@@ -31,7 +31,7 @@ function page() {
 
       <div className="px-5 md:px-20 flex flex-col gap-10 mt-5">
         <div className="flex flex-col gap-8">
-          <p className="text-4xl md:text-5xl font-bold tracking-tight">
+          <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             Terms of Use
           </p>
 
@@ -39,8 +39,8 @@ function page() {
         </div>
 
         <div className="flex flex-col gap-5 mt-2">
-          <p className="text-3xl font-bold">Acceptance of Terms</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Acceptance of Terms</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             By accessing and using TripTribe&apos;s website and services, you
             accept and agree to be bound by these Terms of Use. If you do not
             agree to these terms, please do not use our services.
@@ -60,8 +60,8 @@ function page() {
         />
 
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">Information Accuracy</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Information Accuracy</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             We strive to provide accurate and up-to-date information about trips
             and operators. However, prices, availability, and trip details may
             change without notice. Always verify information directly with the
@@ -76,8 +76,10 @@ function page() {
         />
 
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">Intellectual Property</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">
+            Intellectual Property
+          </p>
+          <p className="text-sm md:text-base text-overlay-muted">
             All content on TripTribe, including text, graphics, logos, and
             software, is owned by TripTribe or its licensors and is protected by
             copyright and other intellectual property laws. You may not
@@ -87,8 +89,10 @@ function page() {
         </div>
 
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">Disclaimer of Warranties</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">
+            Disclaimer of Warranties
+          </p>
+          <p className="text-sm md:text-base text-overlay-muted">
             TripTribe&apos;s services are provided &quot;as is&quot; and
             &quot;as available&quot; without warranties of any kind, either
             express or implied. We do not warrant that our services will be
@@ -97,8 +101,10 @@ function page() {
         </div>
 
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">Limitation of Liability</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">
+            Limitation of Liability
+          </p>
+          <p className="text-sm md:text-base text-overlay-muted">
             To the maximum extent permitted by law, TripTribe shall not be
             liable for any indirect, incidental, special, consequential, or
             punitive damages, or any loss of profits or revenues, whether
@@ -107,8 +113,8 @@ function page() {
         </div>
 
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">Changes to Terms</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Changes to Terms</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             We reserve the right to modify these Terms of Use at any time.
             Changes will be effective immediately upon posting. Your continued
             use of our services after changes are posted constitutes acceptance
@@ -117,8 +123,8 @@ function page() {
         </div>
 
         <div className="flex flex-col gap-5 mb-20">
-          <p className="text-3xl font-bold">Contact Information</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Contact Information</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             For questions about these Terms of Use, please contact us at
             <span className="text-[#6dd5ce]">
               <a href="mailto:contact@triptribe.in?subject=TripTribe%20Support%20Inquiry&body=Hi%20TripTribe%20Team,%0A%0AI'm%20reaching%20out%20regarding%20...%0A%0AThanks,">
