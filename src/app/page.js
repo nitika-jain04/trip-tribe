@@ -135,7 +135,7 @@ const triptribework = [
 export default function Home() {
   return (
     <div>
-      {/* <Navbar /> */}
+      <Navbar />
 
       <div className="relative h-screen w-screen">
         <Image
