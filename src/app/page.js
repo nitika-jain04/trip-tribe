@@ -189,7 +189,7 @@ export default function Home() {
             return (
               <div
                 key={t.id}
-                className="flex items-center bg-pink-200 justify-between h-96 w-96 border border-gray-500 rounded-xl px-5"
+                className="flex items-center bg-pink-200 justify-between h-80 w-80 border border-gray-500 rounded-xl px-5"
               >
                 <div className="flex justify-between">
                   <div className="flex flex-col gap-2">
@@ -208,7 +208,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-5 py-20 px-20 bg-gray-50">
+      <div className="flex flex-col gap-5 py-20 px-10 bg-gray-50">
         <div className="flex justify-between">
           <div className="flex flex-col gap-5 items-start justify-center">
             <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">

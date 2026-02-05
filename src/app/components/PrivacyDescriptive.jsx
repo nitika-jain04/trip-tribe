@@ -3,10 +3,10 @@ import React from "react";
 function PrivacyDescriptive({ heading, description, bulletpoints }) {
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-3xl font-extrabold">{heading}</p>
-      <p className="text-base text-overlay-muted">{description}</p>
+      <p className="text-2xl sm:text-3xl font-medium">{heading}</p>
+      <p className="text-sm md:text-base text-overlay-muted">{description}</p>
 
-      <ul className="list-disc text-base leading-5 text-overlay-muted ml-5 flex flex-col gap-3">
+      <ul className="list-disc leading-5 text-overlay-muted ml-5 flex flex-col gap-3 text-sm md:text-base">
         {bulletpoints.map((bullet, index) => {
           return <li key={index}>{bullet}</li>;
         })}
