@@ -104,7 +104,8 @@ function Page() {
 
         <div className="w-full flex flex-col gap-10">
           <p className="text-overlay-muted text-base">
-            Showing {filteredTrips.length} trips
+            Showing {filteredTrips.length}{" "}
+            {filteredTrips.length === 1 ? "trip" : "trips"}
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:grid-cols-3 lg:gap-10 pb-20">
