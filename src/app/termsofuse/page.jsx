@@ -30,7 +30,7 @@ function page() {
       <Navbar />
 
       <div className="px-5 md:px-20 flex flex-col gap-10 mt-5">
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-3 md:gap-8">
           <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             Terms of Use
           </p>
