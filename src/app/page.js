@@ -142,7 +142,7 @@ export default function Home() {
           src="/about_us.jpg"
           alt="Image"
           fill
-          className="flex items-center justify-between bg-pink-200"
+          className="flex items-center justify-between bg-pink-200 object-cover"
           priority
         />
       </div>
