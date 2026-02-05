@@ -36,14 +36,14 @@ function page() {
 
       <div className="px-5 md:px-20 flex flex-col gap-10 mt-5">
         <div className="flex flex-col gap-8">
-          <p className="text-4xl md:text-5xl font-bold">Privacy Policy</p>
+          <p className="text-2xl sm:text-3xl font-bold">Privacy Policy</p>
 
           <p className="text-sm text-overlay-muted">Last updated: March 2024</p>
         </div>
 
         <div className="flex flex-col gap-5 mt-2">
-          <p className="text-3xl font-bold">Introduction</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Introduction</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             TripTribe (&quot;we,&quot; &quot;our,&quot; or &quot;us) is
             committed to protecting your privacy. This Privacy Policy explains
             how we collect, use, disclose, and safeguard your information when
@@ -73,8 +73,8 @@ function page() {
         />
 
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">Cookies and Tracking</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Cookies and Tracking</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             We use cookies and similar tracking technologies to enhance your
             experience, analyze website traffic, and understand user behavior.
             You can control cookie preferences through your browser settings.
@@ -82,8 +82,8 @@ function page() {
         </div>
 
         <div className="flex flex-col gap-5">
-          <p className="text-3xl font-bold">Data Security</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Data Security</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             We implement reasonable security measures to protect your
             information. However, no method of transmission over the internet is
             100% secure, and we cannot guarantee absolute security.
@@ -97,8 +97,8 @@ function page() {
         />
 
         <div className="flex flex-col gap-5 mb-20">
-          <p className="text-3xl font-bold">Contact Us</p>
-          <p className="text-base text-overlay-muted">
+          <p className="text-2xl sm:text-3xl font-bold">Contact Us</p>
+          <p className="text-sm md:text-base text-overlay-muted">
             If you have questions about this Privacy Policy or our data
             practices, please contact us at contact@triptribe.in
           </p>
