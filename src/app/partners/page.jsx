@@ -169,12 +169,12 @@ function page() {
           Three simple steps to start growing
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 justify-between px-5 lg:py-10 mt-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 justify-between lg:py-10 mt-10">
           {partnerWorking.map((working) => {
             return (
               <div
                 key={working.id}
-                className="flex flex-col gap-4 shadow-lg rounded-xl px-10 py-8"
+                className="flex flex-col gap-4 shadow-lg rounded-xl px-8 py-8"
               >
                 <div
                   className={`w-12 h-12 flex items-center justify-center text-white ${working.color} rounded-full font-bold text-xl`}

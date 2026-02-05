@@ -127,16 +127,16 @@ function Page() {
                     </p>
                   </div>
 
-                  <div className="p-5 flex flex-col gap-2 tracking-wide">
+                  <div className="p-5 flex flex-col gap-2 ">
                     <p className="text-lg font-semibold tracking-normal text-foreground">
                       {trip.name}
                     </p>
-                    <p className="text-sm text-overlay-muted flex items-center gap-2 tracking-wider">
+                    <p className="text-sm text-overlay-muted flex items-center gap-2">
                       <MdOutlinePlace size={16} />
                       {trip.location}
                     </p>
 
-                    <div className="flex items-center gap-5 tracking-wider">
+                    <div className="flex items-center gap-5">
                       <p className="text-sm text-overlay-muted flex items-center gap-2">
                         <LuCalendar size={16} />
                         {trip.duration}
@@ -145,13 +145,13 @@ function Page() {
                         <GrGroup size={16} />
                         {trip.groupSize}
                       </p>
-                      <p className="text-sm flex items-center gap-2">
+                      {/* <p className="text-sm flex items-center gap-2">
                         <TiStarFullOutline
                           size={17}
                           className="text-orange-300"
                         />
                         {trip.rating}
-                      </p>
+                      </p> */}
                     </div>
 
                     <div className="py-2">
@@ -163,17 +163,18 @@ function Page() {
                         <p className="text-sm text-overlay-muted">
                           Starting from
                         </p>
-                        <p className="text-2xl font-semibold tracking-wide text-foreground">
+                        <p className="text-xl md:text-2xl font-semibold tracking-wide text-foreground">
                           ₹{trip.price}
                         </p>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <button className="px-3 py-2 border border-gray-200 text-sm text-foreground rounded-lg hover:bg-blue-400 hover:text-white cursor-pointer">
+                        <button className="px-2 py-1 md:px-3 border border-gray-200 text-sm text-foreground rounded-lg hover:bg-blue-400 hover:text-white cursor-pointer">
                           Compare
                         </button>
                         <Link href={`/trip/${slugify(trip.name)}`}>
-                          <button className="px-3 py-2 text-white bg-primary-aqua text-sm rounded-lg cursor-pointer">
+                          {" "}
+                          <button className="px-2 py-1 md:px-3 text-white bg-primary-aqua text-sm rounded-lg cursor-pointer">
                             View
                           </button>
                         </Link>

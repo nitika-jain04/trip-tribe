@@ -133,11 +133,16 @@ const triptribework = [
 ];
 
 export default function Home() {
+  const slugify = (text) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
   return (
     <div>
-      <Navbar />
-
-      <div className="relative h-[95vh] w-full">
+      <div className="relative h-screen w-full">
+        <Navbar />
         <Image
           src="/about_us.jpg"
           alt="Hero Background"
@@ -290,13 +295,13 @@ export default function Home() {
                       <GrGroup size={16} />
                       {trip.groupSize}
                     </p>
-                    <p className="text-sm flex items-center gap-2">
+                    {/* <p className="text-sm flex items-center gap-2">
                       <TiStarFullOutline
                         size={17}
                         className="text-orange-300"
                       />
                       {trip.rating}
-                    </p>
+                    </p> */}
                   </div>
 
                   <div className="py-2">
@@ -308,18 +313,18 @@ export default function Home() {
                       <p className="text-sm text-overlay-muted">
                         Starting from
                       </p>
-                      <p className="text-2xl font-semibold tracking-wide text-foreground">
+                      <p className="text-xl md:text-2xl font-semibold tracking-wide text-foreground">
                         ₹{trip.price}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <button className="px-3 py-2 border border-gray-200 text-sm text-foreground rounded-lg hover:bg-blue-400 hover:text-white cursor-pointer">
+                      <button className="px-2 py-1 md:px-3 border border-gray-200 text-sm text-foreground rounded-lg hover:bg-blue-400 hover:text-white cursor-pointer">
                         Compare
                       </button>
-                      <Link href={`/explore`}>
+                      <Link href={`/trip/${slugify(trip.name)}`}>
                         {" "}
-                        <button className="px-3 py-2 text-white bg-primary-aqua text-sm rounded-lg cursor-pointer">
+                        <button className="px-2 py-1 md:px-3 text-white bg-primary-aqua text-sm rounded-lg cursor-pointer">
                           View
                         </button>
                       </Link>

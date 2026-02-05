@@ -6,6 +6,7 @@ import Footer from "@/app/components/Footer";
 import { MdKeyboardArrowDown, MdOutlineCancel } from "react-icons/md";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { BsCurrencyRupee } from "react-icons/bs";
+import Navbar from "@/app/components/Navbar";
 
 const slugify = (text) =>
   text
@@ -22,6 +23,8 @@ export default async function TripPage({ params }) {
 
   return (
     <div className="bg-background text-foreground">
+      <Navbar />
+
       <div className="relative h-105 w-full">
         <Image
           src={trip.img}
