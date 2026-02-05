@@ -67,7 +67,7 @@ export default async function TripPage({ params }) {
         </div>
       </div>
 
-      <div className="py-10 px-5 flex flex-col gap-10">
+      <div className="py-10 px-5 flex flex-col gap-10 md:px-36">
         <div className="flex flex-col gap-4">
           <h2 className="text-3xl font-bold">Overview</h2>
           <p className="text-lg text-overlay-muted">
