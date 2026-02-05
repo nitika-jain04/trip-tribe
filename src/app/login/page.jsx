@@ -101,7 +101,7 @@ function TestLogin() {
       {/* Content */}
       <div className="relative flex flex-col lg:flex-row items-center gap-20 py-10">
         <div className="max-w-xl text-white lg:hidden px-10">
-          <p className="text-4xl text-center">
+          <p className="text-3xl md:text-4xl text-center">
             THE GOAL OF LIFE IS LIVING IN AGREEMENT WITH NATURE.
           </p>
           <div className="w-full border-b-4 border-white mt-4" />

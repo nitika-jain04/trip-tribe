@@ -252,7 +252,7 @@ export default function Home() {
             View All
           </Link>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 pb-20 mt-5">
           {trips.map((trip) => {
             return (
               <div
@@ -369,7 +369,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-20 px-10">
           {partners.map((partner, index) => {
             return (
               <div

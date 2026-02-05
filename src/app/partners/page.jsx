@@ -134,7 +134,7 @@ function page() {
 
       <div className="py-20 md:py-28 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center py-5 px-10">
-          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground">
+          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground text-center">
             Why Partner With Us?
           </p>
           <p className="text-xl text-center text-overlay-muted leading-6">
@@ -169,7 +169,7 @@ function page() {
           Three simple steps to start growing
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-5 justify-between px-5 md:py-10 mt-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 justify-between px-5 lg:py-10 mt-10">
           {partnerWorking.map((working) => {
             return (
               <div
@@ -201,7 +201,7 @@ function page() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-20 px-10">
           {partners.map((partner, index) => {
             return (
               <div
