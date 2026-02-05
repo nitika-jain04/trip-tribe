@@ -1,65 +1,422 @@
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import { LuCalendar, LuFilter, LuGlobe, LuSearch } from "react-icons/lu";
+import Link from "next/link";
+import { trips } from "./tripData";
 import Image from "next/image";
+import { MdOutlinePlace } from "react-icons/md";
+import { GrGroup } from "react-icons/gr";
+import { TiStarFullOutline } from "react-icons/ti";
+import { FaArrowRight, FaInstagram } from "react-icons/fa6";
+import { RiShareBoxLine } from "react-icons/ri";
+
+export const metadata = {
+  title: "Explore Group Trips Across India",
+  description:
+    "Discover curated group trips, adventures, and travel communities across India. Compare itineraries, prices, and partners on TripTribe.",
+  alternates: {
+    canonical: "https://triptribe.in",
+  },
+  openGraph: {
+    title: "TripTribe – India's First Community Trip Aggregator",
+    description:
+      "Compare and explore group trips, adventures, and trusted travel communities across India.",
+    url: "https://triptribe.in",
+    siteName: "TripTribe",
+    images: [
+      {
+        url: "https://triptribe.in/about_us.jpg",
+        width: 1200,
+        height: 630,
+        alt: "TripTribe Home",
+      },
+    ],
+    type: "website",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "TripTribe – India's First Community Trip Aggregator",
+    description:
+      "Explore curated group trips, adventures & travel communities across India.",
+  },
+};
+
+const partners = [
+  {
+    id: 1,
+    img: "/about_us.jpg",
+    name: "WanderOn",
+    description:
+      "India's leading community travel platform offering unique experiences across diverse destinations.",
+    webLink: "https://wanderon.in/",
+    igLink: "https://www.instagram.com/wanderon.in",
+  },
+  {
+    id: 2,
+    img: "/about_us.jpg",
+    name: "Safarnama",
+    description:
+      "Curating authentic travel experiences with a focus on cultural immersion and adventure.",
+    webLink: "https://www.safarnama.com/",
+    igLink: "https://www.instagram.com/safarnama",
+  },
+  {
+    id: 3,
+    img: "/about_us.jpg",
+    name: "Capture A Trip",
+    description:
+      "Photography-focused travel experiences for creative travelers and adventure enthusiasts.",
+    webLink: "https://www.captureatrip.com/",
+    igLink: "https://www.instagram.com/captureatrip",
+  },
+  {
+    id: 4,
+    img: "/about_us.jpg",
+    name: "Go4Explore",
+    description:
+      "Adventure travel specialists offering treks, expeditions, and unique wilderness experiences.",
+    webLink: "https://go4explore.com/",
+    igLink: "https://www.instagram.com/go4explore",
+  },
+  {
+    id: 5,
+    img: "/about_us.jpg",
+    name: "WanderSaga",
+    description:
+      "Creating memorable journeys with a blend of adventure, comfort, and local experiences.",
+    webLink: "https://www.wandersaga.com/",
+    igLink: "https://www.instagram.com/wandersaga",
+  },
+  {
+    id: 6,
+    img: "/spiti-valley.jpg",
+    name: "Byko Journeys",
+    description:
+      "Motorcycle tours and road trips across India's most scenic routes and challenging terrains.",
+    webLink: "https://www.bykojourneys.com/",
+    igLink: "https://www.instagram.com/bykojourneys",
+  },
+];
+
+const destinations = [
+  { id: 1, heading: "Spiti Valley", totalTrips: 24 },
+  { id: 2, heading: "Meghalaya", totalTrips: 18 },
+  { id: 3, heading: "Ladakh", totalTrips: 32 },
+  { id: 4, heading: "Goa", totalTrips: 15 },
+  { id: 5, heading: "Kashmir", totalTrips: 21 },
+];
+
+const triptribework = [
+  {
+    id: 1,
+    icon: <LuSearch size={30} />,
+    heading: "1. Discover",
+    description:
+      "Browse verified community trips from top operators across India",
+    color: "bg-primary-aqua",
+  },
+  {
+    id: 2,
+    icon: <LuFilter size={30} />,
+    heading: "2. Compare",
+    description: "See destinations, prices, and styles side by side",
+    color: "bg-primary-blue",
+  },
+  {
+    id: 3,
+    icon: <LuGlobe size={30} />,
+    heading: "3. Book",
+    description: "Go directly to the operator's site — zero markups",
+    color: "bg-primary-orange",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
+    <div>
+      {/* <Navbar /> */}
+
+      <div className="relative h-screen w-screen">
         <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
+          src="/about_us.jpg"
+          alt="Image"
+          fill
+          className="flex items-center justify-between bg-pink-200"
           priority
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.js file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+      </div>
+
+      <div className="py-20 flex flex-col items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-5">
+          <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
+            How It Works?
+          </p>
+          <p className="text-xl text-center text-overlay-muted tracking-wide">
+            Three simple steps to your perfect group travel experience
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-20 md:gap-28 items-center justify-center px-10 pt-14 md:px-16 lg:px-24 md:pt-20">
+          {triptribework.map((why) => {
+            return (
+              <div key={why.id} className="flex flex-col gap-4 items-center">
+                <div className={`p-4 text-white ${why.color} rounded-full`}>
+                  {why.icon}
+                </div>
+                <p className="text-2xl font-bold text-foreground text-center">
+                  {why.heading}
+                </p>
+                <p className="text-gray-500 tracking-wide text-center">
+                  {why.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
-      </main>
+      </div>
+
+      <div className="py-20 flex flex-col items-center justify-center">
+        <div className="flex flex-col items-center gap-5">
+          <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
+            Featured Destinations
+          </p>
+          <p className="text-xl text-center text-overlay-muted tracking-wide">
+            Explore India&apos;s most breathtaking landscapes
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-center justify-center px-10 pt-14 md:px-16 lg:px-24 md:pt-20">
+          {destinations.map((t) => {
+            return (
+              <div
+                key={t.id}
+                className="flex items-center bg-pink-200 justify-between h-96 w-96 border border-gray-500 rounded-xl px-5"
+              >
+                <div className="flex justify-between">
+                  <div className="flex flex-col gap-2">
+                    <div className="p-4 text-3xl text-white rounded-full">
+                      {t.heading}
+                    </div>
+                    <p className="text-2xl font-bold text-surface-lighter text-center">
+                      {t.totalTrips} trips available
+                    </p>
+                  </div>
+                </div>
+                <FaArrowRight size={30} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-5 py-20 px-20 bg-gray-50">
+        <div className="flex justify-between">
+          <div className="flex flex-col gap-5 items-start justify-center">
+            <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
+              Featured Trips
+            </p>
+            <p className="text-xl text-center text-overlay-muted tracking-wide">
+              Handpicked experiences from trusted partners
+            </p>
+          </div>
+
+          <Link
+            href="/explore"
+            className="border border-gray-300 text-sm bg-white w-fit rounded-lg h-fit px-4 py-2"
+          >
+            View All
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:grid-cols-3 lg:gap-10 pb-20 mt-5">
+          {trips.map((trip) => {
+            return (
+              <div
+                key={trip.id}
+                className="rounded-lg shadow-xl hover:transition-transform hover:-translate-y-1 hover:duration-500 hover:ease-out"
+              >
+                <div className="h-44 w-full relative">
+                  <Image
+                    src={trip.img}
+                    alt="Image"
+                    fill
+                    objectFit="cover"
+                    className="rounded-t-xl"
+                  />
+                  <p className="absolute top-5 right-2 bg-surface-lighter rounded-xl font-medium tracking-wide text-xs px-2 hover:bg-foreground text-foreground hover:text-white">
+                    {trip.partner}
+                  </p>
+                </div>
+
+                <div className="p-5 flex flex-col gap-2 tracking-wide">
+                  <p className="text-lg font-semibold tracking-normal text-foreground">
+                    {trip.name}
+                  </p>
+                  <p className="text-sm text-overlay-muted flex items-center gap-2 tracking-wider">
+                    <MdOutlinePlace size={16} />
+                    {trip.location}
+                  </p>
+
+                  <div className="flex items-center gap-5 tracking-wider">
+                    <p className="text-sm text-overlay-muted flex items-center gap-2">
+                      <LuCalendar size={16} />
+                      {trip.duration}
+                    </p>
+                    <p className="text-sm text-overlay-muted flex items-center gap-2">
+                      <GrGroup size={16} />
+                      {trip.groupSize}
+                    </p>
+                    <p className="text-sm flex items-center gap-2">
+                      <TiStarFullOutline
+                        size={17}
+                        className="text-orange-300"
+                      />
+                      {trip.rating}
+                    </p>
+                  </div>
+
+                  <div className="py-2">
+                    <hr className="border-0 border-t border-gray-200" />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-overlay-muted">
+                        Starting from
+                      </p>
+                      <p className="text-2xl font-semibold tracking-wide text-foreground">
+                        ₹{trip.price}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button className="px-3 py-2 border border-gray-200 text-sm text-foreground rounded-lg hover:bg-blue-400 hover:text-white cursor-pointer">
+                        Compare
+                      </button>
+                      <Link href={`/trip/${trip.name}`}>
+                        {" "}
+                        <button className="px-3 py-2 text-white bg-primary-aqua text-sm rounded-lg cursor-pointer">
+                          View
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex px-20 justify-evenly items-center bg-blue-950 py-24">
+        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+          10+
+          <span className="text-base text-surface-light font-normal">
+            Trusted Partners
+          </span>
+        </p>
+        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+          100+
+          <span className="text-base text-surface-light font-normal">
+            Curated Trips
+          </span>
+        </p>
+        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+          50,000+
+          <span className="text-base text-surface-light font-normal">
+            Happy Travelers
+          </span>
+        </p>
+        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+          4.8
+          <span className="text-base text-surface-light font-normal">
+            Average Rating
+          </span>
+        </p>
+      </div>
+
+      <div className="py-20 px-5 lg:px-24">
+        <div className="flex flex-col items-center">
+          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground">
+            Our Partners
+          </p>
+          <p className="text-xl text-center text-overlay-muted tracking-wider leading-6">
+            Trusted travel operators growing with TripTribe
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-10 pt-10 pb-5 md:pt-20">
+          {partners.map((partner, index) => {
+            return (
+              <div
+                key={index}
+                className="rounded-2xl shadow-lg p-6 flex flex-col gap-5 hover:shadow-2xl hover:-translate-y-2 hover:transition-transform hover:duration-700 hover:ease-out"
+              >
+                <div className="flex flex-col gap-3">
+                  <div className="relative w-14 h-14 rounded-lg overflow-hidden">
+                    <Image
+                      src={partner.img}
+                      alt={partner.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <p className="text-xl font-semibold tracking-wide">
+                    {partner.name}
+                  </p>
+                  <p className="text-sm tracking-wider text-black/50">
+                    {partner.description}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-2">
+                  <Link
+                    href={partner.webLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-4 px-3 py-2 border border-gray-200 rounded-lg text-sm tracking-wide w-full text-center hover:text-white hover:bg-blue-400"
+                  >
+                    <span>
+                      <RiShareBoxLine size={17} />
+                    </span>
+                    Website
+                  </Link>
+                  <Link
+                    href={partner.igLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-center hover:text-white hover:bg-blue-400"
+                  >
+                    <FaInstagram size={17} />
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-center my-5">
+          <Link
+            href="/explore"
+            className="border border-gray-300 text-sm bg-white w-fit rounded-lg h-fit px-4 py-2"
+          >
+            View All Partners
+          </Link>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-5 px-20 justify-evenly items-center bg-primary-aqua py-24">
+        <p className="text-white text-5xl font-bold">
+          Compare your next trip in minutes
+        </p>
+        <p className="text-xl text-surface-lighter">
+          Stop endless searching. Start exploring with confidence.
+        </p>
+        <button className="bg-primary-orange rounded-lg text-sm text-white px-6 py-2 cursor-pointer hover:shadow-sm">
+          Start Comparing
+        </button>
+      </div>
+
+      <Footer />
     </div>
   );
 }
