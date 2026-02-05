@@ -3,10 +3,16 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { trips } from "@/app/tripData";
 import Footer from "@/app/components/Footer";
-import { MdKeyboardArrowDown, MdOutlineCancel } from "react-icons/md";
+import {
+  MdKeyboardArrowDown,
+  MdOutlineCancel,
+  MdOutlinePlace,
+} from "react-icons/md";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { BsCurrencyRupee } from "react-icons/bs";
 import Navbar from "@/app/components/Navbar";
+import { LuCalendar } from "react-icons/lu";
+import { GrGroup } from "react-icons/gr";
 
 const slugify = (text) =>
   text
@@ -35,10 +41,29 @@ export default async function TripPage({ params }) {
         />
         <div className="absolute inset-0 bg-black/50" />
 
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl text-white">
-          <p className="text-sm mb-2">{trip.location}</p>
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl text-white flex flex-col gap-3">
+          <div>
+            <p className="w-fit bg-surface-lighter rounded-xl font-medium tracking-wide text-xs px-2 hover:bg-foreground text-foreground hover:text-white">
+              {trip.partner}
+            </p>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold">{trip.name}</h1>
-          <p className="mt-3 max-w-2xl text-white/90">{trip.description}</p>
+
+          <div className="flex items-center gap-5">
+            <p className="text-sm flex items-center gap-2">
+              <MdOutlinePlace size={16} />
+              {trip.location}
+            </p>
+
+            <p className="text-sm flex items-center gap-2">
+              <LuCalendar size={16} />
+              {trip.duration}
+            </p>
+            <p className="text-sm flex items-center gap-2">
+              <GrGroup size={16} />
+              {trip.groupSize}
+            </p>
+          </div>
         </div>
       </div>
 
