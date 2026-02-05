@@ -133,11 +133,11 @@ function page() {
       </div>
 
       <div className="py-20 md:py-28 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center py-5">
-          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground text-center">
+        <div className="flex flex-col items-center py-5 px-10">
+          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground">
             Why Partner With Us?
           </p>
-          <p className="text-xl text-center text-overlay-muted tracking-wide leading-6">
+          <p className="text-xl text-center text-overlay-muted leading-6">
             Transparent, traffic-driven, and built for growth
           </p>
         </div>
@@ -160,16 +160,16 @@ function page() {
         </div>
       </div>
 
-      <div className="bg-gray-50 py-20 md:py-28 px-5 lg:px-24 flex flex-col items-center">
-        <p className="text-4xl font-bold tracking-tight pb-5 text-foreground">
+      <div className="bg-gray-50 py-20 md:py-28 px-10 lg:px-20 flex flex-col items-center">
+        <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground">
           How it Works
         </p>
 
-        <p className="text-overlay-muted text-xl tracking-wide text-center">
+        <p className="text-overlay-muted text-xl text-center">
           Three simple steps to start growing
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 justify-between px-5 md:py-20 md:mt-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-5 justify-between px-5 md:py-10 mt-10">
           {partnerWorking.map((working) => {
             return (
               <div
@@ -191,17 +191,17 @@ function page() {
         </div>
       </div>
 
-      <div className="py-20 px-5 lg:px-24">
-        <div className="flex flex-col items-center">
-          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground">
+      <div className="py-20 lg:px-20">
+        <div className="flex flex-col gap-5 items-center px-10">
+          <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
             Our Partners
           </p>
-          <p className="text-xl text-center text-overlay-muted tracking-wider leading-6">
+          <p className="text-xl text-center text-overlay-muted leading-6">
             Trusted travel operators growing with TripTribe
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-10 pt-10 pb-5 md:pt-28">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-20">
           {partners.map((partner, index) => {
             return (
               <div
@@ -263,7 +263,7 @@ function page() {
 
         <form
           action=""
-          className="flex flex-col gap-5 pt-10 bg-white px-10 py-3 rounded-lg mt-10"
+          className="flex flex-col gap-5 bg-white px-5 py-3 rounded-lg mt-10"
         >
           <div className="flex flex-col md:flex-row gap-5 items-center justify-between">
             <div className="flex flex-col w-full gap-2">

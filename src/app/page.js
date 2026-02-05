@@ -137,22 +137,48 @@ export default function Home() {
     <div>
       <Navbar />
 
-      <div className="relative h-screen w-screen">
+      <div className="relative h-[95vh] w-full">
         <Image
           src="/about_us.jpg"
-          alt="Image"
+          alt="Hero Background"
           fill
-          className="flex items-center justify-between bg-pink-200 object-cover"
+          className="object-cover"
           priority
         />
+        <div className="absolute inset-0 bg-black/50"></div>
+
+        <div className="absolute inset-0 flex flex-col gap-5 items-center justify-center text-center px-4 sm:px-6 md:px-8">
+          <p className="text-4xl xl:text-6xl font-bold text-white leading-tight">
+            Find your tribe.
+            <br />
+            Travel together.
+          </p>
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 max-w-3xl">
+            Explore curated group trips. Compare price, duration, and vibe.
+            <br />
+            Book directly with trusted operators.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 md:gap-6">
+            <Link href="/explore">
+              <button className="bg-primary-aqua text-white px-6 py-1 rounded-lg text-base md:text-lg cursor-pointer transition-all duration-200 hover:shadow-lg">
+                Explore Trips
+              </button>
+            </Link>
+            <Link href="/partners">
+              <button className="bg-white/10 border-2 border-white text-white hover:bg-white hover:text-foreground cursor-pointer px-6 py-1 rounded-lg text-base md:text-lg transition-all duration-200">
+                Join as Partner
+              </button>
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="py-20 flex flex-col items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-5">
           <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
-            How It Works?
+            How It Works
           </p>
-          <p className="text-xl text-center text-overlay-muted tracking-wide">
+          <p className="text-xl text-center text-overlay-muted tracking-wide px-5">
             Three simple steps to your perfect group travel experience
           </p>
         </div>
@@ -175,7 +201,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="py-20 flex flex-col items-center justify-center">
+      {/* <div className="py-20 flex flex-col items-center justify-center">
         <div className="flex flex-col items-center gap-5">
           <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
             Featured Destinations
@@ -184,12 +210,12 @@ export default function Home() {
             Explore India&apos;s most breathtaking landscapes
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-center justify-center px-10 pt-14 md:px-16 lg:px-24 md:pt-20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-20 md:gap-28 items-center justify-center px-10 pt-14 md:px-16 lg:px-24 md:pt-20">
           {destinations.map((t) => {
             return (
               <div
                 key={t.id}
-                className="flex items-center bg-pink-200 justify-between h-80 w-80 border border-gray-500 rounded-xl px-5"
+                className="flex items-center bg-pink-200 justify-between h-[383] w-[320] border border-gray-500 rounded-xl px-5"
               >
                 <div className="flex justify-between">
                   <div className="flex flex-col gap-2">
@@ -206,11 +232,11 @@ export default function Home() {
             );
           })}
         </div>
-      </div>
+      </div> */}
 
-      <div className="flex flex-col gap-5 py-20 px-10 bg-gray-50">
-        <div className="flex justify-between">
-          <div className="flex flex-col gap-5 items-start justify-center">
+      <div className="flex flex-col gap-5 py-20 px-10 md:px-20 bg-gray-50">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-5">
+          <div className="flex flex-col gap-5 items-center md:items-start justify-start">
             <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
               Featured Trips
             </p>
@@ -226,7 +252,7 @@ export default function Home() {
             View All
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:grid-cols-3 lg:gap-10 pb-20 mt-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-5">
           {trips.map((trip) => {
             return (
               <div
@@ -291,7 +317,7 @@ export default function Home() {
                       <button className="px-3 py-2 border border-gray-200 text-sm text-foreground rounded-lg hover:bg-blue-400 hover:text-white cursor-pointer">
                         Compare
                       </button>
-                      <Link href={`/trip/${trip.name}`}>
+                      <Link href={`/explore`}>
                         {" "}
                         <button className="px-3 py-2 text-white bg-primary-aqua text-sm rounded-lg cursor-pointer">
                           View
@@ -306,44 +332,44 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="flex px-20 justify-evenly items-center bg-blue-950 py-24">
-        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 px-10 justify-evenly items-center bg-[#1c2532] py-20 md:py-24">
+        <p className="flex flex-col items-center gap-3 text-primary-aqua text-4xl md:text-5xl font-bold">
           10+
-          <span className="text-base text-surface-light font-normal">
+          <span className="text-base text-white/80 font-normal">
             Trusted Partners
           </span>
         </p>
-        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+        <p className="flex flex-col items-center gap-3 text-primary-aqua text-4xl md:text-5xl font-bold">
           100+
-          <span className="text-base text-surface-light font-normal">
+          <span className="text-base text-white/80 font-normal">
             Curated Trips
           </span>
         </p>
-        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+        <p className="flex flex-col items-center gap-3 text-primary-aqua text-4xl md:text-5xl font-bold">
           50,000+
-          <span className="text-base text-surface-light font-normal">
+          <span className="text-base text-white/80 font-normal">
             Happy Travelers
           </span>
         </p>
-        <p className="flex flex-col items-center gap-2 text-primary-aqua text-5xl font-bold">
+        <p className="flex flex-col items-center gap-3 text-primary-aqua text-4xl md:text-5xl font-bold">
           4.8
-          <span className="text-base text-surface-light font-normal">
+          <span className="text-base text-white/80 font-normal">
             Average Rating
           </span>
         </p>
       </div>
 
-      <div className="py-20 px-5 lg:px-24">
-        <div className="flex flex-col items-center">
-          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground">
+      <div className="py-20 lg:px-20">
+        <div className="flex flex-col gap-5 items-center px-10">
+          <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
             Our Partners
           </p>
-          <p className="text-xl text-center text-overlay-muted tracking-wider leading-6">
+          <p className="text-xl text-center text-overlay-muted leading-6">
             Trusted travel operators growing with TripTribe
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-10 pt-10 pb-5 md:pt-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-20">
           {partners.map((partner, index) => {
             return (
               <div
@@ -393,19 +419,10 @@ export default function Home() {
             );
           })}
         </div>
-
-        <div className="flex justify-center my-5">
-          <Link
-            href="/explore"
-            className="border border-gray-300 text-sm bg-white w-fit rounded-lg h-fit px-4 py-2"
-          >
-            View All Partners
-          </Link>
-        </div>
       </div>
 
-      <div className="flex flex-col gap-5 px-20 justify-evenly items-center bg-primary-aqua py-24">
-        <p className="text-white text-5xl font-bold">
+      <div className="flex flex-col gap-5 px-20 justify-evenly items-center bg-primary-aqua py-24 text-center">
+        <p className="text-white text-4xl md:text-5xl font-bold">
           Compare your next trip in minutes
         </p>
         <p className="text-xl text-surface-lighter">

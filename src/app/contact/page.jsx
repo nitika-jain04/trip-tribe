@@ -1,10 +1,17 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Footer from "../components/Footer";
 import { FiMail } from "react-icons/fi";
 import { BsChat } from "react-icons/bs";
 import Navbar from "../components/Navbar";
+import TripDropdown from "../components/TripDropdown";
 
 function Contact() {
+  const [currentRole, setCurrentRole] = useState("Select your role");
+
+  const role = ["Traveler", "Partner", "Other"];
+
   return (
     <div>
       <Navbar />
@@ -13,7 +20,7 @@ function Contact() {
         <p className="text-4xl md:text-6xl tracking-tight font-bold">
           Get in Touch
         </p>
-        <p className="text-xl md:text-2xl tracking-wide text-center">
+        <p className="text-xl md:text-2xl text-center">
           Have questions? We&apos;re here to help
         </p>
       </div>
@@ -24,7 +31,7 @@ function Contact() {
             <FiMail size={30} />
           </div>
           <p className="text-2xl font-bold text-foreground">Email Us</p>
-          <p className="text-overlay-muted tracking-wide text-center">
+          <p className="text-overlay-muted text-center">
             For general inquiries and support
           </p>
           <a
@@ -40,7 +47,7 @@ function Contact() {
             <BsChat size={30} />
           </div>
           <p className="text-2xl font-bold">WhatsApp</p>
-          <p className="text-overlay-muted tracking-wide text-center">
+          <p className="text-overlay-muted text-center">
             Quick questions and instant responses
           </p>
           <a
@@ -54,53 +61,66 @@ function Contact() {
         </div>
       </div>
 
-      <div className="px-5 md:px-28 flex flex-col gap-2 pb-40">
-        <p className="text-3xl font-bold text-center text-[#OA121F] pb-2">
+      <div className="px-10 md:px-28 flex flex-col gap-2 pb-40">
+        <p className="text-3xl font-bold text-center text-[#0A121F] pb-2">
           Send us a Message
         </p>
         <p className="text-center text-gray-500">
           Fill out the form below and we&apos;ll get back to you within 24 hours
         </p>
 
-        <form action="" className="flex flex-col gap-5 py-5">
+        <form
+          onSubmit={(e) => e.preventDefault()}
+          className="flex flex-col gap-5 py-5"
+        >
           <div className="flex flex-col gap-5 lg:flex-row lg:gap-10 items-center justify-between">
-            <div className="flex flex-col w-full gap-0.5">
+            <div className="flex flex-col w-full gap-2.5">
               <label className="text-sm tracking-wide">Full Name</label>
               <input
                 type="text"
                 placeholder="John Doe"
-                className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua placeholder:text-sm"
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua placeholder:text-sm"
               />
             </div>
 
-            <div className="flex flex-col w-full gap-0.5">
+            <div className="flex flex-col w-full gap-2.5">
               <label className="text-sm tracking-wide">Email</label>
               <input
                 type="email"
                 placeholder="john@example.com"
-                className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua placeholder:text-sm"
+                className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua placeholder:text-sm"
               />
             </div>
           </div>
 
-          <div className="flex flex-col w-full gap-0.5">
-            <label className="text-sm tracking-wide">I am a</label>
+          <div className="flex flex-col w-full gap-2.5">
+            {/* <label className="text-sm tracking-wide">I am a</label>
             <input
               type="text"
-              className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua"
+              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua"
+            /> */}
+            <label className="text-sm tracking-wide">I am a</label>
+
+            <TripDropdown
+              options={role}
+              value={currentRole}
+              onChange={setCurrentRole}
             />
           </div>
 
-          <div className="flex flex-col w-full gap-0.5">
+          <div className="flex flex-col w-full gap-2.5">
             <label className="text-sm tracking-wide">Message</label>
             <textarea
               rows={5}
-              className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua placeholder:text-sm"
+              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:border-2 focus:border-primary-aqua placeholder:text-sm"
               placeholder="How can we help you?"
             ></textarea>
           </div>
 
-          <button className="mt-6 text-white text-sm bg-primary-aqua rounded-lg py-3 px-4">
+          <button
+            type="submit"
+            className="mt-6 text-white text-sm bg-primary-aqua rounded-lg py-3 px-4"
+          >
             Send Message
           </button>
         </form>

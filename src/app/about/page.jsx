@@ -39,6 +39,19 @@ function page() {
           fill
           className="object-cover"
         />
+
+        {/* Dark overlay for better text readability */}
+        <div className="absolute inset-0 bg-black/50"></div>
+
+        {/* Hero Content */}
+        <div className="absolute inset-0 flex flex-col gap-3 items-center justify-center text-center px-4 sm:px-6 md:px-8">
+          <p className="text-4xl md:text-6xl tracking-tight font-bold text-white">
+            About TripTribe.
+          </p>
+          <p className="text-xl md:text-2xl text-white text-center">
+            Making community travel simple, transparent, and social
+          </p>
+        </div>
       </div>
 
       <div className="">
@@ -46,7 +59,7 @@ function page() {
           <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6">
             Our Mission
           </p>
-          <p className="text-xl text-center text-overlay-muted leading-8">
+          <p className="text-lg md:text-xl text-center text-overlay-muted leading-8 text-justify">
             We built TripTribe to solve a simple problem: comparing community
             trips was messy, time-consuming, and frustrating. Multiple tabs,
             inconsistent information, and hidden prices made planning harder
@@ -61,7 +74,7 @@ function page() {
             <p className="text-4xl md:text-5xl font-bold tracking-tight pb-3 text-foreground">
               Our Values
             </p>
-            <p className="text-xl text-center text-overlay-muted tracking-wide leading-8">
+            <p className="text-xl text-center text-overlay-muted leading-8">
               What drives us every day
             </p>
 
@@ -96,11 +109,11 @@ function page() {
             </div>
           </div>
 
-          <div className="py-14 md:py-28 md:px-14 lg:px-20 flex flex-col items-center">
+          <div className="py-14 px-10 md:py-28 md:px-14 lg:px-20 flex flex-col items-center">
             <p className="text-4xl md:text-5xl font-bold pb-4 text-center">
               Meet the Founders
             </p>
-            <p className="text-xl text-center text-overlay-muted tracking-wide leading-8">
+            <p className="text-xl text-center text-overlay-muted leading-8">
               Two travelers on a mission to simplify group travel
             </p>
 
@@ -128,7 +141,7 @@ function page() {
             </div>
           </div>
 
-          <div className="bg-gray-50 py-14 px-5 md:py-28 md:px-14 lg:px-20 flex flex-col items-center">
+          <div className="bg-gray-50 py-14 px-10 md:py-28 md:px-14 lg:px-20 flex flex-col items-center">
             <p className="text-4xl md:text-5xl font-bold tracking-tight pb-10">
               Our Story
             </p>
@@ -159,7 +172,7 @@ function page() {
             <p className="text-4xl md:text-5xl font-bold tracking-tight">
               Ready to Explore?
             </p>
-            <p className="text-xl text-center text-overlay-muted tracking-wide leading-6">
+            <p className="text-xl text-center text-overlay-muted leading-6">
               Start comparing trips and find your perfect adventure today
             </p>
             <div className="flex flex-col md:flex-row md:justify-center gap-5 text-sm items-center w-full text-foreground">
