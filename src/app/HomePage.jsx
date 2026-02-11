@@ -123,7 +123,7 @@ export default function Home() {
 
         <div className="container-premium relative z-10 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-display text-display-lg md:text-display-xl lg:text-display-xl text-background mb-6 animate-fade-up">
+            <h1 className="font-display text-display-lg md:text-display-xl lg:text-display-xl text-background mb-6 mt-10 animate-fade-up">
               Find your tribe.
               <span className="block">Travel together.</span>
             </h1>
@@ -195,9 +195,9 @@ export default function Home() {
         </div>
 
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          <div className="w-8 h-12 rounded-full border-2 border-background/30 flex items-start justify-center p-2">
+          {/* <div className="w-8 h-12 rounded-full border-2 border-background/30 flex items-start justify-center p-2">
             <div className="w-1.5 h-3 bg-background/50 rounded-full" />
-          </div>
+          </div> */}
         </div>
       </section>
 

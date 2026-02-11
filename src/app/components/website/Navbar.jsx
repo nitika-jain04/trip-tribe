@@ -37,13 +37,13 @@ export function Navbar() {
       }`}
     >
       <nav className="container-premium">
-        <div className="flex items-center justify-between h-18 md:h-20">
+        <div className="flex items-center justify-between h-18">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-1 group">
             <img
               src="/triptribe-logo.jpeg"
               alt="TripTribe"
-              className="h-10 w-10 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-10 w-16 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <span
               className={`font-display text-xl font-semibold transition-colors ${
