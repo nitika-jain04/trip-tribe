@@ -1,7 +1,5 @@
 import React from "react";
 import PrivacyDescriptive from "../components/PrivacyDescriptive";
-import Footer from "../components/Footer";
-import Navbar from "../components/Navbar";
 
 function page() {
   const natureofService = [
@@ -26,10 +24,8 @@ function page() {
   ];
 
   return (
-    <div>
-      <Navbar />
-
-      <div className="px-5 md:px-20 flex flex-col gap-10 mt-5">
+    <>
+      <div className="px-5 md:px-20 flex flex-col gap-10 mt-24">
         <div className="flex flex-col gap-3 md:gap-8">
           <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
             Terms of Use
@@ -135,8 +131,7 @@ function page() {
           </p>
         </div>
       </div>
-      <Footer />
-    </div>
+    </>
   );
 }
 

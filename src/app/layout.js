@@ -1,12 +1,7 @@
-import { Inter } from "next/font/google";
 import "./globals.css";
 import AuthCheck from "./components/AuthCheck";
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
+import { Footer } from "./components/website/Footer";
+import { Navbar } from "./components/website/Navbar";
 
 export const metadata = {
   title: {
@@ -19,9 +14,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="font-inter">
+      <body>
         <AuthCheck />
+        <Navbar />
+
         {children}
+        <Footer />
       </body>
     </html>
   );

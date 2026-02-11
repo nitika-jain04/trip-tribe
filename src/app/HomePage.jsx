@@ -1,267 +1,25 @@
-// // app/trip/[slug]/page.jsx
-// import { notFound } from "next/navigation";
-// import Image from "next/image";
-// import { trips } from "@/app/tripData";
-// import Footer from "@/app/components/Footer";
-// import {
-//   MdKeyboardArrowDown,
-//   MdOutlineCancel,
-//   MdOutlinePlace,
-// } from "react-icons/md";
-// import { IoMdCheckmarkCircleOutline } from "react-icons/io";
-// import { BsCurrencyRupee } from "react-icons/bs";
-// import Navbar from "@/app/components/Navbar";
-// import { LuCalendar } from "react-icons/lu";
-// import { GrGroup } from "react-icons/gr";
-
-// const slugify = (text) =>
-//   text
-//     .toLowerCase()
-//     .replace(/[^a-z0-9]+/g, "-")
-//     .replace(/(^-|-$)/g, "");
-
-// export default async function TripPage({ params }) {
-//   const { slug } = await params;
-
-//   const trip = trips.find((t) => slugify(t.name) === slug);
-
-//   if (!trip) notFound();
-
-//   return (
-//     <div className="bg-background text-foreground">
-//       <Navbar />
-
-//       <div className="relative h-105 w-full">
-//         <Image
-//           src={trip.img}
-//           alt={trip.name}
-//           fill
-//           priority
-//           className="object-cover"
-//         />
-//         <div className="absolute inset-0 bg-black/50" />
-
-//         <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-6xl text-white flex flex-col gap-3">
-//           <div>
-//             <p className="w-fit bg-surface-lighter rounded-xl font-medium tracking-wide text-xs px-2 hover:bg-foreground text-foreground hover:text-white">
-//               {trip.partner}
-//             </p>
-//           </div>
-//           <h1 className="text-4xl md:text-5xl font-bold">{trip.name}</h1>
-
-//           <div className="flex items-center gap-5">
-//             <p className="text-sm flex items-center gap-2">
-//               <MdOutlinePlace size={16} />
-//               {trip.location}
-//             </p>
-
-//             <p className="text-sm flex items-center gap-2">
-//               <LuCalendar size={16} />
-//               {trip.duration}
-//             </p>
-//             <p className="text-sm flex items-center gap-2">
-//               <GrGroup size={16} />
-//               {trip.groupSize}
-//             </p>
-//           </div>
-//         </div>
-//       </div>
-
-//       <div className="py-10 px-5 flex flex-col gap-10 md:px-36">
-//         <div className="flex flex-col gap-4">
-//           <h2 className="text-3xl font-bold">Overview</h2>
-//           <p className="text-lg text-overlay-muted">
-//             Experience the magic of Spiti Valley in winter with snow-covered
-//             landscapes and pristine monasteries.
-//           </p>
-//         </div>
-
-//         <div className="flex flex-col gap-4">
-//           <h2 className="text-3xl font-bold">Highlights</h2>
-//           <div className="flex flex-wrap gap-3">
-//             {trip.highlights.map((item, index) => (
-//               <span
-//                 key={index}
-//                 className="px-4 py-2 rounded-xl bg-primary-aqua text-foreground text-sm font-medium"
-//               >
-//                 {item}
-//               </span>
-//             ))}
-//           </div>
-//         </div>
-
-//         <div className="flex flex-col gap-4">
-//           <h2 className="text-3xl font-bold">Itinerary</h2>
-
-//           <div className="flex flex-col">
-//             {trip.itinerary.map((iti, index) => (
-//               <div key={index} className="flex flex-col justify-between">
-//                 <div className="flex items-center justify-between rounded-lg p-4 -ml-5">
-//                   <div className="flex gap-3 items-center">
-//                     <div className="px-3 py-1 rounded-full bg-primary-aqua">
-//                       <p className="text-white">{iti.id}</p>
-//                     </div>
-//                     <p className="font-semibold cursor-pointer hover:underline">
-//                       {iti.heading}
-//                     </p>
-//                   </div>
-//                   <MdKeyboardArrowDown size={20} />
-//                 </div>
-
-//                 <div className="border-b border-gray-200" />
-//               </div>
-//             ))}
-//           </div>
-//         </div>
-
-//         <div className="flex flex-col gap-6">
-//           <h2 className="text-3xl font-bold">What&apos;s Included</h2>
-
-//           <div className="grid md:grid-cols-2 gap-8">
-//             <div>
-//               <p className="flex items-center gap-2 text-success mb-3">
-//                 <IoMdCheckmarkCircleOutline size={22} /> Inclusions
-//               </p>
-//               <ul className="flex flex-col gap-2">
-//                 {trip.inclusions.map((i, index) => (
-//                   <li
-//                     key={index}
-//                     className="flex items-center gap-3 text-overlay-muted"
-//                   >
-//                     <IoMdCheckmarkCircleOutline
-//                       size={18}
-//                       className="text-success"
-//                     />
-//                     {i}
-//                   </li>
-//                 ))}
-//               </ul>
-//             </div>
-
-//             <div>
-//               <p className="flex items-center gap-2 text-error mb-3">
-//                 <MdOutlineCancel size={22} /> Exclusions
-//               </p>
-//               <ul className="flex flex-col gap-2">
-//                 {trip.exclusions.map((ex, index) => (
-//                   <li
-//                     key={index}
-//                     className="flex items-center gap-3 text-overlay-muted"
-//                   >
-//                     <MdOutlineCancel size={18} className="text-error" />
-//                     {ex}
-//                   </li>
-//                 ))}
-//               </ul>
-//             </div>
-//           </div>
-//         </div>
-
-//         <div className="flex flex-col gap-5 mb-10">
-//           <div className="flex flex-col gap-1">
-//             <p className="text-base text-[#6c7c93]">Starting from</p>
-//             <p className="flex items-center text-4xl font-bold">
-//               <BsCurrencyRupee />
-//               {trip.price}
-//             </p>
-//             <p className="text-base text-overlay-muted">per person</p>
-//           </div>
-
-//           <div className="border-b border-gray-300" />
-
-//           <div className="flex flex-col gap-3">
-//             <Info label="Duration" value={trip.duration} />
-//             <Info label="Group Size" value={trip.groupSize} />
-//             <Info label="Difficulty" value={trip.difficulty} />
-//             <Info label="Start City" value={trip.startCity} />
-//           </div>
-//         </div>
-//       </div>
-
-//       <Footer />
-//     </div>
-//   );
-// }
-
-// function Info({ label, value }) {
-//   return (
-//     <div className="flex items-center justify-between">
-//       <p className="text-overlay-muted">{label}</p>
-//       <p>{value}</p>
-//     </div>
-//   );
-// }
-
-// function Section({ title, children }) {
-//   return (
-//     <div>
-//       <h2 className="text-2xl font-bold mb-4">{title}</h2>
-//       {children}
-//     </div>
-//   );
-// }
-
-// export async function generateMetadata({ params }) {
-//   const { slug } = await params;
-
-//   const trip = trips.find((t) => slugify(t.name) === slug);
-
-//   if (!trip) {
-//     return {
-//       title: "Trip Not Found | TripTribe",
-//       description: "The requested trip does not exist.",
-//     };
-//   }
-
-//   return {
-//     title: `${trip.name}`,
-//     description: trip.description,
-//     alternates: {
-//       canonical: `https://triptribe.in/trip/${slug}`,
-//     },
-
-//     openGraph: {
-//       title: trip.name,
-//       description: trip.description,
-//       images: [
-//         {
-//           url: trip.img,
-//           width: 1200,
-//           height: 630,
-//           alt: trip.name,
-//         },
-//       ],
-//       type: "website",
-//     },
-
-//     twitter: {
-//       card: "summary_large_image",
-//       title: trip.name,
-//       description: trip.description,
-//       images: [trip.img],
-//     },
-//   };
-// }
+"use client";
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Layout } from "@/app/components/websiteLayout";
-import { Button } from "../../components/ui/button";
-import Input from "../../components/ui/input";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+import { Button } from "@/app/components/ui/button";
+import Input from "@/app/components/ui/input";
+
 import {
   ArrowRight,
   Search,
   Shield,
-  Users,
   MapPin,
   Star,
   ChevronRight,
   Calendar,
   GitCompare,
   CheckCircle2,
-  Quote,
 } from "lucide-react";
-import { destinations, trips, providers } from "";
+
+import { destinations, trips, providers } from "@/app/data/tripData";
 
 const stats = [
   { value: "200+", label: "Curated Trips" },
@@ -337,7 +95,8 @@ const testimonials = [
 ];
 
 export default function Home() {
-  const navigate = useNavigate();
+  const router = useRouter();
+
   const [searchDestination, setSearchDestination] = useState("");
   const [searchDates, setSearchDates] = useState("");
 
@@ -346,11 +105,11 @@ export default function Home() {
     const params = new URLSearchParams();
     if (searchDestination) params.set("destination", searchDestination);
     if (searchDates) params.set("dates", searchDates);
-    navigate(`/trips?${params.toString()}`);
+    router.push(`/trips?${params.toString()}`);
   };
 
   return (
-    <Layout>
+    <>
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div
@@ -364,7 +123,7 @@ export default function Home() {
 
         <div className="container-premium relative z-10 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-display text-display-lg md:text-display-xl lg:text-[4.5rem] text-background mb-6 animate-fade-up">
+            <h1 className="font-display text-display-lg md:text-display-xl lg:text-display-xl text-background mb-6 animate-fade-up">
               Find your tribe.
               <span className="block">Travel together.</span>
             </h1>
@@ -486,7 +245,7 @@ export default function Home() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:bg-primary group-hover:shadow-glow">
                   <feature.icon className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors" />
                 </div>
-                <h3 className="font-display text-heading-sm text-foreground mb-3">
+                <h3 className="font-display text-heading text-foreground mb-3">
                   {feature.title}
                 </h3>
                 <p className="text-body text-muted-foreground">
@@ -516,10 +275,10 @@ export default function Home() {
             {steps.map((step) => (
               <div key={step.number} className="relative">
                 <div className="card-premium p-8 relative z-10">
-                  <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-display text-heading-sm mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-display text-heading mb-6">
                     {step.number}
                   </div>
-                  <h3 className="font-display text-heading-sm text-foreground mb-3">
+                  <h3 className="font-display text-heading text-foreground mb-3">
                     {step.title}
                   </h3>
                   <p className="text-body text-muted-foreground">
@@ -556,10 +315,10 @@ export default function Home() {
             {trips.slice(0, 3).map((trip) => (
               <Link
                 key={trip.id}
-                to={`/trips/${trip.id}`}
+                href={`/trips/${trip.id}`}
                 className="card-premium overflow-hidden group"
               >
-                <div className="aspect-[16/10] relative overflow-hidden">
+                <div className="aspect-16/10 relative overflow-hidden">
                   <img
                     src={trip.image}
                     alt={trip.name}
@@ -622,7 +381,7 @@ export default function Home() {
                 Explore Incredible India
               </h2>
             </div>
-            <Link href="/trips">
+            <Link href="/explore">
               <Button className="btn-secondary">
                 All Destinations
                 <ChevronRight className="w-5 h-5 ml-1" />
@@ -634,8 +393,8 @@ export default function Home() {
             {destinations.slice(0, 6).map((destination) => (
               <Link
                 key={destination.name}
-                to={`/trips?destination=${destination.name}`}
-                className="group relative aspect-[4/3] rounded-2xl overflow-hidden"
+                href={`/trips?destination=${destination.name}`}
+                className="group relative aspect-4/3 rounded-2xl overflow-hidden"
               >
                 <img
                   src={destination.image}
@@ -658,7 +417,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="section bg-foreground text-background">
+      {/* <section className="section bg-foreground text-background">
         <div className="container-premium">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <p className="text-body-sm font-medium text-primary uppercase tracking-wider mb-4">
@@ -696,7 +455,7 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Providers Section */}
       <section className="section bg-background">
@@ -733,7 +492,7 @@ export default function Home() {
           </div>
 
           <div className="text-center mt-10">
-            <Link href="/partner">
+            <Link href="/partners">
               <Button className="btn-secondary">
                 Become a Partner
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -755,21 +514,21 @@ export default function Home() {
               Search, compare, and book with confidence.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/trips">
+              <Link href="/explore">
                 <Button className="btn-primary text-body px-8 py-6">
                   Explore Trips
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Link href="/blog">
+              {/* <Link href="/blog">
                 <Button className="btn-secondary text-body px-8 py-6">
                   Read Travel Stories
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>
       </section>
-    </Layout>
+    </>
   );
 }

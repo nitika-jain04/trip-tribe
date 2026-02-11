@@ -1,7 +1,5 @@
 import React from "react";
-import Footer from "../components/Footer";
 import PrivacyDescriptive from "../components/PrivacyDescriptive";
-import Navbar from "../components/Navbar";
 
 function page() {
   const infowecollect = [
@@ -31,10 +29,8 @@ function page() {
   ];
 
   return (
-    <div>
-      <Navbar />
-
-      <div className="px-5 md:px-20 flex flex-col gap-10 mt-5">
+    <>
+      <div className="px-5 md:px-20 flex flex-col gap-10 mt-24">
         <div className="flex flex-col gap-3 md:gap-8">
           <p className="text-2xl sm:text-3xl font-bold">Privacy Policy</p>
 
@@ -104,8 +100,7 @@ function page() {
           </p>
         </div>
       </div>
-      <Footer />
-    </div>
+    </>
   );
 }
 

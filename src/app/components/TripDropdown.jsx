@@ -26,7 +26,7 @@ export default function TripDropdown({
     <div ref={dropdownRef} className="relative w-full">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-4 py-2 bg-white shadow-sm text-sm text-gray-500"
+        className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-base text-gray-500"
       >
         {value || placeholder}
         <MdKeyboardArrowDown

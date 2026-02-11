@@ -41,22 +41,22 @@ function Navbar() {
             Home
           </Link>
           <Link
-            href="/explore"
-            className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
-          >
-            Explore Trips
-          </Link>
-          <Link
-            href="/partners"
-            className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
-          >
-            Partners
-          </Link>
-          <Link
             href="/about"
             className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
           >
             About
+          </Link>
+          {/* <Link
+            href="/explore"
+            className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
+          >
+            Explore Trips
+          </Link> */}
+          <Link
+            href="/partners"
+            className="text-gray-700 hover:text-teal-600 transition-colors duration-200"
+          >
+            Become a partner
           </Link>
           <Link
             href="/contact"
@@ -70,9 +70,9 @@ function Navbar() {
         <div className="flex items-center gap-4">
           {/* CTA Button - Hidden on mobile, shown on medium+ */}
           <div className="hidden md:block">
-            <Link href="/partners">
+            <Link href="/explore">
               <button className="rounded-lg text-sm bg-teal-500 hover:bg-teal-600 px-5 py-2.5 font-semibold text-white cursor-pointer transition-all duration-200 shadow-sm hover:shadow-md">
-                Join as Partner
+                Explore Trips
               </button>
             </Link>
           </div>

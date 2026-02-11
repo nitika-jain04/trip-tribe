@@ -5,40 +5,62 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["Playfair Display", "serif"],
       },
       colors: {
-        /* core */
         background: "var(--background)",
         foreground: "var(--foreground)",
+        card: "var(--card)",
+        "card-foreground": "var(--card-foreground)",
+        popover: "var(--popover)",
+        "popover-foreground": "var(--popover-foreground)",
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
 
-        /* brand */
         primary: "var(--primary)",
-        primarySoft: "var(--primary-soft)",
+        "primary-foreground": "var(--primary-foreground)",
+        "primary-soft": "var(--primary-soft)",
+        "primary-aqua": "var(--primary-aqua)",
+        "primary-blue": "var(--primary-blue)",
+        "primary-orange": "var(--primary-orange)",
 
-        /* neutrals */
-        muted: "var(--text-muted)",
-        overlay: "var(--overlay-light)",
-        surface: "var(--surface-light)",
-        surfaceAlt: "var(--surface-lighter)",
-        backgroundDark: "var(--background-dark)",
+        secondary: "var(--secondary)",
+        "secondary-foreground": "var(--secondary-foreground)",
 
-        /* status */
+        accent: "var(--accent)",
+        "accent-foreground": "var(--accent-foreground)",
+
+        muted: "var(--muted)",
+        "muted-foreground": "var(--muted-foreground)",
+
         success: "var(--success)",
         warning: "var(--warning)",
         error: "var(--error)",
         info: "var(--info)",
 
-        /* admin */
-        adminBg: "var(--admin-dark)",
-        adminMuted: "var(--admin-haze)",
-
-        adminPrimary: "var(--admin-aqua)",
-        adminPrimaryAlt: "var(--admin-aquawater)",
-
-        adminSuccess: "var(--admin-success)",
-        adminWarning: "var(--admin-warning)",
-        adminWarningAlt: "var(--admin-warning-alt)",
-        adminError: "var(--admin-error)",
+        "admin-dark": "var(--admin-dark)",
+        "admin-haze": "var(--admin-haze)",
+        "admin-aqua": "var(--admin-aqua)",
+        "admin-aquawater": "var(--admin-aquawater)",
+        "admin-success": "var(--admin-success)",
+        "admin-warning": "var(--admin-warning)",
+        "admin-error": "var(--admin-error)",
+        "admin-background": "var(--admin-background)",
+        "admin-bg-warning": "var(--admin-bg-warning)",
+        "admin-bg-error": "var(--admin-bg-error)",
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      animation: {
+        "fade-up": "fadeUp 0.6s ease-out forwards",
+        "fade-in": "fadeIn 0.5s ease-out forwards",
+        "scale-in": "scaleIn 0.5s ease-out forwards",
+        "slide-in-right": "slideInRight 0.5s ease-out forwards",
+        float: "float 6s ease-in-out infinite",
       },
     },
   },

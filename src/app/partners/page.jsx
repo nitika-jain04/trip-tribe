@@ -1,332 +1,438 @@
-import React from "react";
-import Footer from "../components/Footer";
-import { LuShield } from "react-icons/lu";
-import { HiMiniArrowTrendingUp } from "react-icons/hi2";
-import { GoPeople } from "react-icons/go";
-import Image from "next/image";
-import Link from "next/link";
-import { FaInstagram } from "react-icons/fa6";
-import { RiShareBoxLine } from "react-icons/ri";
-import Navbar from "../components/Navbar";
+"use client";
 
-const partners = [
+import { useState } from "react";
+import { Button } from "../../components/ui/button";
+import Input from "@/app/components/ui/input";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Label } from "@/app/components/ui/label";
+import {
+  Users,
+  TrendingUp,
+  Shield,
+  Star,
+  CheckCircle2,
+  ArrowRight,
+  Globe,
+  BarChart3,
+  Headphones,
+} from "lucide-react";
+import { toast } from "@/app/components/ui/sonner";
+
+const benefits = [
   {
-    id: 1,
-    img: "/about_us.jpg",
-    name: "WanderOn",
+    icon: Users,
+    title: "Reach More Travelers",
     description:
-      "India's leading community travel platform offering unique experiences across diverse destinations.",
-    webLink: "https://wanderon.in/",
-    igLink: "https://www.instagram.com/wanderon.in",
+      "Get discovered by thousands of travelers actively searching for community trips.",
   },
   {
-    id: 2,
-    img: "/about_us.jpg",
-    name: "Safarnama",
+    icon: TrendingUp,
+    title: "Grow Your Business",
     description:
-      "Curating authentic travel experiences with a focus on cultural immersion and adventure.",
-    webLink: "https://www.safarnama.com/",
-    igLink: "https://www.instagram.com/safarnama",
+      "Fill more seats with qualified leads. Our platform drives high-intent bookings.",
   },
   {
-    id: 3,
-    img: "/about_us.jpg",
-    name: "Capture A Trip",
+    icon: Shield,
+    title: "Build Trust",
     description:
-      "Photography-focused travel experiences for creative travelers and adventure enthusiasts.",
-    webLink: "https://www.captureatrip.com/",
-    igLink: "https://www.instagram.com/captureatrip",
+      "Verified badge and authentic reviews help build credibility with new travelers.",
   },
   {
-    id: 4,
-    img: "/about_us.jpg",
-    name: "Go4Explore",
+    icon: BarChart3,
+    title: "Analytics Dashboard",
     description:
-      "Adventure travel specialists offering treks, expeditions, and unique wilderness experiences.",
-    webLink: "https://go4explore.com/",
-    igLink: "https://www.instagram.com/go4explore",
+      "Track views, enquiries, and bookings. Understand what travelers want.",
   },
   {
-    id: 5,
-    img: "/about_us.jpg",
-    name: "WanderSaga",
+    icon: Globe,
+    title: "Market Presence",
     description:
-      "Creating memorable journeys with a blend of adventure, comfort, and local experiences.",
-    webLink: "https://www.wandersaga.com/",
-    igLink: "https://www.instagram.com/wandersaga",
+      "Be part of India's fastest-growing community travel aggregator.",
   },
   {
-    id: 6,
-    img: "/spiti-valley.jpg",
-    name: "Byko Journeys",
+    icon: Headphones,
+    title: "Dedicated Support",
     description:
-      "Motorcycle tours and road trips across India's most scenic routes and challenging terrains.",
-    webLink: "https://www.bykojourneys.com/",
-    igLink: "https://www.instagram.com/bykojourneys",
+      "Our partner success team helps you optimize listings and grow bookings.",
   },
 ];
 
-const whypartner = [
+const steps = [
   {
-    id: 1,
-    icon: <HiMiniArrowTrendingUp size={30} />,
-    heading: "Increase Visibility",
+    number: "01",
+    title: "Apply to Join",
     description:
-      "Reach thousands of qualified travelers actively searching for their next adventure",
-    color: "bg-primary-aqua",
+      "Fill out our partner application form with your business details and trip portfolio.",
   },
   {
-    id: 2,
-    icon: <LuShield size={30} />,
-    heading: "No Markups",
+    number: "02",
+    title: "Verification",
     description:
-      "We don't take commissions. Keep 100% of your revenue while we drive traffic",
-    color: "bg-primary-blue",
+      "Our team verifies your credentials, safety standards, and customer reviews.",
   },
   {
-    id: 3,
-    icon: <GoPeople size={30} />,
-    heading: "Quality Leads",
+    number: "03",
+    title: "Onboarding",
     description:
-      "Connect with travelers who have already compared and are ready to book",
-    color: "bg-primary-orange",
-  },
-];
-
-const partnerWorking = [
-  {
-    id: 1,
-    heading: "Share Your Details",
-    description:
-      "Fill out our simple partner form with your company information and trip offerings",
-    color: "bg-primary-aqua",
+      "Get a dedicated account manager to help set up your profile and list trips.",
   },
   {
-    id: 2,
-    heading: "List Your Trips",
+    number: "04",
+    title: "Go Live",
     description:
-      "We'll work with you to showcase your trips on our platform with accurate details",
-    color: "bg-primary-blue",
-  },
-  {
-    id: 3,
-    heading: "Connect With Travellers",
-    description:
-      "Start receiving qualified leads directly to your website with UTM tracking",
-    color: "bg-primary-orange",
+      "Your trips appear in search results. Start receiving enquiries and bookings.",
   },
 ];
 
-function page() {
+const stats = [
+  { value: "50+", label: "Partner Providers" },
+  { value: "25K+", label: "Monthly Visitors" },
+  { value: "40%", label: "Avg. Booking Increase" },
+  { value: "4.8", label: "Partner Satisfaction" },
+];
+
+export default function Partner() {
+  const [formData, setFormData] = useState({
+    companyName: "",
+    contactName: "",
+    email: "",
+    phone: "",
+    website: "",
+    tripCount: "",
+    regions: "",
+    about: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setIsSubmitting(false);
+    setIsSubmitted(true);
+    toast.success("Application submitted! We'll be in touch within 48 hours.");
+  };
+
   return (
-    <div>
-      <Navbar />
+    <>
+      {/* Hero */}
+      <section className="relative pt-32 pb-20 bg-linear-to-br from-primary-light via-background to-background overflow-hidden">
+        <div className="absolute top-1/4 right-0 w-150 h-150 bg-primary/5 rounded-full blur-3xl" />
 
-      <div className="flex flex-col gap-5 py-28 items-center bg-[#12223b]">
-        <p className="text-4xl md:text-5xl tracking-tight font-bold md:px-20 text-center text-white">
-          Grow with TripTribe
-        </p>
-        <p className="text-xl md:text-2xl text-center text-surface-lighter px-5 lg:px-60 xl:px-80">
-          Join India&apos;s first community trip aggregator and connect with
-          thousands of travelers
-        </p>
-      </div>
+        <div className="container-premium relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-body-sm font-medium mb-6">
+              <Users className="w-4 h-4" />
+              Partner with TripTribe
+            </div>
 
-      <div className="py-20 md:py-28 flex flex-col items-center justify-center">
-        <div className="flex flex-col items-center py-5 px-10">
-          <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground text-center">
-            Why Partner With Us?
-          </p>
-          <p className="text-xl text-center text-overlay-muted leading-6">
-            Transparent, traffic-driven, and built for growth
-          </p>
+            <h1 className="font-display text-display-lg text-foreground mb-6">
+              Grow Your Trip <span className="text-gradient">Business</span>
+            </h1>
+
+            <p className="text-body-lg text-muted-foreground mb-8">
+              Join India&apos;s leading community trip aggregator. Reach
+              thousands of travelers looking for authentic group experiences.
+            </p>
+
+            <Button
+              className="btn-primary text-body px-8 py-6"
+              onClick={() =>
+                document
+                  .getElementById("apply")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              Apply to Join
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-20 md:gap-28 items-center justify-center px-10 pt-14 md:px-16 lg:px-24 md:pt-20">
-          {whypartner.map((why) => {
-            return (
-              <div key={why.id} className="flex flex-col gap-4 items-center">
-                <div className={`p-4 text-white ${why.color} rounded-full`}>
-                  {why.icon}
-                </div>
-                <p className="text-2xl font-bold text-foreground text-center">
-                  {why.heading}
+      </section>
+
+      {/* Stats */}
+      <section className="py-16 bg-foreground text-background">
+        <div className="container-premium">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <p className="font-display text-display text-primary mb-2">
+                  {stat.value}
                 </p>
-                <p className="text-gray-500 tracking-wide text-center">
-                  {why.description}
+                <p className="text-body-sm text-background/70">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="section bg-background">
+        <div className="container-premium">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <p className="text-body-sm font-medium text-primary uppercase tracking-wider mb-4">
+              Why Partner With Us
+            </p>
+            <h2 className="font-display text-display text-foreground mb-6">
+              Benefits for <span className="text-gradient">Providers</span>
+            </h2>
+            <p className="text-body-lg text-muted-foreground">
+              We help community trip organizers reach more travelers and grow
+              their business.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {benefits.map((benefit) => (
+              <div key={benefit.title} className="card-premium p-8">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                  <benefit.icon className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-display text-heading text-foreground mb-3">
+                  {benefit.title}
+                </h3>
+                <p className="text-body text-muted-foreground">
+                  {benefit.description}
                 </p>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="bg-gray-50 py-20 md:py-28 px-10 lg:px-20 flex flex-col items-center">
-        <p className="text-4xl md:text-5xl font-bold tracking-tight pb-6 text-foreground">
-          How it Works
-        </p>
+      {/* How It Works */}
+      <section className="section bg-muted/30">
+        <div className="container-premium">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <p className="text-body-sm font-medium text-primary uppercase tracking-wider mb-4">
+              Getting Started
+            </p>
+            <h2 className="font-display text-display text-foreground mb-6">
+              How to <span className="text-gradient">Join</span>
+            </h2>
+          </div>
 
-        <p className="text-overlay-muted text-xl text-center">
-          Three simple steps to start growing
-        </p>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {steps.map((step, index) => (
+              <div key={step.number} className="relative">
+                {index < steps.length - 1 && (
+                  <div className="hidden lg:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-linear-to-r from-primary to-primary/30" />
+                )}
+                <div className="card-premium p-6 relative z-10">
+                  <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-display text-heading-sm mb-4">
+                    {step.number}
+                  </div>
+                  <h3 className="font-display text-heading text-foreground mb-2">
+                    {step.title}
+                  </h3>
+                  <p className="text-body-sm text-muted-foreground">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 justify-between lg:py-10 mt-10">
-          {partnerWorking.map((working) => {
-            return (
-              <div
-                key={working.id}
-                className="flex flex-col gap-4 shadow-lg rounded-xl px-8 py-8"
-              >
-                <div
-                  className={`w-12 h-12 flex items-center justify-center text-white ${working.color} rounded-full font-bold text-xl`}
+      {/* Application Form */}
+      <section id="apply" className="section bg-background">
+        <div className="container-premium">
+          <div className="max-w-2xl mx-auto">
+            <div className="text-center mb-12">
+              <p className="text-body-sm font-medium text-primary uppercase tracking-wider mb-4">
+                Apply Now
+              </p>
+              <h2 className="font-display text-display text-foreground mb-4">
+                Partner Application
+              </h2>
+              <p className="text-body text-muted-foreground">
+                Fill out the form below and our team will get back to you within
+                48 hours.
+              </p>
+            </div>
+
+            {isSubmitted ? (
+              <div className="card-premium p-12 text-center">
+                <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle2 className="w-10 h-10 text-success" />
+                </div>
+                <h3 className="font-display text-heading-lg text-foreground mb-3">
+                  Application Received!
+                </h3>
+                <p className="text-body text-muted-foreground mb-6">
+                  Thank you for your interest in partnering with TripTribe. Our
+                  team will review your application and reach out within 48
+                  hours.
+                </p>
+                <Button
+                  onClick={() => setIsSubmitted(false)}
+                  className="btn-secondary"
                 >
-                  {working.id}
-                </div>
-                <p className="text-2xl font-bold">{working.heading}</p>
-                <p className="text-gray-500 tracking-wide">
-                  {working.description}
-                </p>
+                  Submit Another Application
+                </Button>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="py-20 lg:px-20">
-        <div className="flex flex-col gap-5 items-center px-10">
-          <p className="text-4xl md:text-5xl font-bold tracking-tight text-foreground text-center">
-            Our Partners
-          </p>
-          <p className="text-xl text-center text-overlay-muted leading-6">
-            Trusted travel operators growing with TripTribe
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:grid-cols-3 lg:gap-10 pb-20 mt-20 px-10">
-          {partners.map((partner, index) => {
-            return (
-              <div
-                key={index}
-                className="rounded-2xl shadow-lg p-6 flex flex-col gap-5 hover:shadow-2xl hover:-translate-y-2 hover:transition-transform hover:duration-700 hover:ease-out"
+            ) : (
+              <form
+                onSubmit={handleSubmit}
+                className="card-premium p-8 space-y-6"
               >
-                <div className="flex flex-col gap-3">
-                  <div className="relative w-14 h-14 rounded-lg overflow-hidden">
-                    <Image
-                      src={partner.img}
-                      alt={partner.name}
-                      fill
-                      className="object-cover"
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="companyName">Company / Brand Name *</Label>
+                    <Input
+                      id="companyName"
+                      value={formData.companyName}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          companyName: e.target.value,
+                        })
+                      }
+                      placeholder="Your travel company name"
+                      required
                     />
                   </div>
-
-                  <p className="text-xl font-semibold tracking-wide">
-                    {partner.name}
-                  </p>
-                  <p className="text-sm tracking-wider text-black/50">
-                    {partner.description}
-                  </p>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="contactName">Contact Person *</Label>
+                    <Input
+                      id="contactName"
+                      value={formData.contactName}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          contactName: e.target.value,
+                        })
+                      }
+                      placeholder="Full name"
+                      required
+                    />
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  <Link
-                    href={partner.webLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-4 px-3 py-2 border border-gray-200 rounded-lg text-sm tracking-wide w-full text-center hover:text-white hover:bg-blue-400"
-                  >
-                    <span>
-                      <RiShareBoxLine size={17} />
-                    </span>
-                    Website
-                  </Link>
-                  <Link
-                    href={partner.igLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-center hover:text-white hover:bg-blue-400"
-                  >
-                    <FaInstagram size={17} />
-                  </Link>
+                <div className="flex flex-col gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      placeholder="business@email.com"
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) =>
+                        setFormData({ ...formData, phone: e.target.value })
+                      }
+                      placeholder="+91 98765 43210"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="website">Website / Social Media</Label>
+                  <Input
+                    id="website"
+                    value={formData.website}
+                    onChange={(e) =>
+                      setFormData({ ...formData, website: e.target.value })
+                    }
+                    placeholder="https://yourwebsite.com or Instagram handle"
+                  />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="tripCount">
+                      Number of Trips Organized (per year)
+                    </Label>
+                    <Input
+                      id="tripCount"
+                      value={formData.tripCount}
+                      onChange={(e) =>
+                        setFormData({ ...formData, tripCount: e.target.value })
+                      }
+                      placeholder="e.g., 20-30"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="regions">Regions You Operate In</Label>
+                    <Input
+                      id="regions"
+                      value={formData.regions}
+                      onChange={(e) =>
+                        setFormData({ ...formData, regions: e.target.value })
+                      }
+                      placeholder="e.g., Himalayas, Northeast, South India"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="about">Tell Us About Your Business *</Label>
+                  <Textarea
+                    id="about"
+                    value={formData.about}
+                    onChange={(e) =>
+                      setFormData({ ...formData, about: e.target.value })
+                    }
+                    placeholder="What kind of trips do you organize? What makes your experiences unique?"
+                    rows={4}
+                    required
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  className="btn-primary w-full py-6"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                </Button>
+
+                <p className="text-body-sm text-muted-foreground text-center">
+                  By submitting, you agree to our terms of service and partner
+                  agreement.
+                </p>
+              </form>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col gap-2 py-20 px-5 md:py-24 md:px-10 lg:px-24 mb-20 bg-gray-50">
-        <p className="text-4xl md:text-5xl font-bold text-center pb-2 text-foreground">
-          Become a Partner{" "}
-        </p>
-        <p className="text-center text-gray-500 text-xl">
-          Fill out the form below and we&apos;ll get back to you within 24 hours
-        </p>
-
-        <form
-          action=""
-          className="flex flex-col gap-5 bg-white px-5 py-3 rounded-lg mt-10"
-        >
-          <div className="flex flex-col md:flex-row gap-5 items-center justify-between">
-            <div className="flex flex-col w-full gap-2">
-              <label className="text-sm font-medium">Full Name</label>
-              <input
-                type="text"
-                placeholder="John Doe"
-                required
-                className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-primary-aqua placeholder:text-sm"
-              />
+      {/* Testimonial */}
+      <section className="section bg-primary text-primary-foreground">
+        <div className="container-premium">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-1 mb-6">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Star key={i} className="w-6 h-6 fill-accent text-accent" />
+              ))}
             </div>
-
-            <div className="flex flex-col w-full gap-2">
-              <label className="text-sm font-medium">Email</label>
-              <input
-                type="email"
-                placeholder="john@example.com"
-                required
-                className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-primary-aqua placeholder:text-sm"
-              />
+            <blockquote className="font-display text-heading-lg md:text-display mb-8">
+              &quot;Since joining TripTribe, our bookings have increased by 45%.
+              The platform brings us qualified travelers who are genuinely
+              interested in community trips.&quot;
+            </blockquote>
+            <div>
+              <p className="font-semibold">Vikram Singh</p>
+              <p className="text-primary-foreground/70">
+                Founder, Himalayan Explorers
+              </p>
             </div>
           </div>
-
-          <div className="flex flex-col md:flex-row gap-5 items-center justify-between">
-            <div className="flex flex-col w-full gap-2">
-              <label className="text-sm font-medium">Company Name</label>
-              <input
-                type="text"
-                placeholder="Your Company"
-                required
-                className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-primary-aqua"
-              />
-            </div>
-
-            <div className="flex flex-col w-full gap-2">
-              <label className="text-sm font-medium">Website</label>
-              <input
-                type="text"
-                required
-                placeholder="https://yourwebsite.com"
-                className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-primary-aqua"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col w-full gap-2">
-            <label className="text-sm font-medium">Message</label>
-            <textarea
-              required
-              rows={5}
-              className="border border-gray-300 mt-2 rounded-md px-3 py-2 focus:outline-none focus:border-primary-aqua placeholder:text-sm"
-              placeholder="Tell us about your travel company and the trips you offer..."
-            ></textarea>
-          </div>
-
-          <button className="mt-6 text-white text-sm bg-primary-aqua rounded-lg py-3 px-4">
-            Send Message
-          </button>
-        </form>
-      </div>
-      <Footer />
-    </div>
+        </div>
+      </section>
+    </>
   );
 }
-
-export default page;
