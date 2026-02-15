@@ -8,13 +8,11 @@ import { CiSearch } from "react-icons/ci";
 import { LiaEditSolid } from "react-icons/lia";
 import { LuEye } from "react-icons/lu";
 import { SlLocationPin, SlOptions } from "react-icons/sl";
-import { HiOutlineArchive } from "react-icons/hi";
-import { LuCopy } from "react-icons/lu";
 import { Button, formatDateRange } from "@/app/adminFunctionCalls";
-import { MdOutlineCurrencyRupee } from "react-icons/md";
 import { IoCloseSharp } from "react-icons/io5";
 import { FaPlus, FaTrash } from "react-icons/fa6";
-import { IoIosCalendar } from "react-icons/io";
+import { useRouter } from "next/navigation";
+import { IndianRupeeIcon, Loader2, AlertCircle, MapPin } from "lucide-react";
 
 function Page() {
   const [trips, setTrips] = useState([]);
@@ -29,13 +27,16 @@ function Page() {
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [destinationFilter, setDestinationFilter] =
     useState("All Destinations");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const router = useRouter();
 
   const fetchOperators = async () => {
     const token = localStorage.getItem("token");
 
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/admin/operators?page=1&limit=100`,
+        `https://trip-tribe-backend.onrender.com/api/v1/operators/admin?page=1&limit=100`,
         {
           method: "GET",
           headers: {
@@ -60,10 +61,12 @@ function Page() {
   const getAllTrips = useCallback(async () => {
     const token = localStorage.getItem("token");
     setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/admin/trips?page=${page}&limit=10`,
+        `https://trip-tribe-backend.onrender.com/api/v1/trips/admin?page=${page}&limit=10`,
+
         {
           method: "GET",
           headers: {
@@ -121,6 +124,22 @@ function Page() {
     }
   }
 
+  const handleViewTrip = (trip) => {
+    const id = trip.id;
+    router.push(`/admin/trips/${id}`);
+  };
+
+  const handleEditTrip = (trip) => {
+    const id = trip.id;
+    router.push(`/admin/trips/edit/${id}`);
+  };
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setPage(1); // Reset to first page on new search
+  };
+
   return (
     <AdminGuard>
       <div className="px-5 py-10 flex flex-col gap-5">
@@ -144,7 +163,17 @@ function Page() {
               type="text"
               placeholder="Search trips..."
               className="placeholder:text-sm w-full focus:outline-none"
+              value={searchQuery}
+              onChange={handleSearchChange}
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <IoCloseSharp size={18} />
+              </button>
+            )}
           </div>
 
           <Dropdownadmin
@@ -187,20 +216,58 @@ function Page() {
             <div>Actions</div>
           </div>
 
+          {/* Enhanced Loading State */}
           {loading && (
-            <div className="py-10 text-center text-gray-500 text-sm">
-              Fetching trips...
+            <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
+              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+              <p className="text-gray-600 font-medium">Loading trips...</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Please wait while we fetch your data
+              </p>
             </div>
           )}
 
-          {!loading && trips.length === 0 && (
-            <div className="py-10 text-center text-gray-500">
-              No trips found
+          {/* Enhanced Error State */}
+          {error && !loading && (
+            <div className="flex flex-col items-center justify-center py-16 bg-red-50">
+              <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+              <p className="text-red-600 font-medium">Failed to load trips</p>
+              <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
+              <button
+                onClick={getAllTrips}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+              >
+                <Loader2 className="w-4 h-4" />
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {/* Enhanced Empty State */}
+          {!loading && !error && trips.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
+              <MapPin className="w-12 h-12 text-gray-400 mb-4" />
+              <p className="text-gray-600 font-medium">No trips found</p>
+              <p className="text-sm text-gray-400 mt-1">
+                {searchQuery
+                  ? "No trips match your search criteria"
+                  : "Get started by adding your first trip"}
+              </p>
+              {!searchQuery && (
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="mt-4 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+                >
+                  Add Trip
+                </button>
+              )}
             </div>
           )}
 
           {/* Data Rows */}
           {!loading &&
+            !error &&
+            trips.length > 0 &&
             trips.map((trip, index) => (
               <div
                 key={trip._id || index}
@@ -227,13 +294,17 @@ function Page() {
 
                 {/* Price */}
                 <div className="text-sm flex items-center gap-1">
-                  <MdOutlineCurrencyRupee />
-                  {trip.price ? `${trip.price}` : "N/A"}
+                  <IndianRupeeIcon size={12} />
+                  {trip.price
+                    ? Number(trip.price).toLocaleString("en-IN", {
+                        maximumFractionDigits: 0,
+                      })
+                    : "N/A"}
                 </div>
 
                 {/* Dates */}
                 <div className="text-sm text-admin-haze flex items-center gap-1">
-                  <IoIosCalendar size={16} />
+                  {/* <IoIosCalendar size={16} /> */}
                   {formatDateRange(trip.start_date, trip.end_date)}
                 </div>
 
@@ -262,42 +333,41 @@ function Page() {
                   labelText={<SlOptions />}
                   options={[
                     {
-                      index: 1,
                       label: "View",
                       value: "View",
                       icon: <LuEye size={18} />,
+                      onClick: () => handleViewTrip(trip),
                     },
                     {
-                      index: 2,
                       label: "Edit",
                       value: "Edit",
                       icon: <LiaEditSolid size={18} />,
+                      onClick: () => handleEditTrip(trip),
                     },
-                    {
-                      index: 3,
-                      label: "Duplicate",
-                      value: "Duplicate",
-                      icon: <LuCopy />,
-                    },
-                    {
-                      index: 4,
-                      label: "Archive",
-                      value: "Archive",
-                      icon: <HiOutlineArchive size={18} />,
-                    },
+                    // {
+                    //   label: "Duplicate",
+                    //   value: "Duplicate",
+                    //   icon: <LuCopy />,
+                    // },
+                    // {
+                    //   label: "Archive",
+                    //   value: "Archive",
+                    //   icon: <HiOutlineArchive size={18} />,
+                    // },
                   ]}
                 />
               </div>
             ))}
+
+          {/* Summary Row */}
+          {!loading && !error && trips.length > 0 && (
+            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 text-sm text-gray-600">
+              Showing {trips.length} of {totalTrips} trips
+            </div>
+          )}
         </div>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-admin-haze text-sm">
-              Showing {trips.length} of {totalTrips} trips
-            </p>
-          </div>
-
+        <div className="flex items-center justify-end">
           <div className="flex gap-5 items-center">
             <button
               className={`border border-gray-100 bg-gray-50 p-2 text-sm rounded-lg cursor-pointer ${page === 1 ? "text-admin-haze" : "text-admin-dark"}`}
@@ -321,154 +391,1056 @@ function Page() {
   );
 }
 
+// function AddTripModal({ handleModalClose }) {
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     destination: "",
+//     region: "",
+//     price: "",
+//     start_date: "",
+//     end_date: "",
+//     difficulty: "moderate",
+//     total_seats: "",
+//     description: "",
+//     itinerary: [
+//       {
+//         day: 1,
+//         activities: [""],
+//       },
+//     ],
+//     images: ["", "", ""],
+//     operator_id: "",
+//   });
+
+//   const [operators, setOperators] = useState([]);
+//   const [loadingOperators, setLoadingOperators] = useState(false);
+//   const [imageCount, setImageCount] = useState(3);
+
+//   useEffect(() => {
+//     const fetchOperators = async () => {
+//       const token = localStorage.getItem("token");
+//       setLoadingOperators(true);
+
+//       try {
+//         const res = await fetch(
+//           `https://trip-tribe-backend.onrender.com/api/v1/admin/operators?page=1&limit=100`,
+//           {
+//             method: "GET",
+//             headers: {
+//               "Content-Type": "application/json",
+//               Authorization: `Bearer ${token}`,
+//             },
+//           },
+//         );
+
+//         const data = await res.json();
+
+//         if (res.ok && data.success) {
+//           setOperators(data.result.operators || []);
+//         }
+//       } catch (err) {
+//         console.error("Failed to fetch operators:", err);
+//       } finally {
+//         setLoadingOperators(false);
+//       }
+//     };
+
+//     fetchOperators();
+//   }, []);
+
+//   function handleChange(e) {
+//     const { name, value } = e.target;
+//     setFormData((prev) => ({ ...prev, [name]: value }));
+//   }
+
+//   // Handle image URL change
+//   function handleImageChange(index, value) {
+//     const updatedImages = [...formData.images];
+//     updatedImages[index] = value;
+//     setFormData((prev) => ({ ...prev, images: updatedImages }));
+//   }
+
+//   // Add more image input
+//   function addImageField() {
+//     setFormData((prev) => ({
+//       ...prev,
+//       images: [...prev.images, ""],
+//     }));
+//     setImageCount((prev) => prev + 1);
+//   }
+
+//   // Remove image input
+//   function removeImageField(index) {
+//     if (imageCount > 1) {
+//       const updatedImages = formData.images.filter((_, i) => i !== index);
+//       setFormData((prev) => ({ ...prev, images: updatedImages }));
+//       setImageCount((prev) => prev - 1);
+//     }
+//   }
+
+//   // Handle itinerary day changes
+//   function handleItineraryDayChange(dayIndex, field, value) {
+//     const updatedItinerary = [...formData.itinerary];
+//     if (field === "day") {
+//       updatedItinerary[dayIndex].day = parseInt(value) || 1;
+//     }
+//     setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
+//   }
+
+//   // Handle itinerary activity changes
+//   function handleActivityChange(dayIndex, activityIndex, value) {
+//     const updatedItinerary = [...formData.itinerary];
+//     updatedItinerary[dayIndex].activities[activityIndex] = value;
+//     setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
+//   }
+
+//   // Add new activity to a day
+//   function addActivity(dayIndex) {
+//     const updatedItinerary = [...formData.itinerary];
+//     updatedItinerary[dayIndex].activities.push("");
+//     setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
+//   }
+
+//   // Remove activity from a day
+//   function removeActivity(dayIndex, activityIndex) {
+//     if (formData.itinerary[dayIndex].activities.length > 1) {
+//       const updatedItinerary = [...formData.itinerary];
+//       updatedItinerary[dayIndex].activities = updatedItinerary[
+//         dayIndex
+//       ].activities.filter((_, i) => i !== activityIndex);
+//       setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
+//     }
+//   }
+
+//   // Add new day to itinerary
+//   function addDay() {
+//     const newDay = {
+//       day: formData.itinerary.length + 1,
+//       activities: [""],
+//     };
+//     setFormData((prev) => ({
+//       ...prev,
+//       itinerary: [...prev.itinerary, newDay],
+//     }));
+//   }
+
+//   // Remove day from itinerary
+//   function removeDay(dayIndex) {
+//     if (formData.itinerary.length > 1) {
+//       const updatedItinerary = formData.itinerary.filter(
+//         (_, i) => i !== dayIndex,
+//       );
+//       // Re-number days
+//       updatedItinerary.forEach((day, index) => {
+//         day.day = index + 1;
+//       });
+//       setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
+//     }
+//   }
+
+//   async function handleSubmit(e) {
+//     e.preventDefault();
+
+//     // Validate dates
+//     if (new Date(formData.end_date) <= new Date(formData.start_date)) {
+//       alert("End date must be after start date");
+//       return;
+//     }
+
+//     // Clean up empty activities
+//     const cleanedItinerary = formData.itinerary
+//       .map((day) => ({
+//         ...day,
+//         activities: day.activities.filter((activity) => activity.trim() !== ""),
+//       }))
+//       .filter((day) => day.activities.length > 0); // Remove empty days
+
+//     // Clean up empty images
+//     const cleanedImages = formData.images.filter((img) => img.trim() !== "");
+
+//     const token = localStorage.getItem("token");
+
+//     try {
+//       const res = await fetch(
+//         "https://trip-tribe-backend.onrender.com/api/v1/admin/trips",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           body: JSON.stringify({
+//             ...formData,
+//             itinerary: cleanedItinerary,
+//             images: cleanedImages,
+//             price: parseFloat(formData.price),
+//             total_seats: parseInt(formData.total_seats),
+//           }),
+//         },
+//       );
+
+//       const data = await res.json();
+
+//       if (!res.ok || !data.success) {
+//         throw new Error(data.message || "Failed to add trip");
+//       }
+
+//       handleModalClose(false); // close modal on success
+//       alert("Trip added successfully!");
+//     } catch (err) {
+//       console.error(err.message);
+//       alert(err.message);
+//     }
+//   }
+
+//   return (
+//     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+//       <div className="bg-white w-[80vw] h-[90vh] rounded-xl shadow-lg flex flex-col">
+//         {/* Modal Header */}
+//         <div className="flex items-center justify-between px-6 py-4 border-b">
+//           <h2 className="text-xl font-semibold text-[#14181F]">Add Trip</h2>
+//           <button
+//             onClick={() => handleModalClose(false)}
+//             className="text-gray-500 hover:text-black text-xl"
+//           >
+//             <IoCloseSharp />
+//           </button>
+//         </div>
+
+//         {/* Modal Body */}
+//         <div className="flex-1 overflow-y-auto px-6 py-6">
+//           <form onSubmit={handleSubmit}>
+//             {/* Basic Information */}
+//             <div className="mb-8">
+//               <h3 className="text-lg font-semibold text-gray-800 mb-4">
+//                 Basic Information
+//               </h3>
+//               <div className="grid grid-cols-2 gap-4">
+//                 {/* Trip Name */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Trip Name *</label>
+//                   <input
+//                     type="text"
+//                     name="name"
+//                     required
+//                     value={formData.name}
+//                     onChange={handleChange}
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                     placeholder="Manali to Hampta Pass Trek"
+//                   />
+//                 </div>
+
+//                 {/* Destination */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Destination *</label>
+//                   <input
+//                     type="text"
+//                     name="destination"
+//                     required
+//                     value={formData.destination}
+//                     onChange={handleChange}
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                     placeholder="Hampta Pass"
+//                   />
+//                 </div>
+
+//                 {/* Region */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Region *</label>
+//                   <input
+//                     type="text"
+//                     name="region"
+//                     required
+//                     value={formData.region}
+//                     onChange={handleChange}
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                     placeholder="Himachal Pradesh"
+//                   />
+//                 </div>
+
+//                 {/* Operator */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Operator *</label>
+//                   <select
+//                     name="operator_id"
+//                     required
+//                     value={formData.operator_id}
+//                     onChange={handleChange}
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                     disabled={loadingOperators}
+//                   >
+//                     <option value="">Select Operator</option>
+//                     {operators.map((operator) => (
+//                       <option key={operator.id} value={operator.id}>
+//                         {operator.name}
+//                       </option>
+//                     ))}
+//                   </select>
+//                 </div>
+
+//                 {/* Price */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Price (₹) *</label>
+//                   <input
+//                     type="number"
+//                     name="price"
+//                     required
+//                     value={formData.price}
+//                     onChange={handleChange}
+//                     min="0"
+//                     step="0.01"
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                     placeholder="17999.00"
+//                   />
+//                 </div>
+
+//                 {/* Total Seats */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Total Seats *</label>
+//                   <input
+//                     type="number"
+//                     name="total_seats"
+//                     required
+//                     value={formData.total_seats}
+//                     onChange={handleChange}
+//                     min="1"
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                     placeholder="18"
+//                   />
+//                 </div>
+
+//                 {/* Start Date */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Start Date *</label>
+//                   <input
+//                     type="date"
+//                     name="start_date"
+//                     required
+//                     value={formData.start_date}
+//                     onChange={handleChange}
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                   />
+//                 </div>
+
+//                 {/* End Date */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">End Date *</label>
+//                   <input
+//                     type="date"
+//                     name="end_date"
+//                     required
+//                     value={formData.end_date}
+//                     onChange={handleChange}
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                   />
+//                 </div>
+
+//                 {/* Difficulty */}
+//                 <div>
+//                   <label className="text-sm text-gray-600">Difficulty *</label>
+//                   <select
+//                     name="difficulty"
+//                     required
+//                     value={formData.difficulty}
+//                     onChange={handleChange}
+//                     className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                   >
+//                     <option value="easy">Easy</option>
+//                     <option value="moderate">Moderate</option>
+//                     <option value="hard">Hard</option>
+//                   </select>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Description */}
+//             <div className="mb-8">
+//               <label className="text-sm text-gray-600">Description</label>
+//               <textarea
+//                 name="description"
+//                 required
+//                 value={formData.description}
+//                 onChange={handleChange}
+//                 rows="4"
+//                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                 placeholder="Describe the trip in detail..."
+//               />
+//             </div>
+
+//             {/* Itinerary */}
+//             <div className="mb-8">
+//               <div className="flex justify-between items-center mb-2">
+//                 <label className="text-sm text-gray-600">Itinerary</label>
+//                 <button
+//                   type="button"
+//                   onClick={addDay}
+//                   className="flex items-center gap-2 text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100"
+//                 >
+//                   <FaPlus size={12} /> Add Day
+//                 </button>
+//               </div>
+
+//               {formData.itinerary.map((day, dayIndex) => (
+//                 <div
+//                   key={dayIndex}
+//                   className="mb-6 p-4 border border-gray-200 rounded-lg"
+//                 >
+//                   <div className="flex justify-between items-center mb-3">
+//                     <div className="flex items-center gap-3">
+//                       <label className="text-sm text-gray-600">Day</label>
+//                       <input
+//                         type="number"
+//                         value={day.day}
+//                         onChange={(e) =>
+//                           handleItineraryDayChange(
+//                             dayIndex,
+//                             "day",
+//                             e.target.value,
+//                           )
+//                         }
+//                         min="1"
+//                         className="w-20 border border-gray-200 rounded px-2 py-1"
+//                       />
+//                     </div>
+//                     {formData.itinerary.length > 1 && (
+//                       <button
+//                         type="button"
+//                         onClick={() => removeDay(dayIndex)}
+//                         className="text-red-500 hover:text-red-700"
+//                       >
+//                         <FaTrash size={14} />
+//                       </button>
+//                     )}
+//                   </div>
+
+//                   <div className="space-y-2">
+//                     {day.activities.map((activity, activityIndex) => (
+//                       <div
+//                         key={activityIndex}
+//                         className="flex items-center gap-2"
+//                       >
+//                         <input
+//                           type="text"
+//                           value={activity}
+//                           onChange={(e) =>
+//                             handleActivityChange(
+//                               dayIndex,
+//                               activityIndex,
+//                               e.target.value,
+//                             )
+//                           }
+//                           className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                           placeholder={`Activity ${activityIndex + 1}`}
+//                         />
+//                         {day.activities.length > 1 && (
+//                           <button
+//                             type="button"
+//                             onClick={() =>
+//                               removeActivity(dayIndex, activityIndex)
+//                             }
+//                             className="text-red-500 hover:text-red-700 p-2"
+//                           >
+//                             <FaTrash size={14} />
+//                           </button>
+//                         )}
+//                       </div>
+//                     ))}
+//                   </div>
+
+//                   <button
+//                     type="button"
+//                     onClick={() => addActivity(dayIndex)}
+//                     className="mt-3 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+//                   >
+//                     <FaPlus size={12} /> Add Activity
+//                   </button>
+//                 </div>
+//               ))}
+//             </div>
+
+//             {/* Images */}
+//             <div className="mb-8">
+//               <div className="flex justify-between items-center mb-4">
+//                 <h3 className="text-lg font-semibold text-gray-800">Images</h3>
+//                 <button
+//                   type="button"
+//                   onClick={addImageField}
+//                   className="flex items-center gap-2 text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100"
+//                 >
+//                   <FaPlus size={12} /> Add Image URL
+//                 </button>
+//               </div>
+
+//               <div className="grid grid-cols-2 gap-4">
+//                 {formData.images.map((imageUrl, index) => (
+//                   <div key={index} className="flex items-center gap-2">
+//                     <input
+//                       type="url"
+//                       value={imageUrl}
+//                       onChange={(e) => handleImageChange(index, e.target.value)}
+//                       className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+//                       placeholder={`https://cdn.triptribe.com/trips/image-${index + 1}.jpg`}
+//                     />
+//                     {formData.images.length > 1 && (
+//                       <button
+//                         type="button"
+//                         onClick={() => removeImageField(index)}
+//                         className="text-red-500 hover:text-red-700 p-2"
+//                       >
+//                         <FaTrash size={14} />
+//                       </button>
+//                     )}
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+
+//             {/* Modal Footer */}
+//             <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
+//               <button
+//                 type="button"
+//                 onClick={() => handleModalClose(false)}
+//                 className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+//               >
+//                 Cancel
+//               </button>
+//               <button
+//                 type="submit"
+//                 className="px-6 py-2 bg-[#4ED0C3] text-white rounded-lg text-sm font-medium hover:bg-[#3db8ab]"
+//               >
+//                 Create Trip
+//               </button>
+//             </div>
+//           </form>
+//         </div>
+//       </div>
+//     </div>
+//   );
+// }
+
+// function AddTripModal({ handleModalClose }) {
+//   const [operators, setOperators] = useState([]);
+//   const [locations, setLocations] = useState([]);
+//   const [loading, setLoading] = useState(false);
+
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     description: "",
+//     price: "",
+//     start_date: "",
+//     end_date: "",
+//     difficulty: "HARD",
+//     total_seats: "",
+//     operator_id: "",
+//     source_id: "",
+//     destination_id: "",
+//     status: "PUBLISHED",
+//     images: [""],
+//     inclusions: [""],
+//     exclusions: [""],
+//     itinerary: [{ day: 1, activities: [""] }],
+//   });
+
+//   // Fetch operators + locations
+//   useEffect(() => {
+//     const token = localStorage.getItem("token");
+
+//     const fetchData = async () => {
+//       try {
+//         const [opRes, locRes] = await Promise.all([
+//           fetch(
+//             "https://trip-tribe-backend.onrender.com/api/v1/operators/admin?page=1&limit=100",
+//             { headers: { Authorization: `Bearer ${token}` } },
+//           ),
+//           fetch(
+//             "https://trip-tribe-backend.onrender.com/api/v1/locations/admin?page=1&limit=200",
+//             { headers: { Authorization: `Bearer ${token}` } },
+//           ),
+//         ]);
+
+//         const opData = await opRes.json();
+//         const locData = await locRes.json();
+
+//         if (opData.success) setOperators(opData.result.operators || []);
+//         if (locData.success) setLocations(locData.result.locations || []);
+//       } catch (err) {
+//         console.error("Fetch failed", err);
+//       }
+//     };
+
+//     fetchData();
+//   }, []);
+
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((p) => ({ ...p, [name]: value }));
+//   };
+
+//   // Generic list handlers (images/inclusions/exclusions)
+//   const handleListChange = (key, index, value) => {
+//     const arr = [...formData[key]];
+//     arr[index] = value;
+//     setFormData((p) => ({ ...p, [key]: arr }));
+//   };
+
+//   const addListItem = (key) =>
+//     setFormData((p) => ({ ...p, [key]: [...p[key], ""] }));
+
+//   const removeListItem = (key, index) => {
+//     if (formData[key].length === 1) return;
+//     const arr = formData[key].filter((_, i) => i !== index);
+//     setFormData((p) => ({ ...p, [key]: arr }));
+//   };
+
+//   // Itinerary handlers
+//   const addDay = () =>
+//     setFormData((p) => ({
+//       ...p,
+//       itinerary: [
+//         ...p.itinerary,
+//         { day: p.itinerary.length + 1, activities: [""] },
+//       ],
+//     }));
+
+//   const addActivity = (dayIndex) => {
+//     const it = [...formData.itinerary];
+//     it[dayIndex].activities.push("");
+//     setFormData((p) => ({ ...p, itinerary: it }));
+//   };
+
+//   const handleActivity = (d, a, value) => {
+//     const it = [...formData.itinerary];
+//     it[d].activities[a] = value;
+//     setFormData((p) => ({ ...p, itinerary: it }));
+//   };
+
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+
+//     const token = localStorage.getItem("token");
+//     setLoading(true);
+
+//     const payload = {
+//       ...formData,
+//       price: Number(formData.price),
+//       total_seats: Number(formData.total_seats),
+//       images: formData.images.filter(Boolean),
+//       inclusions: formData.inclusions.filter(Boolean),
+//       exclusions: formData.exclusions.filter(Boolean),
+//       itinerary: formData.itinerary.map((d) => ({
+//         ...d,
+//         activities: d.activities.filter(Boolean),
+//       })),
+//     };
+
+//     try {
+//       const res = await fetch(
+//         "https://trip-tribe-backend.onrender.com/api/v1/trips/admin",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           body: JSON.stringify(payload),
+//         },
+//       );
+
+//       const data = await res.json();
+//       if (!res.ok || !data.success)
+//         throw new Error(data.message || "Create failed");
+
+//       alert("Trip created successfully!");
+//       handleModalClose(false);
+//     } catch (err) {
+//       alert(err.message);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+//       <div className="bg-white w-[85vw] h-[92vh] rounded-xl flex flex-col">
+//         {/* Header */}
+//         <div className="flex justify-between items-center px-6 py-4 border-b">
+//           <h2 className="text-xl font-semibold">Create Trip</h2>
+//           <button onClick={() => handleModalClose(false)}>
+//             <IoCloseSharp size={22} />
+//           </button>
+//         </div>
+
+//         {/* Body */}
+//         <form
+//           onSubmit={handleSubmit}
+//           className="flex-1 overflow-y-auto p-6 space-y-8"
+//         >
+//           {/* Basic Info */}
+//           <section className="grid grid-cols-2 gap-4">
+//             <Input
+//               label="Trip Name"
+//               name="name"
+//               value={formData.name}
+//               onChange={handleChange}
+//               required
+//             />
+//             <Select
+//               label="Operator"
+//               name="operator_id"
+//               value={formData.operator_id}
+//               onChange={handleChange}
+//               options={operators.map((o) => ({ value: o.id, label: o.name }))}
+//             />
+//             <Select
+//               label="Source"
+//               name="source_id"
+//               value={formData.source_id}
+//               onChange={handleChange}
+//               options={locations.map((l) => ({ value: l.id, label: l.name }))}
+//             />
+//             <Select
+//               label="Destination"
+//               name="destination_id"
+//               value={formData.destination_id}
+//               onChange={handleChange}
+//               options={locations.map((l) => ({ value: l.id, label: l.name }))}
+//             />
+//             <Input
+//               label="Price"
+//               name="price"
+//               type="number"
+//               value={formData.price}
+//               onChange={handleChange}
+//               required
+//             />
+//             <Input
+//               label="Seats"
+//               name="total_seats"
+//               type="number"
+//               value={formData.total_seats}
+//               onChange={handleChange}
+//               required
+//             />
+//             <Input
+//               label="Start Date"
+//               name="start_date"
+//               type="date"
+//               value={formData.start_date}
+//               onChange={handleChange}
+//               required
+//             />
+//             <Input
+//               label="End Date"
+//               name="end_date"
+//               type="date"
+//               value={formData.end_date}
+//               onChange={handleChange}
+//               required
+//             />
+//           </section>
+
+//           {/* Description */}
+//           <div>
+//             <label className="text-sm">Description</label>
+//             <textarea
+//               name="description"
+//               value={formData.description}
+//               onChange={handleChange}
+//               rows={4}
+//               className="w-full mt-1 border rounded px-3 py-2"
+//             />
+//           </div>
+
+//           {/* Dynamic Lists */}
+//           {["images", "inclusions", "exclusions"].map((key) => (
+//             <DynamicList
+//               key={key}
+//               title={key.charAt(0).toUpperCase() + key.slice(1)}
+//               items={formData[key]}
+//               onChange={(i, v) => handleListChange(key, i, v)}
+//               onAdd={() => addListItem(key)}
+//               onRemove={(i) => removeListItem(key, i)}
+//             />
+//           ))}
+
+//           {/* Itinerary */}
+//           <div>
+//             <div className="flex justify-between mb-3">
+//               <h3 className="font-semibold">Itinerary</h3>
+//               <button
+//                 type="button"
+//                 onClick={addDay}
+//                 className="text-sm text-blue-600"
+//               >
+//                 <FaPlus /> Add Day
+//               </button>
+//             </div>
+
+//             {formData.itinerary.map((day, d) => (
+//               <div key={d} className="border rounded p-4 mb-4">
+//                 <p className="font-medium mb-2">Day {day.day}</p>
+//                 {day.activities.map((act, a) => (
+//                   <input
+//                     key={a}
+//                     value={act}
+//                     onChange={(e) => handleActivity(d, a, e.target.value)}
+//                     placeholder="Activity"
+//                     className="w-full border rounded px-3 py-2 mb-2"
+//                   />
+//                 ))}
+//                 <button
+//                   type="button"
+//                   onClick={() => addActivity(d)}
+//                   className="text-sm text-blue-600"
+//                 >
+//                   <FaPlus /> Add Activity
+//                 </button>
+//               </div>
+//             ))}
+//           </div>
+
+//           {/* Footer */}
+//           <div className="flex justify-end gap-3 border-t pt-4">
+//             <button
+//               type="button"
+//               onClick={() => handleModalClose(false)}
+//               className="px-4 py-2 border rounded"
+//             >
+//               Cancel
+//             </button>
+//             <button
+//               type="submit"
+//               disabled={loading}
+//               className="px-4 py-2 bg-teal-500 text-white rounded"
+//             >
+//               {loading ? "Creating..." : "Create Trip"}
+//             </button>
+//           </div>
+//         </form>
+//       </div>
+//     </div>
+//   );
+// }
+
+// function Input({ label, ...props }) {
+//   return (
+//     <div>
+//       <label className="text-sm">{label}</label>
+//       <input {...props} className="w-full mt-1 border rounded px-3 py-2" />
+//     </div>
+//   );
+// }
+
+// function Select({ label, options = [], ...props }) {
+//   return (
+//     <div>
+//       <label className="text-sm">{label}</label>
+//       <select {...props} className="w-full mt-1 border rounded px-3 py-2">
+//         <option value="">Select {label}</option>
+//         {options.map((o) => (
+//           <option key={o.value} value={o.value}>
+//             {o.label}
+//           </option>
+//         ))}
+//       </select>
+//     </div>
+//   );
+// }
+
+// function DynamicList({ title, items, onChange, onAdd, onRemove }) {
+//   return (
+//     <div>
+//       <div className="flex justify-between mb-2">
+//         <h3 className="font-semibold">{title}</h3>
+//         <button type="button" onClick={onAdd} className="text-sm text-blue-600">
+//           <FaPlus /> Add
+//         </button>
+//       </div>
+//       {items.map((item, i) => (
+//         <div key={i} className="flex gap-2 mb-2">
+//           <input
+//             value={item}
+//             onChange={(e) => onChange(i, e.target.value)}
+//             className="flex-1 border rounded px-3 py-2"
+//           />
+//           <button type="button" onClick={() => onRemove(i)}>
+//             <FaTrash />
+//           </button>
+//         </div>
+//       ))}
+//     </div>
+//   );
+// }
+
 function AddTripModal({ handleModalClose }) {
+  const [operators, setOperators] = useState([]);
+  const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
-    destination: "",
-    region: "",
+    description: "",
     price: "",
     start_date: "",
     end_date: "",
-    difficulty: "moderate",
+    difficulty: "HARD",
     total_seats: "",
-    description: "",
-    itinerary: [
-      {
-        day: 1,
-        activities: [""],
-      },
-    ],
-    images: ["", "", ""],
     operator_id: "",
+    source_id: "",
+    destination_id: "",
+    status: "PUBLISHED",
+    images: [],
+    inclusions: [""],
+    exclusions: [""],
+    itinerary: [{ day: 1, activities: [""] }],
   });
 
-  const [operators, setOperators] = useState([]);
-  const [loadingOperators, setLoadingOperators] = useState(false);
-  const [imageCount, setImageCount] = useState(3);
-
+  // Fetch operators + locations
   useEffect(() => {
-    const fetchOperators = async () => {
-      const token = localStorage.getItem("token");
-      setLoadingOperators(true);
+    const token = localStorage.getItem("token");
 
+    const fetchData = async () => {
       try {
-        const res = await fetch(
-          `https://trip-tribe-backend.onrender.com/api/v1/admin/operators?page=1&limit=100`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
+        const [opRes, locRes] = await Promise.all([
+          fetch(
+            "https://trip-tribe-backend.onrender.com/api/v1/operators/admin?page=1&limit=100",
+            { headers: { Authorization: `Bearer ${token}` } },
+          ),
+          fetch(
+            "https://trip-tribe-backend.onrender.com/api/v1/locations/admin?page=1&limit=200",
+            { headers: { Authorization: `Bearer ${token}` } },
+          ),
+        ]);
 
-        const data = await res.json();
+        const opData = await opRes.json();
+        const locData = await locRes.json();
 
-        if (res.ok && data.success) {
-          setOperators(data.result.operators || []);
-        }
+        if (opData.success) setOperators(opData.result.operators || []);
+        if (locData.success) setLocations(locData.result.locations || []);
       } catch (err) {
-        console.error("Failed to fetch operators:", err);
-      } finally {
-        setLoadingOperators(false);
+        console.error("Fetch failed", err);
       }
     };
 
-    fetchOperators();
+    fetchData();
   }, []);
 
-  function handleChange(e) {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }
+    setFormData((p) => ({ ...p, [name]: value }));
+  };
 
-  // Handle image URL change
-  function handleImageChange(index, value) {
-    const updatedImages = [...formData.images];
-    updatedImages[index] = value;
-    setFormData((prev) => ({ ...prev, images: updatedImages }));
-  }
+  // Image upload handler
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  // Add more image input
-  function addImageField() {
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ""],
-    }));
-    setImageCount((prev) => prev + 1);
-  }
+    const token = localStorage.getItem("token");
+    setUploadingImage(true);
 
-  // Remove image input
-  function removeImageField(index) {
-    if (imageCount > 1) {
-      const updatedImages = formData.images.filter((_, i) => i !== index);
-      setFormData((prev) => ({ ...prev, images: updatedImages }));
-      setImageCount((prev) => prev - 1);
-    }
-  }
+    const formData = new FormData();
+    formData.append("image", file);
 
-  // Handle itinerary day changes
-  function handleItineraryDayChange(dayIndex, field, value) {
-    const updatedItinerary = [...formData.itinerary];
-    if (field === "day") {
-      updatedItinerary[dayIndex].day = parseInt(value) || 1;
-    }
-    setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
-  }
-
-  // Handle itinerary activity changes
-  function handleActivityChange(dayIndex, activityIndex, value) {
-    const updatedItinerary = [...formData.itinerary];
-    updatedItinerary[dayIndex].activities[activityIndex] = value;
-    setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
-  }
-
-  // Add new activity to a day
-  function addActivity(dayIndex) {
-    const updatedItinerary = [...formData.itinerary];
-    updatedItinerary[dayIndex].activities.push("");
-    setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
-  }
-
-  // Remove activity from a day
-  function removeActivity(dayIndex, activityIndex) {
-    if (formData.itinerary[dayIndex].activities.length > 1) {
-      const updatedItinerary = [...formData.itinerary];
-      updatedItinerary[dayIndex].activities = updatedItinerary[
-        dayIndex
-      ].activities.filter((_, i) => i !== activityIndex);
-      setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
-    }
-  }
-
-  // Add new day to itinerary
-  function addDay() {
-    const newDay = {
-      day: formData.itinerary.length + 1,
-      activities: [""],
-    };
-    setFormData((prev) => ({
-      ...prev,
-      itinerary: [...prev.itinerary, newDay],
-    }));
-  }
-
-  // Remove day from itinerary
-  function removeDay(dayIndex) {
-    if (formData.itinerary.length > 1) {
-      const updatedItinerary = formData.itinerary.filter(
-        (_, i) => i !== dayIndex,
+    try {
+      const res = await fetch(
+        "https://trip-tribe-backend.onrender.com/api/v1/uploads/image",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        },
       );
-      // Re-number days
-      updatedItinerary.forEach((day, index) => {
-        day.day = index + 1;
-      });
-      setFormData((prev) => ({ ...prev, itinerary: updatedItinerary }));
-    }
-  }
 
-  async function handleSubmit(e) {
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // Add the uploaded image URL to images array
+        setFormData((p) => ({
+          ...p,
+          images: [...p.images, data.result.url],
+        }));
+      } else {
+        throw new Error(data.message || "Failed to upload image");
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload image: " + err.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Remove image from list
+  const removeImage = (index) => {
+    setFormData((p) => ({
+      ...p,
+      images: p.images.filter((_, i) => i !== index),
+    }));
+  };
+
+  // Generic list handlers (inclusions/exclusions)
+  const handleListChange = (key, index, value) => {
+    const arr = [...formData[key]];
+    arr[index] = value;
+    setFormData((p) => ({ ...p, [key]: arr }));
+  };
+
+  const addListItem = (key) =>
+    setFormData((p) => ({ ...p, [key]: [...p[key], ""] }));
+
+  const removeListItem = (key, index) => {
+    if (formData[key].length === 1) return;
+    const arr = formData[key].filter((_, i) => i !== index);
+    setFormData((p) => ({ ...p, [key]: arr }));
+  };
+
+  // Itinerary handlers
+  const addDay = () =>
+    setFormData((p) => ({
+      ...p,
+      itinerary: [
+        ...p.itinerary,
+        { day: p.itinerary.length + 1, activities: [""] },
+      ],
+    }));
+
+  const removeDay = (dayIndex) => {
+    if (formData.itinerary.length === 1) return;
+    const updatedItinerary = formData.itinerary.filter(
+      (_, i) => i !== dayIndex,
+    );
+    // Re-number days
+    updatedItinerary.forEach((day, index) => {
+      day.day = index + 1;
+    });
+    setFormData((p) => ({ ...p, itinerary: updatedItinerary }));
+  };
+
+  const addActivity = (dayIndex) => {
+    const it = [...formData.itinerary];
+    it[dayIndex].activities.push("");
+    setFormData((p) => ({ ...p, itinerary: it }));
+  };
+
+  const removeActivity = (dayIndex, activityIndex) => {
+    if (formData.itinerary[dayIndex].activities.length === 1) return;
+    const it = [...formData.itinerary];
+    it[dayIndex].activities = it[dayIndex].activities.filter(
+      (_, i) => i !== activityIndex,
+    );
+    setFormData((p) => ({ ...p, itinerary: it }));
+  };
+
+  const handleActivity = (d, a, value) => {
+    const it = [...formData.itinerary];
+    it[d].activities[a] = value;
+    setFormData((p) => ({ ...p, itinerary: it }));
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate dates
@@ -477,344 +1449,338 @@ function AddTripModal({ handleModalClose }) {
       return;
     }
 
-    // Clean up empty activities
-    const cleanedItinerary = formData.itinerary
-      .map((day) => ({
-        ...day,
-        activities: day.activities.filter((activity) => activity.trim() !== ""),
-      }))
-      .filter((day) => day.activities.length > 0); // Remove empty days
-
-    // Clean up empty images
-    const cleanedImages = formData.images.filter((img) => img.trim() !== "");
-
     const token = localStorage.getItem("token");
+    setLoading(true);
+
+    // Clean up empty values and prepare payload
+    const payload = {
+      name: formData.name,
+      description: formData.description,
+      price: Number(formData.price),
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      difficulty: formData.difficulty,
+      total_seats: Number(formData.total_seats),
+      operator_id: formData.operator_id,
+      source_id: formData.source_id,
+      destination_id: formData.destination_id,
+      status: formData.status,
+      images: formData.images.filter(Boolean),
+      inclusions: formData.inclusions.filter((item) => item.trim() !== ""),
+      exclusions: formData.exclusions.filter((item) => item.trim() !== ""),
+      itinerary: formData.itinerary
+        .map((day) => ({
+          day: day.day,
+          activities: day.activities.filter((act) => act.trim() !== ""),
+        }))
+        .filter((day) => day.activities.length > 0),
+    };
+
+    console.log("Submitting payload:", payload);
 
     try {
       const res = await fetch(
-        "https://trip-tribe-backend.onrender.com/api/v1/admin/trips",
+        "https://trip-tribe-backend.onrender.com/api/v1/trips/admin",
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            ...formData,
-            itinerary: cleanedItinerary,
-            images: cleanedImages,
-            price: parseFloat(formData.price),
-            total_seats: parseInt(formData.total_seats),
-          }),
+          body: JSON.stringify(payload),
         },
       );
 
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to add trip");
+        throw new Error(data.message || "Failed to create trip");
       }
 
-      handleModalClose(false); // close modal on success
-      alert("Trip added successfully!");
+      alert("Trip created successfully!");
+      handleModalClose(false);
     } catch (err) {
-      console.error(err.message);
+      console.error("Create failed:", err);
       alert(err.message);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="bg-white w-[80vw] h-[90vh] rounded-xl shadow-lg flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold text-[#14181F]">Add Trip</h2>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white w-[90vw] max-w-6xl h-[90vh] rounded-xl flex flex-col">
+        {/* Header */}
+        <div className="flex justify-between items-center px-6 py-4 border-b">
+          <h2 className="text-xl font-semibold">Create New Trip</h2>
           <button
             onClick={() => handleModalClose(false)}
-            className="text-gray-500 hover:text-black text-xl"
+            className="text-gray-500 hover:text-gray-700"
           >
-            <IoCloseSharp />
+            <IoCloseSharp size={24} />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          <form onSubmit={handleSubmit}>
-            {/* Basic Information */}
-            <div className="mb-8">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Basic Information
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Trip Name */}
-                <div>
-                  <label className="text-sm text-gray-600">Trip Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleChange}
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                    placeholder="Manali to Hampta Pass Trek"
-                  />
-                </div>
-
-                {/* Destination */}
-                <div>
-                  <label className="text-sm text-gray-600">Destination *</label>
-                  <input
-                    type="text"
-                    name="destination"
-                    required
-                    value={formData.destination}
-                    onChange={handleChange}
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                    placeholder="Hampta Pass"
-                  />
-                </div>
-
-                {/* Region */}
-                <div>
-                  <label className="text-sm text-gray-600">Region *</label>
-                  <input
-                    type="text"
-                    name="region"
-                    required
-                    value={formData.region}
-                    onChange={handleChange}
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                    placeholder="Himachal Pradesh"
-                  />
-                </div>
-
-                {/* Operator */}
-                <div>
-                  <label className="text-sm text-gray-600">Operator *</label>
-                  <select
-                    name="operator_id"
-                    required
-                    value={formData.operator_id}
-                    onChange={handleChange}
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                    disabled={loadingOperators}
-                  >
-                    <option value="">Select Operator</option>
-                    {operators.map((operator) => (
-                      <option key={operator.id} value={operator.id}>
-                        {operator.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Price */}
-                <div>
-                  <label className="text-sm text-gray-600">Price (₹) *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    required
-                    value={formData.price}
-                    onChange={handleChange}
-                    min="0"
-                    step="0.01"
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                    placeholder="17999.00"
-                  />
-                </div>
-
-                {/* Total Seats */}
-                <div>
-                  <label className="text-sm text-gray-600">Total Seats *</label>
-                  <input
-                    type="number"
-                    name="total_seats"
-                    required
-                    value={formData.total_seats}
-                    onChange={handleChange}
-                    min="1"
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                    placeholder="18"
-                  />
-                </div>
-
-                {/* Start Date */}
-                <div>
-                  <label className="text-sm text-gray-600">Start Date *</label>
-                  <input
-                    type="date"
-                    name="start_date"
-                    required
-                    value={formData.start_date}
-                    onChange={handleChange}
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                {/* End Date */}
-                <div>
-                  <label className="text-sm text-gray-600">End Date *</label>
-                  <input
-                    type="date"
-                    name="end_date"
-                    required
-                    value={formData.end_date}
-                    onChange={handleChange}
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                {/* Difficulty */}
-                <div>
-                  <label className="text-sm text-gray-600">Difficulty *</label>
-                  <select
-                    name="difficulty"
-                    required
-                    value={formData.difficulty}
-                    onChange={handleChange}
-                    className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="easy">Easy</option>
-                    <option value="moderate">Moderate</option>
-                    <option value="hard">Hard</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="mb-8">
-              <label className="text-sm text-gray-600">Description</label>
-              <textarea
-                name="description"
-                required
-                value={formData.description}
+        {/* Body */}
+        <form
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-6 space-y-8"
+        >
+          {/* Basic Info */}
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Basic Information
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                label="Trip Name *"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                rows="4"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="Describe the trip in detail..."
+                required
+                placeholder="Himalayan Base Camp Trek"
+              />
+              <Input
+                label="Price (₹) *"
+                name="price"
+                type="number"
+                value={formData.price}
+                onChange={handleChange}
+                required
+                min="0"
+                placeholder="45000"
+              />
+              <Input
+                label="Total Seats *"
+                name="total_seats"
+                type="number"
+                value={formData.total_seats}
+                onChange={handleChange}
+                required
+                min="1"
+                placeholder="15"
+              />
+              <Select
+                label="Difficulty *"
+                name="difficulty"
+                value={formData.difficulty}
+                onChange={handleChange}
+                required
+                options={[
+                  { value: "EASY", label: "Easy" },
+                  { value: "MODERATE", label: "Moderate" },
+                  { value: "HARD", label: "Hard" },
+                ]}
+              />
+              <Select
+                label="Status *"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+                options={[
+                  { value: "PUBLISHED", label: "Published" },
+                  { value: "DRAFT", label: "Draft" },
+                  { value: "ARCHIVED", label: "Archived" },
+                ]}
+              />
+              <Input
+                label="Start Date *"
+                name="start_date"
+                type="date"
+                value={formData.start_date}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                label="End Date *"
+                name="end_date"
+                type="date"
+                value={formData.end_date}
+                onChange={handleChange}
+                required
               />
             </div>
+          </section>
 
-            {/* Itinerary */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <label className="text-sm text-gray-600">Itinerary</label>
-                <button
-                  type="button"
-                  onClick={addDay}
-                  className="flex items-center gap-2 text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100"
+          {/* Operator and Locations */}
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Operator & Locations
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              <Select
+                label="Operator *"
+                name="operator_id"
+                value={formData.operator_id}
+                onChange={handleChange}
+                required
+                options={operators.map((o) => ({ value: o.id, label: o.name }))}
+              />
+              <Select
+                label="Source Location *"
+                name="source_id"
+                value={formData.source_id}
+                onChange={handleChange}
+                required
+                options={locations.map((l) => ({
+                  value: l.id,
+                  label: `${l.name} (${l.region})`,
+                }))}
+              />
+              <Select
+                label="Destination Location *"
+                name="destination_id"
+                value={formData.destination_id}
+                onChange={handleChange}
+                required
+                options={locations.map((l) => ({
+                  value: l.id,
+                  label: `${l.name} (${l.region})`,
+                }))}
+              />
+            </div>
+          </section>
+
+          {/* Description */}
+          <section className="space-y-2">
+            <h3 className="text-lg font-semibold text-gray-800">Description</h3>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows={4}
+              required
+              className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-blue-500"
+              placeholder="10-day trek to Everest Base Camp..."
+            />
+          </section>
+
+          {/* Images with Upload */}
+          <section className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">Images</h3>
+              <div className="relative">
+                <input
+                  type="file"
+                  id="imageUpload"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={uploadingImage}
+                />
+                <label
+                  htmlFor="imageUpload"
+                  className={`flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg cursor-pointer hover:bg-blue-100 ${
+                    uploadingImage ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  <FaPlus size={12} /> Add Day
-                </button>
+                  {uploadingImage ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <FaPlus size={14} />
+                      Upload Image
+                    </>
+                  )}
+                </label>
               </div>
+            </div>
 
-              {formData.itinerary.map((day, dayIndex) => (
-                <div
-                  key={dayIndex}
-                  className="mb-6 p-4 border border-gray-200 rounded-lg"
-                >
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-3">
-                      <label className="text-sm text-gray-600">Day</label>
-                      <input
-                        type="number"
-                        value={day.day}
-                        onChange={(e) =>
-                          handleItineraryDayChange(
-                            dayIndex,
-                            "day",
-                            e.target.value,
-                          )
-                        }
-                        min="1"
-                        className="w-20 border border-gray-200 rounded px-2 py-1"
-                      />
-                    </div>
-                    {formData.itinerary.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeDay(dayIndex)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <FaTrash size={14} />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    {day.activities.map((activity, activityIndex) => (
-                      <div
-                        key={activityIndex}
-                        className="flex items-center gap-2"
-                      >
-                        <input
-                          type="text"
-                          value={activity}
-                          onChange={(e) =>
-                            handleActivityChange(
-                              dayIndex,
-                              activityIndex,
-                              e.target.value,
-                            )
-                          }
-                          className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                          placeholder={`Activity ${activityIndex + 1}`}
-                        />
-                        {day.activities.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeActivity(dayIndex, activityIndex)
-                            }
-                            className="text-red-500 hover:text-red-700 p-2"
-                          >
-                            <FaTrash size={14} />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
+            {/* Image List */}
+            <div className="grid grid-cols-3">
+              {formData.images.map((url, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={url}
+                    alt={`Trip ${index + 1}`}
+                    className="w-14 h-14 object-cover rounded-lg border border-gray-200"
+                  />
                   <button
                     type="button"
-                    onClick={() => addActivity(dayIndex)}
-                    className="mt-3 text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <FaPlus size={12} /> Add Activity
+                    <FaTrash size={12} />
                   </button>
                 </div>
               ))}
+              {formData.images.length === 0 && (
+                <div className="col-span-3 text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                  No images uploaded yet
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Inclusions */}
+          <DynamicList
+            title="Inclusions"
+            items={formData.inclusions}
+            onChange={(i, v) => handleListChange("inclusions", i, v)}
+            onAdd={() => addListItem("inclusions")}
+            onRemove={(i) => removeListItem("inclusions", i)}
+            placeholder="Accommodation"
+          />
+
+          {/* Exclusions */}
+          <DynamicList
+            title="Exclusions"
+            items={formData.exclusions}
+            onChange={(i, v) => handleListChange("exclusions", i, v)}
+            onAdd={() => addListItem("exclusions")}
+            onRemove={(i) => removeListItem("exclusions", i)}
+            placeholder="Personal expenses"
+          />
+
+          {/* Itinerary */}
+          <section className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-800">Itinerary</h3>
+              <button
+                type="button"
+                onClick={addDay}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+              >
+                <FaPlus size={14} /> Add Day
+              </button>
             </div>
 
-            {/* Images */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">Images</h3>
-                <button
-                  type="button"
-                  onClick={addImageField}
-                  className="flex items-center gap-2 text-sm bg-blue-50 text-blue-600 px-3 py-1 rounded-lg hover:bg-blue-100"
-                >
-                  <FaPlus size={12} /> Add Image URL
-                </button>
-              </div>
+            {formData.itinerary.map((day, dayIndex) => (
+              <div
+                key={dayIndex}
+                className="border border-gray-200 rounded-lg p-4 space-y-3"
+              >
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium text-gray-700">Day {day.day}</h4>
+                  {formData.itinerary.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeDay(dayIndex)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <FaTrash size={14} />
+                    </button>
+                  )}
+                </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {formData.images.map((imageUrl, index) => (
-                  <div key={index} className="flex items-center gap-2">
+                {day.activities.map((activity, actIndex) => (
+                  <div key={actIndex} className="flex gap-2">
                     <input
-                      type="url"
-                      value={imageUrl}
-                      onChange={(e) => handleImageChange(index, e.target.value)}
+                      value={activity}
+                      onChange={(e) =>
+                        handleActivity(dayIndex, actIndex, e.target.value)
+                      }
+                      placeholder="Activity"
                       className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                      placeholder={`https://cdn.triptribe.com/trips/image-${index + 1}.jpg`}
                     />
-                    {formData.images.length > 1 && (
+                    {day.activities.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => removeImageField(index)}
+                        onClick={() => removeActivity(dayIndex, actIndex)}
                         className="text-red-500 hover:text-red-700 p-2"
                       >
                         <FaTrash size={14} />
@@ -822,29 +1788,121 @@ function AddTripModal({ handleModalClose }) {
                     )}
                   </div>
                 ))}
-              </div>
-            </div>
 
-            {/* Modal Footer */}
-            <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
-              <button
-                type="button"
-                onClick={() => handleModalClose(false)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-6 py-2 bg-[#4ED0C3] text-white rounded-lg text-sm font-medium hover:bg-[#3db8ab]"
-              >
-                Create Trip
-              </button>
-            </div>
-          </form>
-        </div>
+                {/* <button
+                  type="button"
+                  onClick={() => addActivity(dayIndex)}
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                >
+                  <FaPlus size={12} /> Add Activity
+                </button> */}
+              </div>
+            ))}
+          </section>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <button
+              type="button"
+              onClick={() => handleModalClose(false)}
+              className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Creating...
+                </>
+              ) : (
+                "Create Trip"
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+  );
+}
+
+function Input({ label, ...props }) {
+  return (
+    <div>
+      <label className="text-sm text-gray-600">{label}</label>
+      <input
+        {...props}
+        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+      />
+    </div>
+  );
+}
+
+function Select({ label, options = [], ...props }) {
+  return (
+    <div>
+      <label className="text-sm text-gray-600">{label}</label>
+      <select
+        {...props}
+        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+      >
+        <option value="">Select {label}</option>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function DynamicList({
+  title,
+  items,
+  onChange,
+  onAdd,
+  onRemove,
+  placeholder = "",
+}) {
+  return (
+    <section className="space-y-3">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+        <button
+          type="button"
+          onClick={onAdd}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+        >
+          <FaPlus size={14} /> Add
+        </button>
+      </div>
+      <div className="space-y-2">
+        {items.map((item, index) => (
+          <div key={index} className="flex gap-2">
+            <input
+              value={item}
+              onChange={(e) => onChange(index, e.target.value)}
+              placeholder={placeholder || `${title.slice(0, -1)} ${index + 1}`}
+              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+            />
+            {items.length > 1 && (
+              <button
+                type="button"
+                onClick={() => onRemove(index)}
+                className="text-red-500 hover:text-red-700 p-2"
+              >
+                <FaTrash size={14} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

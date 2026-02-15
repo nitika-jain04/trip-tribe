@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @plugin "tailwindcss-animate";
 
@@ -191,6 +192,7 @@
   --text-display: var(--text-5xl);
   --text-display-lg: var(--text-6xl);
   --text-display-xl: var(--text-7xl);
+  --text-display-2xl: var(--text-9xl);
 
   /* Box shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -213,6 +215,7 @@
   html {
     scroll-behavior: smooth;
   }
+
   html,
   body {
     overscroll-behavior: none;
@@ -493,6 +496,10 @@
 
 .text-display-xl {
   font-size: var(--text-display-xl);
+}
+
+.text-display-2xl {
+  font-size: var(--text-display-2xl);
 }
 
 #root {

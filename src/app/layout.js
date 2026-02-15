@@ -1,7 +1,5 @@
 import "./globals.css";
 import AuthCheck from "./components/AuthCheck";
-import { Footer } from "./components/website/Footer";
-import { Navbar } from "./components/website/Navbar";
 
 export const metadata = {
   title: {
@@ -13,13 +11,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body>
         <AuthCheck />
-        <Navbar />
-
         {children}
-        <Footer />
       </body>
     </html>
   );

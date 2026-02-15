@@ -17,10 +17,10 @@ export const formatDate = (dateString) => {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "Invalid Date";
 
-    return date.toLocaleDateString("en-IN", {
+    return date.toLocaleDateString("en-US", {
       day: "2-digit",
       month: "short",
-      // year: "2-digit",
+      year: "2-digit",
     });
   } catch (error) {
     console.error("Date formatting error:", error);

@@ -21,23 +21,34 @@ function DropdownActionsAdmin({ labelText, options }) {
   return (
     <div ref={dropdownRef} className="relative w-fit">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         className="cursor-pointer text-sm text-admin-dark"
       >
         {labelText}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0.5 bg-white border border-gray-200 rounded-sm flex flex-col gap-1 w-40 px-1 py-2 z-50">
+        <div
+          className="absolute right-5 -bottom-6 bg-white border border-gray-200 rounded-sm flex flex-col w-40 px-1 py-1 z-9999"
+          onClick={(e) => e.stopPropagation()}
+        >
           {options.map((op) => {
             const isSelected = selected.value === op.value;
 
             return (
               <button
                 key={op.value}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   setSelected(op);
                   setIsOpen(false);
+                  // Call the onClick handler if it exists
+                  if (op.onClick) {
+                    op.onClick();
+                  }
                 }}
                 className="flex items-center gap-2 rounded-sm px-3 py-1 text-sm cursor-pointer transition-transform duration-500 ease-out hover:bg-admin-background hover:text-admin-success"
               >

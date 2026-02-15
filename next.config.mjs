@@ -8,7 +8,7 @@ const nextConfig = {
         protocol: "https",
         hostname: "cdn.triptribe.com",
         port: "",
-        pathname: "/**", // Allow all paths from this hostname
+        pathname: "/**",
       },
       {
         protocol: "https",

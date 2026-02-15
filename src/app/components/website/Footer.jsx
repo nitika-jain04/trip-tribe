@@ -3,10 +3,10 @@ import Link from "next/link";
 
 const footerLinks = {
   explore: [
-    { name: "Search Trips", href: "/explore" },
-    { name: "Destinations", href: "/explore" },
-    { name: "Compare Trips", href: "/explore" },
-    { name: "Verified Reviews", href: "/explore" },
+    { name: "Search Trips", href: "/trips" },
+    { name: "Destinations", href: "/trips" },
+    { name: "Compare Trips", href: "/trips" },
+    { name: "Verified Reviews", href: "/trips" },
   ],
   company: [
     { name: "About Us", href: "/about" },
@@ -38,7 +38,7 @@ export function Footer() {
               </p>
             </div>
             <Link
-              href="/explore"
+              href="/trips"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium text-body-lg transition-all duration-300 hover:bg-primary/90 hover:gap-4"
             >
               Explore Trips

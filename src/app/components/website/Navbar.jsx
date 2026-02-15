@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -39,17 +39,18 @@ export function Navbar() {
       <nav className="container-premium">
         <div className="flex items-center justify-between h-18">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-1 group">
+          <Link href="/" className="flex items-center gap-2 group">
             <img
-              src="/triptribe-logo.jpeg"
+              src="/triptribe-logo-no-text.png"
               alt="TripTribe"
-              className="h-10 w-16 rounded-xl object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-10 w-10 rounded-lg transition-transform duration-300 group-hover:scale-105"
             />
-            <span
+            {/* <span
               className={`font-display text-xl font-semibold transition-colors ${
                 isScrolled ? "text-foreground" : "text-background"
               }`}
-            >
+            > */}
+            <span className="font-display text-xl font-semibold transition-colors text-foreground">
               TripTribe
             </span>
           </Link>
@@ -75,18 +76,19 @@ export function Navbar() {
 
           {/* CTA Button */}
           <div className="hidden md:flex items-center gap-3">
-            <Link href="/explore">
+            <Link href="/trips">
               <Button className="btn-primary">Explore Trips</Button>
             </Link>
           </div>
 
           {/* Mobile Menu Button */}
           <button
-            className={`md:hidden p-2 rounded-lg transition-colors ${
-              isScrolled
-                ? "text-foreground hover:bg-muted"
-                : "text-background hover:bg-background/10"
-            }`}
+            // className={`md:hidden p-2 rounded-lg transition-colors ${
+            //   isScrolled
+            //     ? "text-foreground hover:bg-muted"
+            //     : "text-background hover:bg-background/10"
+            // }`}
+            className="md:hidden p-2 rounded-lg transition-colors text-foreground hover:bg-muted"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -121,7 +123,7 @@ export function Navbar() {
             ))}
 
             <Link
-              href="/explore"
+              href="/trips"
               onClick={() => setIsMobileMenuOpen(false)}
               className="mt-4"
             >

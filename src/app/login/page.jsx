@@ -1,5 +1,6 @@
 "use client";
 
+import { EyeClosed, EyeClosedIcon, EyeIcon, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -12,6 +13,7 @@ function TestLogin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const BACKEND_URL =
     "https://trip-tribe-backend.onrender.com/api/v1/auth/login";
@@ -39,7 +41,7 @@ function TestLogin() {
 
       // ❌ Backend error handling
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Login failed");
+        throw new Error(data.message || "Incorrect email / password");
       }
 
       setEmail("");
@@ -68,7 +70,7 @@ function TestLogin() {
     } catch (err) {
       setEmail("");
       setPassword("");
-      alert("Login error:", err);
+      alert("Login failed");
       setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
@@ -90,7 +92,7 @@ function TestLogin() {
     <div className="min-h-screen relative flex items-center justify-center">
       {/* Background */}
       <Image
-        src="/loginimg.jpg"
+        src="/loginimg.jpeg"
         alt="Login Background"
         fill
         className="object-cover"
@@ -100,7 +102,7 @@ function TestLogin() {
 
       {/* Content */}
       <div className="relative flex flex-col lg:flex-row items-center gap-20 py-10">
-        <div className="max-w-xl text-white lg:hidden px-10">
+        <div className="max-w-xl text-white px-10">
           <p className="text-3xl md:text-4xl text-center">
             THE GOAL OF LIFE IS LIVING IN AGREEMENT WITH NATURE.
           </p>
@@ -114,14 +116,16 @@ function TestLogin() {
           </h2>
 
           {error && (
-            <p className="mb-4 text-center text-sm text-red-400">{error}</p>
+            <p className="mb-4 text-center text-sm font-display font-semibold text-error">
+              {error}
+            </p>
           )}
 
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div>
               <label className="text-sm">Email</label>
               <input
-                type="email"
+                type={email}
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -131,13 +135,30 @@ function TestLogin() {
 
             <div>
               <label className="text-sm">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full mt-1 rounded-md bg-transparent border border-white/40 px-3 py-2 focus:outline-none focus:border-white"
-              />
+              <div className="flex items-center gap-2 border border-white/40 rounded-md bg-transparent px-3 py-2 ">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full mt-1 focus:outline-none focus:border-white"
+                />
+                {showPassword ? (
+                  <EyeOff
+                    size={18}
+                    onClick={() => {
+                      setShowPassword(false);
+                    }}
+                  />
+                ) : (
+                  <EyeIcon
+                    size={18}
+                    onClick={() => {
+                      setShowPassword(true);
+                    }}
+                  />
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2 text-sm opacity-80">
@@ -158,19 +179,19 @@ function TestLogin() {
               {loading ? "Logging in..." : "LOGIN"}
             </button>
 
-            <p className="text-center text-sm opacity-70 hover:underline cursor-pointer">
+            {/* <p className="text-center text-sm opacity-70 hover:underline cursor-pointer">
               Forgot Password?
-            </p>
+            </p> */}
           </form>
         </div>
 
         {/* Right Quote */}
-        <div className="max-w-xl text-white hidden lg:block">
+        {/* <div className="max-w-xl text-white hidden lg:block">
           <p className="text-6xl text-center">
             THE GOAL OF LIFE IS LIVING IN AGREEMENT WITH NATURE.
           </p>
           <div className="w-full border-b-4 border-white mt-4" />
-        </div>
+        </div> */}
       </div>
     </div>
   );
