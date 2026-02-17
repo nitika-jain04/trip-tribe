@@ -22,9 +22,6 @@ function Page() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedOperator, setSelectedOperator] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [selectedRegion, setSelectedRegion] = useState("All Regions");
   const [regions, setRegions] = useState([]);
@@ -32,7 +29,7 @@ function Page() {
   const router = useRouter();
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
   const getAllRegions = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -90,8 +87,8 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
     setLoading(true);
     setError(null);
 
-     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+    const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
     try {
       const res = await fetch(
@@ -197,8 +194,10 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
       <div className="px-5 py-10 flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div>
-          <h1 className="text-3xl font-bold text-foreground">Operators</h1>
-          <p className="text-muted-foreground mt-1">Manage trip operators on the platform</p>
+            <h1 className="text-3xl font-bold text-foreground">Operators</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage trip operators on the platform
+            </p>
           </div>
 
           <div>
@@ -503,20 +502,17 @@ function AddOperatorModal({ handleModalClose }) {
     const formDataToSend = new FormData();
     formDataToSend.append("image", file);
 
-     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+    const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/uploads/image`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formDataToSend,
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: formDataToSend,
+      });
 
       const data = await res.json();
 

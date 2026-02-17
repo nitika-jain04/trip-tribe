@@ -18,6 +18,9 @@ function TestLogin() {
   const BACKEND_URL =
     "https://trip-tribe-backend.onrender.com/api/v1/auth/login";
 
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
   const handleLogin = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -26,7 +29,7 @@ function TestLogin() {
     setLoading(true);
 
     try {
-      const res = await fetch(BACKEND_URL, {
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

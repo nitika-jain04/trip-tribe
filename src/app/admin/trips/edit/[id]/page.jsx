@@ -10,7 +10,6 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -22,6 +21,9 @@ export default function TripEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
   // Fetch trip
   useEffect(() => {
     const fetchTrip = async () => {
@@ -30,8 +32,10 @@ export default function TripEditPage() {
 
       try {
         const res = await fetch(
-          `https://trip-tribe-backend.onrender.com/api/v1/trips/admin/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
         );
 
         const data = await res.json();
@@ -111,7 +115,7 @@ export default function TripEditPage() {
 
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/trips/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
         {
           method: "PUT",
           headers: {

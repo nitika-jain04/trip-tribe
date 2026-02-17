@@ -11,7 +11,6 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
 
 export default function OperatorEditPage() {
   const { id } = useParams();
@@ -35,7 +34,7 @@ export default function OperatorEditPage() {
 
       try {
         const res = await fetch(
-         `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
+          `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -73,7 +72,6 @@ export default function OperatorEditPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -86,14 +84,11 @@ export default function OperatorEditPage() {
     fd.append("image", file);
 
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/uploads/image`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        },
-      );
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
 
       const data = await res.json();
       if (!res.ok || !data.success)
@@ -139,7 +134,7 @@ export default function OperatorEditPage() {
 
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/operators/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
         {
           method: "PUT",
           headers: {
@@ -174,7 +169,7 @@ export default function OperatorEditPage() {
 
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/operators/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

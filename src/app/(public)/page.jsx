@@ -22,7 +22,8 @@ import {
   ImageIcon,
 } from "lucide-react";
 
-import { api_version, base_url } from "@/lib/utils";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 const stats = [
   { value: "200+", label: "Curated Trips" },
@@ -133,7 +134,7 @@ export default function Page() {
       setError(null);
 
       const res = await fetch(
-        `${base_url}/api/${api_version}/locations?page=1&limit=10`,
+        `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=10`,
         {
           method: "GET",
         },
@@ -171,7 +172,7 @@ export default function Page() {
       setError(null);
 
       const res = await fetch(
-        `${base_url}/api/${api_version}/operators?page=1&limit=10`,
+        `${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`,
         {
           method: "GET",
         },
@@ -199,7 +200,7 @@ export default function Page() {
       setError(null);
 
       const res = await fetch(
-        `${base_url}/api/${api_version}/trips?page=1&limit=10`,
+        `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`,
       );
 
       if (!res.ok) throw new Error("Failed to fetch trips");
@@ -221,7 +222,7 @@ export default function Page() {
 
         try {
           const res = await fetch(
-            `${base_url}/api/${api_version}/operators/${id}`,
+            `${BASE_URL}/api/${API_VERSION}/operators/${id}`,
           );
           const data = await res.json();
 
@@ -239,7 +240,7 @@ export default function Page() {
 
         try {
           const res = await fetch(
-            `${base_url}/api/${api_version}/locations/${id}`,
+            `${BASE_URL}/api/${API_VERSION}/locations/${id}`,
           );
           const data = await res.json();
 

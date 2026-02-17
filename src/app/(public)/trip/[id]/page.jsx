@@ -28,7 +28,8 @@ import {
   TabsTrigger,
 } from "@/app/components/ui/tabs";
 
-import { base_url, api_version } from "@/lib/utils";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function TripPage() {
   const { id } = useParams();
@@ -44,7 +45,7 @@ function TripPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`${base_url}/api/${api_version}/trips/${id}`);
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`);
 
         const data = await res.json();
 
@@ -65,10 +66,10 @@ function TripPage() {
 
         // ✅ FIX 2: fetch related data safely
         const [operatorRes, srcRes, destRes] = await Promise.all([
-          fetch(`${base_url}/api/${api_version}/operators/${raw.operator_id}`),
-          fetch(`${base_url}/api/${api_version}/locations/${raw.source_id}`),
+          fetch(`${BASE_URL}/api/${API_VERSION}/operators/${raw.operator_id}`),
+          fetch(`${BASE_URL}/api/${API_VERSION}/locations/${raw.source_id}`),
           fetch(
-            `${base_url}/api/${api_version}/locations/${raw.destination_id}`,
+            `${BASE_URL}/api/${API_VERSION}/locations/${raw.destination_id}`,
           ),
         ]);
 

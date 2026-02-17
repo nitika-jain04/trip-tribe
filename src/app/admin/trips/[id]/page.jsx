@@ -36,7 +36,7 @@ export default function TripDetail() {
       try {
         // Fetch trip
         const tripRes = await fetch(
-          `https://trip-tribe-backend.onrender.com/api/v1/trips/admin/${id}`,
+          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -56,7 +56,7 @@ export default function TripDetail() {
         if (tripResult.operator_id) {
           requests.push(
             fetch(
-              `https://trip-tribe-backend.onrender.com/api/v1/operators/admin/${tripResult.operator_id}`,
+              `${BASE_URL}/api/${API_VERSION}/operators/admin/${tripResult.operator_id}`,
               { headers: { Authorization: `Bearer ${token}` } },
             ).then((r) => r.json()),
           );
@@ -65,7 +65,7 @@ export default function TripDetail() {
         if (tripResult.source_id) {
           requests.push(
             fetch(
-              `https://trip-tribe-backend.onrender.com/api/v1/locations/admin/${tripResult.source_id}`,
+              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.source_id}`,
               { headers: { Authorization: `Bearer ${token}` } },
             ).then((r) => r.json()),
           );
@@ -74,7 +74,7 @@ export default function TripDetail() {
         if (tripResult.destination_id) {
           requests.push(
             fetch(
-              `https://trip-tribe-backend.onrender.com/api/v1/locations/admin/${tripResult.destination_id}`,
+              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.destination_id}`,
               { headers: { Authorization: `Bearer ${token}` } },
             ).then((r) => r.json()),
           );

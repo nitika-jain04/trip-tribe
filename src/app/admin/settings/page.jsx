@@ -9,8 +9,8 @@ import { LiaEditSolid } from "react-icons/lia";
 import { Button } from "@/app/adminFunctionCalls";
 import dynamic from "next/dynamic";
 import { X, Loader2, AlertCircle, MapPin, Search } from "lucide-react";
-const API_URL =
-  "https://trip-tribe-backend.onrender.com/api/v1/locations/admin";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function Page() {
   const [activeTab, setActiveTab] = useState("destinations");
@@ -20,7 +20,9 @@ function Page() {
       <div className="px-5 py-10 flex flex-col gap-5">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-          <p className="text-muted-foreground mt-1">Manage platform configurations and content</p>
+          <p className="text-muted-foreground mt-1">
+            Manage platform configurations and content
+          </p>
         </div>
 
         <div className="flex gap-2 items-center bg-gray-100 w-fit p-2 rounded-lg">
@@ -77,7 +79,7 @@ function Destinations() {
       }
 
       const res = await fetch(
-        "https://trip-tribe-backend.onrender.com/api/v1/locations/admin?page=1&limit=10",
+        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
         {
           method: "GET",
           headers: {
@@ -334,14 +336,17 @@ function AddDestinationModal({ onClose, refresh }) {
     console.log("req", payload);
 
     try {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (res.ok) {
         refresh();
