@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Calendar,
-  LoaderCircleIcon,
   MapPin,
   IndianRupee,
   User,
@@ -17,6 +16,7 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { MdChairAlt } from "react-icons/md";
+import Cookies from "js-cookie";
 
 export default function TripDetail() {
   const [trip, setTrip] = useState(null);
@@ -29,7 +29,7 @@ export default function TripDetail() {
 
   useEffect(() => {
     const fetchTripAndRelated = async () => {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       setLoading(true);
       setError(null);
 

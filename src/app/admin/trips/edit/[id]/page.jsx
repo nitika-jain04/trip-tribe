@@ -3,13 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  LoaderCircleIcon,
-  Save,
-  ArrowLeft,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import Cookies from "js-cookie";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -27,7 +22,7 @@ export default function TripEditPage() {
   // Fetch trip
   useEffect(() => {
     const fetchTrip = async () => {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       setError("");
 
       try {
@@ -98,7 +93,7 @@ export default function TripEditPage() {
     setSaving(true);
     setError("");
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     const requestBody = {};
     Object.keys(formData).forEach((key) => {

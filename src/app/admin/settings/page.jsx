@@ -324,7 +324,7 @@ function AddDestinationModal({ onClose, refresh }) {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     setSaving(true);
 
     const payload = {

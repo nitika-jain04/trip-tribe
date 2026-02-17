@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   Calendar,
   Edit,
-  LoaderCircleIcon,
   Mail,
   Phone,
   AlertCircle,
@@ -15,6 +14,7 @@ import {
   Building2,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import Cookies from "js-cookie";
 
 export default function OperatorDetail() {
   const [operator, setOperator] = useState(null);
@@ -49,10 +49,8 @@ export default function OperatorDetail() {
 
   useEffect(() => {
     const fetchOperator = async () => {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       setError(null);
-
-    
 
       try {
         const res = await fetch(

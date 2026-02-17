@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
+import Cookies from "js-cookie";
 
 export default function OperatorEditPage() {
   const { id } = useParams();
@@ -30,7 +31,7 @@ export default function OperatorEditPage() {
   // Fetch operator
   useEffect(() => {
     const fetchOperator = async () => {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
 
       try {
         const res = await fetch(
@@ -79,7 +80,7 @@ export default function OperatorEditPage() {
     setUploadingImage(true);
     setError("");
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     const fd = new FormData();
     fd.append("image", file);
 
@@ -109,7 +110,7 @@ export default function OperatorEditPage() {
     setSaving(true);
     setError("");
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     // Only changed fields
     const requestBody = {};
@@ -165,7 +166,7 @@ export default function OperatorEditPage() {
     setSaving(true);
     setDeleteConfirm(true);
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     try {
       const res = await fetch(

@@ -24,6 +24,9 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
 const contactMethods = [
   {
     icon: Mail,

@@ -12,6 +12,7 @@ import { LuCircleCheckBig, LuEye } from "react-icons/lu";
 import { SlOptions } from "react-icons/sl";
 import { useRouter } from "next/navigation";
 import { Loader2, AlertCircle, Users } from "lucide-react";
+import Cookies from "js-cookie";
 
 function Page() {
   const [operators, setOperators] = useState([]);
@@ -32,7 +33,7 @@ function Page() {
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
   const getAllRegions = useCallback(async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     setLoading(true);
     setError(null);
 
@@ -83,7 +84,7 @@ function Page() {
   }, []);
 
   const getAllOperators = useCallback(async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     setLoading(true);
     setError(null);
 
@@ -497,7 +498,7 @@ function AddOperatorModal({ handleModalClose }) {
     setUploadingImage(true);
     setError("");
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     const formDataToSend = new FormData();
     formDataToSend.append("image", file);
@@ -543,7 +544,7 @@ function AddOperatorModal({ handleModalClose }) {
     setLoading(true);
     setError("");
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     // Validate phone number - accept Indian format
     if (!/^(\+91|91)?[6-9]\d{9}$/.test(formData.phone_number)) {

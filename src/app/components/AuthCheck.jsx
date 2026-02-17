@@ -2,12 +2,13 @@
 import { useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
 
 export default function AuthCheck() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     if (!token) return;
 
     try {

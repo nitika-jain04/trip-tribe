@@ -4,6 +4,7 @@ import { EyeClosed, EyeClosedIcon, EyeIcon, EyeOff } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 function TestLogin() {
   const router = useRouter();
@@ -14,9 +15,6 @@ function TestLogin() {
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-
-  const BACKEND_URL =
-    "https://trip-tribe-backend.onrender.com/api/v1/auth/login";
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -54,15 +52,39 @@ function TestLogin() {
 
       // In handleLogin, after successful login:
       if (rememberMe) {
-        localStorage.setItem("rememberedEmail", email);
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(user));
-        localStorage.setItem("rememberMe", "true");
+        // localStorage.setItem("rememberedEmail", email);
+        // localStorage.setItem("token", token);
+        // localStorage.setItem("user", JSON.stringify(user));
+        // localStorage.setItem("rememberMe", "true");
+
+        Cookies.set("token", data.token, {
+          expires: 1, // 1 day
+          // secure: true,
+          sameSite: "strict",
+          path: "/",
+        });
+
+        Cookies.set("rememberedEmail", email, {
+          expires: 1, // 1 day
+          // secure: true,
+          sameSite: "strict",
+          path: "/",
+        });
+
+        Cookies.set("rememberMe", email, {
+          expires: 1, // 1 day
+          // secure: true,
+          sameSite: "strict",
+          path: "/",
+        });
       } else {
-        localStorage.removeItem("rememberedEmail");
-        localStorage.removeItem("rememberMe");
-        sessionStorage.setItem("token", token);
-        sessionStorage.setItem("user", JSON.stringify(user));
+        // localStorage.removeItem("rememberedEmail");
+        // localStorage.removeItem("rememberMe");
+        Cookies.remove("token", { path: "/" });
+        Cookies.remove("rememberedEmail");
+        Cookies.remove("rememberMe");
+        // sessionStorage.setItem("token", token);
+        // sessionStorage.setItem("user", JSON.stringify(user));
       }
 
       if (user.role === "SUPER_ADMIN" || user.role === "ADMIN") {

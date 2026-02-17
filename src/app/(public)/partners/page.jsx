@@ -17,6 +17,7 @@ import {
   Headphones,
 } from "lucide-react";
 import { toast } from "@/app/components/ui/sonner";
+import Cookies from "js-cookie";
 
 const benefits = [
   {
@@ -92,6 +93,9 @@ const stats = [
 ];
 
 export default function Partner() {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
   const [formData, setFormData] = useState({
     companyName: "",
     contactName: "",
@@ -108,10 +112,48 @@ export default function Partner() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast.success("Application submitted! We'll be in touch within 48 hours.");
+
+    try {
+      // Get token from cookies/localStorage if using auth
+      const token = Cookies.get("token");
+
+      // Prepare payload in backend-required format
+      const payload = {
+        name: formData.companyName,
+        contact_name: formData.contactName,
+        email: formData.email,
+        phone_number: formData.phone,
+        website_url: formData.website,
+        trips_per_year: Number(formData.tripCount) || 0,
+        regions: formData.regions.split(",").map((r) => r.trim()), // convert comma-separated string to array
+        business_description: formData.about,
+      };
+
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/operators/apply`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // send token if required
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Application failed");
+
+      // Success
+      toast.success(data.message || "Application submitted successfully!");
+      setIsSubmitted(true);
+    } catch (err) {
+      console.error("Application submission error:", err);
+      toast.error(err.message || "Something went wrong");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -122,7 +164,7 @@ export default function Partner() {
 
         <div className="container-premium relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-body-sm font-medium mb-4">
+            <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-primary/10 text-primary text-body-sm font-medium mb-4">
               <Users className="w-4 h-4" />
               Partner with TripTribe
             </div>
@@ -279,7 +321,7 @@ export default function Partner() {
                 className="card-premium p-8 space-y-6"
               >
                 <div className="grid sm:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <Label htmlFor="companyName">Company / Brand Name *</Label>
                     <Input
                       id="companyName"
@@ -294,7 +336,7 @@ export default function Partner() {
                       required
                     />
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <Label htmlFor="contactName">Contact Person *</Label>
                     <Input
                       id="contactName"
@@ -311,8 +353,8 @@ export default function Partner() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
-                  <div className="space-y-2">
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-3">
                     <Label htmlFor="email">Email Address *</Label>
                     <Input
                       id="email"
@@ -325,7 +367,7 @@ export default function Partner() {
                       required
                     />
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <Label htmlFor="phone">Phone Number *</Label>
                     <Input
                       id="phone"
@@ -339,7 +381,7 @@ export default function Partner() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   <Label htmlFor="website">Website / Social Media</Label>
                   <Input
                     id="website"
@@ -352,7 +394,7 @@ export default function Partner() {
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <Label htmlFor="tripCount">
                       Number of Trips Organized (per year)
                     </Label>
@@ -365,11 +407,12 @@ export default function Partner() {
                       placeholder="e.g., 20-30"
                     />
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-3">
                     <Label htmlFor="regions">Regions You Operate In</Label>
                     <Input
                       id="regions"
                       value={formData.regions}
+                      required
                       onChange={(e) =>
                         setFormData({ ...formData, regions: e.target.value })
                       }
@@ -378,7 +421,7 @@ export default function Partner() {
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-3">
                   <Label htmlFor="about">Tell Us About Your Business *</Label>
                   <Textarea
                     id="about"

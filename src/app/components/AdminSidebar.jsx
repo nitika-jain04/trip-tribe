@@ -9,47 +9,45 @@ import { GrLocation } from "react-icons/gr";
 import { LuMountain } from "react-icons/lu";
 import { usePathname } from "next/navigation";
 import { BiComment } from "react-icons/bi";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export default function AdminSidebar({ collapsed, toggle }) {
-  const [userProfile, setUserProfile] = useState({name:"", email:""});
+  const [userProfile, setUserProfile] = useState({ name: "", email: "" });
 
   const pathname = usePathname();
 
   useEffect(() => {
-  const fetchUserProfile = async () => {
-    try {
-      const token = localStorage.getItem("token");
+    const fetchUserProfile = async () => {
+      try {
+        const token = Cookies.get("token");
 
-      if (!token) return;
+        if (!token) return;
 
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/auth/profile`,
-        {
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/auth/profile`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
+        });
+
+        if (!res.ok) throw new Error("Unauthorized");
+
+        const data = await res.json();
+
+        if (data.success) {
+          setUserProfile(data.result);
         }
-      );
-
-      if (!res.ok) throw new Error("Unauthorized");
-
-      const data = await res.json();
-
-      if (data.success) {
-        setUserProfile(data.result);
+      } catch (err) {
+        console.error("Profile fetch failed:", err);
       }
-    } catch (err) {
-      console.error("Profile fetch failed:", err);
-    }
-  };
+    };
 
-  fetchUserProfile();
-}, []);
+    fetchUserProfile();
+  }, []);
 
   return (
     <aside
@@ -118,7 +116,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
         />
         <SidebarLink
           href="/admin/enquiries"
-          icon={<BiComment  size={22} />}
+          icon={<BiComment size={22} />}
           label="Enquiries"
           collapsed={collapsed}
           isActive={pathname === "/admin/enquiries"}
@@ -140,7 +138,9 @@ export default function AdminSidebar({ collapsed, toggle }) {
               {userProfile}
             </div> */}
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-200">{userProfile.name}</p>
+              <p className="text-sm font-medium text-gray-200">
+                {userProfile.name}
+              </p>
               <p className="text-xs text-gray-500">{userProfile.email}</p>
             </div>
           </div>

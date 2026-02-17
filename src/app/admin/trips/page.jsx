@@ -13,6 +13,7 @@ import { IoCloseSharp } from "react-icons/io5";
 import { FaPlus, FaTrash } from "react-icons/fa6";
 import { useRouter } from "next/navigation";
 import { IndianRupeeIcon, Loader2, AlertCircle, MapPin } from "lucide-react";
+import Cookies from "js-cookie";
 
 function Page() {
   const [trips, setTrips] = useState([]);
@@ -34,7 +35,7 @@ function Page() {
   const router = useRouter();
 
   const fetchOperators = async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     try {
       const res = await fetch(
@@ -61,7 +62,7 @@ function Page() {
   };
 
   const getAllTrips = useCallback(async () => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     setLoading(true);
     setError(null);
 
@@ -419,7 +420,7 @@ function AddTripModal({ handleModalClose }) {
 
   // Fetch operators + locations
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     const fetchData = async () => {
       try {
@@ -455,7 +456,7 @@ function AddTripModal({ handleModalClose }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     setUploadingImage(true);
 
     const formData = new FormData();
@@ -565,7 +566,7 @@ function AddTripModal({ handleModalClose }) {
       return;
     }
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
     setLoading(true);
 
     // Clean up empty values and prepare payload
