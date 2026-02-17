@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import AdminSidebar from "../components/AdminSidebar";
-import { SearchIcon } from "lucide-react";
 
 export default function AdminLayout({ children }) {
   const [collapsed, setCollapsed] = useState(false);

@@ -25,6 +25,9 @@ export default function OperatorEditPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
   // Fetch operator
   useEffect(() => {
     const fetchOperator = async () => {
@@ -32,7 +35,7 @@ export default function OperatorEditPage() {
 
       try {
         const res = await fetch(
-          `https://trip-tribe-backend.onrender.com/api/v1/operators/admin/${id}`,
+         `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -70,6 +73,7 @@ export default function OperatorEditPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -83,7 +87,7 @@ export default function OperatorEditPage() {
 
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/uploads/image`,
+        `${BASE_URL}/api/${API_VERSION}/uploads/image`,
         {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },

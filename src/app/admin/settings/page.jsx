@@ -19,10 +19,8 @@ function Page() {
     <AdminGuard>
       <div className="px-5 py-10 flex flex-col gap-5">
         <div>
-          <p className="text-[#14181F] text-2xl font-semibold">Settings</p>
-          <p className="text-[#65758b] text-base">
-            Manage platform configurations and content
-          </p>
+          <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+          <p className="text-muted-foreground mt-1">Manage platform configurations and content</p>
         </div>
 
         <div className="flex gap-2 items-center bg-gray-100 w-fit p-2 rounded-lg">

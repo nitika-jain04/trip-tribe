@@ -31,6 +31,9 @@ function Page() {
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
   const getAllRegions = useCallback(async () => {
     const token = localStorage.getItem("token");
     setLoading(true);
@@ -38,7 +41,7 @@ function Page() {
 
     try {
       const res = await fetch(
-        "https://trip-tribe-backend.onrender.com/api/v1/locations/admin",
+        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
         {
           method: "GET",
           headers: {
@@ -87,9 +90,12 @@ function Page() {
     setLoading(true);
     setError(null);
 
+     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/operators/admin?page=${page}&limit=10`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin?page=${page}&limit=10`,
         {
           method: "GET",
           headers: {
@@ -191,10 +197,8 @@ function Page() {
       <div className="px-5 py-10 flex flex-col gap-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-admin-dark text-2xl font-semibold">Operators</p>
-            <p className="text-admin-haze text-base">
-              Manage trip operators on the platform
-            </p>
+          <h1 className="text-3xl font-bold text-foreground">Operators</h1>
+          <p className="text-muted-foreground mt-1">Manage trip operators on the platform</p>
           </div>
 
           <div>
@@ -499,9 +503,12 @@ function AddOperatorModal({ handleModalClose }) {
     const formDataToSend = new FormData();
     formDataToSend.append("image", file);
 
+     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/uploads/image`,
+        `${BASE_URL}/api/${API_VERSION}/uploads/image`,
         {
           method: "POST",
           headers: {
@@ -584,9 +591,12 @@ function AddOperatorModal({ handleModalClose }) {
       (key) => requestBody[key] === undefined && delete requestBody[key],
     );
 
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+    const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
     try {
       const res = await fetch(
-        "https://trip-tribe-backend.onrender.com/api/v1/operators/admin",
+        `${BASE_URL}/api/${API_VERSION}/operators/admin`,
         {
           method: "POST",
           headers: {

@@ -1,5 +1,6 @@
 import "./globals.css";
 import AuthCheck from "./components/AuthCheck";
+import { Toaster } from "./components/ui/toaster";
 
 export const metadata = {
   title: {
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
       <body>
         <AuthCheck />
         {children}
+        <Toaster/>
       </body>
     </html>
   );

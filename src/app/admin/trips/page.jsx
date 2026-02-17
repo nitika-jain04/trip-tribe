@@ -144,11 +144,10 @@ function Page() {
     <AdminGuard>
       <div className="px-5 py-10 flex flex-col gap-5">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-admin-dark text-2xl font-semibold">Trips</p>
-            <p className="text-admin-haze text-base">
-              Manage all trip listings across operators
-            </p>
+          <div> 
+            <h1 className="text-3xl font-bold text-foreground">Trips</h1>
+          <p className="text-muted-foreground mt-1">Manage all trip listings across operators
+</p>
           </div>
 
           <div>

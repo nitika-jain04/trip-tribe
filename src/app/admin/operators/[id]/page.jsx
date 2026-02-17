@@ -44,14 +44,19 @@ export default function OperatorDetail() {
     return `+${cleaned}`; // fallback
   };
 
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
   useEffect(() => {
     const fetchOperator = async () => {
       const token = localStorage.getItem("token");
       setError(null);
 
+    
+
       try {
         const res = await fetch(
-          `https://trip-tribe-backend.onrender.com/api/v1/operators/admin/${id}`,
+          `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

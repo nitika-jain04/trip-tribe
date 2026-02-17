@@ -8,9 +8,48 @@ import { IoSettingsOutline } from "react-icons/io5";
 import { GrLocation } from "react-icons/gr";
 import { LuMountain } from "react-icons/lu";
 import { usePathname } from "next/navigation";
+import { BiComment } from "react-icons/bi";
+import { useState,useEffect } from "react";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export default function AdminSidebar({ collapsed, toggle }) {
+  const [userProfile, setUserProfile] = useState({name:"", email:""});
+
   const pathname = usePathname();
+
+  useEffect(() => {
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) return;
+
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/auth/profile`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Unauthorized");
+
+      const data = await res.json();
+
+      if (data.success) {
+        setUserProfile(data.result);
+      }
+    } catch (err) {
+      console.error("Profile fetch failed:", err);
+    }
+  };
+
+  fetchUserProfile();
+}, []);
 
   return (
     <aside
@@ -78,6 +117,13 @@ export default function AdminSidebar({ collapsed, toggle }) {
           isActive={pathname === "/admin/trips"}
         />
         <SidebarLink
+          href="/admin/enquiries"
+          icon={<BiComment  size={22} />}
+          label="Enquiries"
+          collapsed={collapsed}
+          isActive={pathname === "/admin/enquiries"}
+        />
+        <SidebarLink
           href="/admin/settings"
           icon={<IoSettingsOutline size={22} />}
           label="Settings"
@@ -90,12 +136,12 @@ export default function AdminSidebar({ collapsed, toggle }) {
       {!collapsed && (
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-linear-to-br from-teal-400 to-teal-500 flex items-center justify-center text-slate-900 font-bold text-sm">
-              A
-            </div>
+            {/* <div className="w-8 h-8 rounded-full bg-linear-to-br from-teal-400 to-teal-500 flex items-center justify-center text-slate-900 font-bold text-sm">
+              {userProfile}
+            </div> */}
             <div className="flex-1">
-              <p className="text-sm font-medium text-gray-200">Super Admin</p>
-              <p className="text-xs text-gray-500">admin@triptribe.in</p>
+              <p className="text-sm font-medium text-gray-200">{userProfile.name}</p>
+              <p className="text-xs text-gray-500">{userProfile.email}</p>
             </div>
           </div>
         </div>

@@ -101,16 +101,16 @@ function TestLogin() {
       <div className="absolute inset-0 bg-black/30" />
 
       {/* Content */}
-      <div className="relative flex flex-col lg:flex-row items-center gap-20 py-10">
+      <div className="relative flex flex-col items-center gap-10 py-5 my-auto">
         <div className="max-w-xl text-white px-10">
-          <p className="text-3xl md:text-4xl text-center">
+          <p className="text-2xl lg:text-3xl text-center">
             THE GOAL OF LIFE IS LIVING IN AGREEMENT WITH NATURE.
           </p>
           <div className="w-full border-b-4 border-white mt-4" />
         </div>
 
         {/* Login Card */}
-        <div className="w-80 lg:w-105 rounded-3xl bg-white/15 backdrop-blur-md border border-white/30 px-5 py-10 md:px-12 md:py-20 text-white shadow-xl">
+        <div className="w-75 md:w-90 lg:w-105 rounded-3xl bg-white/15 backdrop-blur-md border border-white/30 px-5 py-10 md:px-12 md:py-20 text-white shadow-xl">
           <h2 className="text-2xl font-semibold text-center mb-6">
             Login to Your Account
           </h2>
