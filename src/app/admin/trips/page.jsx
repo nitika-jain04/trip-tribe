@@ -8,12 +8,27 @@ import { CiSearch } from "react-icons/ci";
 import { LiaEditSolid } from "react-icons/lia";
 import { LuEye } from "react-icons/lu";
 import { SlLocationPin, SlOptions } from "react-icons/sl";
-import { Button, formatDateRange } from "@/app/adminFunctionCalls";
+import { Button, formatDateRange } from "@/app/components/adminFunctionCalls";
 import { IoCloseSharp } from "react-icons/io5";
-import { FaPlus, FaTrash } from "react-icons/fa6";
+import { FaPlus, FaTrash, FaMapMarkedAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { IndianRupeeIcon, Loader2, AlertCircle, MapPin } from "lucide-react";
 import Cookies from "js-cookie";
+import dynamic from "next/dynamic";
+import { StatusBadge } from "@/app/components/admin/StatusBadge";
+
+// Dynamically import map components to avoid SSR issues
+const MapPicker = dynamic(() => import("@/app/components/MapPickerTrip"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+      <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
+    </div>
+  ),
+});
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function Page() {
   const [trips, setTrips] = useState([]);
@@ -24,13 +39,11 @@ function Page() {
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [operators, setOperators] = useState([]);
-  const [loadingOperators, setLoadingOperators] = useState(false); // Add this line
+  const [loadingOperators, setLoadingOperators] = useState(false);
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [destinationFilter, setDestinationFilter] =
     useState("All Destinations");
   const [searchQuery, setSearchQuery] = useState("");
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
   const router = useRouter();
 
@@ -308,27 +321,34 @@ function Page() {
                 {/* Dates */}
                 <div className="text-sm text-admin-haze flex items-center gap-1">
                   {/* <IoIosCalendar size={16} /> */}
-                  {formatDateRange(trip.start_date, trip.end_date)}
+                  {/* {formatDateRange(trip.start_date, trip.end_date)} */}
+                  {new Date(trip.start_date).toLocaleDateString()},{" "}
+                  {new Date(trip.end_date).toLocaleDateString()}
                 </div>
 
                 {/* Difficulty */}
-                <div className="text-sm">{trip.difficulty || "N/A"}</div>
+                <div className="text-sm">
+                  <span
+                    className={`text-sm font-medium ${
+                      trip.difficulty === "EASY"
+                        ? "text-success"
+                        : trip.difficulty === "MODERATE"
+                          ? "text-primary"
+                          : trip.difficulty === "HARD"
+                            ? "text-warning"
+                            : "text-destructive"
+                    }`}
+                  >
+                    {trip.difficulty || "N/A"}
+                  </span>
+                </div>
 
                 {/* Status */}
                 <div>
-                  <span
-                    className={`px-2 py-1 text-xs tracking-wide rounded-full font-medium
-                            ${
-                              trip.status === "published" ||
-                              trip.status === "active"
-                                ? "bg-green-100 text-green-700"
-                                : trip.status === "draft"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-red-100 text-red-700"
-                            }`}
-                  >
-                    {trip.status || "N/A"}
-                  </span>
+                  <StatusBadge status={trip.status} />
+
+                  {/* {trip.status || "N/A"}
+                  </span> */}
                 </div>
 
                 {/* Actions */}
@@ -396,9 +416,10 @@ function Page() {
 
 function AddTripModal({ handleModalClose }) {
   const [operators, setOperators] = useState([]);
-  const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showSourceMap, setShowSourceMap] = useState(false);
+  const [showDestinationMap, setShowDestinationMap] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -409,8 +430,20 @@ function AddTripModal({ handleModalClose }) {
     difficulty: "HARD",
     total_seats: "",
     operator_id: "",
-    source_id: "",
-    destination_id: "",
+    source: {
+      name: "",
+      region: "",
+      latitude: "",
+      longitude: "",
+      type: "CITY",
+    },
+    destination: {
+      name: "",
+      region: "",
+      latitude: "",
+      longitude: "",
+      type: "CITY",
+    },
     status: "PUBLISHED",
     images: [],
     inclusions: [""],
@@ -418,37 +451,66 @@ function AddTripModal({ handleModalClose }) {
     itinerary: [{ day: 1, activities: [""] }],
   });
 
-  // Fetch operators + locations
+  // Fetch operators
   useEffect(() => {
     const token = Cookies.get("token");
 
-    const fetchData = async () => {
+    const fetchOperators = async () => {
       try {
-        const [opRes, locRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/${API_VERSION}/operators/admin`, {
+        const opRes = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/operators/admin`,
+          {
             headers: { Authorization: `Bearer ${token}` },
-          }),
-          fetch(`${BASE_URL}/api/${API_VERSION}/locations/admin`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
+          },
+        );
 
         const opData = await opRes.json();
-        const locData = await locRes.json();
 
         if (opData.success) setOperators(opData.result.operators || []);
-        if (locData.success) setLocations(locData.result.locations || []);
       } catch (err) {
         console.error("Fetch failed", err);
       }
     };
 
-    fetchData();
+    fetchOperators();
   }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+
+    // Handle nested location fields
+    if (name.startsWith("source.") || name.startsWith("destination.")) {
+      const [location, field] = name.split(".");
+      setFormData((p) => ({
+        ...p,
+        [location]: {
+          ...p[location],
+          [field]: value,
+        },
+      }));
+    } else {
+      setFormData((p) => ({ ...p, [name]: value }));
+    }
+  };
+
+  const handleLocationSelect = (type, locationData) => {
+    setFormData((p) => ({
+      ...p,
+      [type]: {
+        name: locationData.name || locationData.address || "",
+        region: locationData.region || locationData.state || "",
+        latitude: locationData.lat || locationData.latitude || "",
+        longitude: locationData.lng || locationData.longitude || "",
+        type: locationData.type || "CITY",
+      },
+    }));
+
+    // Close the map modal
+    if (type === "source") {
+      setShowSourceMap(false);
+    } else {
+      setShowDestinationMap(false);
+    }
   };
 
   // Image upload handler
@@ -566,6 +628,25 @@ function AddTripModal({ handleModalClose }) {
       return;
     }
 
+    // Validate locations
+    if (
+      !formData.source.latitude ||
+      !formData.source.longitude ||
+      !formData.source.name
+    ) {
+      alert("Please select source location from map");
+      return;
+    }
+
+    if (
+      !formData.destination.latitude ||
+      !formData.destination.longitude ||
+      !formData.destination.name
+    ) {
+      alert("Please select destination location from map");
+      return;
+    }
+
     const token = Cookies.get("token");
     setLoading(true);
 
@@ -579,8 +660,20 @@ function AddTripModal({ handleModalClose }) {
       difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
       operator_id: formData.operator_id,
-      source_id: formData.source_id,
-      destination_id: formData.destination_id,
+      source: {
+        name: formData.source.name,
+        region: formData.source.region,
+        latitude: formData.source.latitude,
+        longitude: formData.source.longitude,
+        type: formData.source.type,
+      },
+      destination: {
+        name: formData.destination.name,
+        region: formData.destination.region,
+        latitude: formData.destination.latitude,
+        longitude: formData.destination.longitude,
+        type: formData.destination.type,
+      },
       status: formData.status,
       images: formData.images.filter(Boolean),
       inclusions: formData.inclusions.filter((item) => item.trim() !== ""),
@@ -717,12 +810,10 @@ function AddTripModal({ handleModalClose }) {
             </div>
           </section>
 
-          {/* Operator and Locations */}
+          {/* Operator */}
           <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Operator & Locations
-            </h3>
-            <div className="grid grid-cols-3 gap-4">
+            <h3 className="text-lg font-semibold text-gray-800">Operator</h3>
+            <div className="grid grid-cols-1 gap-4">
               <Select
                 label="Operator *"
                 name="operator_id"
@@ -731,30 +822,148 @@ function AddTripModal({ handleModalClose }) {
                 required
                 options={operators.map((o) => ({ value: o.id, label: o.name }))}
               />
-              <Select
-                label="Source Location *"
-                name="source_id"
-                value={formData.source_id}
-                onChange={handleChange}
-                required
-                options={locations.map((l) => ({
-                  value: l.id,
-                  label: `${l.name} (${l.region})`,
-                }))}
-              />
-              <Select
-                label="Destination Location *"
-                name="destination_id"
-                value={formData.destination_id}
-                onChange={handleChange}
-                required
-                options={locations.map((l) => ({
-                  value: l.id,
-                  label: `${l.name} (${l.region})`,
-                }))}
-              />
             </div>
           </section>
+
+          {/* Source Location with Map Picker */}
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Source Location
+            </h3>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex-1">
+                  {formData.source.name ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        <span className="font-medium">Name:</span>{" "}
+                        {formData.source.name}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Region:</span>{" "}
+                        {formData.source.region || "N/A"}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Coordinates:</span>{" "}
+                        {formData.source.latitude}, {formData.source.longitude}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No location selected
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSourceMap(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                >
+                  <FaMapMarkedAlt size={16} />
+                  {formData.source.name ? "Change Location" : "Select from Map"}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Destination Location with Map Picker */}
+          <section className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">
+              Destination Location
+            </h3>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex-1">
+                  {formData.destination.name ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        <span className="font-medium">Name:</span>{" "}
+                        {formData.destination.name}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Region:</span>{" "}
+                        {formData.destination.region || "N/A"}
+                      </p>
+                      <p className="text-sm">
+                        <span className="font-medium">Coordinates:</span>{" "}
+                        {formData.destination.latitude},{" "}
+                        {formData.destination.longitude}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500">
+                      No location selected
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowDestinationMap(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
+                >
+                  <FaMapMarkedAlt size={16} />
+                  {formData.destination.name
+                    ? "Change Location"
+                    : "Select from Map"}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* Map Modals */}
+          {showSourceMap && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+              <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-xl flex flex-col">
+                <div className="flex justify-between items-center px-6 py-4 border-b">
+                  <h3 className="text-lg font-semibold">
+                    Select Source Location
+                  </h3>
+                  <button
+                    onClick={() => setShowSourceMap(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <IoCloseSharp size={24} />
+                  </button>
+                </div>
+                <div className="flex-1 p-4">
+                  <MapPicker
+                    onLocationSelect={(location) =>
+                      handleLocationSelect("source", location)
+                    }
+                    initialCenter={[20.5937, 78.9629]} // India center
+                    initialZoom={5}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showDestinationMap && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
+              <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-xl flex flex-col">
+                <div className="flex justify-between items-center px-6 py-4 border-b">
+                  <h3 className="text-lg font-semibold">
+                    Select Destination Location
+                  </h3>
+                  <button
+                    onClick={() => setShowDestinationMap(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <IoCloseSharp size={24} />
+                  </button>
+                </div>
+                <div className="flex-1 p-4">
+                  <MapPicker
+                    onLocationSelect={(location) =>
+                      handleLocationSelect("destination", location)
+                    }
+                    initialCenter={[20.5937, 78.9629]} // India center
+                    initialZoom={5}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Description */}
           <section className="space-y-2">
@@ -805,25 +1014,25 @@ function AddTripModal({ handleModalClose }) {
             </div>
 
             {/* Image List */}
-            <div className="grid grid-cols-3">
+            <div className="grid grid-cols-6 gap-4">
               {formData.images.map((url, index) => (
                 <div key={index} className="relative group">
                   <img
                     src={url}
                     alt={`Trip ${index + 1}`}
-                    className="w-14 h-14 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-20 object-cover rounded-lg border border-gray-200"
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <FaTrash size={12} />
                   </button>
                 </div>
               ))}
               {formData.images.length === 0 && (
-                <div className="col-span-3 text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                <div className="col-span-6 text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
                   No images uploaded yet
                 </div>
               )}

@@ -309,7 +309,8 @@ function TripsContent() {
               Explore Community Trips
             </h1>
             <p className="text-body-lg text-muted-foreground">
-              {filteredTrips.length} trips from verified providers
+              {filteredTrips.length > 0 &&
+                `${filteredTrips.length} ${filteredTrips.length === 1 ? "trip" : "trips"} from verified providers`}
             </p>
           </div>
 

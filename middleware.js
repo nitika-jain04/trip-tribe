@@ -3,7 +3,6 @@
 
 // export function middleware(request) {
 //   const token = request.cookies.get("token")?.value;
-
 //   const { pathname } = request.nextUrl;
 
 //   // 🔒 Protect admin routes
@@ -14,7 +13,6 @@
 
 //     try {
 //       const decoded = jwt.decode(token);
-
 //       const role = decoded?.role;
 
 //       if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
@@ -28,7 +26,6 @@
 //   return NextResponse.next();
 // }
 
-// // ✅ Only run middleware on these paths
 // export const config = {
 //   matcher: ["/admin/:path*"],
 // };
@@ -40,7 +37,6 @@ export function middleware(request) {
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
-  // 🔒 Protect admin routes
   if (pathname.startsWith("/admin")) {
     if (!token) {
       return NextResponse.redirect(new URL("/login", request.url));
@@ -53,7 +49,7 @@ export function middleware(request) {
       if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
         return NextResponse.redirect(new URL("/unauthorized", request.url));
       }
-    } catch (error) {
+    } catch {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }

@@ -6,9 +6,10 @@ import { SlLocationPin } from "react-icons/sl";
 import { LuTag } from "react-icons/lu";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { LiaEditSolid } from "react-icons/lia";
-import { Button } from "@/app/adminFunctionCalls";
+import { Button } from "@/app/components/adminFunctionCalls";
 import dynamic from "next/dynamic";
 import { X, Loader2, AlertCircle, MapPin, Search } from "lucide-react";
+import Cookies from "js-cookie";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -70,8 +71,7 @@ function Destinations() {
       setLoading(true);
       setError(null);
 
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = typeof window !== "undefined" ? Cookies.get("token") : null;
 
       if (!token) {
         setError("Authentication token missing");

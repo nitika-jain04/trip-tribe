@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import Cookies from "js-cookie";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
 export default function OperatorEditPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -24,9 +27,6 @@ export default function OperatorEditPage() {
   const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
   // Fetch operator
   useEffect(() => {

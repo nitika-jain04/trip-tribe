@@ -17,8 +17,28 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export default function AdminSidebar({ collapsed, toggle }) {
   const [userProfile, setUserProfile] = useState({ name: "", email: "" });
+  const [isMobile, setIsMobile] = useState(false);
 
   const pathname = usePathname();
+
+  // Handle responsive collapse
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+
+      // Auto-collapse on mobile if expanded
+      if (mobile && !collapsed) {
+        toggle();
+      }
+    };
+
+    // Initial check
+    handleResize();
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [collapsed, toggle]);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -50,103 +70,122 @@ export default function AdminSidebar({ collapsed, toggle }) {
   }, []);
 
   return (
-    <aside
-      className={`fixed left-0 top-0 h-screen bg-linear-to-b from-slate-900 via-slate-900 to-slate-800 text-white
-      shadow-2xl shadow-black/20 border-r border-slate-700/50
-      transition-all duration-300 ease-in-out z-50
-      ${collapsed ? "w-28 transition-none duration-500" : "w-64"}`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-6">
-        <div className="flex items-center gap-3 overflow-hidden">
-          <div className="bg-linear-to-br from-teal-400 to-teal-500 text-slate-900 p-2.5 rounded-xl shadow-lg shadow-teal-500/20 shrink-0">
-            <LuMountain size={20} />
-          </div>
-
-          <div
-            className={`transition-all duration-300 overflow-hidden ${
-              collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-40"
-            }`}
-          >
-            <p className="text-base font-bold bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent whitespace-nowrap">
-              TripTribe
-            </p>
-            <p className="text-xs text-gray-400 font-medium whitespace-nowrap">
-              Admin Portal
-            </p>
-          </div>
-        </div>
-
-        <button
+    <>
+      {/* Mobile overlay */}
+      {isMobile && !collapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
           onClick={toggle}
-          className="hover:bg-slate-700 p-1 rounded-lg border border-slate-700 transition-colors duration-200 shrink-0"
-        >
-          {collapsed ? (
-            <ChevronRight size={18} className="text-gray-400" />
-          ) : (
-            <ChevronLeft size={18} className="text-gray-400" />
-          )}
-        </button>
-      </div>
+        />
+      )}
 
-      <div className="border-b border-slate-700/50 mx-4 mb-6" />
+      <aside
+        className={`fixed left-0 top-0 h-screen bg-linear-to-b from-slate-900 via-slate-900 to-slate-800 text-white
+        shadow-2xl shadow-black/20 border-r border-slate-700/50
+        transition-all duration-300 ease-in-out z-50
+        ${collapsed ? "w-28 transition-none duration-500" : "w-64"}
+        ${isMobile && collapsed ? "-translate-x-full" : "translate-x-0"}
+        ${isMobile && !collapsed ? "shadow-2xl" : ""}`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-6">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="bg-linear-to-br from-teal-400 to-teal-500 text-slate-900 p-2.5 rounded-xl shadow-lg shadow-teal-500/20 shrink-0">
+              <LuMountain size={20} />
+            </div>
 
-      {/* Menu */}
-      <nav className="flex flex-col gap-1.5 px-3">
-        <SidebarLink
-          href="/admin/dashboard"
-          icon={<MdOutlineDashboard size={22} />}
-          label="Dashboard"
-          collapsed={collapsed}
-          isActive={pathname === "/admin/dashboard"}
-        />
-        <SidebarLink
-          href="/admin/operators"
-          icon={<GoPeople size={22} />}
-          label="Operators"
-          collapsed={collapsed}
-          isActive={pathname === "/admin/operators"}
-        />
-        <SidebarLink
-          href="/admin/trips"
-          icon={<GrLocation size={22} />}
-          label="Trips"
-          collapsed={collapsed}
-          isActive={pathname === "/admin/trips"}
-        />
-        <SidebarLink
-          href="/admin/enquiries"
-          icon={<BiComment size={22} />}
-          label="Enquiries"
-          collapsed={collapsed}
-          isActive={pathname === "/admin/enquiries"}
-        />
-        <SidebarLink
-          href="/admin/settings"
-          icon={<IoSettingsOutline size={22} />}
-          label="Settings"
-          collapsed={collapsed}
-          isActive={pathname === "/admin/settings"}
-        />
-      </nav>
-
-      {/* Footer */}
-      {!collapsed && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
-          <div className="flex items-center gap-3">
-            {/* <div className="w-8 h-8 rounded-full bg-linear-to-br from-teal-400 to-teal-500 flex items-center justify-center text-slate-900 font-bold text-sm">
-              {userProfile}
-            </div> */}
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-200">
-                {userProfile.name}
+            <div
+              className={`transition-all duration-300 overflow-hidden ${
+                collapsed ? "opacity-0 max-w-0" : "opacity-100 max-w-40"
+              }`}
+            >
+              <p className="text-base font-bold bg-linear-to-r from-white to-gray-300 bg-clip-text text-transparent whitespace-nowrap">
+                TripTribe
               </p>
-              <p className="text-xs text-gray-500">{userProfile.email}</p>
+              <p className="text-xs text-gray-400 font-medium whitespace-nowrap">
+                Admin Portal
+              </p>
             </div>
           </div>
+
+          <button
+            onClick={toggle}
+            className="hover:bg-slate-700 p-1 rounded-lg border border-slate-700 transition-colors duration-200 shrink-0"
+          >
+            {collapsed ? (
+              <ChevronRight size={18} className="text-gray-400" />
+            ) : (
+              <ChevronLeft size={18} className="text-gray-400" />
+            )}
+          </button>
         </div>
+
+        <div className="border-b border-slate-700/50 mx-4 mb-6" />
+
+        {/* Menu */}
+        <nav className="flex flex-col gap-1.5 px-3">
+          <SidebarLink
+            href="/admin/dashboard"
+            icon={<MdOutlineDashboard size={22} />}
+            label="Dashboard"
+            collapsed={collapsed}
+            isActive={pathname === "/admin/dashboard"}
+          />
+          <SidebarLink
+            href="/admin/operators"
+            icon={<GoPeople size={22} />}
+            label="Operators"
+            collapsed={collapsed}
+            isActive={pathname === "/admin/operators"}
+          />
+          <SidebarLink
+            href="/admin/trips"
+            icon={<GrLocation size={22} />}
+            label="Trips"
+            collapsed={collapsed}
+            isActive={pathname === "/admin/trips"}
+          />
+          <SidebarLink
+            href="/admin/enquiries"
+            icon={<BiComment size={22} />}
+            label="Enquiries"
+            collapsed={collapsed}
+            isActive={pathname === "/admin/enquiries"}
+          />
+          <SidebarLink
+            href="/admin/settings"
+            icon={<IoSettingsOutline size={22} />}
+            label="Settings"
+            collapsed={collapsed}
+            isActive={pathname === "/admin/settings"}
+          />
+        </nav>
+
+        {/* Footer */}
+        {!collapsed && (
+          <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-200">
+                  {userProfile.name}
+                </p>
+                <p className="text-xs text-gray-500">{userProfile.email}</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </aside>
+
+      {/* Mobile toggle button */}
+      {isMobile && collapsed && (
+        <button
+          onClick={toggle}
+          className="fixed left-4 bottom-4 z-50 bg-teal-500 text-white p-3 rounded-full shadow-lg hover:bg-teal-600 transition-colors"
+        >
+          <ChevronRight size={20} />
+        </button>
       )}
-    </aside>
+    </>
   );
 }
 

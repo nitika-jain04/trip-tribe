@@ -1,0 +1,228 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Calendar,
+  MapPin,
+  User,
+  MessageSquare,
+  Save,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import { Textarea } from "@/app/components/ui/textarea";
+import { Label } from "@/app/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import { StatusBadge } from "@/app/components/admin/StatusBadge";
+import { useToast } from "@/app/hooks/use-toast";
+import Cookies from "js-cookie";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+export default function EnquiryDetail({ params }) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const { id } = useParams();
+
+  const [enquiry, setEnquiry] = useState(null);
+  const [status, setStatus] = useState("new");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEnquiry = async () => {
+      const token = Cookies.get("token");
+
+      console.log("id", id);
+
+      try {
+        const res = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        const data = await res.json();
+
+        console.log("res", data);
+
+        const fetchedEnquiry =
+          data?.result?.data?.find((e) => e.id === id) || data?.result || null;
+
+        if (!fetchedEnquiry) throw new Error("Enquiry not found");
+
+        setEnquiry(fetchedEnquiry);
+        setStatus(fetchedEnquiry.status?.toLowerCase() || "new");
+        setAdminNotes(fetchedEnquiry.admin_notes || "");
+      } catch (err) {
+        console.error("Error fetching enquiry:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEnquiry();
+  }, [id]);
+
+  const handleSave = () => {
+    toast({
+      title: "Enquiry Updated",
+      description: "The enquiry has been updated successfully.",
+    });
+  };
+
+  if (loading) {
+    return <p className="text-center py-12">Loading enquiry...</p>;
+  }
+
+  if (!enquiry) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">Enquiry not found</p>
+        <Button asChild className="mt-4">
+          <Link href="/admin/enquiries">Back to Enquiries</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-w-4xl p-6">
+      {/* Back Button */}
+      <Button variant="ghost" asChild>
+        <Link href="/admin/enquiries">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Enquiries
+        </Link>
+      </Button>
+
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">
+            Enquiry Details
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Enquiry from {enquiry.full_name}
+          </p>
+        </div>
+        <StatusBadge status={enquiry.status.toLowerCase()} />
+      </div>
+
+      {/* Traveller Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-primary" />
+            Traveller Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="font-semibold text-lg">{enquiry.full_name}</p>
+            </div>
+          </div>
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center gap-3 text-sm">
+              <Mail className="h-4 w-4 text-muted-foreground" />
+              <a
+                href={`mailto:${enquiry.email}`}
+                className="text-primary hover:underline"
+              >
+                {enquiry.email}
+              </a>
+            </div>
+            {enquiry.phone && (
+              <div className="flex items-center gap-3 text-sm">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <a href={`tel:${enquiry.phone}`} className="hover:underline">
+                  {enquiry.phone}
+                </a>
+              </div>
+            )}
+            <div className="flex items-center gap-3 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span>
+                Enquired on {new Date(enquiry.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Traveller Message */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-warning" />
+            Traveller Message
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-foreground bg-muted/50 rounded-lg p-4">
+            {enquiry.message}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Admin Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Admin Actions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">New</SelectItem>
+                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="closed">Closed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Admin Notes</Label>
+            <Textarea
+              value={adminNotes}
+              onChange={(e) => setAdminNotes(e.target.value)}
+              placeholder="Add internal notes about this enquiry..."
+              rows={4}
+            />
+          </div>
+          <Button onClick={handleSave}>
+            <Save className="h-4 w-4 mr-2" />
+            Save Changes
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
