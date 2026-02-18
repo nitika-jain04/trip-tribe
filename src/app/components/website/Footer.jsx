@@ -69,14 +69,14 @@ export function Footer() {
             </p>
             <div className="flex flex-col gap-3 text-body-sm">
               <a
-                href="mailto:hello@triptribe.in"
+                href="mailto:admin@triptribe.co"
                 className="flex items-center gap-3 text-background/60 hover:text-primary transition-colors"
               >
                 <Mail className="w-4 h-4" />
-                hello@triptribe.in
+                admin@triptribe.co
               </a>
               <a
-                href="tel:+919876543210"
+                href="tel:+91 8800590295"
                 className="flex items-center gap-3 text-background/60 hover:text-primary transition-colors"
               >
                 <Phone className="w-4 h-4" />
@@ -84,7 +84,7 @@ export function Footer() {
               </a>
               <span className="flex items-center gap-3 text-background/60">
                 <MapPin className="w-4 h-4" />
-                Bangalore, India
+                Gurugram, India
               </span>
             </div>
           </div>

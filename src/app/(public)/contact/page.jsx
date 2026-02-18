@@ -46,7 +46,7 @@ const contactMethods = [
     icon: MapPin,
     title: "Visit Us",
     description: "Our office",
-    value: "Bangalore, Karnataka",
+    value: "Gurugram, India",
     href: "#",
   },
 ];
@@ -484,7 +484,7 @@ export default function Contact() {
               TripTribe HQ
             </h3>
             <p className="text-body text-muted-foreground">
-              Koramangala, Bangalore
+              Koramangala, Gurugram
               <br />
               Karnataka 560034, India
             </p>
