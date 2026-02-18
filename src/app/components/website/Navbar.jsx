@@ -90,7 +90,9 @@ export function Navbar() {
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
+              <X
+                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" ? "text-white" : "text-foreground hover:text-white"}`}
+              />
             ) : (
               <Menu
                 className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" ? "text-white" : "text-foreground hover:text-white"}`}
