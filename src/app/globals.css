@@ -187,7 +187,7 @@
   --text-body-lg: var(--text-xl);
   --text-heading-sm: var(--text-xl);
   --text-heading-2xl: var(--text-7xl);
-  --text-heading-lg: var(--text-3xl);
+  --text-heading-lg: var(--text-2xl);
   --text-display-sm: var(--text-4xl);
   --text-display: var(--text-5xl);
   --text-display-lg: var(--text-6xl);

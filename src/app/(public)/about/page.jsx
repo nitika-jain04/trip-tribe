@@ -214,7 +214,7 @@ export default function About() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
                   <value.icon className="w-7 h-7 text-primary" />
                 </div>
-                <h3 className="font-display text-heading text-foreground mb-3">
+                <h3 className="font-display text-heading-lg text-foreground mb-4">
                   {value.title}
                 </h3>
                 <p className="text-body text-muted-foreground">
@@ -281,7 +281,7 @@ export default function About() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 max-w-4/6 gap-20 text-center">
+          <div className="grid sm:grid-cols-2 px-10 lg:max-w-4/6 gap-20 text-center">
             {team.map((member) => (
               <div
                 key={member.name}
@@ -295,7 +295,7 @@ export default function About() {
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-display text-body-lg text-foreground mb-1">
+                  <h3 className="font-display text-heading-lg text-foreground mb-1">
                     {member.name}
                   </h3>
                   <p className="text-body-sm text-primary font-medium mb-2">

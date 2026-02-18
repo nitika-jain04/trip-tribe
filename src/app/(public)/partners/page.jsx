@@ -321,7 +321,7 @@ export default function Partner() {
                 <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
                   <benefit.icon className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="font-display text-heading text-foreground mb-3">
+                <h3 className="font-display text-heading-lg text-foreground mb-3">
                   {benefit.title}
                 </h3>
                 <p className="text-body text-muted-foreground">
@@ -355,7 +355,7 @@ export default function Partner() {
                   <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-display text-heading-sm mb-4">
                     {step.number}
                   </div>
-                  <h3 className="font-display text-heading text-foreground mb-2">
+                  <h3 className="font-display text-heading-lg text-foreground mb-2">
                     {step.title}
                   </h3>
                   <p className="text-body-sm text-muted-foreground">
