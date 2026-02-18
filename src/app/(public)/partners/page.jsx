@@ -17,7 +17,6 @@ import {
   Headphones,
 } from "lucide-react";
 import { toast } from "@/app/components/ui/sonner";
-import Cookies from "js-cookie";
 
 const benefits = [
   {
@@ -96,7 +95,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export default function Partner() {
-
   const [formData, setFormData] = useState({
     companyName: "",
     contactName: "",
@@ -109,22 +107,85 @@ export default function Partner() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = "Company name is required";
+    }
+
+    if (!formData.contactName.trim()) {
+      newErrors.contactName = "Contact person name is required";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    const cleanedPhone = formData.phone.replace(/[^\d+]/g, "");
+    if (!/^\+?\d{10,15}$/.test(cleanedPhone)) {
+      newErrors.phone = "Enter a valid phone number";
+    }
+
+    if (formData.tripCount && isNaN(Number(formData.tripCount))) {
+      newErrors.tripCount = "Enter a valid number";
+    }
+
+    const website = formData.website.trim();
+    if (!website) {
+      newErrors.website = "Website or social link is required";
+    } else if (website.includes("_")) {
+      newErrors.website = "Website URL cannot contain underscores (_)";
+    }
+
+    if (!formData.regions.trim()) {
+      newErrors.regions = "Please specify at least one region";
+    }
+    const aboutText = formData.about.trim();
+
+    if (!aboutText) {
+      newErrors.about = "Business description is required";
+    } else if (aboutText.length < 50) {
+      newErrors.about = `Description must be at least 50 characters (${aboutText.length}/50)`;
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please fix the highlighted errors");
+      return;
+    }
+
     setIsSubmitting(true);
+
+    const cleanedPhone = formData.phone.replace(/[^\d+]/g, "");
 
     try {
       const payload = {
         name: formData.companyName,
         contact_name: formData.contactName,
         email: formData.email,
-        phone_number: formData.phone,
+        phone_number: cleanedPhone,
         website_url: formData.website,
         trips_per_year: Number(formData.tripCount) || 0,
-        regions: formData.regions.split(",").map((r) => r.trim()), 
+        regions: formData.regions
+          .split(",")
+          .map((r) => r.trim())
+          .filter(Boolean),
         business_description: formData.about,
       };
+
+      console.log("req", payload);
 
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/operators/apply`,
@@ -139,14 +200,45 @@ export default function Partner() {
 
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Application failed");
+      if (!res.ok) {
+        const message = data?.error?.message || "Application failed";
+
+        if (data?.error?.code === "VALIDATION_ERROR") {
+          const apiErrors = {};
+
+          // Smart field detection (you can expand this)
+          if (message.toLowerCase().includes("email")) {
+            apiErrors.email = message;
+          } else if (message.toLowerCase().includes("phone")) {
+            apiErrors.phone = message;
+          }
+
+          setErrors((prev) => ({
+            ...prev,
+            ...apiErrors,
+          }));
+        }
+
+        throw new Error(message);
+      }
 
       // Success
       toast.success(data.message || "Application submitted successfully!");
       setIsSubmitted(true);
+
+      setFormData({
+        companyName: "",
+        contactName: "",
+        email: "",
+        phone: "",
+        website: "",
+        tripCount: "",
+        regions: "",
+        about: "",
+      });
     } catch (err) {
       console.error("Application submission error:", err);
-      toast.error(err.message || "Something went wrong");
+      toast.error(err.message || "Please fix the form errors");
     } finally {
       setIsSubmitting(false);
     }
@@ -318,37 +410,52 @@ export default function Partner() {
               >
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-3">
-                    <Label htmlFor="companyName">Company / Brand Name *</Label>
-                    <Input
-                      id="companyName"
-                      value={formData.companyName}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          companyName: e.target.value,
-                        })
-                      }
-                      placeholder="Your travel company name"
-                      required
-                    />
-                  </div>
-                  <div className="flex flex-col gap-3">
                     <Label htmlFor="contactName">Contact Person *</Label>
                     <Input
                       id="contactName"
                       value={formData.contactName}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          contactName: e.target.value,
-                        })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, contactName: value });
+
+                        if (errors.contactName) {
+                          setErrors({ ...errors, contactName: "" });
+                        }
+                      }}
                       placeholder="Full name"
-                      required
+                      // required
+                      className={errors.contactName ? "border-red-500" : ""}
                     />
+                    {errors.contactName && (
+                      <p className="text-sm text-red-500">
+                        {errors.contactName}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <Label htmlFor="companyName">Company / Brand Name *</Label>
+                    <Input
+                      id="companyName"
+                      value={formData.companyName}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, companyName: value });
+
+                        if (errors.companyName) {
+                          setErrors({ ...errors, companyName: "" });
+                        }
+                      }}
+                      placeholder="Your travel company name"
+                      className={errors.companyName ? "border-red-500" : ""}
+                    />
+                    {errors.companyName && (
+                      <p className="text-sm text-red-500">
+                        {errors.companyName}
+                      </p>
+                    )}
                   </div>
                 </div>
-
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-3">
                     <Label htmlFor="email">Email Address *</Label>
@@ -356,24 +463,48 @@ export default function Partner() {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
+                      // onChange={(e) =>
+                      //   setFormData({ ...formData, email: e.target.value })
+                      // }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, email: value });
+
+                        if (errors.email) {
+                          setErrors({ ...errors, email: "" });
+                        }
+                      }}
                       placeholder="business@email.com"
-                      required
+                      // required
+                      className={errors.email ? "border-red-500" : ""}
                     />
+                    {errors.email && (
+                      <p className="text-sm text-red-500">{errors.email}</p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-3">
                     <Label htmlFor="phone">Phone Number *</Label>
                     <Input
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, phone: e.target.value })
-                      }
+                      // onChange={(e) =>
+                      //   setFormData({ ...formData, phone: e.target.value })
+                      // }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, phone: value });
+
+                        if (errors.phone) {
+                          setErrors({ ...errors, phone: "" });
+                        }
+                      }}
                       placeholder="+91 98765 43210"
-                      required
+                      className={errors.phone ? "border-red-500" : ""}
+                      // required
                     />
+                    {errors.phone && (
+                      <p className="text-sm text-red-500">{errors.phone}</p>
+                    )}
                   </div>
                 </div>
 
@@ -382,11 +513,24 @@ export default function Partner() {
                   <Input
                     id="website"
                     value={formData.website}
-                    onChange={(e) =>
-                      setFormData({ ...formData, website: e.target.value })
-                    }
+                    // onChange={(e) =>
+                    //   setFormData({ ...formData, website: e.target.value })
+                    // }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, website: value });
+
+                      if (errors.website) {
+                        setErrors({ ...errors, website: "" });
+                      }
+                    }}
                     placeholder="https://yourwebsite.com or Instagram handle"
+                    className={errors.website ? "border-red-500" : ""}
+                    // required
                   />
+                  {errors.website && (
+                    <p className="text-sm text-red-500">{errors.website}</p>
+                  )}
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-6">
@@ -397,23 +541,47 @@ export default function Partner() {
                     <Input
                       id="tripCount"
                       value={formData.tripCount}
-                      onChange={(e) =>
-                        setFormData({ ...formData, tripCount: e.target.value })
-                      }
+                      // onChange={(e) =>
+                      //   setFormData({ ...formData, tripCount: e.target.value })
+                      // }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, tripCount: value });
+
+                        if (errors.tripCount) {
+                          setErrors({ ...errors, tripCount: "" });
+                        }
+                      }}
                       placeholder="e.g., 20-30"
+                      className={errors.tripCount ? "border-red-500" : ""}
                     />
+                    {errors.tripCount && (
+                      <p className="text-sm text-red-500">{errors.tripCount}</p>
+                    )}
                   </div>
                   <div className="flex flex-col gap-3">
                     <Label htmlFor="regions">Regions You Operate In</Label>
                     <Input
                       id="regions"
                       value={formData.regions}
-                      required
-                      onChange={(e) =>
-                        setFormData({ ...formData, regions: e.target.value })
-                      }
+                      // required
+                      // onChange={(e) =>
+                      //   setFormData({ ...formData, regions: e.target.value })
+                      // }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, regions: value });
+
+                        if (errors.regions) {
+                          setErrors({ ...errors, regions: "" });
+                        }
+                      }}
                       placeholder="e.g., Himalayas, Northeast, South India"
+                      className={errors.regions ? "border-red-500" : ""}
                     />
+                    {errors.regions && (
+                      <p className="text-sm text-red-500">{errors.regions}</p>
+                    )}
                   </div>
                 </div>
 
@@ -422,13 +590,25 @@ export default function Partner() {
                   <Textarea
                     id="about"
                     value={formData.about}
-                    onChange={(e) =>
-                      setFormData({ ...formData, about: e.target.value })
-                    }
+                    // onChange={(e) =>
+                    //   setFormData({ ...formData, about: e.target.value })
+                    // }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, about: value });
+
+                      if (errors.about) {
+                        setErrors({ ...errors, about: "" });
+                      }
+                    }}
                     placeholder="What kind of trips do you organize? What makes your experiences unique?"
                     rows={4}
-                    required
+                    className={errors.about ? "border-red-500" : ""}
+                    // required
                   />
+                  {errors.about && (
+                    <p className="text-sm text-red-500">{errors.about}</p>
+                  )}
                 </div>
 
                 <Button

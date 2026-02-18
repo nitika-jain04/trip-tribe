@@ -149,7 +149,6 @@ export default function Page() {
       console.log("locations", data.result?.locations);
 
       if (data.success) {
-        // Transform locations to match the expected format with mock trip counts
         const transformedLocations = (data.result?.locations || []).map(
           (loc) => ({
             name: loc.name,
@@ -215,7 +214,6 @@ export default function Page() {
 
       const rawTrips = data.result?.trips || [];
 
-      // --- caches to avoid duplicate API calls ---
       const operatorCache = {};
       const locationCache = {};
 
@@ -339,10 +337,6 @@ export default function Page() {
     return () => clearInterval(interval);
   }, []);
 
-  const getOperatorName = (operatorId) => {
-    const operator = operators.find((op) => op.id === operatorId);
-    return operator?.name;
-  };
 
   // Create datalist options from locations
   const locationNames = locations.map((loc) => loc.name);
@@ -398,7 +392,7 @@ export default function Page() {
                   <div className="flex-1 relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
-                      type="text"
+                      type="date"
                       placeholder="When? (optional)"
                       value={searchDates}
                       onChange={(e) => setSearchDates(e.target.value)}

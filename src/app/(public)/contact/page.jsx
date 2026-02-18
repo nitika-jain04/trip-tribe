@@ -89,51 +89,106 @@ export default function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [errors, setErrors] = useState({});
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+  const validateForm = () => {
+    const newErrors = {};
 
-  try {
-    const response = await fetch(
-      `${BASE_URL}/api/${API_VERSION}/enquiries`,
-      {
+    if (!formData.name.trim()) {
+      newErrors.name = "Full name is required";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Enter a valid email address";
+    }
+
+    if (!formData.subject.trim()) {
+      newErrors.subject = "Subject is required";
+    } else if (formData.subject.trim().length < 5) {
+      newErrors.subject = "Subject must be at least 5 characters";
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = "Message is required";
+    } else if (formData.message.trim().length < 10) {
+      newErrors.message = "Message must be at least 10 characters";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error("Please fix the highlighted errors");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const payload = {
+        full_name: formData.name,
+        email: formData.email,
+        inquiry_type: formData.inquiryType.toUpperCase(),
+        subject: formData.subject,
+        message: formData.message,
+      };
+
+      console.log("req", payload);
+
+      const response = await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          full_name: formData.name,
-          email: formData.email,
-          inquiry_type: formData.inquiryType.toUpperCase(),
-          subject: formData.subject,
-          message: formData.message,
-        }),
-      }
-    );
-
-    const data = await response.json();
-
-    if (response.ok && data.success) {
-      setIsSubmitted(true);
-      toast.success(data.message || "Message sent successfully!");
-      setFormData({
-        name: "",
-        email: "",
-        subject: "",
-        inquiryType: "",
-        message: "",
+        body: JSON.stringify(payload),
       });
-    } else {
-      toast.error(data.message || "Something went wrong. Please try again.");
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setIsSubmitted(true);
+        toast.success(data.message || "Message sent successfully!");
+        setFormData({
+          name: "",
+          email: "",
+          subject: "",
+          inquiryType: "",
+          message: "",
+        });
+      } else {
+        const message = data?.error?.message || "Application failed";
+
+        if (data?.error?.code === "VALIDATION_ERROR") {
+          const apiErrors = {};
+
+          // Smart field detection (you can expand this)
+          if (message.toLowerCase().includes("email")) {
+            apiErrors.email = message;
+          } else if (message.toLowerCase().includes("phone")) {
+            apiErrors.phone = message;
+          }
+
+          setErrors((prev) => ({
+            ...prev,
+            ...apiErrors,
+          }));
+        }
+
+        toast.error(message);
+      }
+    } catch (error) {
+      console.error("Error submitting enquiry:", error);
+      toast.error("Network error. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    console.error("Error submitting enquiry:", error);
-    toast.error("Network error. Please try again later.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+  };
 
   return (
     <>
@@ -228,13 +283,24 @@ const handleSubmit = async (e) => {
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) =>
-                          setFormData({ ...formData, name: e.target.value })
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData({ ...formData, name: value });
+
+                          if (errors.name) {
+                            setErrors((prev) => {
+                              const updated = { ...prev };
+                              delete updated.name;
+                              return updated;
+                            });
+                          }
+                        }}
+                        className={`h-12 rounded-xl ${errors.name ? "border-red-500" : ""}`}
                         placeholder="Your name"
-                        required
-                        className="h-12 rounded-xl"
                       />
+                      {errors.name && (
+                        <p className="text-sm text-red-500">{errors.name}</p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label htmlFor="email">Email Address</Label>
@@ -242,24 +308,43 @@ const handleSubmit = async (e) => {
                         id="email"
                         type="email"
                         value={formData.email}
-                        onChange={(e) =>
-                          setFormData({ ...formData, email: e.target.value })
-                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData({ ...formData, email: value });
+
+                          if (errors.email) {
+                            setErrors((prev) => {
+                              const updated = { ...prev };
+                              delete updated.email;
+                              return updated;
+                            });
+                          }
+                        }}
+                        className={`h-12 rounded-xl ${errors.email ? "border-red-500" : ""}`}
                         placeholder="you@email.com"
-                        required
-                        className="h-12 rounded-xl"
                       />
+                      {errors.email && (
+                        <p className="text-sm text-red-500">{errors.email}</p>
+                      )}
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="inquiryType">Inquiry Type</Label>
                     <Select
-                    required
+                      required
                       value={formData.inquiryType}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, inquiryType: value })
-                      }
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, inquiryType: value });
+
+                        if (errors.inquiryType) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.inquiryType;
+                            return updated;
+                          });
+                        }
+                      }}
                     >
                       <SelectTrigger className="h-12 rounded-xl">
                         <SelectValue placeholder="Select inquiry type" />
@@ -279,13 +364,24 @@ const handleSubmit = async (e) => {
                     <Input
                       id="subject"
                       value={formData.subject}
-                      onChange={(e) =>
-                        setFormData({ ...formData, subject: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, subject: value });
+
+                        if (errors.subject) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.subject;
+                            return updated;
+                          });
+                        }
+                      }}
+                      className={`h-12 rounded-xl ${errors.subject ? "border-red-500" : ""}`}
                       placeholder="How can we help?"
-                      required
-                      className="h-12 rounded-xl"
                     />
+                    {errors.subject && (
+                      <p className="text-sm text-red-500">{errors.subject}</p>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -293,14 +389,25 @@ const handleSubmit = async (e) => {
                     <Textarea
                       id="message"
                       value={formData.message}
-                      onChange={(e) =>
-                        setFormData({ ...formData, message: e.target.value })
-                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, message: value });
+
+                        if (errors.message) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.message;
+                            return updated;
+                          });
+                        }
+                      }}
+                      className={`h-12 rounded-xl ${errors.message ? "border-red-500" : ""}`}
                       placeholder="Tell us more..."
-                      required
                       rows={5}
-                      className="rounded-xl resize-none"
                     />
+                    {errors.message && (
+                      <p className="text-sm text-red-500">{errors.message}</p>
+                    )}
                   </div>
 
                   <Button

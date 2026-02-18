@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 
-import { Button } from "@/app/components/ui/button";
 import {
   MapPin,
   Star,
@@ -15,9 +14,6 @@ import {
   ChevronLeft,
   Check,
   X,
-  ThumbsUp,
-  Share2,
-  Heart,
   Loader2,
 } from "lucide-react";
 
@@ -89,7 +85,10 @@ function TripPage() {
         setTrip({
           id: raw.id,
           name: raw.name,
+          description: raw.description || "",
           image: raw.images?.[0] || "/placeholder.jpg",
+          images: raw.images?.length ? raw.images : ["/placeholder.jpg"],
+          source: source?.result?.name || "Unknown",
           destination: destination?.result?.name || "Unknown",
           region: destination?.result?.region || "",
           provider: {
@@ -161,14 +160,14 @@ function TripPage() {
                 />
               </div>
               <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
+                {trip.images?.map((img, i) => (
+                    <div
                     key={i}
                     className="aspect-square rounded-lg overflow-hidden bg-muted"
                   >
                     <img
-                      src={trip.image}
-                      alt={`${trip.name} ${i}`}
+                      src={img}
+                      alt={`${trip.name}`}
                       className="w-full h-full object-cover opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
                     />
                   </div>
@@ -242,7 +241,7 @@ function TripPage() {
                   <Calendar className="w-5 h-5 text-primary mb-2" />
                   <p className="text-body-sm text-muted-foreground">Duration</p>
                   <p className="font-semibold text-foreground">
-                    {trip.duration}
+                    {trip.duration} days
                   </p>
                 </div>
                 <div className="card-premium p-4">
@@ -365,13 +364,7 @@ function TripPage() {
                       About This Trip
                     </h3>
                     <p className="text-body text-muted-foreground leading-relaxed">
-                      Experience the breathtaking beauty of {trip.destination}{" "}
-                      with {trip.provider.name}. This{" "}
-                      {trip.duration.toLowerCase()} adventure takes you through
-                      some of the most stunning landscapes in {trip.region}.
-                      Perfect for travelers seeking {trip.type.toLowerCase()}{" "}
-                      experiences with a group of {trip.groupSize} like-minded
-                      adventurers.
+                     {trip.description}
                     </p>
                   </div>
                 </div>
@@ -382,6 +375,10 @@ function TripPage() {
                       Trip Details
                     </h4>
                     <dl className="space-y-3 text-body-sm">
+                       <div className="flex justify-between">
+                        <dt className="text-muted-foreground">Source</dt>
+                        <dd className="font-medium">{trip.source}</dd>
+                      </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Destination</dt>
                         <dd className="font-medium">{trip.destination}</dd>
@@ -392,7 +389,7 @@ function TripPage() {
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Duration</dt>
-                        <dd className="font-medium">{trip.duration}</dd>
+                        <dd className="font-medium">{trip.duration} days</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Difficulty</dt>
