@@ -45,12 +45,9 @@ export function Navbar() {
               alt="TripTribe"
               className="h-10 w-10 rounded-lg transition-transform duration-300 group-hover:scale-105"
             />
-            {/* <span
-              className={`font-display text-xl font-semibold transition-colors ${
-                isScrolled ? "text-foreground" : "text-background"
-              }`}
-            > */}
-            <span className="font-display text-xl font-semibold transition-colors text-foreground">
+            <span
+              className={`font-display text-xl font-semibold transition-colors ${pathname === "/" ? "text-white" : "text-foreground"}`}
+            >
               TripTribe
             </span>
           </Link>
@@ -88,14 +85,16 @@ export function Navbar() {
             //     ? "text-foreground hover:bg-muted"
             //     : "text-background hover:bg-background/10"
             // }`}
-            className="md:hidden p-2 rounded-lg transition-colors text-foreground hover:bg-muted"
+            className="md:hidden p-2 rounded-lg transition-colors text-foreground hover:bg-primary"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
               <X className="w-6 h-6" />
             ) : (
-              <Menu className="w-6 h-6" />
+              <Menu
+                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" ? "text-white" : "text-foreground hover:text-white"}`}
+              />
             )}
           </button>
         </div>
