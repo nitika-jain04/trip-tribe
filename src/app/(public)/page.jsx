@@ -389,10 +389,21 @@ export default function Page() {
                   </div>
                   <div className="flex-1 relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input
+                    {/* <Input
                       type="date"
                       placeholder="When? (optional)"
                       value={searchDates}
+                      onChange={(e) => setSearchDates(e.target.value)}
+                      className="pl-12 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
+                    /> */}
+                    <Input
+                      type={searchDates ? "date" : "text"}
+                      placeholder="When? (optional)"
+                      value={searchDates}
+                      onFocus={(e) => (e.target.type = "date")}
+                      onBlur={(e) => {
+                        if (!e.target.value) e.target.type = "text";
+                      }}
                       onChange={(e) => setSearchDates(e.target.value)}
                       className="pl-12 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
