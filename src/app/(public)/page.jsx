@@ -25,12 +25,6 @@ import {
   ImageIcon,
 } from "lucide-react";
 
-<<<<<<< HEAD
-=======
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
-
->>>>>>> 259a3b9ddc4a6c82c79bfb23eaf56d41c6a26c74
 const stats = [
   { value: "200+", label: "Curated Trips" },
   { value: "50+", label: "Verified Providers" },
