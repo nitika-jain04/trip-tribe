@@ -173,7 +173,7 @@ export default function About() {
               <h3 className="font-display text-heading-lg text-foreground mb-4">
                 Our Mission
               </h3>
-              <p className="text-body-lg text-muted-foreground">
+              <p className="text-body md:text-body-lg text-muted-foreground">
                 To be India&apos;s most trusted aggregator for community travel.
                 We help travelers discover, compare, and book group trips from
                 verified providers with complete transparency.
@@ -186,7 +186,7 @@ export default function About() {
               <h3 className="font-display text-heading-lg text-foreground mb-4">
                 Our Vision
               </h3>
-              <p className="text-body-lg text-muted-foreground">
+              <p className="text-body md:text-body-lg text-muted-foreground">
                 A world where finding your perfect community trip is as easy as
                 searching for a flight. Where every traveler has access to
                 authentic group experiences from trusted organizers.
@@ -295,7 +295,7 @@ export default function About() {
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-display text-heading-lg text-foreground mb-1">
+                  <h3 className="font-display text-body-lg text-foreground mb-1">
                     {member.name}
                   </h3>
                   <p className="text-body-sm text-primary font-medium mb-2">

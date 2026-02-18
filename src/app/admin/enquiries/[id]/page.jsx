@@ -8,10 +8,10 @@ import {
   Mail,
   Phone,
   Calendar,
-  MapPin,
   User,
   MessageSquare,
   Save,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -36,8 +36,7 @@ import Cookies from "js-cookie";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-export default function EnquiryDetail({ params }) {
-  const router = useRouter();
+export default function EnquiryDetail() {
   const { toast } = useToast();
   const { id } = useParams();
 
@@ -84,15 +83,77 @@ export default function EnquiryDetail({ params }) {
     fetchEnquiry();
   }, [id]);
 
-  const handleSave = () => {
-    toast({
-      title: "Enquiry Updated",
-      description: "The enquiry has been updated successfully.",
-    });
+  const handleSave = async () => {
+    const token = Cookies.get("token");
+    if (!enquiry) return;
+
+    try {
+      setLoading(true); // optional: disable inputs while saving
+
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${enquiry.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            status: status.toUpperCase(), // ensure API gets "IN_PROGRESS", "NEW", etc.
+            admin_notes: adminNotes,
+          }),
+        },
+      );
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData?.message || "Failed to update enquiry");
+      }
+
+      const updatedData = await res.json();
+
+      // update local state with latest data from server
+      setEnquiry(updatedData.result || updatedData);
+
+      toast({
+        title: "Enquiry Updated",
+        description: "The enquiry has been updated successfully.",
+      });
+    } catch (err) {
+      console.error("Error updating enquiry:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
-    return <p className="text-center py-12">Loading enquiry...</p>;
+    return (
+      <div className="p-6 bg-gray-50 min-h-screen">
+        <Link
+          href="/admin/enquiries"
+          className="inline-flex items-center gap-2 text-sm font-medium mb-6"
+        >
+          <ArrowLeft size={25} />
+          Back to Enquiries
+        </Link>
+        <div className="">
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">
+              Loading enquiry details...
+            </p>
+            <p className="text-sm text-gray-400 mt-1">
+              Please wait while we fetch the data
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!enquiry) {
@@ -197,13 +258,13 @@ export default function EnquiryDetail({ params }) {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={setStatus} disabled={loading}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="new">New</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="closed">Closed</SelectItem>
               </SelectContent>
             </Select>
@@ -215,11 +276,12 @@ export default function EnquiryDetail({ params }) {
               onChange={(e) => setAdminNotes(e.target.value)}
               placeholder="Add internal notes about this enquiry..."
               rows={4}
+              disabled={loading}
             />
           </div>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={loading}>
             <Save className="h-4 w-4 mr-2" />
-            Save Changes
+            {loading ? "Saving..." : "Save Changes"}
           </Button>
         </CardContent>
       </Card>

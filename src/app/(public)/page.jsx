@@ -359,7 +359,7 @@ export default function Page() {
 
         <div className="container-premium relative z-10 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-display text-display-sm md:text-display-xl lg:text-heading-2xl md:leading-20 text-background mb-6 mt-10 animate-fade-up">
+            <h1 className="font-display text-display-sm md:text-display-xl lg:text-heading-2xl md:leading-20 lg:leading-24 text-background mb-6 mt-10 animate-fade-up">
               Find your tribe.
               <span className="block">Travel together.</span>
             </h1>
@@ -483,7 +483,7 @@ export default function Page() {
               One Platform to Compare and Choose{" "}
               <span className="text-gradient">Group Trips</span>
             </h2>
-            <p className="text-body-lg text-muted-foreground">
+            <p className="text-body md:text-body-lg text-muted-foreground">
               We curate group trips from verified providers and enable clear
               comparisons, so you can choose the right trip with confidence.
             </p>
@@ -498,7 +498,7 @@ export default function Page() {
                 <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 transition-all duration-300 group-hover:bg-primary group-hover:shadow-glow">
                   <feature.icon className="w-7 h-7 text-primary group-hover:text-primary-foreground transition-colors" />
                 </div>
-                <h3 className="font-display text-heading-lg text-foreground mb-3">
+                <h3 className="font-display text-heading-lg text-foreground mb-3 max-h-20 min-h-[18]">
                   {feature.title}
                 </h3>
                 <p className="text-body text-muted-foreground">
@@ -528,7 +528,7 @@ export default function Page() {
             {steps.map((step) => (
               <div key={step.number} className="relative">
                 <div className="card-premium p-8 relative z-10">
-                  <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-display text-heading mb-6">
+                  <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center font-display text-heading-lg mb-6">
                     {step.number}
                   </div>
                   <h3 className="font-display text-heading-lg text-foreground mb-3">
@@ -552,7 +552,7 @@ export default function Page() {
               <p className="text-body font-medium text-primary uppercase tracking-wider mb-4">
                 Featured Trips
               </p>
-              <h2 className="font-display text-display text-foreground">
+              <h2 className="font-display text-heading-lg md:text-display text-foreground">
                 Popular Group Trips
               </h2>
             </div>
@@ -685,7 +685,7 @@ export default function Page() {
               <p className="text-body font-medium text-primary uppercase tracking-wider mb-4">
                 Popular Destinations
               </p>
-              <h2 className="font-display text-display text-foreground">
+              <h2 className="font-display text-heading-lg md:text-display text-foreground">
                 Explore Incredible India
               </h2>
             </div>
@@ -760,7 +760,7 @@ export default function Page() {
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="font-display text-heading-lg text-background mb-1">
+                    <h3 className="font-display text-heading-sm md:text-heading-lg text-background mb-1">
                       {location.name}, {location.region}
                     </h3>
                     <p className="text-body-sm text-background/70">
@@ -846,7 +846,7 @@ export default function Page() {
 
           {/* Providers Grid */}
           {!loadingOperators && operators.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-8">
+            <div className="flex flex-wrap items-center justify-center gap-5 md:gap-8">
               {operators.slice(0, 6).map((provider) => (
                 <div
                   key={provider.id}

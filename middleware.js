@@ -1,35 +1,3 @@
-// import { NextResponse } from "next/server";
-// import jwt from "jsonwebtoken";
-
-// export function middleware(request) {
-//   const token = request.cookies.get("token")?.value;
-//   const { pathname } = request.nextUrl;
-
-//   // 🔒 Protect admin routes
-//   if (pathname.startsWith("/admin")) {
-//     if (!token) {
-//       return NextResponse.redirect(new URL("/login", request.url));
-//     }
-
-//     try {
-//       const decoded = jwt.decode(token);
-//       const role = decoded?.role;
-
-//       if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
-//         return NextResponse.redirect(new URL("/unauthorized", request.url));
-//       }
-//     } catch (error) {
-//       return NextResponse.redirect(new URL("/login", request.url));
-//     }
-//   }
-
-//   return NextResponse.next();
-// }
-
-// export const config = {
-//   matcher: ["/admin/:path*"],
-// };
-
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 
@@ -37,21 +5,26 @@ export function middleware(request) {
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/admin")) {
-    if (!token) {
+  if (pathname === "/login") {
+    return NextResponse.next();
+  }
+
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  try {
+    const decoded = jwt.decode(token);
+
+    if (
+      !decoded ||
+      decoded.exp * 1000 < Date.now() ||
+      !["ADMIN", "SUPER_ADMIN"].includes(decoded.role)
+    ) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
-
-    try {
-      const decoded = jwt.decode(token);
-      const role = decoded?.role;
-
-      if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
-        return NextResponse.redirect(new URL("/unauthorized", request.url));
-      }
-    } catch {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
+  } catch {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();

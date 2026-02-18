@@ -41,6 +41,8 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Cookies from "js-cookie";
+import { useToast } from "@/app/hooks/use-toast";
+import { IoClose, IoCloseCircle } from "react-icons/io5";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -51,6 +53,8 @@ function Enquiries() {
   const [enquiries, setEnquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { toast } = useToast();
 
   const fetchEnquiries = async () => {
     const token = Cookies.get("token");
@@ -106,6 +110,84 @@ function Enquiries() {
       statusFilter === "all" || enquiry.status?.toLowerCase() === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleDelete = async (id) => {
+    const token = Cookies.get("token");
+    if (!token) return;
+
+    if (!confirm("Are you sure you want to delete this enquiry?")) return;
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData?.message || "Failed to delete enquiry");
+      }
+
+      setEnquiries((prev) => prev.filter((enq) => enq.id !== id));
+      toast({
+        title: "Enquiry Deleted",
+        description: "Enquiry deleted successfully",
+      });
+    } catch (err) {
+      console.error("Error deleting enquiry:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to delete enquiry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCloseEnquiry = async (id) => {
+    const token = Cookies.get("token");
+    if (!token) return;
+
+    if (!confirm("Are you sure you want to close this enquiry?")) return;
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: "CLOSED" }),
+        },
+      );
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData?.message || "Failed to close enquiry");
+      }
+
+      setEnquiries((prev) =>
+        prev.map((enq) => (enq.id === id ? { ...enq, status: "closed" } : enq)),
+      );
+      toast({
+        title: "Enquiry Closed",
+        description: "Enquiry closed successfully",
+      });
+    } catch (err) {
+      console.error("Error closing enquiry:", err);
+      toast({
+        title: "Error",
+        description: err.message || "Failed to close enquiry",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Loading State
   if (loading) {
@@ -276,33 +358,33 @@ function Enquiries() {
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by traveller, subject, or email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* <Card> */}
+      <CardContent className="">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by traveller, subject, or email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
           </div>
-        </CardContent>
-      </Card>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+      {/* </Card> */}
 
       {/* Enquiries Table */}
       <Card>
@@ -332,7 +414,10 @@ function Enquiries() {
                   <TableCell className="font-medium">
                     {enquiry.subject}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">
+                  <TableCell
+                    className="text-muted-foreground max-w-37.5 overflow-hidden text-ellipsis cursor-pointer"
+                    title={enquiry.email}
+                  >
                     {enquiry.email}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
@@ -357,6 +442,22 @@ function Enquiries() {
                             <Eye className="h-4 w-4" />
                             View Details
                           </Link>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="flex items-center gap-2 text-red-600 hover:text-red-700"
+                          onClick={() => handleDelete(enquiry.id)}
+                        >
+                          <Inbox className="h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          className="flex items-center gap-2 hover:text-red-700"
+                          onClick={() => handleCloseEnquiry(enquiry.id)}
+                        >
+                          <IoClose className="h-4 w-4" />
+                          Mark as Closed
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

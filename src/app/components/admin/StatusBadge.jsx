@@ -36,8 +36,8 @@ const statusConfig = {
     label: "New",
     className: "bg-primary/10 text-primary border-primary/20",
   },
-  "in-progress": {
-    label: "In Progress",
+  in_progress: {
+    label: "In-Progress",
     className: "bg-warning/10 text-warning border-warning/20",
   },
   closed: {
