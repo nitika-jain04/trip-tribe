@@ -90,24 +90,50 @@ export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsSubmitting(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsSubmitting(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/${API_VERSION}/enquiries`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: formData.name,
+          email: formData.email,
+          inquiry_type: formData.inquiryType.toUpperCase(),
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      }
+    );
 
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      setIsSubmitted(true);
+      toast.success(data.message || "Message sent successfully!");
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        inquiryType: "",
+        message: "",
+      });
+    } else {
+      toast.error(data.message || "Something went wrong. Please try again.");
+    }
+  } catch (error) {
+    console.error("Error submitting enquiry:", error);
+    toast.error("Network error. Please try again later.");
+  } finally {
     setIsSubmitting(false);
-    setIsSubmitted(true);
-    toast.success("Message sent successfully! We'll get back to you soon.");
-
-    setFormData({
-      name: "",
-      email: "",
-      subject: "",
-      inquiryType: "",
-      message: "",
-    });
-  };
+  }
+};
 
   return (
     <>
@@ -229,6 +255,7 @@ export default function Contact() {
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="inquiryType">Inquiry Type</Label>
                     <Select
+                    required
                       value={formData.inquiryType}
                       onValueChange={(value) =>
                         setFormData({ ...formData, inquiryType: value })

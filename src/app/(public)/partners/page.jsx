@@ -92,9 +92,10 @@ const stats = [
   { value: "4.8", label: "Partner Satisfaction" },
 ];
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
 export default function Partner() {
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
   const [formData, setFormData] = useState({
     companyName: "",
@@ -114,10 +115,6 @@ export default function Partner() {
     setIsSubmitting(true);
 
     try {
-      // Get token from cookies/localStorage if using auth
-      const token = Cookies.get("token");
-
-      // Prepare payload in backend-required format
       const payload = {
         name: formData.companyName,
         contact_name: formData.contactName,
@@ -125,7 +122,7 @@ export default function Partner() {
         phone_number: formData.phone,
         website_url: formData.website,
         trips_per_year: Number(formData.tripCount) || 0,
-        regions: formData.regions.split(",").map((r) => r.trim()), // convert comma-separated string to array
+        regions: formData.regions.split(",").map((r) => r.trim()), 
         business_description: formData.about,
       };
 
@@ -135,7 +132,6 @@ export default function Partner() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // send token if required
           },
           body: JSON.stringify(payload),
         },
