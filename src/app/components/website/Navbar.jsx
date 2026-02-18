@@ -46,7 +46,7 @@ export function Navbar() {
               className="h-10 w-10 rounded-lg transition-transform duration-300 group-hover:scale-105"
             />
             <span
-              className={`font-display text-xl font-semibold transition-colors ${pathname === "/" ? "text-white" : "text-foreground"}`}
+              className={`font-display text-xl font-semibold transition-colors ${pathname === "/" && !isScrolled ? "text-white" : "text-foreground"}`}
             >
               TripTribe
             </span>
@@ -85,17 +85,21 @@ export function Navbar() {
             //     ? "text-foreground hover:bg-muted"
             //     : "text-background hover:bg-background/10"
             // }`}
-            className="md:hidden p-2 rounded-lg transition-colors text-foreground hover:bg-primary"
+            className={`md:hidden p-2 rounded-lg transition-colors text-foreground hover:bg-primary ${
+              isScrolled
+                ? "text-foreground hover:bg-muted"
+                : "text-background hover:bg-background/10"
+            }`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? (
               <X
-                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" ? "text-white" : "text-foreground hover:text-white"}`}
+                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" && !isScrolled ? "text-white" : "text-foreground hover:text-white"}`}
               />
             ) : (
               <Menu
-                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" ? "text-white" : "text-foreground hover:text-white"}`}
+                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" && !isScrolled ? "text-white" : "text-foreground hover:text-white"}`}
               />
             )}
           </button>
