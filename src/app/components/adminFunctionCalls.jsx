@@ -1,3 +1,4 @@
+// Format date function
 export function Button({ label, fnClose, bool }) {
   return (
     <button
@@ -9,7 +10,6 @@ export function Button({ label, fnClose, bool }) {
   );
 }
 
-// Format date function
 export const formatDate = (dateString) => {
   if (!dateString) return "N/A";
 

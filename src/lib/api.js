@@ -1,7 +1,8 @@
 import { jwtDecode } from "jwt-decode";
+import Cookies from "js-cookie";
 
 export const apiFetch = async (url, options = {}) => {
-  const token = localStorage.getItem("token");
+  const token = Cookies.get("token");
 
   // 🔐 Token missing
   if (!token) {
@@ -47,6 +48,6 @@ export const apiFetch = async (url, options = {}) => {
 };
 
 const logout = () => {
-  localStorage.removeItem("token");
-  window.location.replace("/");
+  Cookies.remove("token", { path: "/" });
+  // window.location.replace("/");
 };

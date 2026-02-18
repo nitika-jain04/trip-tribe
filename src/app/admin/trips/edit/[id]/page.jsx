@@ -3,14 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  LoaderCircleIcon,
-  Save,
-  ArrowLeft,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
-import { Button } from "@/app/components/ui/button";
+import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import Cookies from "js-cookie";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -22,16 +16,21 @@ export default function TripEditPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
   // Fetch trip
   useEffect(() => {
     const fetchTrip = async () => {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       setError("");
 
       try {
         const res = await fetch(
-          `https://trip-tribe-backend.onrender.com/api/v1/trips/admin/${id}`,
-          { headers: { Authorization: `Bearer ${token}` } },
+          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
         );
 
         const data = await res.json();
@@ -94,7 +93,7 @@ export default function TripEditPage() {
     setSaving(true);
     setError("");
 
-    const token = localStorage.getItem("token");
+    const token = Cookies.get("token");
 
     const requestBody = {};
     Object.keys(formData).forEach((key) => {
@@ -111,7 +110,7 @@ export default function TripEditPage() {
 
     try {
       const res = await fetch(
-        `https://trip-tribe-backend.onrender.com/api/v1/trips/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
         {
           method: "PUT",
           headers: {

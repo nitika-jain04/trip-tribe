@@ -40,7 +40,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import { api_version, base_url } from "@/lib/utils";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function TripsContent() {
   const searchParams = useSearchParams();
@@ -66,7 +68,7 @@ function TripsContent() {
   async function getPublishedTrips() {
     try {
       const res = await fetch(
-        `${base_url}/api/${api_version}/trips?page=1&limit=10`,
+        `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`,
       );
 
       if (!res.ok) throw new Error("Failed to fetch trips");
@@ -88,7 +90,7 @@ function TripsContent() {
 
         try {
           const res = await fetch(
-            `${base_url}/api/${api_version}/operators/${id}`,
+            `${BASE_URL}/api/${API_VERSION}/operators/${id}`,
           );
           const data = await res.json();
 
@@ -106,7 +108,7 @@ function TripsContent() {
 
         try {
           const res = await fetch(
-            `${base_url}/api/${api_version}/locations/${id}`,
+            `${BASE_URL}/api/${API_VERSION}/locations/${id}`,
           );
           const data = await res.json();
 
@@ -307,7 +309,8 @@ function TripsContent() {
               Explore Community Trips
             </h1>
             <p className="text-body-lg text-muted-foreground">
-              {filteredTrips.length} trips from verified providers
+              {filteredTrips.length > 0 &&
+                `${filteredTrips.length} ${filteredTrips.length === 1 ? "trip" : "trips"} from verified providers`}
             </p>
           </div>
 

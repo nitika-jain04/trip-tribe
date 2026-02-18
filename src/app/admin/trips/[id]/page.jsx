@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Calendar,
-  LoaderCircleIcon,
   MapPin,
   IndianRupee,
   User,
@@ -17,6 +16,7 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { MdChairAlt } from "react-icons/md";
+import Cookies from "js-cookie";
 
 export default function TripDetail() {
   const [trip, setTrip] = useState(null);
@@ -29,14 +29,14 @@ export default function TripDetail() {
 
   useEffect(() => {
     const fetchTripAndRelated = async () => {
-      const token = localStorage.getItem("token");
+      const token = Cookies.get("token");
       setLoading(true);
       setError(null);
 
       try {
         // Fetch trip
         const tripRes = await fetch(
-          `https://trip-tribe-backend.onrender.com/api/v1/trips/admin/${id}`,
+          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           },
@@ -56,7 +56,7 @@ export default function TripDetail() {
         if (tripResult.operator_id) {
           requests.push(
             fetch(
-              `https://trip-tribe-backend.onrender.com/api/v1/operators/admin/${tripResult.operator_id}`,
+              `${BASE_URL}/api/${API_VERSION}/operators/admin/${tripResult.operator_id}`,
               { headers: { Authorization: `Bearer ${token}` } },
             ).then((r) => r.json()),
           );
@@ -65,7 +65,7 @@ export default function TripDetail() {
         if (tripResult.source_id) {
           requests.push(
             fetch(
-              `https://trip-tribe-backend.onrender.com/api/v1/locations/admin/${tripResult.source_id}`,
+              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.source_id}`,
               { headers: { Authorization: `Bearer ${token}` } },
             ).then((r) => r.json()),
           );
@@ -74,7 +74,7 @@ export default function TripDetail() {
         if (tripResult.destination_id) {
           requests.push(
             fetch(
-              `https://trip-tribe-backend.onrender.com/api/v1/locations/admin/${tripResult.destination_id}`,
+              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.destination_id}`,
               { headers: { Authorization: `Bearer ${token}` } },
             ).then((r) => r.json()),
           );
