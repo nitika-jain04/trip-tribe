@@ -7,8 +7,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 import {
   ArrowRight,
@@ -24,6 +22,11 @@ import {
   AlertCircle,
   ImageIcon,
 } from "lucide-react";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+console.log(BASE_URL, API_VERSION);
 
 const stats = [
   { value: "200+", label: "Curated Trips" },
