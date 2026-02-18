@@ -29,7 +29,7 @@ function page() {
   ];
 
   return (
-    <div className="px-5 md:px-10 xl:px-28 py-24 flex flex-col gap-12">
+    <div className="px-5 md:px-8 lg:px-24 xl:px-28 2xl:px-36 py-24 flex flex-col gap-12">
       <div className="flex flex-col gap-4 md:gap-6">
         <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
           Privacy Policy

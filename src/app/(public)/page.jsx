@@ -12,7 +12,6 @@ import {
   Search,
   Shield,
   MapPin,
-  Star,
   ChevronRight,
   Calendar,
   GitCompare,
@@ -21,17 +20,23 @@ import {
   AlertCircle,
   ImageIcon,
 } from "lucide-react";
+import { Libre_Baskerville } from "next/font/google";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const baskerville = Libre_Baskerville({
+  weight: ["400", "700"],
+  subsets: ["latin"],
+});
+
 console.log(BASE_URL, API_VERSION);
 
 const stats = [
-  { value: "200+", label: "Curated Trips" },
-  { value: "50+", label: "Verified Providers" },
-  { value: "25K+", label: "Happy Travelers" },
-  { value: "4.8", label: "Average Rating" },
+  { value: "20+", label: "Curated Trips" },
+  { value: "10+", label: "Verified Providers" },
+  // { value: "25K+", label: "Happy Travelers" },
+  // { value: "4.8", label: "Average Rating" },
 ];
 
 const features = [
@@ -354,13 +359,18 @@ export default function Page() {
 
         <div className="container-premium relative z-10 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-display text-display-sm sm:text-display-lg md:text-display-xl lg:text-heading md:leading-20 text-background mb-6 mt-10 animate-fade-up">
+            <h1 className="font-display text-display-sm md:text-display-xl lg:text-heading-2xl md:leading-20 text-background mb-6 mt-10 animate-fade-up">
               Find your tribe.
               <span className="block">Travel together.</span>
             </h1>
             <p className="text-body-sm sm:text-body-lg md:text-xl text-background/90 max-w-2xl mx-auto mb-10 animate-fade-up delay-100">
-              Explore curated group trips. Compare price, duration, and vibe.
-              <span className="block">
+              Explore curated group trips.
+              <span className="block md:inline">
+                {" "}
+                Compare price, duration, and vibe.
+              </span>
+              <span className="block md:inline">
+                {" "}
                 Book directly with trusted operators.
               </span>
             </p>
@@ -436,20 +446,21 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-          {/* <div className="w-8 h-12 rounded-full border-2 border-background/30 flex items-start justify-center p-2">
-            <div className="w-1.5 h-3 bg-background/50 rounded-full" />
-            </div> */}
-        </div>
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce"></div>
       </section>
 
       {/* Stats Section */}
       <section className="py-12 bg-hite">
         <div className="container-premium">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 justify-center items-center md:px-40">
             {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="font-display text-display text-primary mb-1">
+              <div
+                key={stat.label}
+                className="flex flex-col items-center justify-center text-center"
+              >
+                <p
+                  className={`text-display text-primary ${baskerville.className}`}
+                >
                   {stat.value}
                 </p>
                 <p className="text-body-sm text-muted-foreground">

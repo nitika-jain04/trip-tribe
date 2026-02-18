@@ -184,9 +184,9 @@
   /* Custom font sizes for your design system */
   --text-body-sm: var(--text-sm);
   --text-body: var(--text-base);
-  --text-body-lg: var(--text-lg);
+  --text-body-lg: var(--text-xl);
   --text-heading-sm: var(--text-xl);
-  --text-heading: var(--text-2xl);
+  --text-heading-2xl: var(--text-7xl);
   --text-heading-lg: var(--text-3xl);
   --text-display-sm: var(--text-4xl);
   --text-display: var(--text-5xl);
@@ -482,7 +482,7 @@
   font-size: var(--text-heading-lg);
 }
 
-.text-display-sm {
+/* .text-display-sm {
   font-size: var(--text-display-sm);
 }
 
@@ -500,7 +500,7 @@
 
 .text-display-2xl {
   font-size: var(--text-display-2xl);
-}
+} */
 
 #root {
   max-width: 1280px;

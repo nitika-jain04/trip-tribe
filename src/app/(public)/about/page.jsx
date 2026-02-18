@@ -43,42 +43,40 @@ const team = [
   {
     name: "Depane Rao",
     role: "Co-founder & CEO",
-    image:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80",
-    bio: "Former consultant turned travel entrepreneur. Believes in the power of group travel.",
+    image: "/about_ceo.jpg",
+    bio: "Adventure enthusiast with a background in technology, passionate about making travel accessible to everyone.",
   },
   {
     name: "Akash Kashyap",
-    role: "Co-founder & CTO",
-    image:
-      "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80",
-    bio: "Tech veteran building tools that help travelers discover authentic experiences.",
+    role: "CFO",
+    image: "/about_cfo.jpg",
+    bio: "Consultant with 6 years of experience and a travel veteran, building TripTribe to help travelers discover and confidently choose authentic, community-led group experiences.",
   },
 ];
 
 const milestones = [
   {
-    year: "2022",
+    year: "2025",
     title: "Founded",
     description:
       "TripTribe was born to solve the fragmented community travel discovery problem.",
   },
   {
-    year: "2023",
-    title: "First 25 Partners",
-    description: "Onboarded our first 25 verified community trip providers.",
+    year: "2026",
+    title: "First 10 Partners",
+    description: "Onboarded our first 10 verified community trip providers.",
   },
-  {
-    year: "2023",
-    title: "10,000 Users",
-    description:
-      "Crossed the milestone of 10,000 travelers using our platform.",
-  },
-  {
-    year: "2024",
-    title: "Comparison Launch",
-    description: "Launched our side-by-side trip comparison feature.",
-  },
+  // {
+  //   year: "2023",
+  //   title: "10,000 Users",
+  //   description:
+  //     "Crossed the milestone of 10,000 travelers using our platform.",
+  // },
+  // {
+  //   year: "2024",
+  //   title: "Comparison Launch",
+  //   description: "Launched our side-by-side trip comparison feature.",
+  // },
 ];
 
 export default function About() {
@@ -141,7 +139,7 @@ export default function About() {
               </div>
             </div>
             <div className="relative">
-              <div className="aspect-[4/3] rounded-3xl overflow-hidden shadow-premium-lg">
+              <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-premium-lg">
                 <img
                   src="https://images.unsplash.com/photo-1522199710521-72d69614c702?w=800&q=80"
                   alt="Group travel"
@@ -297,7 +295,7 @@ export default function About() {
                   />
                 </div>
                 <div className="p-6">
-                  <h3 className="font-display text-heading text-foreground mb-1">
+                  <h3 className="font-display text-body-lg text-foreground mb-1">
                     {member.name}
                   </h3>
                   <p className="text-body-sm text-primary font-medium mb-2">

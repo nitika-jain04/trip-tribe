@@ -49,7 +49,7 @@ export default function OperatorEditPage() {
             email: data.result.email || "",
             phone_number: data.result.phone_number || "",
             contact_name: data.result.contact_name || "",
-            description: data.result.description || "",
+            description: data.result.business_description || "",
             website_url: data.result.website_url || "",
             logo_url: data.result.logo_url || "",
             status: data.result.status || "",

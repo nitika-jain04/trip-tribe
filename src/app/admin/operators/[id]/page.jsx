@@ -217,7 +217,7 @@ export default function OperatorDetail() {
           </div> */}
 
           <div className="text-muted-foreground">
-            {operator.description || "No description provided"}
+            {operator.business_description || "No description provided"}
           </div>
 
           <div className="flex flex-wrap justify-between text-sm text-muted-foreground pt-2">

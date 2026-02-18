@@ -406,23 +406,23 @@ function Page() {
                       icon: <LiaEditSolid size={18} />,
                       onClick: () => handleEditOperator(operator),
                     },
-                    {
-                      label:
-                        operator.status === "SUSPENDED"
-                          ? "Reactivate"
-                          : "Suspend",
-                      value:
-                        operator.status === "SUSPENDED"
-                          ? "Reactivate"
-                          : "Suspend",
-                      icon: <LuCircleCheckBig size={18} />,
-                      onClick: () => {
-                        // Handle suspend/reactivate
-                        console.log(
-                          `${operator.status === "SUSPENDED" ? "Reactivate" : "Suspend"} clicked`,
-                        );
-                      },
-                    },
+                    // {
+                    //   label:
+                    //     operator.status === "SUSPENDED"
+                    //       ? "Reactivate"
+                    //       : "Suspend",
+                    //   value:
+                    //     operator.status === "SUSPENDED"
+                    //       ? "Reactivate"
+                    //       : "Suspend",
+                    //   icon: <LuCircleCheckBig size={18} />,
+                    //   onClick: () => {
+                    //     // Handle suspend/reactivate
+                    //     console.log(
+                    //       `${operator.status === "SUSPENDED" ? "Reactivate" : "Suspend"} clicked`,
+                    //     );
+                    //   },
+                    // },
                   ]}
                 />
               </div>

@@ -284,7 +284,7 @@ export default function Partner() {
       </section>
 
       {/* Stats */}
-      <section className="py-16 bg-foreground text-background">
+      {/* <section className="py-16 bg-foreground text-background">
         <div className="container-premium">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat) => (
@@ -297,7 +297,7 @@ export default function Partner() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Benefits */}
       <section className="section bg-background">
