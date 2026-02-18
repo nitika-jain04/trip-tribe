@@ -484,9 +484,9 @@ export default function Contact() {
               TripTribe HQ
             </h3>
             <p className="text-body text-muted-foreground">
-              Koramangala, Gurugram
+              Gurugram
               <br />
-              Karnataka 560034, India
+              Haryana, India
             </p>
           </div>
         </div>

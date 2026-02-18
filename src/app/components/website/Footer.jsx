@@ -80,7 +80,7 @@ export function Footer() {
                 className="flex items-center gap-3 text-background/60 hover:text-primary transition-colors"
               >
                 <Phone className="w-4 h-4" />
-                +91 98765 43210
+                +91 8800590295
               </a>
               <span className="flex items-center gap-3 text-background/60">
                 <MapPin className="w-4 h-4" />
