@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 
-
 import {
   ArrowRight,
   Search,
@@ -337,7 +336,6 @@ export default function Page() {
     return () => clearInterval(interval);
   }, []);
 
-
   // Create datalist options from locations
   const locationNames = locations.map((loc) => loc.name);
 
@@ -356,11 +354,11 @@ export default function Page() {
 
         <div className="container-premium relative z-10 text-center">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-display text-display-lg md:text-display-xl lg:text-heading leading-20 text-background mb-6 mt-10 animate-fade-up">
+            <h1 className="font-display text-display-sm sm:text-display-lg md:text-display-xl lg:text-heading md:leading-20 text-background mb-6 mt-10 animate-fade-up">
               Find your tribe.
               <span className="block">Travel together.</span>
             </h1>
-            <p className="text-body-lg md:text-xl text-background/90 max-w-2xl mx-auto mb-10 animate-fade-up delay-100">
+            <p className="text-body-sm sm:text-body-lg md:text-xl text-background/90 max-w-2xl mx-auto mb-10 animate-fade-up delay-100">
               Explore curated group trips. Compare price, duration, and vibe.
               <span className="block">
                 Book directly with trusted operators.
@@ -371,7 +369,7 @@ export default function Page() {
               onSubmit={handleSearch}
               className="max-w-3xl mx-auto animate-fade-up delay-150"
             >
-              <div className="bg-background/95 backdrop-blur-md rounded-2xl p-3 md:p-4 shadow-2xl">
+              <div className="bg-background/95 backdrop-blur-lg rounded-2xl p-3 md:p-4 shadow-2xl">
                 <div className="flex flex-col md:flex-row gap-3">
                   <div className="flex-1 relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -410,7 +408,7 @@ export default function Page() {
               </div>
             </form>
 
-            <div className="flex flex-wrap items-center gap-6 justify-center mt-8 animate-fade-up delay-200">
+            <div className="flex flex-wrap items-center gap-5 md:gap-6 justify-center mt-8 animate-fade-up delay-200">
               <div className="flex items-center gap-2 text-body-sm text-background/80">
                 <CheckCircle2 className="w-5 h-5 text-success" /> Verified
                 Providers
