@@ -18,6 +18,9 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { MdChairAlt } from "react-icons/md";
 import Cookies from "js-cookie";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
 export default function TripDetail() {
   const [trip, setTrip] = useState(null);
   const [operator, setOperator] = useState(null);

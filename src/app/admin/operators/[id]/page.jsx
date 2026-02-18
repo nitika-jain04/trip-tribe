@@ -16,6 +16,9 @@ import {
 import { Button } from "@/app/components/ui/button";
 import Cookies from "js-cookie";
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
 export default function OperatorDetail() {
   const [operator, setOperator] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -43,9 +46,6 @@ export default function OperatorDetail() {
 
     return `+${cleaned}`; // fallback
   };
-
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
   useEffect(() => {
     const fetchOperator = async () => {

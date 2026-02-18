@@ -7,8 +7,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import { CiSearch } from "react-icons/ci";
 import { LiaEditSolid } from "react-icons/lia";
 import { LuEye } from "react-icons/lu";
-import { SlLocationPin, SlOptions } from "react-icons/sl";
-import { Button, formatDateRange } from "@/app/components/adminFunctionCalls";
+// import { SlLocationPin, SlOptions } from "react-icons/sl";
+import { Button as AdminButton } from "@/app/components/adminFunctionCalls";
 import { IoCloseSharp } from "react-icons/io5";
 import { FaPlus, FaTrash, FaMapMarkedAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,31 @@ import { IndianRupeeIcon, Loader2, AlertCircle, MapPin } from "lucide-react";
 import Cookies from "js-cookie";
 import dynamic from "next/dynamic";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
+import { Button } from "@/app/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+
+import { MoreHorizontal } from "lucide-react";
 
 // Dynamically import map components to avoid SSR issues
 const MapPicker = dynamic(() => import("@/app/components/MapPickerTrip"), {
@@ -168,7 +193,9 @@ function Page() {
           </div>
 
           <div>
-            <Button label="Add Trip" fnClose={setShowModal} bool="true" />
+            <AdminButton onClick={() => setShowModal(true)}>
+              Add Trip
+            </AdminButton>
           </div>
         </div>
 
@@ -219,176 +246,138 @@ function Page() {
           />
         </div>
 
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          {/* Header Row */}
-          <div className="grid grid-cols-[2.5fr_1.5fr_1fr_1.5fr_1fr_1fr_0.5fr] gap-5 text-admin-haze bg-gray-100 px-4 py-3 text-sm font-medium tracking-wide">
-            {" "}
-            <div>Trip</div>
-            <div>Operator</div>
-            <div>Price</div>
-            <div>Dates</div>
-            <div>Difficulty</div>
-            <div>Status</div>
-            <div>Actions</div>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>All Trips ({totalTrips})</CardTitle>
+          </CardHeader>
 
-          {/* Enhanced Loading State */}
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">Loading trips...</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Please wait while we fetch your data
-              </p>
-            </div>
-          )}
-
-          {/* Enhanced Error State */}
-          {error && !loading && (
-            <div className="flex flex-col items-center justify-center py-16 bg-red-50">
-              <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-              <p className="text-red-600 font-medium">Failed to load trips</p>
-              <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
-              <button
-                onClick={getAllTrips}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
-                <Loader2 className="w-4 h-4" />
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {/* Enhanced Empty State */}
-          {!loading && !error && trips.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
-              <MapPin className="w-12 h-12 text-gray-400 mb-4" />
-              <p className="text-gray-600 font-medium">No trips found</p>
-              <p className="text-sm text-gray-400 mt-1">
-                {searchQuery
-                  ? "No trips match your search criteria"
-                  : "Get started by adding your first trip"}
-              </p>
-              {!searchQuery && (
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="mt-4 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
-                >
-                  Add Trip
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Data Rows */}
-          {!loading &&
-            !error &&
-            trips.length > 0 &&
-            trips.map((trip, index) => (
-              <div
-                key={trip._id || index}
-                className="grid grid-cols-[2.5fr_1.5fr_1fr_1.5fr_1fr_1fr_0.5fr] gap-5
-                        items-center pl-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
-              >
-                {/* Trip Name and Destination */}
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium text-sm">{trip.name || "N/A"}</p>
-                    <p className="text-sm text-admin-haze flex items-center gap-1">
-                      <span>
-                        <SlLocationPin size={15} />
-                      </span>
-                      {trip.destination || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Operator */}
-                <div className="text-sm text-admin-haze">
-                  {handleOperatorsName(trip.operator_id)}
-                </div>
-
-                {/* Price */}
-                <div className="text-sm flex items-center gap-1">
-                  <IndianRupeeIcon size={12} />
-                  {trip.price
-                    ? Number(trip.price).toLocaleString("en-IN", {
-                        maximumFractionDigits: 0,
-                      })
-                    : "N/A"}
-                </div>
-
-                {/* Dates */}
-                <div className="text-sm text-admin-haze flex items-center gap-1">
-                  {/* <IoIosCalendar size={16} /> */}
-                  {/* {formatDateRange(trip.start_date, trip.end_date)} */}
-                  {new Date(trip.start_date).toLocaleDateString()},{" "}
-                  {new Date(trip.end_date).toLocaleDateString()}
-                </div>
-
-                {/* Difficulty */}
-                <div className="text-sm">
-                  <span
-                    className={`text-sm font-medium ${
-                      trip.difficulty === "EASY"
-                        ? "text-success"
-                        : trip.difficulty === "MODERATE"
-                          ? "text-primary"
-                          : trip.difficulty === "HARD"
-                            ? "text-warning"
-                            : "text-destructive"
-                    }`}
-                  >
-                    {trip.difficulty || "N/A"}
-                  </span>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <StatusBadge status={trip.status} />
-
-                  {/* {trip.status || "N/A"}
-                  </span> */}
-                </div>
-
-                {/* Actions */}
-                <DropdownActionsAdmin
-                  labelText={<SlOptions />}
-                  options={[
-                    {
-                      label: "View",
-                      value: "View",
-                      icon: <LuEye size={18} />,
-                      onClick: () => handleViewTrip(trip),
-                    },
-                    {
-                      label: "Edit",
-                      value: "Edit",
-                      icon: <LiaEditSolid size={18} />,
-                      onClick: () => handleEditTrip(trip),
-                    },
-                    // {
-                    //   label: "Duplicate",
-                    //   value: "Duplicate",
-                    //   icon: <LuCopy />,
-                    // },
-                    // {
-                    //   label: "Archive",
-                    //   value: "Archive",
-                    //   icon: <HiOutlineArchive size={18} />,
-                    // },
-                  ]}
-                />
+          <CardContent>
+            {loading && (
+              <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+                <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+                <p className="text-gray-600 font-medium">Loading trips...</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Please wait while we fetch your data
+                </p>
               </div>
-            ))}
+            )}
 
-          {/* Summary Row */}
-          {!loading && !error && trips.length > 0 && (
-            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 text-sm text-gray-600">
-              Showing {trips.length} of {totalTrips} trips
-            </div>
-          )}
-        </div>
+            {error && !loading && (
+              <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
+                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                <p className="text-red-600 font-medium">Failed to load trips</p>
+                <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
+                <button
+                  onClick={getAllTrips}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                >
+                  <Loader2 className="w-4 h-4" />
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {!loading && !error && (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Trip</TableHead>
+                    <TableHead>Operator</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Dates</TableHead>
+                    <TableHead>Difficulty</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {trips.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-8">
+                        <div className="flex flex-col items-center justify-center text-gray-500">
+                          <MapPin className="w-8 h-8 mb-2 text-gray-400" />
+                          <p>No trips found</p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+
+                  {trips.map((trip, index) => (
+                    <TableRow key={trip._id || index}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{trip.name || "N/A"}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {trip.destination || "N/A"}
+                          </p>
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-muted-foreground">
+                        {handleOperatorsName(trip.operator_id)}
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <IndianRupeeIcon size={12} />
+                          {trip.price
+                            ? Number(trip.price).toLocaleString("en-IN", {
+                                maximumFractionDigits: 0,
+                              })
+                            : "N/A"}
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-muted-foreground">
+                        {new Date(trip.start_date).toLocaleDateString()},{" "}
+                        {new Date(trip.end_date).toLocaleDateString()}
+                      </TableCell>
+
+                      <TableCell>
+                        <span className="font-medium">
+                          {trip.difficulty || "N/A"}
+                        </span>
+                      </TableCell>
+
+                      <TableCell>
+                        <StatusBadge status={trip.status} />
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => handleViewTrip(trip)}
+                              className="flex items-center gap-2"
+                            >
+                              <LuEye className="h-4 w-4" />
+                              View
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => handleEditTrip(trip)}
+                              className="flex items-center gap-2"
+                            >
+                              <LiaEditSolid className="h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="flex items-center justify-end">
           <div className="flex gap-5 items-center">
