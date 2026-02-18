@@ -131,7 +131,9 @@ export default function Partner() {
       newErrors.phone = "Enter a valid phone number";
     }
 
-    if (formData.tripCount && isNaN(Number(formData.tripCount))) {
+    if (!formData.tripCount) {
+      newErrors.tripCount = "Enter your trip count";
+    } else if (formData.tripCount && isNaN(Number(formData.tripCount))) {
       newErrors.tripCount = "Enter a valid number";
     }
 
