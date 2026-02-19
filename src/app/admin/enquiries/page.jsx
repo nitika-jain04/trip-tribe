@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -42,7 +42,8 @@ import {
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
-import { IoClose, IoCloseCircle } from "react-icons/io5";
+import { IoClose } from "react-icons/io5";
+import { useRouter } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -50,18 +51,35 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 function Enquiries() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  // const [enquiryFilter, setEnquiryFilter] = useState("general");
+
   const [enquiries, setEnquiries] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { toast } = useToast();
+  // pagination states
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
-  const fetchEnquiries = async () => {
+  // date filter states
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const fetchEnquiries = useCallback(async () => {
     const token = Cookies.get("token");
 
     if (!token) {
-      setError("Authentication token missing");
-      setLoading(false);
+      router.push("/");
+      // setError("Authentication token missing");
+      // setLoading(false);
       return;
     }
 
@@ -69,8 +87,23 @@ function Enquiries() {
     setError(null);
 
     try {
+      const params = new URLSearchParams();
+
+      if (debouncedSearch) params.append("search", debouncedSearch);
+
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter.toUpperCase());
+      }
+
+      if (fromDate) params.append("from_date", fromDate);
+
+      if (toDate) params.append("to_date", toDate);
+
+      params.append("page", page.toString());
+      params.append("limit", limit.toString());
+
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/enquiries/admin`,
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin?${params.toString()}`,
         {
           method: "GET",
           headers: {
@@ -84,32 +117,44 @@ function Enquiries() {
       }
 
       const data = await res.json();
+
       if (data.success) {
         setEnquiries(data.result.data || []);
+
+        setTotalPages(data.result.pagination?.pages || 1);
+        setTotalItems(data.result.pagination?.total || 0);
+        setPage(data.result.pagination?.page || 1);
+        setLimit(data.result.pagination?.limit || 10);
       } else {
         throw new Error(data.message || "Failed to fetch enquiries");
       }
     } catch (error) {
-      console.error("Error fetching enquiries:", error);
+      console.error(error);
       setError(error.message || "Failed to load enquiries");
     } finally {
       setLoading(false);
     }
-  };
+  }, [debouncedSearch, statusFilter, page, limit, fromDate, toDate, router]);
 
   useEffect(() => {
-    fetchEnquiries();
-  }, []);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
 
-  const filteredEnquiries = enquiries.filter((enquiry) => {
-    const matchesSearch =
-      enquiry.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      enquiry.subject?.toLowerCase().includes(search.toLowerCase()) ||
-      enquiry.email?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" || enquiry.status?.toLowerCase() === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    const token = Cookies.get("token");
+
+    if (!token) {
+      router.push("/");
+      return;
+    }
+
+    fetchEnquiries();
+  }, [fetchEnquiries, router]);
 
   const handleDelete = async (id) => {
     const token = Cookies.get("token");
@@ -129,20 +174,19 @@ function Enquiries() {
       );
 
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData?.message || "Failed to delete enquiry");
+        throw new Error("Failed to delete enquiry");
       }
 
-      setEnquiries((prev) => prev.filter((enq) => enq.id !== id));
       toast({
         title: "Enquiry Deleted",
         description: "Enquiry deleted successfully",
       });
+
+      fetchEnquiries();
     } catch (err) {
-      console.error("Error deleting enquiry:", err);
       toast({
         title: "Error",
-        description: err.message || "Failed to delete enquiry",
+        description: err.message,
         variant: "destructive",
       });
     }
@@ -168,324 +212,248 @@ function Enquiries() {
       );
 
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData?.message || "Failed to close enquiry");
+        throw new Error("Failed to close enquiry");
       }
 
-      setEnquiries((prev) =>
-        prev.map((enq) => (enq.id === id ? { ...enq, status: "closed" } : enq)),
-      );
       toast({
         title: "Enquiry Closed",
         description: "Enquiry closed successfully",
       });
+
+      fetchEnquiries();
     } catch (err) {
-      console.error("Error closing enquiry:", err);
       toast({
         title: "Error",
-        description: err.message || "Failed to close enquiry",
+        description: err.message,
         variant: "destructive",
       });
     }
   };
 
-  // Loading State
+  // Loading
   if (loading) {
     return (
       <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Enquiries</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage all traveller enquiries across the platform
-          </p>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by traveller, subject, or email..."
-                  className="pl-10"
-                  disabled
-                />
-              </div>
-
-              <Select disabled>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>All Enquiries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">Loading enquiries...</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Please wait while we fetch your data
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+            <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">Loading enquiries...</p>
+            <p className="text-sm text-gray-400 mt-1">
+              Please wait while we fetch your data
+            </p>
+          </div>
+        </CardContent>
       </div>
     );
   }
 
-  // Error State
+  // Error
   if (error) {
     return (
-      <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Enquiries</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage all traveller enquiries across the platform
-          </p>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by traveller, subject, or email..."
-                  className="pl-10"
-                  disabled
-                />
-              </div>
-
-              <Select disabled>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>All Enquiries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
-              <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-              <p className="text-red-600 font-medium">
-                Failed to load enquiries
-              </p>
-              <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
-              <button
-                onClick={fetchEnquiries}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
-                <Loader2 className="w-4 h-4" />
-                Try Again
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="p-6 text-red-500">
+        <AlertCircle />
+        {error}
       </div>
     );
   }
 
-  // Empty State
-  if (enquiries.length === 0) {
-    return (
-      <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Enquiries</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage all traveller enquiries across the platform
-          </p>
-        </div>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by traveller, subject, or email..."
-                  className="pl-10"
-                  disabled
-                />
-              </div>
-
-              <Select disabled>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>All Enquiries</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
-              <Inbox className="w-12 h-12 text-gray-400 mb-4" />
-              <p className="text-gray-600 font-medium">No enquiries found</p>
-              <p className="text-sm text-gray-400 mt-1">
-                There are no enquiries to display at the moment
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Main Content
   return (
     <div className="space-y-6 p-6">
-      {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Enquiries</h1>
-        <p className="text-muted-foreground mt-1">
-          Manage all traveller enquiries across the platform
-        </p>
+        <h1 className="text-3xl font-bold">Enquiries</h1>
+        <p className="text-muted-foreground">Manage all traveller enquiries</p>
       </div>
 
       {/* Filters */}
-      {/* <Card> */}
-      <CardContent className="">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Card>
+        <CardContent className="pt-6 flex gap-5 flex-wrap w-full">
+          <div className="relative w-80">
+            <Search className="absolute left-3 top-3 h-4 w-4" />
             <Input
-              placeholder="Search by traveller, subject, or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
+              placeholder="Search"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
             />
           </div>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-40">
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setPage(1);
+              setStatusFilter(value);
+            }}
+          >
+            <SelectTrigger className="w-40">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
+
             <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="all">All</SelectItem>
               <SelectItem value="new">New</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </CardContent>
-      {/* </Card> */}
 
-      {/* Enquiries Table */}
+          {/* <Select
+            value={enquiryFilter}
+            onValueChange={(value) => {
+              setPage(1);
+              setEnquiryFilter(value);
+            }}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Enquiry Type" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="general">General</SelectItem>
+              <SelectItem value="Partnership">Partnership</SelectItem>
+              <SelectItem value="trip">Trip Question</SelectItem>
+              <SelectItem value="support">SUPPORT</SelectItem>
+              <SelectItem value="feedback">FEEDBACK</SelectItem>
+            </SelectContent>
+          </Select> */}
+
+          <Input
+            type={fromDate ? "date" : "text"}
+            placeholder="Start Date"
+            value={fromDate}
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!e.target.value) e.target.type = "text";
+            }}
+            onChange={(e) => {
+              setPage(1);
+              setFromDate(e.target.value);
+            }}
+            className="w-fit focus:outline-none focus:border-none"
+          />
+
+          <Input
+            type={toDate ? "date" : "text"}
+            placeholder="End Date"
+            value={toDate}
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!e.target.value) e.target.type = "text";
+            }}
+            onChange={(e) => {
+              setPage(1);
+              setToDate(e.target.value);
+            }}
+            className="w-fit focus:outline-none"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Table */}
       <Card>
         <CardHeader>
-          <CardTitle>All Enquiries ({filteredEnquiries.length})</CardTitle>
+          <CardTitle>All Enquiries ({totalItems})</CardTitle>
         </CardHeader>
+
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Traveller</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Subject</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Date</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead />
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {filteredEnquiries.map((enquiry) => (
+              {enquiries.map((enquiry) => (
                 <TableRow key={enquiry.id}>
+                  <TableCell>{enquiry.full_name}</TableCell>
+
+                  <TableCell>{enquiry.subject}</TableCell>
+
+                  <TableCell>{enquiry.email}</TableCell>
+
                   <TableCell>
-                    <div>
-                      <p className="font-medium">{enquiry.full_name}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {enquiry.subject}
-                  </TableCell>
-                  <TableCell
-                    className="text-muted-foreground max-w-37.5 overflow-hidden text-ellipsis cursor-pointer"
-                    title={enquiry.email}
-                  >
-                    {enquiry.email}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
                     {new Date(enquiry.createdAt).toLocaleDateString()}
                   </TableCell>
+
                   <TableCell>
-                    <StatusBadge status={enquiry.status?.toLowerCase()} />
+                    <StatusBadge status={enquiry.status.toLowerCase()} />
                   </TableCell>
-                  <TableCell className="text-right">
+
+                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
+                          <MoreHorizontal />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+
+                      <DropdownMenuContent>
                         <DropdownMenuItem asChild>
-                          <Link
-                            href={`/admin/enquiries/${enquiry.id}`}
-                            className="flex items-center gap-2"
-                          >
-                            <Eye className="h-4 w-4" />
-                            View Details
+                          <Link href={`/admin/enquiries/${enquiry.id}`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View
                           </Link>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
-                          className="flex items-center gap-2 text-red-600 hover:text-red-700"
-                          onClick={() => handleDelete(enquiry.id)}
+                          onClick={() => handleCloseEnquiry(enquiry.id)}
                         >
-                          <Inbox className="h-4 w-4" />
-                          Delete
+                          <IoClose className="mr-2" />
+                          Close
                         </DropdownMenuItem>
 
                         <DropdownMenuItem
-                          className="flex items-center gap-2 hover:text-red-700"
-                          onClick={() => handleCloseEnquiry(enquiry.id)}
+                          onClick={() => handleDelete(enquiry.id)}
+                          className="text-red-600"
                         >
-                          <IoClose className="h-4 w-4" />
-                          Mark as Closed
+                          <Inbox className="mr-2" />
+                          Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
-
-              {filteredEnquiries.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
-                    <div className="flex flex-col items-center justify-center text-gray-500">
-                      <Search className="w-8 h-8 mb-2 text-gray-400" />
-                      <p>No enquiries match your filters</p>
-                      <button
-                        onClick={() => {
-                          setSearch("");
-                          setStatusFilter("all");
-                        }}
-                        className="mt-2 text-teal-600 hover:text-teal-700 text-sm"
-                      >
-                        Clear filters
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
             </TableBody>
           </Table>
+
+          {/* Pagination */}
+          <div className="flex justify-between items-center mt-4">
+            <span className="text-sm text-muted-foreground">
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, totalItems)} of {totalItems}
+            </span>
+
+            <span className="px-3 py-1 text-center text-sm">
+              Page {page} of {totalPages}
+            </span>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </Button>
+
+              <Button
+                variant="outline"
+                disabled={page === totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

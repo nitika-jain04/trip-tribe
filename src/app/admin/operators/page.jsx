@@ -98,7 +98,7 @@ function OperatorsPage() {
       // Set unique regions for filter
       const regionSet = new Set();
       (data.result.operators || []).forEach(
-        (op) => op.region && regionSet.add(op.region),
+        (op) => op.regions && regionSet.add(op.regions),
       );
       setRegions(Array.from(regionSet));
     } catch (err) {
@@ -132,7 +132,7 @@ function OperatorsPage() {
     }
 
     if (regionFilter !== "all") {
-      filtered = filtered.filter((op) => op.region === regionFilter);
+      filtered = filtered.filter((op) => op.regions === regionFilter);
     }
 
     setFilteredOperators(filtered);
@@ -208,6 +208,7 @@ function OperatorsPage() {
                   <SelectItem value="all">All Regions</SelectItem>
                   {regions.map((region) => (
                     <SelectItem key={region} value={region}>
+                      {" "}
                       {region}
                     </SelectItem>
                   ))}
@@ -265,7 +266,7 @@ function OperatorsPage() {
                         <div className="flex items-center gap-3">
                           <div className="relative h-10 w-10 rounded-lg overflow-hidden">
                             <Image
-                              src={op.logo_url || "/vercel.svg"}
+                              src={"/vercel.svg"}
                               alt={op.name}
                               fill
                               className="object-cover"
@@ -288,7 +289,7 @@ function OperatorsPage() {
                       </TableCell>
 
                       <TableCell className="text-muted-foreground">
-                        {op.region}
+                        {op.regions}
                       </TableCell>
 
                       <TableCell className="text-center">
@@ -369,7 +370,7 @@ function AddOperatorModal({ handleModalClose }) {
     email: "",
     phone_number: "",
     contact_name: "",
-    // region: "",
+    regions: "",
     description: "",
     website: "",
     logo_url: "",
@@ -474,7 +475,7 @@ function AddOperatorModal({ handleModalClose }) {
       contact_name: formData.contact_name,
       email: formData.email,
       phone_number: formData.phone_number,
-      // region: formData.region,
+      regions: formData.regions,
       website: formData.website || undefined,
       logo_url: formData.logo_url || undefined,
       rating: parseFloat(formData.rating) || 4.5,
@@ -637,18 +638,18 @@ function AddOperatorModal({ handleModalClose }) {
             </div>
 
             {/* Region */}
-            {/* <div>
+            <div>
               <label className="text-sm text-gray-600">Region *</label>
               <input
                 type="text"
                 name="region"
                 required
-                value={formData.region}
+                value={formData.regions}
                 onChange={handleChange}
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
                 placeholder="North India"
               />
-            </div> */}
+            </div>
 
             {/* Status */}
             <div>
