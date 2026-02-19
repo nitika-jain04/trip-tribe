@@ -235,7 +235,7 @@
   h5,
   h6 {
     font-family: var(--font-display);
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight leading-tight;
   }
 }
 

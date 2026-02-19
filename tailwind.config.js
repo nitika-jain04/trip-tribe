@@ -5,55 +5,59 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Playfair Display", "serif"],
+        display: ["Playfair Display", "Georgia", "serif"],
       },
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
-        card: "var(--card)",
-        "card-foreground": "var(--card-foreground)",
-        popover: "var(--popover)",
-        "popover-foreground": "var(--popover-foreground)",
-        border: "var(--border)",
-        input: "var(--input)",
-        ring: "var(--ring)",
+        // Core - IMPORTANT: Add hsl() wrapper for CSS variables
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        card: "hsl(var(--card))",
+        "card-foreground": "hsl(var(--card-foreground))",
+        popover: "hsl(var(--popover))",
+        "popover-foreground": "hsl(var(--popover-foreground))",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
 
-        primary: "var(--primary)",
-        "primary-foreground": "var(--primary-foreground)",
-        "primary-soft": "var(--primary-soft)",
-        "primary-aqua": "var(--primary-aqua)",
-        "primary-blue": "var(--primary-blue)",
-        "primary-orange": "var(--primary-orange)",
+        // Primary
+        primary: "hsl(var(--primary))",
+        "primary-foreground": "hsl(var(--primary-foreground))",
+        "primary-light": "hsl(var(--primary-light))",
 
-        secondary: "var(--secondary)",
-        "secondary-foreground": "var(--secondary-foreground)",
+        // Secondary
+        secondary: "hsl(var(--secondary))",
+        "secondary-foreground": "hsl(var(--secondary-foreground))",
 
-        accent: "var(--accent)",
-        "accent-foreground": "var(--accent-foreground)",
+        // Accent
+        accent: "hsl(var(--accent))",
+        "accent-foreground": "hsl(var(--accent-foreground))",
 
-        muted: "var(--muted)",
-        "muted-foreground": "var(--muted-foreground)",
+        // Status
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        error: "hsl(var(--error))",
+        info: "hsl(var(--info))",
 
-        success: "var(--success)",
-        warning: "var(--warning)",
-        error: "var(--error)",
-        info: "var(--info)",
-
+        // Admin (hex colors - no hsl wrapper needed)
         "admin-dark": "var(--admin-dark)",
         "admin-haze": "var(--admin-haze)",
         "admin-aqua": "var(--admin-aqua)",
         "admin-aquawater": "var(--admin-aquawater)",
         "admin-success": "var(--admin-success)",
         "admin-warning": "var(--admin-warning)",
+        "admin-warning-alt": "var(--admin-warning-alt)",
         "admin-error": "var(--admin-error)",
         "admin-background": "var(--admin-background)",
         "admin-bg-warning": "var(--admin-bg-warning)",
         "admin-bg-error": "var(--admin-bg-error)",
+        "admin-backsearch": "var(--admin-backseach)",
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 2px)",
+        lg: "var(--radius)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
       },
       animation: {
         "fade-up": "fadeUp 0.6s ease-out forwards",
@@ -61,6 +65,39 @@ module.exports = {
         "scale-in": "scaleIn 0.5s ease-out forwards",
         "slide-in-right": "slideInRight 0.5s ease-out forwards",
         float: "float 6s ease-in-out infinite",
+        bounce: "bounce 1s infinite",
+      },
+      keyframes: {
+        fadeUp: {
+          "0%": { opacity: 0, transform: "translateY(30px)" },
+          "100%": { opacity: 1, transform: "translateY(0)" },
+        },
+        fadeIn: {
+          "0%": { opacity: 0 },
+          "100%": { opacity: 1 },
+        },
+        scaleIn: {
+          "0%": { opacity: 0, transform: "scale(0.95)" },
+          "100%": { opacity: 1, transform: "scale(1)" },
+        },
+        slideInRight: {
+          "0%": { opacity: 0, transform: "translateX(30px)" },
+          "100%": { opacity: 1, transform: "translateX(0)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        bounce: {
+          "0%, 100%": {
+            transform: "translateY(-25%)",
+            "animation-timing-function": "cubic-bezier(0.8, 0, 1, 1)",
+          },
+          "50%": {
+            transform: "translateY(0)",
+            "animation-timing-function": "cubic-bezier(0, 0, 0.2, 1)",
+          },
+        },
       },
       fontSize: {
         "body-sm": "var(--text-body-sm)",
@@ -78,5 +115,5 @@ module.exports = {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 };
