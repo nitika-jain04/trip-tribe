@@ -57,8 +57,6 @@ function OperatorsPage() {
   const [operators, setOperators] = useState([]);
   const [filteredOperators, setFilteredOperators] = useState([]);
   const [regions, setRegions] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
   const [regionFilter, setRegionFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,77 +64,90 @@ function OperatorsPage() {
   const [page, setPage] = useState(1);
   const [totalOperators, setTotalOperators] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("APPLICATION");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [sortOrder, setSortOrder] = useState("DESC");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch operators from API
   const getOperators = useCallback(async () => {
     const token = Cookies.get("token");
-    if (!token) return;
+
+    if (!token) {
+      console.log("No token found");
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin?page=${page}&limit=10`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+      const params = new URLSearchParams();
+
+      // ✅ ALWAYS send pagination
+      params.append("page", String(page));
+      params.append("limit", String(limit));
+
+      // ✅ ONLY send when filtered
+      if (statusFilter && statusFilter !== "all") {
+        params.append("status", statusFilter.toUpperCase());
+      }
+
+      if (sourceFilter && sourceFilter !== "all") {
+        params.append("source", sourceFilter);
+      }
+
+      if (sortBy) {
+        params.append("sortBy", sortBy);
+      }
+
+      if (sortOrder) {
+        params.append("sortOrder", sortOrder);
+      }
+
+      if (searchQuery && searchQuery.trim() !== "") {
+        params.append("search", searchQuery.trim());
+      }
+
+      const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
+
+      console.log("Final URL:", url);
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-      );
+      });
 
       const data = await res.json();
-      if (!data.success)
+
+      console.log("Response:", data);
+
+      if (!res.ok || !data.success) {
         throw new Error(data.message || "Failed to fetch operators");
+      }
 
-      setOperators(data.result.operators || []);
-      setTotalOperators(data.result.pagination?.total || 0);
-      setTotalPages(data.result.pagination?.pages || 1);
+      const operatorsArray = data?.result?.operators || [];
+      const pagination = data?.result?.pagination || {};
 
-      // Set unique regions for filter
-      const regionSet = new Set();
-      (data.result.operators || []).forEach(
-        (op) => op.regions && regionSet.add(op.regions),
-      );
-      setRegions(Array.from(regionSet));
+      setOperators(operatorsArray);
+      setFilteredOperators(operatorsArray);
+
+      // ✅ pagination from backend
+      setTotalOperators(pagination.total || 0);
+      setTotalPages(pagination.pages || 1);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch error:", err);
       setError(err.message);
       setOperators([]);
+      setFilteredOperators([]);
     } finally {
       setLoading(false);
     }
-  }, [page]);
-
-  // Apply search + filters
-  useEffect(() => {
-    let filtered = [...operators];
-
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (op) =>
-          op.name?.toLowerCase().includes(query) ||
-          op.email?.toLowerCase().includes(query) ||
-          op.contact_name?.toLowerCase().includes(query) ||
-          op.phone_number?.toLowerCase().includes(query),
-      );
-    }
-
-    if (statusFilter !== "all") {
-      filtered = filtered.filter(
-        (op) => op.status.toLowerCase() === statusFilter,
-      );
-    }
-
-    if (regionFilter !== "all") {
-      filtered = filtered.filter((op) => op.regions === regionFilter);
-    }
-
-    setFilteredOperators(filtered);
-  }, [operators, searchQuery, statusFilter, regionFilter]);
+  }, [page, limit, statusFilter, sourceFilter, sortBy, sortOrder, searchQuery]);
 
   useEffect(() => {
     getOperators();
@@ -182,8 +193,10 @@ function OperatorsPage() {
                 <Input
                   placeholder="Search operators..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
                 />
               </div>
 
@@ -206,8 +219,8 @@ function OperatorsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Regions</SelectItem>
-                  {regions.map((region) => (
-                    <SelectItem key={region} value={region}>
+                  {regions.map((region, index) => (
+                    <SelectItem key={index} value={region}>
                       {" "}
                       {region}
                     </SelectItem>
@@ -266,10 +279,11 @@ function OperatorsPage() {
                         <div className="flex items-center gap-3">
                           <div className="relative h-10 w-10 rounded-lg overflow-hidden">
                             <Image
-                              src={"/vercel.svg"}
+                              src={op.logo_url || "/vercel.svg"}
                               alt={op.name}
                               fill
                               className="object-cover"
+                              unoptimized
                             />
                           </div>
                           <div>

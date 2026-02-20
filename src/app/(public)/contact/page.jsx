@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
@@ -83,12 +83,18 @@ export default function Contact() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
+    phone: "",
     subject: "",
     inquiryType: "",
+    tripId: "",
+    operatorId: "",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [trips, setTrips] = useState([]);
+  const [operators, setOperators] = useState([]);
+
   const [errors, setErrors] = useState({});
 
   const validateForm = () => {
@@ -102,6 +108,16 @@ export default function Contact() {
       newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = "Enter a valid email address";
+    }
+
+    // accepts +919876543210, 919876543210, 9876543210
+    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!phoneRegex.test(formData.phone.trim())) {
+      newErrors.phone =
+        "Enter valid phone number like +919876543210 or 9876543210";
     }
 
     if (!formData.subject.trim()) {
@@ -134,11 +150,13 @@ export default function Contact() {
       const payload = {
         full_name: formData.name,
         email: formData.email,
+        phone_number: formData.phone,
         inquiry_type: formData.inquiryType.toUpperCase(),
         subject: formData.subject,
         message: formData.message,
+        trip_id: formData.tripId || null,
+        operator_id: formData.operatorId || null,
       };
-
       console.log("req", payload);
 
       const response = await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
@@ -157,8 +175,11 @@ export default function Contact() {
         setFormData({
           name: "",
           email: "",
+          phone: "",
           subject: "",
           inquiryType: "",
+          tripId: "",
+          operatorId: "",
           message: "",
         });
       } else {
@@ -187,6 +208,31 @@ export default function Contact() {
       toast.error("Network error. Please try again later.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTrips();
+    fetchOperators();
+  }, []);
+
+  const fetchTrips = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips`);
+      const data = await res.json();
+      if (data.success) setTrips(data?.result?.trips || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchOperators = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/operators`);
+      const data = await res.json();
+      if (data.success) setOperators(data?.result?.operators || []);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -330,6 +376,32 @@ export default function Contact() {
                   </div>
 
                   <div className="flex flex-col gap-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData({ ...formData, phone: value });
+
+                        if (errors.phone) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.phone;
+                            return updated;
+                          });
+                        }
+                      }}
+                      className={`h-12 rounded-xl ${errors.phone ? "border-red-500" : ""}`}
+                      placeholder="+919876543210"
+                    />
+                    {errors.phone && (
+                      <p className="text-sm text-red-500">{errors.phone}</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2">
                     <Label htmlFor="inquiryType">Inquiry Type</Label>
                     <Select
                       required
@@ -358,6 +430,57 @@ export default function Contact() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {formData.inquiryType === "trip" && (
+                    <div className="grid sm:grid-cols-2 gap-6">
+                      <div className="flex flex-col gap-2">
+                        <Label>Select Trip</Label>
+                        <Select
+                          value={formData.tripId}
+                          onValueChange={(tripId) => {
+                            const trip = trips.find((t) => t.id === tripId);
+
+                            setFormData({
+                              ...formData,
+                              tripId,
+                              operatorId: trip?.operator_id || "",
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="h-12 rounded-xl">
+                            <SelectValue placeholder="Select Trip" />
+                          </SelectTrigger>
+
+                          <SelectContent>
+                            {trips.map((trip) => (
+                              <SelectItem key={trip.id} value={trip.id}>
+                                {trip.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Operator dropdown */}
+                      <div className="flex flex-col gap-2">
+                        <Label>Operator</Label>
+
+                        <Select value={formData.operatorId} disabled>
+                          <SelectTrigger className="h-12 rounded-xl">
+                            <SelectValue placeholder="Operator auto-selected" />
+                          </SelectTrigger>
+
+                          <SelectContent>
+                            {operators.map((op) => (
+                              <SelectItem key={op.id} value={op.id}>
+                                {op.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="subject">Subject</Label>

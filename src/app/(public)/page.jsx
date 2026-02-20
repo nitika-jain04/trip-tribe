@@ -363,7 +363,7 @@ export default function Page() {
               Find your tribe.
               <span className="block">Travel together.</span>
             </h1>
-            <p className="text-body-sm sm:text-body-lg md:text-xl text-background/90 max-w-2xl mx-auto mb-10 animate-fade-up delay-100">
+            <p className="text-base md:text-lg lg:text-xl text-background/90 max-w-2xl mx-auto mb-10 animate-fade-up delay-100">
               Explore curated group trips.
               <span className="block md:inline">
                 {" "}

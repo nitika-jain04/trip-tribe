@@ -230,23 +230,6 @@ function Enquiries() {
     }
   };
 
-  // Loading
-  if (loading) {
-    return (
-      <div className="space-y-6 p-6">
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
-            <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-            <p className="text-gray-600 font-medium">Loading enquiries...</p>
-            <p className="text-sm text-gray-400 mt-1">
-              Please wait while we fetch your data
-            </p>
-          </div>
-        </CardContent>
-      </div>
-    );
-  }
-
   // Error
   if (error) {
     return (
@@ -263,7 +246,6 @@ function Enquiries() {
         <h1 className="text-3xl font-bold">Enquiries</h1>
         <p className="text-muted-foreground">Manage all traveller enquiries</p>
       </div>
-
       {/* Filters */}
       <Card>
         <CardContent className="pt-6 flex gap-5 flex-wrap w-full">
@@ -350,112 +332,124 @@ function Enquiries() {
           />
         </CardContent>
       </Card>
-
-      {/* Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>All Enquiries ({totalItems})</CardTitle>
-        </CardHeader>
-
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Subject</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead />
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {enquiries.map((enquiry) => (
-                <TableRow key={enquiry.id}>
-                  <TableCell>{enquiry.full_name}</TableCell>
-
-                  <TableCell>{enquiry.subject}</TableCell>
-
-                  <TableCell>{enquiry.email}</TableCell>
-
-                  <TableCell>
-                    {new Date(enquiry.createdAt).toLocaleDateString()}
-                  </TableCell>
-
-                  <TableCell>
-                    <StatusBadge status={enquiry.status.toLowerCase()} />
-                  </TableCell>
-
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal />
-                        </Button>
-                      </DropdownMenuTrigger>
-
-                      <DropdownMenuContent>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/admin/enquiries/${enquiry.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View
-                          </Link>
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() => handleCloseEnquiry(enquiry.id)}
-                        >
-                          <IoClose className="mr-2" />
-                          Close
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(enquiry.id)}
-                          className="text-red-600"
-                        >
-                          <Inbox className="mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-
-          {/* Pagination */}
-          <div className="flex justify-between items-center mt-4">
-            <span className="text-sm text-muted-foreground">
-              Showing {(page - 1) * limit + 1} to{" "}
-              {Math.min(page * limit, totalItems)} of {totalItems}
-            </span>
-
-            <span className="px-3 py-1 text-center text-sm">
-              Page {page} of {totalPages}
-            </span>
-
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </Button>
-
-              <Button
-                variant="outline"
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </Button>
+      {loading ? (
+        <div className="space-y-6 p-6">
+          <CardContent>
+            <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+              <p className="text-gray-600 font-medium">Loading enquiries...</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Please wait while we fetch your data
+              </p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </div>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>All Enquiries ({totalItems})</CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Subject</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+
+              <TableBody>
+                {enquiries.map((enquiry) => (
+                  <TableRow key={enquiry.id}>
+                    <TableCell>{enquiry.full_name}</TableCell>
+
+                    <TableCell>{enquiry.subject}</TableCell>
+
+                    <TableCell>{enquiry.email}</TableCell>
+
+                    <TableCell>
+                      {new Date(enquiry.createdAt).toLocaleDateString()}
+                    </TableCell>
+
+                    <TableCell>
+                      <StatusBadge status={enquiry.status.toLowerCase()} />
+                    </TableCell>
+
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal />
+                          </Button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent>
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/enquiries/${enquiry.id}`}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              View
+                            </Link>
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => handleCloseEnquiry(enquiry.id)}
+                          >
+                            <IoClose className="mr-2" />
+                            Close
+                          </DropdownMenuItem>
+
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(enquiry.id)}
+                            className="text-red-600"
+                          >
+                            <Inbox className="mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+
+            {/* Pagination */}
+            <div className="flex justify-between items-center mt-4">
+              <span className="text-sm text-muted-foreground">
+                Showing {(page - 1) * limit + 1} to{" "}
+                {Math.min(page * limit, totalItems)} of {totalItems}
+              </span>
+
+              <span className="px-3 py-1 text-center text-sm">
+                Page {page} of {totalPages}
+              </span>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Previous
+                </Button>
+
+                <Button
+                  variant="outline"
+                  disabled={page === totalPages}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
