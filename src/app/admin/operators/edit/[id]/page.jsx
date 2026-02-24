@@ -3,14 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  LoaderCircleIcon,
-  Save,
-  Trash2,
-  ArrowLeft,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -77,6 +70,15 @@ export default function OperatorEditPage() {
     const file = e.target.files[0];
     if (!file) return;
 
+    // ✅ 5MB validation
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+
+    if (file.size > MAX_SIZE) {
+      setError("Image size must be less than 5MB");
+      e.target.value = ""; // reset input
+      return;
+    }
+
     setUploadingImage(true);
     setError("");
 
@@ -92,12 +94,18 @@ export default function OperatorEditPage() {
       });
 
       const data = await res.json();
-      if (!res.ok || !data.success)
-        throw new Error(data.message || "Upload failed");
 
-      setFormData((prev) => ({ ...prev, logo_url: data.result.url }));
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Upload failed");
+      }
+
+      // ✅ update logo_url after upload
+      setFormData((prev) => ({
+        ...prev,
+        logo_url: data.result.url,
+      }));
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Image upload failed");
     } finally {
       setUploadingImage(false);
     }
@@ -114,11 +122,7 @@ export default function OperatorEditPage() {
 
     // Only changed fields
     const requestBody = {};
-    // Object.keys(formData).forEach((key) => {
-    //   if ((formData[key] || "") !== (operator[key] || "")) {
-    //     requestBody[key] = formData[key] || null;
-    //   }
-    // });
+
     Object.keys(formData).forEach((key) => {
       if ((formData[key] ?? "") !== (operator[key] ?? "")) {
         requestBody[key] = formData[key];

@@ -12,6 +12,8 @@ import {
   Pencil,
   Search,
   Loader2,
+  UserCheck,
+  UserX,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -46,6 +48,7 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { IoCloseSharp } from "react-icons/io5";
+import Link from "next/link";
 
 // Modal for adding operators
 
@@ -315,7 +318,7 @@ function OperatorsPage() {
                         <StatusBadge status={op.status?.toLowerCase()} />
                       </TableCell>
 
-                      <TableCell className="text-right">
+                      {/* <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -341,6 +344,48 @@ function OperatorsPage() {
                                 Edit
                               </Button>
                             </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell> */}
+
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Button onClick={() => handleViewDetails(op)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </Button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Button onClick={() => handleEditOperator(op)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </Button>
+                            </DropdownMenuItem>
+                            {op.status === "pending" && (
+                              <DropdownMenuItem className="text-success">
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Approve
+                              </DropdownMenuItem>
+                            )}
+                            {op.status === "active" && (
+                              <DropdownMenuItem className="text-destructive">
+                                <UserX className="h-4 w-4 mr-2" />
+                                Suspend
+                              </DropdownMenuItem>
+                            )}
+                            {op.status === "suspended" && (
+                              <DropdownMenuItem className="text-success">
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Reactivate
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
