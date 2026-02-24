@@ -9,6 +9,7 @@ import {
   Loader2,
   AlertCircle,
   Inbox,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
@@ -44,6 +45,7 @@ import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { IoClose } from "react-icons/io5";
 import { useRouter } from "next/navigation";
+import { BiComment } from "react-icons/bi";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -332,7 +334,34 @@ function Enquiries() {
           />
         </CardContent>
       </Card>
-      {loading ? (
+
+      {/* {!loading && !error && enquiries.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
+          <MapPin className="w-12 h-12 text-gray-400 mb-4" />
+          <p className="text-gray-600 font-medium">No Enquiries found</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {search && "No enquiries match your search criteria"}
+          </p> */}
+      {/* {!searchQuery && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="mt-4 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
+            >
+              Add Trip
+            </button>
+          )} */}
+      {/* </div>
+      )} */}
+
+      {!loading && !error && enquiries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
+          <BiComment className="w-12 h-12 text-gray-400 mb-4" />
+          <p className="text-gray-600 font-medium">No Enquiries found</p>
+          <p className="text-sm text-gray-400 mt-1">
+            {search && "No enquiries match your search criteria"}
+          </p>
+        </div>
+      ) : loading ? (
         <div className="space-y-6 p-6">
           <CardContent>
             <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
@@ -359,6 +388,7 @@ function Enquiries() {
                   <TableHead>Email</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>

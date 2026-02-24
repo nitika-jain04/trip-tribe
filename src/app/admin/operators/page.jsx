@@ -197,6 +197,7 @@ function OperatorsPage() {
                     setSearchQuery(e.target.value);
                     setPage(1);
                   }}
+                  className="pl-10"
                 />
               </div>
 
