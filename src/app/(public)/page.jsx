@@ -158,7 +158,7 @@ export default function Page() {
             name: loc.name,
             region: loc.region,
             type: loc.type,
-            trips: Math.floor(Math.random() * 15) + 5, // Mock trip count between 5-20
+            trips: Math.floor(Math.random() * 15) + 5,
             image: destinationImages[loc.name] || "/loginimg.jpeg",
           }),
         );

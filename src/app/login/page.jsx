@@ -44,7 +44,7 @@ export default function TestLogin() {
       // ✅ Save cookies only for /admin routes
       if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
         Cookies.set("token", token, {
-          expires: 1, // 1 day
+          expires: 1,
           path: "/",
           sameSite: "lax",
         });

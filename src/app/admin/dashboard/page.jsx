@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, MapPin, MessageSquare, TrendingUp, Eye } from "lucide-react";
+import { Users, MapPin, MessageSquare, TrendingUp } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,13 +9,6 @@ import {
 } from "@/app/components/ui/card";
 import { StatCard } from "@/app/components/admin/StatCard";
 import {
-  dashboardStats,
-  activities,
-  enquiryChartData,
-  destinationChartData,
-  destinations,
-} from "@/app/data/mockData";
-import {
   LineChart,
   Line,
   XAxis,
@@ -23,22 +16,11 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
 } from "recharts";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/app/components/ui/table";
 import AdminGuard from "@/app/components/AdminGuard";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { ActivityFeed } from "@/app/components/admin/ActivityFeed";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;

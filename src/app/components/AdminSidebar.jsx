@@ -21,13 +21,11 @@ export default function AdminSidebar({ collapsed, toggle }) {
 
   const pathname = usePathname();
 
-  // Handle responsive collapse
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
 
-      // Auto-collapse on mobile if expanded
       if (mobile && !collapsed) {
         toggle();
       }

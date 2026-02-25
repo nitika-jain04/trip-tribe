@@ -69,7 +69,7 @@ function OperatorsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("APPLICATION");
+  // const [sourceFilter, setSourceFilter] = useState("APPLICATION");
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("DESC");
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,9 +98,9 @@ function OperatorsPage() {
         params.append("status", statusFilter.toUpperCase());
       }
 
-      if (sourceFilter && sourceFilter !== "all") {
-        params.append("source", sourceFilter);
-      }
+      // if (sourceFilter && sourceFilter !== "all") {
+      //   params.append("source", sourceFilter);
+      // }
 
       if (sortBy) {
         params.append("sortBy", sortBy);
@@ -116,7 +116,7 @@ function OperatorsPage() {
 
       const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
 
-      console.log("Final URL:", url);
+      // console.log("Final URL:", url);
 
       const res = await fetch(url, {
         method: "GET",
@@ -150,7 +150,7 @@ function OperatorsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, statusFilter, sourceFilter, sortBy, sortOrder, searchQuery]);
+  }, [page, limit, statusFilter, sortBy, sortOrder, searchQuery]);
 
   useEffect(() => {
     getOperators();
@@ -434,6 +434,9 @@ function AddOperatorModal({ handleModalClose }) {
     rating: 4.5,
     status: "inactive",
 
+    total_trips: "",
+    trips_per_year: "",
+
     social_links: {
       instagram: "",
       facebook: "",
@@ -481,6 +484,8 @@ function AddOperatorModal({ handleModalClose }) {
 
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
     const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+    console.log("req", formDataToSend);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
@@ -558,6 +563,13 @@ function AddOperatorModal({ handleModalClose }) {
       logo_url: formData.logo_url || undefined,
       rating: parseFloat(formData.rating) || 4.5,
       status: formData.status,
+      total_trips: formData.total_trips
+        ? parseInt(formData.total_trips)
+        : undefined,
+
+      trips_per_year: formData.trips_per_year
+        ? parseInt(formData.trips_per_year)
+        : undefined,
     };
 
     Object.keys(requestBody).forEach(
@@ -726,6 +738,34 @@ function AddOperatorModal({ handleModalClose }) {
                 onChange={handleChange}
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
                 placeholder="North India"
+              />
+            </div>
+
+            {/* Total Trips */}
+            <div>
+              <label className="text-sm text-gray-600">Total Trips</label>
+              <input
+                type="number"
+                name="total_trips"
+                value={formData.total_trips}
+                onChange={handleChange}
+                min="0"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="150"
+              />
+            </div>
+
+            {/* Trips Per Year */}
+            <div>
+              <label className="text-sm text-gray-600">Trips Per Year</label>
+              <input
+                type="number"
+                name="trips_per_year"
+                value={formData.trips_per_year}
+                onChange={handleChange}
+                min="0"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="25"
               />
             </div>
 

@@ -217,7 +217,7 @@ export default function OperatorDetail() {
           </div> */}
 
           <div className="text-muted-foreground">
-            {operator.business_description || "No description provided"}
+            {operator.description || "No description provided"}
           </div>
 
           <div className="flex flex-wrap justify-between text-sm text-muted-foreground pt-2">
@@ -263,24 +263,26 @@ export default function OperatorDetail() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           label="Total Trips"
-          value={operator.total_trips || operator.tripsCount || 0}
+          value={operator.total_trips ?? operator.tripsCount ?? 0}
         />
-        {/* <StatCard
+
+        <StatCard label="Trips Per Year" value={operator.trips_per_year ?? 0} />
+        <StatCard
           label="Member Since"
           value={
             operator.createdAt
               ? new Date(operator.createdAt).toLocaleDateString("en-IN")
               : "N/A"
           }
-        /> */}
-        {/* <StatCard
+        />
+        <StatCard
           label="Last Updated"
           value={
             operator.updatedAt
               ? new Date(operator.updatedAt).toLocaleDateString("en-IN")
               : "N/A"
           }
-        /> */}
+        />
       </div>
 
       {/* Details Section */}
@@ -294,6 +296,13 @@ export default function OperatorDetail() {
             value={operator.contact_name || "N/A"}
           />
           <DetailItem label="Website" value={operator.website_url || "N/A"} />
+
+          <DetailItem label="Total Trips" value={operator.total_trips ?? 0} />
+
+          <DetailItem
+            label="Trips Per Year"
+            value={operator.trips_per_year ?? 0}
+          />
         </div>
       </div>
     </div>
@@ -303,7 +312,7 @@ export default function OperatorDetail() {
 function StatCard({ label, value }) {
   return (
     <div className="bg-white border rounded-xl p-5 shadow-sm flex flex-col items-center hover:shadow-md transition-shadow">
-      <p className="text-xl font-semibold">{value}</p>
+      <p className="text-xl font-medium">{value}</p>
       <p className="text-sm text-muted-foreground">{label}</p>
     </div>
   );
