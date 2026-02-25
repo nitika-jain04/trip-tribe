@@ -564,7 +564,7 @@ function AddOperatorModal({ handleModalClose }) {
       description: formData.description,
       contact_name: formData.contact_name,
       email: formData.email,
-      phone_number: formatIndianNumber(formData.phone_number),
+      phone_number: formData.phone_number,
       regions: formData.regions
         ? formData.regions
             .split(",")

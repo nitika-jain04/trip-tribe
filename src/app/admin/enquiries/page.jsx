@@ -464,10 +464,28 @@ function Enquiries() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {enquiry.inquiry_type
-                        ?.replace("_", " ")
-                        .toLowerCase()
-                        .replace(/\b\w/g, (c) => c.toUpperCase()) || "-"}
+                      {enquiry.inquiry_type ? (
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            enquiry.inquiry_type === "GENERAL"
+                              ? "bg-blue-100 text-blue-500"
+                              : enquiry.inquiry_type === "TRIP"
+                                ? "bg-yellow-100 text-yellow-700"
+                                : enquiry.inquiry_type === "PARTNERSHIP"
+                                  ? "bg-green-100 text-green-700"
+                                  : enquiry.inquiry_type === "FEEDBACK"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {enquiry.inquiry_type
+                            .replace("_", " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
 
                     <TableCell>{enquiry.email}</TableCell>

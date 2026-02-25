@@ -509,7 +509,6 @@ function Page() {
   );
 }
 
-// AddTripModal component with shadcn/ui styling
 function AddTripModal({ handleModalClose, operators }) {
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
