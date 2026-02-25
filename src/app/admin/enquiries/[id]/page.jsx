@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -99,7 +99,7 @@ export default function EnquiryDetail() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            status: status.toUpperCase(), // ensure API gets "IN_PROGRESS", "NEW", etc.
+            status: status.toUpperCase(),
             admin_notes: adminNotes,
           }),
         },
@@ -207,7 +207,19 @@ export default function EnquiryDetail() {
               <p className="font-semibold text-lg">{enquiry.full_name}</p>
             </div>
           </div>
-          <div className="space-y-3 pt-2">
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-3 text-sm">
+              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <span>
+                Enquiry Type:{" "}
+                {enquiry.inquiry_type
+                  ?.replace("_", " ")
+                  .toLowerCase()
+                  .replace(/\b\w/g, (c) => c.toUpperCase())}
+              </span>
+            </div>
+
             <div className="flex items-center gap-3 text-sm">
               <Mail className="h-4 w-4 text-muted-foreground" />
               <a
@@ -217,14 +229,19 @@ export default function EnquiryDetail() {
                 {enquiry.email}
               </a>
             </div>
-            {enquiry.phone && (
+
+            {enquiry.phone_number && (
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="h-4 w-4 text-muted-foreground" />
-                <a href={`tel:${enquiry.phone}`} className="hover:underline">
-                  {enquiry.phone}
+                <a
+                  href={`tel:${enquiry.phone_number}`}
+                  className="hover:underline"
+                >
+                  {enquiry.phone_number}
                 </a>
               </div>
             )}
+
             <div className="flex items-center gap-3 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span>
@@ -235,6 +252,43 @@ export default function EnquiryDetail() {
         </CardContent>
       </Card>
 
+      {/* Trip Details */}
+      {enquiry.inquiry_type === "TRIP" && enquiry.trip && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              🏔️ Trip Details
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-4">
+            <div className="grid md:grid-cols-2 gap-4">
+              {/* Trip Name */}
+              <div>
+                <p className="text-sm text-muted-foreground">Trip Name</p>
+
+                <Link
+                  href={`/admin/trips/${enquiry.trip.id}`}
+                  className="font-semibold text-primary hover:underline"
+                >
+                  {enquiry.trip.name}
+                </Link>
+              </div>
+
+              {/* Quick Action */}
+              <div>
+                <Link
+                  href={`/admin/trips/${enquiry.trip.id}`}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  <Button>Open Trip →</Button>
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Traveller Message */}
       <Card>
         <CardHeader>
@@ -243,10 +297,20 @@ export default function EnquiryDetail() {
             Traveller Message
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-foreground bg-muted/50 rounded-lg p-4">
-            {enquiry.message}
-          </p>
+        <CardContent className="space-y-4">
+          {/* Subject */}
+          {enquiry.subject && (
+            <div>
+              <p className="text-sm text-muted-foreground mb-1">Subject</p>
+              <p className="font-medium">{enquiry.subject}</p>
+            </div>
+          )}
+
+          {/* Message */}
+          <div>
+            <p className="text-sm text-muted-foreground mb-1">Message</p>
+            <p className="text-foreground rounded-lg">{enquiry.message}</p>
+          </div>
         </CardContent>
       </Card>
 

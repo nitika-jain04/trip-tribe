@@ -1,7 +1,7 @@
 "use client";
 
-import { Users, MapPin, MessageSquare, Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Users, MapPin, MessageSquare, Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const typeIcons = {
   operator: Users,
@@ -11,10 +11,10 @@ const typeIcons = {
 };
 
 const typeColors = {
-  operator: 'bg-primary/10 text-primary',
-  trip: 'bg-success/10 text-success',
-  enquiry: 'bg-warning/10 text-warning',
-  review: 'bg-accent/10 text-accent',
+  operator: "bg-primary/10 text-primary",
+  trip: "bg-success/10 text-success",
+  enquiry: "bg-warning/10 text-warning",
+  review: "bg-accent/10 text-accent",
 };
 
 // Next.js JSX component
@@ -28,7 +28,7 @@ export function ActivityFeed({ activities }) {
 
     if (days > 0) return `${days}d ago`;
     if (hours > 0) return `${hours}h ago`;
-    return 'Just now';
+    return "Just now";
   };
 
   return (
@@ -37,7 +37,7 @@ export function ActivityFeed({ activities }) {
         const Icon = typeIcons[activity.type] || Users;
         return (
           <div key={activity.id} className="flex items-start gap-3">
-            <div className={cn('p-2 rounded-lg', typeColors[activity.type])}>
+            <div className={cn("p-2 rounded-lg", typeColors[activity.type])}>
               <Icon className="h-4 w-4" />
             </div>
             <div className="flex-1 min-w-0">

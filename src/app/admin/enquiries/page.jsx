@@ -8,8 +8,7 @@ import {
   Eye,
   Loader2,
   AlertCircle,
-  Inbox,
-  MapPin,
+  Trash,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
@@ -53,7 +52,7 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 function Enquiries() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  // const [enquiryFilter, setEnquiryFilter] = useState("general");
+  const [enquiryFilter, setEnquiryFilter] = useState("all");
 
   const [enquiries, setEnquiries] = useState([]);
 
@@ -97,6 +96,10 @@ function Enquiries() {
         params.append("status", statusFilter.toUpperCase());
       }
 
+      if (enquiryFilter !== "all") {
+        params.append("inquiry_type", enquiryFilter);
+      }
+
       if (fromDate) params.append("from_date", fromDate);
 
       if (toDate) params.append("to_date", toDate);
@@ -136,7 +139,16 @@ function Enquiries() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, statusFilter, page, limit, fromDate, toDate, router]);
+  }, [
+    debouncedSearch,
+    statusFilter,
+    enquiryFilter,
+    page,
+    limit,
+    fromDate,
+    toDate,
+    router,
+  ]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -250,7 +262,7 @@ function Enquiries() {
       </div>
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6 flex gap-5 flex-wrap w-full">
+        <CardContent className="pt-2 flex gap-5 flex-wrap w-full">
           <div className="relative w-80">
             <Search className="absolute left-3 top-3 h-4 w-4" />
             <Input
@@ -276,32 +288,33 @@ function Enquiries() {
             </SelectTrigger>
 
             <SelectContent>
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">Status</SelectItem>
               <SelectItem value="new">New</SelectItem>
               <SelectItem value="in_progress">In Progress</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
             </SelectContent>
           </Select>
 
-          {/* <Select
+          <Select
             value={enquiryFilter}
             onValueChange={(value) => {
               setPage(1);
               setEnquiryFilter(value);
             }}
           >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Enquiry Type" />
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Inquiry Type" />
             </SelectTrigger>
 
             <SelectContent>
-              <SelectItem value="general">General</SelectItem>
-              <SelectItem value="Partnership">Partnership</SelectItem>
-              <SelectItem value="trip">Trip Question</SelectItem>
-              <SelectItem value="support">SUPPORT</SelectItem>
-              <SelectItem value="feedback">FEEDBACK</SelectItem>
+              <SelectItem value="all">Enquiry Type</SelectItem>
+              <SelectItem value="GENERAL">General</SelectItem>
+              <SelectItem value="TRIP">Trip</SelectItem>
+              <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
+              <SelectItem value="SUPPORT">Support</SelectItem>
+              <SelectItem value="FEEDBACK">Feedback</SelectItem>
             </SelectContent>
-          </Select> */}
+          </Select>
 
           <Input
             type={fromDate ? "date" : "text"}
@@ -335,24 +348,6 @@ function Enquiries() {
         </CardContent>
       </Card>
 
-      {/* {!loading && !error && enquiries.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
-          <MapPin className="w-12 h-12 text-gray-400 mb-4" />
-          <p className="text-gray-600 font-medium">No Enquiries found</p>
-          <p className="text-sm text-gray-400 mt-1">
-            {search && "No enquiries match your search criteria"}
-          </p> */}
-      {/* {!searchQuery && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="mt-4 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
-            >
-              Add Trip
-            </button>
-          )} */}
-      {/* </div>
-      )} */}
-
       {!loading && !error && enquiries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
           <BiComment className="w-12 h-12 text-gray-400 mb-4" />
@@ -384,11 +379,11 @@ function Enquiries() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Subject</TableHead>
+                  <TableHead>Enquiry Type</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -396,9 +391,20 @@ function Enquiries() {
               <TableBody>
                 {enquiries.map((enquiry) => (
                   <TableRow key={enquiry.id}>
-                    <TableCell>{enquiry.full_name}</TableCell>
-
-                    <TableCell>{enquiry.subject}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{enquiry.full_name}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {enquiry.phone_number || "NA"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {enquiry.inquiry_type
+                        ?.replace("_", " ")
+                        .toLowerCase()
+                        .replace(/\b\w/g, (c) => c.toUpperCase()) || "-"}
+                    </TableCell>
 
                     <TableCell>{enquiry.email}</TableCell>
 
@@ -410,7 +416,7 @@ function Enquiries() {
                       <StatusBadge status={enquiry.status.toLowerCase()} />
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -437,7 +443,7 @@ function Enquiries() {
                             onClick={() => handleDelete(enquiry.id)}
                             className="text-red-600"
                           >
-                            <Inbox className="mr-2" />
+                            <Trash className="mr-2" size={15} />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>

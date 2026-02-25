@@ -189,7 +189,7 @@ function OperatorsPage() {
 
         {/* Filters */}
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="pt-2">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -413,7 +413,6 @@ function OperatorsPage() {
           </Button>
         </div>
 
-        {/* Add Operator Modal */}
         {showAddModal && (
           <AddOperatorModal handleModalClose={handleAddModalClose} />
         )}
@@ -422,9 +421,7 @@ function OperatorsPage() {
   );
 }
 
-// AddOperatorModal component (keep your existing AddOperatorModal code here)
 function AddOperatorModal({ handleModalClose }) {
-  // ... (your existing AddOperatorModal code)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -436,8 +433,15 @@ function AddOperatorModal({ handleModalClose }) {
     logo_url: "",
     rating: 4.5,
     status: "inactive",
-  });
 
+    social_links: {
+      instagram: "",
+      facebook: "",
+      twitter: "",
+      linkedin: "",
+      youtube: "",
+    },
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -445,7 +449,21 @@ function AddOperatorModal({ handleModalClose }) {
 
   function handleChange(e) {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name.startsWith("social_links.")) {
+      const key = name.split(".")[1];
+
+      setFormData((prev) => ({
+        ...prev,
+        social_links: {
+          ...prev.social_links,
+          [key]: value,
+        },
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   }
 
@@ -702,7 +720,7 @@ function AddOperatorModal({ handleModalClose }) {
               <label className="text-sm text-gray-600">Region *</label>
               <input
                 type="text"
-                name="region"
+                name="regions"
                 required
                 value={formData.regions}
                 onChange={handleChange}
@@ -738,6 +756,78 @@ function AddOperatorModal({ handleModalClose }) {
                 onChange={handleChange}
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
                 placeholder="https://wanderlustadventures.com"
+              />
+            </div>
+
+            {/* Social Links Section */}
+            <div className="col-span-2">
+              <label className="text-sm text-gray-600">
+                Social Media Links
+              </label>
+            </div>
+
+            {/* Instagram */}
+            <div>
+              <label className="text-sm text-gray-600">Instagram URL</label>
+              <input
+                type="url"
+                name="social_links.instagram"
+                value={formData.social_links.instagram}
+                onChange={handleChange}
+                placeholder="https://instagram.com/operator"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* Facebook */}
+            <div>
+              <label className="text-sm text-gray-600">Facebook URL</label>
+              <input
+                type="url"
+                name="social_links.facebook"
+                value={formData.social_links.facebook}
+                onChange={handleChange}
+                placeholder="https://facebook.com/operator"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* LinkedIn */}
+            <div>
+              <label className="text-sm text-gray-600">LinkedIn URL</label>
+              <input
+                type="url"
+                name="social_links.linkedin"
+                value={formData.social_links.linkedin}
+                onChange={handleChange}
+                placeholder="https://linkedin.com/company/operator"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* Twitter */}
+            <div>
+              <label className="text-sm text-gray-600">Twitter URL</label>
+              <input
+                type="url"
+                name="social_links.twitter"
+                value={formData.social_links.twitter}
+                onChange={handleChange}
+                placeholder="https://twitter.com/operator"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            {/* YouTube */}
+            <div>
+              <label className="text-sm text-gray-600">YouTube URL</label>
+              <input
+                type="url"
+                name="social_links.youtube"
+                value={formData.social_links.youtube}
+                onChange={handleChange}
+                placeholder="https://youtube.com/@operator"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
               />
             </div>
 
