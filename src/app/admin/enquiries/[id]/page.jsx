@@ -32,6 +32,7 @@ import {
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { useToast } from "@/app/hooks/use-toast";
 import Cookies from "js-cookie";
+import { formatPhoneNumber } from "@/lib/utils";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -234,10 +235,10 @@ export default function EnquiryDetail() {
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href={`tel:${enquiry.phone_number}`}
+                  href={`tel:+91${enquiry.phone_number.replace(/\D/g, "").slice(-10)}`}
                   className="hover:underline"
                 >
-                  {enquiry.phone_number}
+                  {formatPhoneNumber(enquiry.phone_number)}
                 </a>
               </div>
             )}

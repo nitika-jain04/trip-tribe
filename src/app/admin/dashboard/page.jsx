@@ -112,34 +112,61 @@ export default function DashboardPage() {
         // -------- Enquiry graph --------
         const enquiries = enquiriesData?.result?.data || [];
 
+        // const last7Days = {};
+        // const today = new Date();
+
+        // for (let i = 6; i >= 0; i--) {
+        //   const d = new Date();
+        //   d.setDate(today.getDate() - i);
+        //   const key = d.toLocaleDateString("en-US", { weekday: "short" });
+
+        //   last7Days[key] = 0;
+        // }
+
+        // enquiries.forEach((enq) => {
+        //   const date = new Date(enq.createdAt);
+        //   const key = date.toLocaleDateString("en-US", {
+        //     weekday: "short",
+        //   });
+
+        //   if (last7Days[key] !== undefined) {
+        //     last7Days[key]++;
+        //   }
+        // });
+
+        // const chartData = Object.entries(last7Days).map(
+        //   ([name, enquiries]) => ({
+        //     name,
+        //     enquiries,
+        //   }),
+        // );
+
         const last7Days = {};
         const today = new Date();
 
         for (let i = 6; i >= 0; i--) {
           const d = new Date();
           d.setDate(today.getDate() - i);
-          const key = d.toLocaleDateString("en-US", { weekday: "short" });
 
-          last7Days[key] = 0;
+          const dateKey = d.toISOString().split("T")[0]; // unique key
+          const dayLabel = d.toLocaleDateString("en-US", { weekday: "short" });
+
+          last7Days[dateKey] = {
+            name: dayLabel,
+            enquiries: 0,
+          };
         }
 
         enquiries.forEach((enq) => {
-          const date = new Date(enq.createdAt);
-          const key = date.toLocaleDateString("en-US", {
-            weekday: "short",
-          });
+          const dateKey = new Date(enq.createdAt).toISOString().split("T")[0];
 
-          if (last7Days[key] !== undefined) {
-            last7Days[key]++;
+          if (last7Days[dateKey]) {
+            last7Days[dateKey].enquiries++;
           }
         });
 
-        const chartData = Object.entries(last7Days).map(
-          ([name, enquiries]) => ({
-            name,
-            enquiries,
-          }),
-        );
+        const chartData = Object.values(last7Days);
+        setEnquiryChart(chartData);
 
         setStats({
           operators: {
@@ -162,8 +189,6 @@ export default function DashboardPage() {
             closed: enquiryStats.byStatus.closed,
           },
         });
-
-        setEnquiryChart(chartData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -268,6 +293,15 @@ export default function DashboardPage() {
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     dot={{ fill: "hsl(var(--primary))" }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="enquiries"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={3}
+                    dot={{ fill: "hsl(var(--primary))" }}
+                    activeDot={{ r: 6 }}
+                    connectNulls={true}
                   />
                 </LineChart>
               </ResponsiveContainer>

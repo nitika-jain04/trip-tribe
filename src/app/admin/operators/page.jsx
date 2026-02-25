@@ -4,9 +4,7 @@ import AdminGuard from "@/app/components/AdminGuard";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-
 import {
-  Plus,
   MoreHorizontal,
   Eye,
   Pencil,
@@ -14,9 +12,9 @@ import {
   Loader2,
   UserCheck,
   UserX,
+  Trash2,
 } from "lucide-react";
 import Image from "next/image";
-
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 import {
@@ -49,8 +47,7 @@ import {
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { IoCloseSharp } from "react-icons/io5";
 import Link from "next/link";
-
-// Modal for adding operators
+import { formatPhoneNumber } from "@/lib/utils";
 
 function OperatorsPage() {
   const router = useRouter();
@@ -69,7 +66,6 @@ function OperatorsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
-  // const [sourceFilter, setSourceFilter] = useState("APPLICATION");
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("DESC");
   const [searchQuery, setSearchQuery] = useState("");
@@ -154,7 +150,7 @@ function OperatorsPage() {
 
   useEffect(() => {
     getOperators();
-    const interval = setInterval(() => getOperators(), 2 * 60 * 1000);
+    const interval = setInterval(() => getOperators(), 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, [getOperators]);
 
@@ -163,10 +159,43 @@ function OperatorsPage() {
     if (!value) getOperators();
   };
 
-  const handleViewDetails = (operator) =>
-    router.push(`/admin/operators/${operator.id}`);
-  const handleEditOperator = (operator) =>
-    router.push(`/admin/operators/edit/${operator.id}`);
+  // const handleViewDetails = (operator) =>
+  //   router.push(`/admin/operators/${operator.id}`);
+  // const handleEditOperator = (operator) =>
+  //   router.push(`/admin/operators/edit/${operator.id}`);
+
+  const handleDeleteOperator = async (operatorId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this operator? This action cannot be undone.",
+    );
+
+    if (!confirmed) return;
+
+    const token = Cookies.get("token");
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${operatorId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to delete operator");
+      }
+
+      alert("Operator deleted successfully");
+      getOperators(); // refresh list
+    } catch (err) {
+      alert(err.message || "Something went wrong while deleting");
+    }
+  };
 
   return (
     <AdminGuard>
@@ -188,36 +217,36 @@ function OperatorsPage() {
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardContent className="pt-2">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search operators..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setPage(1);
-                  }}
-                  className="pl-10"
-                />
-              </div>
+        {/* <Card> */}
+        <CardContent className="pt-2">
+          <div className="flex flex-col sm:flex-row gap-4 w-150">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search operators..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-10"
+              />
+            </div>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  {/* <SelectItem value="pending">Pending</SelectItem> */}
-                </SelectContent>
-              </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+                {/* <SelectItem value="pending">Pending</SelectItem> */}
+              </SelectContent>
+            </Select>
 
-              <Select value={regionFilter} onValueChange={setRegionFilter}>
+            {/* <Select value={regionFilter} onValueChange={setRegionFilter}>
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="Region" />
                 </SelectTrigger>
@@ -230,12 +259,11 @@ function OperatorsPage() {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+              </Select> */}
+          </div>
+        </CardContent>
+        {/* </Card> */}
 
-        {/* Operators Table */}
         <Card>
           <CardHeader>
             <CardTitle>All Operators ({filteredOperators.length})</CardTitle>
@@ -247,7 +275,7 @@ function OperatorsPage() {
                   <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
                     <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
                     <p className="text-gray-600 font-medium">
-                      Loading enquiries...
+                      Loading operators...
                     </p>
                     <p className="text-sm text-gray-400 mt-1">
                       Please wait while we fetch your data
@@ -302,51 +330,25 @@ function OperatorsPage() {
                       <TableCell>
                         <p className="text-sm">{op.contact_name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {op.phone_number}
+                          {formatPhoneNumber(op.phone_number)}
                         </p>
                       </TableCell>
 
                       <TableCell className="text-muted-foreground">
-                        {op.regions}
+                        {Array.isArray(op.regions) && op.regions.length > 0
+                          ? op.regions.join(", ")
+                          : "-"}
                       </TableCell>
 
                       <TableCell className="text-center">
-                        {op.total_trips || 0}
+                        {op.total_trips !== undefined && op.total_trips !== null
+                          ? Number(op.total_trips)
+                          : "-"}
                       </TableCell>
 
                       <TableCell>
                         <StatusBadge status={op.status?.toLowerCase()} />
                       </TableCell>
-
-                      {/* <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Button
-                                variant="ghost"
-                                onClick={() => handleViewDetails(op)}
-                              >
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </Button>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Button
-                                variant="ghost"
-                                onClick={() => handleEditOperator(op)}
-                              >
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell> */}
 
                       <TableCell className="text-right">
                         <DropdownMenu>
@@ -357,30 +359,40 @@ function OperatorsPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Button onClick={() => handleViewDetails(op)}>
+                              <Link href={`/admin/operators/${op.id}`}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
-                              </Button>
+                              </Link>
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <Button onClick={() => handleEditOperator(op)}>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/admin/operators/edit/${op.id}`}>
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
-                              </Button>
+                              </Link>
                             </DropdownMenuItem>
-                            {op.status === "pending" && (
-                              <DropdownMenuItem className="text-success">
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Approve
-                              </DropdownMenuItem>
+                            {op.status === "INACTIVE" && (
+                              <>
+                                <DropdownMenuItem className="text-success">
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Approve
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteOperator(op.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
                             )}
-                            {op.status === "active" && (
+                            {op.status === "ACTIVE" && (
                               <DropdownMenuItem className="text-destructive">
                                 <UserX className="h-4 w-4 mr-2" />
                                 Suspend
                               </DropdownMenuItem>
                             )}
-                            {op.status === "suspended" && (
+                            {op.status === "SUSPENDED" && (
                               <DropdownMenuItem className="text-success">
                                 <UserCheck className="h-4 w-4 mr-2" />
                                 Reactivate
@@ -397,7 +409,6 @@ function OperatorsPage() {
           </CardContent>
         </Card>
 
-        {/* Pagination */}
         <div className="flex items-center justify-end gap-4">
           <Button
             disabled={page === 1}
@@ -429,14 +440,12 @@ function AddOperatorModal({ handleModalClose }) {
     contact_name: "",
     regions: "",
     description: "",
-    website: "",
+    website_url: "",
     logo_url: "",
     rating: 4.5,
     status: "inactive",
-
-    total_trips: "",
-    trips_per_year: "",
-
+    total_trips: 0,
+    trips_per_year: 0,
     social_links: {
       instagram: "",
       facebook: "",
@@ -528,10 +537,8 @@ function AddOperatorModal({ handleModalClose }) {
     const token = Cookies.get("token");
 
     // Validate phone number - accept Indian format
-    if (!/^(\+91|91)?[6-9]\d{9}$/.test(formData.phone_number)) {
-      alert(
-        "Please enter a valid Indian phone number (e.g., 919876543210 or +919876543210)",
-      );
+    if (!/^[6-9]\d{9}$/.test(formData.phone_number)) {
+      alert("Please enter a valid Indian phone number");
       setLoading(false);
       return;
     }
@@ -544,7 +551,7 @@ function AddOperatorModal({ handleModalClose }) {
     }
 
     // Validate website URL if provided
-    if (formData.website && !/^https?:\/\/.+/.test(formData.website)) {
+    if (formData.website_url && !/^https?:\/\/.+/.test(formData.website_url)) {
       alert(
         "Please enter a valid website URL (starting with http:// or https://)",
       );
@@ -557,19 +564,33 @@ function AddOperatorModal({ handleModalClose }) {
       description: formData.description,
       contact_name: formData.contact_name,
       email: formData.email,
-      phone_number: formData.phone_number,
-      regions: formData.regions,
-      website: formData.website || undefined,
+      phone_number: formatIndianNumber(formData.phone_number),
+      regions: formData.regions
+        ? formData.regions
+            .split(",")
+            .map((r) => r.trim())
+            .filter(Boolean)
+        : [],
+      website_url: formData.website_url || undefined,
       logo_url: formData.logo_url || undefined,
-      rating: parseFloat(formData.rating) || 4.5,
+      // rating: parseFloat(formData.rating) || 4.5,
       status: formData.status,
-      total_trips: formData.total_trips
-        ? parseInt(formData.total_trips)
-        : undefined,
 
-      trips_per_year: formData.trips_per_year
-        ? parseInt(formData.trips_per_year)
-        : undefined,
+      total_trips:
+        formData.total_trips !== "" ? Number(formData.total_trips) : undefined,
+
+      trips_per_year:
+        formData.trips_per_year !== ""
+          ? Number(formData.trips_per_year)
+          : undefined,
+
+      social_links: {
+        instagram: formData.social_links.instagram || undefined,
+        facebook: formData.social_links.facebook || undefined,
+        twitter: formData.social_links.twitter || undefined,
+        youtube: formData.social_links.youtube || undefined,
+        linkedin: formData.social_links.linkedin || undefined,
+      },
     };
 
     Object.keys(requestBody).forEach(
@@ -578,6 +599,8 @@ function AddOperatorModal({ handleModalClose }) {
 
     const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
     const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+    console.log("add op req", requestBody);
 
     try {
       const res = await fetch(
@@ -716,15 +739,29 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Phone Number */}
             <div>
               <label className="text-sm text-gray-600">Phone Number *</label>
-              <input
-                type="tel"
-                name="phone_number"
-                required
-                value={formData.phone_number}
-                onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="+917007755306"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                  +91
+                </span>
+
+                <Input
+                  type="tel"
+                  placeholder="9876543210"
+                  value={formData.phone_number}
+                  onChange={(e) => {
+                    const digits = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
+
+                    setFormData((prev) => ({
+                      ...prev,
+                      phone_number: digits,
+                    }));
+                  }}
+                  className="pl-12 text-sm"
+                  required
+                />
+              </div>
             </div>
 
             {/* Region */}
@@ -737,7 +774,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.regions}
                 onChange={handleChange}
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="North India"
+                placeholder="North India, Himalayas"
               />
             </div>
 
@@ -779,24 +816,13 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.status}
                 onChange={handleChange}
               >
-                <option value="">Select Status</option>
+                <option value="" className="placeholder:text-gray-600">
+                  Select Status
+                </option>
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
                 <option value="SUSPENDED">Suspended</option>
               </select>
-            </div>
-
-            {/* Website URL */}
-            <div>
-              <label className="text-sm text-gray-600">Website URL</label>
-              <input
-                type="url"
-                name="website"
-                value={formData.website}
-                onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="https://wanderlustadventures.com"
-              />
             </div>
 
             {/* Social Links Section */}
@@ -804,6 +830,19 @@ function AddOperatorModal({ handleModalClose }) {
               <label className="text-sm text-gray-600">
                 Social Media Links
               </label>
+            </div>
+
+            {/* Website URL */}
+            <div>
+              <label className="text-sm text-gray-600">Website URL</label>
+              <input
+                type="url"
+                name="website_url"
+                value={formData.website_url}
+                onChange={handleChange}
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                placeholder="https://wanderlustadventures.com"
+              />
             </div>
 
             {/* Instagram */}

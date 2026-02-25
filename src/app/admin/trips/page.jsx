@@ -1,21 +1,57 @@
 "use client";
 
 import AdminGuard from "@/app/components/AdminGuard";
-import Dropdownadmin from "@/app/components/Dropdown-admin";
-import DropdownActionsAdmin from "@/app/components/DropdownActionsAdmin";
 import React, { useCallback, useEffect, useState } from "react";
-import { CiSearch } from "react-icons/ci";
-import { LiaEditSolid } from "react-icons/lia";
-import { LuEye } from "react-icons/lu";
-import { SlLocationPin, SlOptions } from "react-icons/sl";
-import { Button, formatDateRange } from "@/app/components/adminFunctionCalls";
-import { IoCloseSharp } from "react-icons/io5";
-import { FaPlus, FaTrash, FaMapMarkedAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { IndianRupeeIcon, Loader2, AlertCircle, MapPin } from "lucide-react";
+import {
+  Plus,
+  Search,
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  Copy,
+  Archive,
+  Loader2,
+  AlertCircle,
+  MapPin,
+  Star,
+  IndianRupee,
+} from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import Input from "@/app/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/app/components/ui/dropdown-menu";
+import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Cookies from "js-cookie";
 import dynamic from "next/dynamic";
-import { StatusBadge } from "@/app/components/admin/StatusBadge";
+import { IoCloseSharp } from "react-icons/io5";
+import { FaPlus, FaTrash, FaMapMarkedAlt } from "react-icons/fa";
+import { SlLocationPin } from "react-icons/sl";
 
 // Dynamically import map components to avoid SSR issues
 const MapPicker = dynamic(() => import("@/app/components/MapPickerTrip"), {
@@ -39,15 +75,20 @@ function Page() {
   const [totalPages, setTotalPages] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [operators, setOperators] = useState([]);
+  const [destinations, setDestinations] = useState([]);
   const [loadingOperators, setLoadingOperators] = useState(false);
-  const [statusFilter, setStatusFilter] = useState("All Status");
-  const [destinationFilter, setDestinationFilter] =
-    useState("All Destinations");
-  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter states
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [destinationFilter, setDestinationFilter] = useState("all");
+  const [operatorFilter, setOperatorFilter] = useState("all");
+  const [difficultyFilter, setDifficultyFilter] = useState("all");
 
   const router = useRouter();
 
   const fetchOperators = async () => {
+    setLoadingOperators(true);
     const token = Cookies.get("token");
 
     try {
@@ -82,7 +123,6 @@ function Page() {
     try {
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/trips/admin?page=${page}&limit=10`,
-
         {
           method: "GET",
           headers: {
@@ -93,12 +133,19 @@ function Page() {
       );
 
       const data = await res.json();
-      console.log("data", data);
 
       if (res.ok && data.success) {
         setTrips(data.result.trips || []);
         setTotalTrips(data.result.pagination?.total || 0);
         setTotalPages(data.result.pagination?.pages || 1);
+
+        // Extract unique destinations
+        const uniqueDests = [
+          ...new Set(
+            data.result.trips.map((t) => t.destination?.name).filter(Boolean),
+          ),
+        ];
+        setDestinations(uniqueDests);
       } else {
         throw new Error(data.message || "Failed to fetch trips");
       }
@@ -114,308 +161,356 @@ function Page() {
   useEffect(() => {
     fetchOperators();
     getAllTrips();
+  }, [getAllTrips]);
 
-    const interval = setInterval(
-      () => {
-        getAllTrips();
-      },
-      2 * 60 * 1000,
-    );
-
+  useEffect(() => {
+    const interval = setInterval(getAllTrips, 2 * 60 * 1000);
     return () => clearInterval(interval);
   }, [getAllTrips]);
 
-  function handleOperatorsName(id) {
+  const getOperatorName = (id) => {
     if (!id) return "N/A";
-
     const operator = operators.find((operator) => operator.id === id);
     return operator ? operator.name : "N/A";
-  }
+  };
 
-  function handleModalClose(value) {
+  const handleModalClose = (value) => {
     setShowModal(value);
-
     if (value === false) {
       getAllTrips();
     }
-  }
+  };
 
   const handleViewTrip = (trip) => {
-    const id = trip.id;
-    router.push(`/admin/trips/${id}`);
+    router.push(`/admin/trips/${trip.id}`);
   };
 
   const handleEditTrip = (trip) => {
-    const id = trip.id;
-    router.push(`/admin/trips/edit/${id}`);
+    router.push(`/admin/trips/edit/${trip.id}`);
   };
 
-  // Handle search input change
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
-    setPage(1); // Reset to first page on new search
-  };
+  // Filter trips
+  const filteredTrips = trips.filter((trip) => {
+    const matchesSearch =
+      trip.name?.toLowerCase().includes(search.toLowerCase()) ||
+      trip.destination?.name?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || trip.status === statusFilter.toUpperCase();
+    const matchesDestination =
+      destinationFilter === "all" ||
+      trip.destination?.name === destinationFilter;
+    const matchesOperator =
+      operatorFilter === "all" || trip.operator_id === operatorFilter;
+    const matchesDifficulty =
+      difficultyFilter === "all" ||
+      trip.difficulty?.toLowerCase() === difficultyFilter.toLowerCase();
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesDestination &&
+      matchesOperator &&
+      matchesDifficulty
+    );
+  });
+
+  const difficulties = ["EASY", "MODERATE", "HARD"];
 
   return (
     <AdminGuard>
-      <div className="px-5 py-10 flex flex-col gap-5">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 p-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Trips</h1>
             <p className="text-muted-foreground mt-1">
               Manage all trip listings across operators
             </p>
           </div>
-
-          <div>
-            <Button label="Add Trip" fnClose={setShowModal} bool="true" />
-          </div>
+          <Button onClick={() => setShowModal(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add New Trip
+          </Button>
         </div>
 
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-3 w-1/2 border border-gray-200 rounded-lg p-2">
-            <CiSearch size={17} />
-            <input
-              type="text"
-              placeholder="Search trips..."
-              className="placeholder:text-sm w-full focus:outline-none"
-              value={searchQuery}
-              onChange={handleSearchChange}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <IoCloseSharp size={18} />
-              </button>
-            )}
-          </div>
-
-          <Dropdownadmin
-            options={[
-              { index: 1, label: "All Status", value: "All Status" },
-              { index: 2, label: "Live", value: "Live" },
-              { index: 3, label: "Draft", value: "Draft" },
-              { index: 4, label: "Archived", value: "Archived" },
-            ]}
-            onSelect={setStatusFilter}
-            selectedValue={statusFilter}
-          />
-
-          <Dropdownadmin
-            options={[
-              {
-                index: 1,
-                label: "All Destinations",
-                value: "All Destinations",
-              },
-              { index: 2, label: "Himalayas", value: "Himalayas" },
-              { index: 3, label: "Beach", value: "Beach" },
-              { index: 4, label: "Forest", value: "Forest" },
-            ]}
-            onSelect={setDestinationFilter}
-            selectedValue={destinationFilter}
-          />
-        </div>
-
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          {/* Header Row */}
-          <div className="grid grid-cols-[2.5fr_1.5fr_1fr_1.5fr_1fr_1fr_0.5fr] gap-5 text-admin-haze bg-gray-100 px-4 py-3 text-sm font-medium tracking-wide">
-            {" "}
-            <div>Trip</div>
-            <div>Operator</div>
-            <div>Price</div>
-            <div>Dates</div>
-            <div>Difficulty</div>
-            <div>Status</div>
-            <div>Actions</div>
-          </div>
-
-          {/* Enhanced Loading State */}
-          {loading && (
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">Loading trips...</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Please wait while we fetch your data
-              </p>
-            </div>
-          )}
-
-          {/* Enhanced Error State */}
-          {error && !loading && (
-            <div className="flex flex-col items-center justify-center py-16 bg-red-50">
-              <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-              <p className="text-red-600 font-medium">Failed to load trips</p>
-              <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
-              <button
-                onClick={getAllTrips}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-              >
-                <Loader2 className="w-4 h-4" />
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {/* Enhanced Empty State */}
-          {!loading && !error && trips.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
-              <MapPin className="w-12 h-12 text-gray-400 mb-4" />
-              <p className="text-gray-600 font-medium">No trips found</p>
-              <p className="text-sm text-gray-400 mt-1">
-                {searchQuery
-                  ? "No trips match your search criteria"
-                  : "Get started by adding your first trip"}
-              </p>
-              {!searchQuery && (
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="mt-4 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors"
-                >
-                  Add Trip
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Data Rows */}
-          {!loading &&
-            !error &&
-            trips.length > 0 &&
-            trips.map((trip, index) => (
-              <div
-                key={trip._id || index}
-                className="grid grid-cols-[2.5fr_1.5fr_1fr_1.5fr_1fr_1fr_0.5fr] gap-5
-                        items-center pl-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
-              >
-                {/* Trip Name and Destination */}
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col gap-1">
-                    <p className="font-medium text-sm">{trip.name || "N/A"}</p>
-                    <p className="text-sm text-admin-haze flex items-center gap-1">
-                      <span>
-                        <SlLocationPin size={15} />
-                      </span>
-                      {trip.destination || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Operator */}
-                <div className="text-sm text-admin-haze">
-                  {handleOperatorsName(trip.operator_id)}
-                </div>
-
-                {/* Price */}
-                <div className="text-sm flex items-center gap-1">
-                  <IndianRupeeIcon size={12} />
-                  {trip.price
-                    ? Number(trip.price).toLocaleString("en-IN", {
-                        maximumFractionDigits: 0,
-                      })
-                    : "N/A"}
-                </div>
-
-                {/* Dates */}
-                <div className="text-sm text-admin-haze flex items-center gap-1">
-                  {/* <IoIosCalendar size={16} /> */}
-                  {/* {formatDateRange(trip.start_date, trip.end_date)} */}
-                  {new Date(trip.start_date).toLocaleDateString()},{" "}
-                  {new Date(trip.end_date).toLocaleDateString()}
-                </div>
-
-                {/* Difficulty */}
-                <div className="text-sm">
-                  <span
-                    className={`text-sm font-medium ${
-                      trip.difficulty === "EASY"
-                        ? "text-success"
-                        : trip.difficulty === "MODERATE"
-                          ? "text-primary"
-                          : trip.difficulty === "HARD"
-                            ? "text-warning"
-                            : "text-destructive"
-                    }`}
-                  >
-                    {trip.difficulty || "N/A"}
-                  </span>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <StatusBadge status={trip.status} />
-
-                  {/* {trip.status || "N/A"}
-                  </span> */}
-                </div>
-
-                {/* Actions */}
-                <DropdownActionsAdmin
-                  labelText={<SlOptions />}
-                  options={[
-                    {
-                      label: "View",
-                      value: "View",
-                      icon: <LuEye size={18} />,
-                      onClick: () => handleViewTrip(trip),
-                    },
-                    {
-                      label: "Edit",
-                      value: "Edit",
-                      icon: <LiaEditSolid size={18} />,
-                      onClick: () => handleEditTrip(trip),
-                    },
-                    // {
-                    //   label: "Duplicate",
-                    //   value: "Duplicate",
-                    //   icon: <LuCopy />,
-                    // },
-                    // {
-                    //   label: "Archive",
-                    //   value: "Archive",
-                    //   icon: <HiOutlineArchive size={18} />,
-                    // },
-                  ]}
+        {/* Filters */}
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+              <div className="relative lg:col-span-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search trips..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
                 />
               </div>
-            ))}
 
-          {/* Summary Row */}
-          {!loading && !error && trips.length > 0 && (
-            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 text-sm text-gray-600">
-              Showing {trips.length} of {totalTrips} trips
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="published">Live</SelectItem>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={destinationFilter}
+                onValueChange={setDestinationFilter}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Destination" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Destinations</SelectItem>
+                  {destinations.map((dest) => (
+                    <SelectItem key={dest} value={dest}>
+                      {dest}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Operator" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Operators</SelectItem>
+                  {operators.map((op) => (
+                    <SelectItem key={op.id} value={op.id}>
+                      {op.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={difficultyFilter}
+                onValueChange={setDifficultyFilter}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Difficulties</SelectItem>
+                  {difficulties.map((diff) => (
+                    <SelectItem key={diff} value={diff.toLowerCase()}>
+                      {diff.charAt(0) + diff.slice(1).toLowerCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="flex items-center justify-end">
-          <div className="flex gap-5 items-center">
-            <button
-              className={`border border-gray-100 bg-gray-50 p-2 text-sm rounded-lg cursor-pointer ${page === 1 ? "text-admin-haze" : "text-admin-dark"}`}
-              disabled={page === 1}
-              onClick={() => setPage((p) => Math.max(p - 1, 1))}
-            >
-              Previous
-            </button>
-            <button
-              disabled={page === totalPages}
-              onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-              className="border border-gray-100 bg-gray-50 p-2 text-sm rounded-lg cursor-pointer"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        {/* Trips Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>All Trips ({filteredTrips.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+                <p className="text-gray-600 font-medium">Loading trips...</p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg">
+                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                <p className="text-red-600 font-medium">Failed to load trips</p>
+                <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
+                <Button onClick={getAllTrips} variant="destructive">
+                  Try Again
+                </Button>
+              </div>
+            ) : filteredTrips.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <MapPin className="w-12 h-12 text-gray-400 mb-4" />
+                <p className="text-gray-600 font-medium">No trips found</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  {search
+                    ? "No trips match your search criteria"
+                    : "Get started by adding your first trip"}
+                </p>
+                {!search && (
+                  <Button onClick={() => setShowModal(true)} className="mt-4">
+                    Add Trip
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Trip</TableHead>
+                      <TableHead>Operator</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Dates</TableHead>
+                      <TableHead>Difficulty</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTrips.map((trip) => (
+                      <TableRow key={trip.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            {trip.images && trip.images[0] ? (
+                              <img
+                                src={trip.images[0]}
+                                alt={trip.name}
+                                className="h-12 w-16 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="h-12 w-16 rounded bg-gray-100 flex items-center justify-center">
+                                <MapPin className="h-4 w-4 text-gray-400" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium">
+                                {trip.name || "N/A"}
+                              </p>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <SlLocationPin size={12} />
+                                {trip.destination?.name || "N/A"}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {getOperatorName(trip.operator_id)}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-1">
+                            <IndianRupee className="h-3 w-3" />
+                            {trip.price?.toLocaleString("en-IN") || "N/A"}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {trip.start_date && trip.end_date ? (
+                              <>
+                                <p>
+                                  {new Date(
+                                    trip.start_date,
+                                  ).toLocaleDateString()}
+                                </p>
+                                <p className="text-muted-foreground">
+                                  {new Date(trip.end_date).toLocaleDateString()}
+                                </p>
+                              </>
+                            ) : (
+                              "N/A"
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span
+                            className={`text-sm font-medium ${
+                              trip.difficulty === "EASY"
+                                ? "text-success"
+                                : trip.difficulty === "MODERATE"
+                                  ? "text-primary"
+                                  : trip.difficulty === "HARD"
+                                    ? "text-warning"
+                                    : "text-destructive"
+                            }`}
+                          >
+                            {trip.difficulty || "N/A"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={trip.status || "DRAFT"} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleViewTrip(trip)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleEditTrip(trip)}
+                              >
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <Copy className="h-4 w-4 mr-2" />
+                                Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive">
+                                <Archive className="h-4 w-4 mr-2" />
+                                Archive
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {filteredTrips.length} of {totalTrips} trips
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                      disabled={page === 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setPage((p) => Math.min(p + 1, totalPages))
+                      }
+                      disabled={page === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
-      {showModal && <AddTripModal handleModalClose={handleModalClose} />}
+
+      {showModal && (
+        <AddTripModal
+          handleModalClose={handleModalClose}
+          operators={operators}
+        />
+      )}
     </AdminGuard>
   );
 }
 
-function AddTripModal({ handleModalClose }) {
-  const [operators, setOperators] = useState([]);
+// AddTripModal component with shadcn/ui styling
+function AddTripModal({ handleModalClose, operators }) {
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
@@ -451,34 +546,9 @@ function AddTripModal({ handleModalClose }) {
     itinerary: [{ day: 1, activities: [""] }],
   });
 
-  // Fetch operators
-  useEffect(() => {
-    const token = Cookies.get("token");
-
-    const fetchOperators = async () => {
-      try {
-        const opRes = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/operators/admin`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        const opData = await opRes.json();
-
-        if (opData.success) setOperators(opData.result.operators || []);
-      } catch (err) {
-        console.error("Fetch failed", err);
-      }
-    };
-
-    fetchOperators();
-  }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Handle nested location fields
     if (name.startsWith("source.") || name.startsWith("destination.")) {
       const [location, field] = name.split(".");
       setFormData((p) => ({
@@ -498,14 +568,13 @@ function AddTripModal({ handleModalClose }) {
       ...p,
       [type]: {
         name: locationData.name || locationData.address || "",
-        region: locationData.region || locationData.state || "",
+        region: locationData.region || "",
         latitude: locationData.lat || locationData.latitude || "",
         longitude: locationData.lng || locationData.longitude || "",
         type: locationData.type || "CITY",
       },
     }));
 
-    // Close the map modal
     if (type === "source") {
       setShowSourceMap(false);
     } else {
@@ -513,7 +582,6 @@ function AddTripModal({ handleModalClose }) {
     }
   };
 
-  // Image upload handler
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -521,8 +589,8 @@ function AddTripModal({ handleModalClose }) {
     const token = Cookies.get("token");
     setUploadingImage(true);
 
-    const formData = new FormData();
-    formData.append("image", file);
+    const formDataObj = new FormData();
+    formDataObj.append("image", file);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
@@ -530,13 +598,12 @@ function AddTripModal({ handleModalClose }) {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        body: formData,
+        body: formDataObj,
       });
 
       const data = await res.json();
 
       if (res.ok && data.success) {
-        // Add the uploaded image URL to images array
         setFormData((p) => ({
           ...p,
           images: [...p.images, data.result.url],
@@ -552,7 +619,6 @@ function AddTripModal({ handleModalClose }) {
     }
   };
 
-  // Remove image from list
   const removeImage = (index) => {
     setFormData((p) => ({
       ...p,
@@ -560,7 +626,6 @@ function AddTripModal({ handleModalClose }) {
     }));
   };
 
-  // Generic list handlers (inclusions/exclusions)
   const handleListChange = (key, index, value) => {
     const arr = [...formData[key]];
     arr[index] = value;
@@ -576,7 +641,6 @@ function AddTripModal({ handleModalClose }) {
     setFormData((p) => ({ ...p, [key]: arr }));
   };
 
-  // Itinerary handlers
   const addDay = () =>
     setFormData((p) => ({
       ...p,
@@ -591,7 +655,6 @@ function AddTripModal({ handleModalClose }) {
     const updatedItinerary = formData.itinerary.filter(
       (_, i) => i !== dayIndex,
     );
-    // Re-number days
     updatedItinerary.forEach((day, index) => {
       day.day = index + 1;
     });
@@ -622,13 +685,12 @@ function AddTripModal({ handleModalClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate dates
+    // Validation
     if (new Date(formData.end_date) <= new Date(formData.start_date)) {
       alert("End date must be after start date");
       return;
     }
 
-    // Validate locations
     if (
       !formData.source.latitude ||
       !formData.source.longitude ||
@@ -647,10 +709,19 @@ function AddTripModal({ handleModalClose }) {
       return;
     }
 
+    if (!formData.operator_id) {
+      alert("Please select operator");
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      alert("Trip name required");
+      return;
+    }
+
     const token = Cookies.get("token");
     setLoading(true);
 
-    // Clean up empty values and prepare payload
     const payload = {
       name: formData.name,
       description: formData.description,
@@ -663,15 +734,15 @@ function AddTripModal({ handleModalClose }) {
       source: {
         name: formData.source.name,
         region: formData.source.region,
-        latitude: formData.source.latitude,
-        longitude: formData.source.longitude,
+        latitude: Number(formData.source.latitude),
+        longitude: Number(formData.source.longitude),
         type: formData.source.type,
       },
       destination: {
         name: formData.destination.name,
         region: formData.destination.region,
-        latitude: formData.destination.latitude,
-        longitude: formData.destination.longitude,
+        latitude: Number(formData.destination.latitude),
+        longitude: Number(formData.destination.longitude),
         type: formData.destination.type,
       },
       status: formData.status,
@@ -685,8 +756,6 @@ function AddTripModal({ handleModalClose }) {
         }))
         .filter((day) => day.activities.length > 0),
     };
-
-    console.log("Submitting payload:", payload);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
@@ -715,17 +784,18 @@ function AddTripModal({ handleModalClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-[90vw] max-w-6xl h-[90vh] rounded-xl flex flex-col">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white w-[90vw] max-w-6xl h-[90vh] rounded-lg shadow-lg flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-xl font-semibold">Create New Trip</h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => handleModalClose(false)}
-            className="text-gray-500 hover:text-gray-700"
           >
-            <IoCloseSharp size={24} />
-          </button>
+            <IoCloseSharp size={20} />
+          </Button>
         </div>
 
         {/* Body */}
@@ -735,202 +805,241 @@ function AddTripModal({ handleModalClose }) {
         >
           {/* Basic Info */}
           <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Basic Information
-            </h3>
+            <h3 className="text-lg font-semibold">Basic Information</h3>
             <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Trip Name *"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                placeholder="Himalayan Base Camp Trek"
-              />
-              <Input
-                label="Price (₹) *"
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                required
-                min="0"
-                placeholder="45000"
-              />
-              <Input
-                label="Total Seats *"
-                name="total_seats"
-                type="number"
-                value={formData.total_seats}
-                onChange={handleChange}
-                required
-                min="1"
-                placeholder="15"
-              />
-              <Select
-                label="Difficulty *"
-                name="difficulty"
-                value={formData.difficulty}
-                onChange={handleChange}
-                required
-                options={[
-                  { value: "EASY", label: "Easy" },
-                  { value: "MODERATE", label: "Moderate" },
-                  { value: "HARD", label: "Hard" },
-                ]}
-              />
-              <Select
-                label="Status *"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                required
-                options={[
-                  { value: "PUBLISHED", label: "Published" },
-                  { value: "DRAFT", label: "Draft" },
-                  { value: "ARCHIVED", label: "Archived" },
-                ]}
-              />
-              <Input
-                label="Start Date *"
-                name="start_date"
-                type="date"
-                value={formData.start_date}
-                onChange={handleChange}
-                required
-              />
-              <Input
-                label="End Date *"
-                name="end_date"
-                type="date"
-                value={formData.end_date}
-                onChange={handleChange}
-                required
-              />
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Trip Name *
+                </label>
+                <Input
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  placeholder="Himalayan Base Camp Trek"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Price (₹) *
+                </label>
+                <Input
+                  name="price"
+                  type="number"
+                  value={formData.price}
+                  onChange={handleChange}
+                  required
+                  min="0"
+                  placeholder="45000"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Total Seats *
+                </label>
+                <Input
+                  name="total_seats"
+                  type="number"
+                  value={formData.total_seats}
+                  onChange={handleChange}
+                  required
+                  min="1"
+                  placeholder="15"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Difficulty *
+                </label>
+                <select
+                  name="difficulty"
+                  value={formData.difficulty}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="EASY">Easy</option>
+                  <option value="MODERATE">Moderate</option>
+                  <option value="HARD">Hard</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Status *
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                >
+                  <option value="PUBLISHED">Published</option>
+                  <option value="DRAFT">Draft</option>
+                  <option value="ARCHIVED">Archived</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  Start Date *
+                </label>
+                <Input
+                  name="start_date"
+                  type="date"
+                  value={formData.start_date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">
+                  End Date *
+                </label>
+                <Input
+                  name="end_date"
+                  type="date"
+                  value={formData.end_date}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
             </div>
           </section>
 
           {/* Operator */}
           <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">Operator</h3>
-            <div className="grid grid-cols-1 gap-4">
-              <Select
-                label="Operator *"
+            <h3 className="text-lg font-semibold">Operator</h3>
+            <div>
+              <label className="text-sm font-medium mb-1 block">
+                Operator *
+              </label>
+              <select
                 name="operator_id"
                 value={formData.operator_id}
                 onChange={handleChange}
                 required
-                options={operators.map((o) => ({ value: o.id, label: o.name }))}
-              />
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+              >
+                <option value="">Select Operator</option>
+                {operators.map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </section>
 
-          {/* Source Location with Map Picker */}
+          {/* Source Location */}
           <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Source Location
-            </h3>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex-1">
-                  {formData.source.name ? (
-                    <div className="space-y-2">
-                      <p className="text-sm">
-                        <span className="font-medium">Name:</span>{" "}
-                        {formData.source.name}
+            <h3 className="text-lg font-semibold">Source Location</h3>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    {formData.source.name ? (
+                      <div className="space-y-1">
+                        <p className="text-sm">
+                          <span className="font-medium">Name:</span>{" "}
+                          {formData.source.name}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Region:</span>{" "}
+                          {formData.source.region || "N/A"}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Coordinates:</span>{" "}
+                          {formData.source.latitude},{" "}
+                          {formData.source.longitude}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No location selected
                       </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Region:</span>{" "}
-                        {formData.source.region || "N/A"}
-                      </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Coordinates:</span>{" "}
-                        {formData.source.latitude}, {formData.source.longitude}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      No location selected
-                    </p>
-                  )}
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowSourceMap(true)}
+                  >
+                    <FaMapMarkedAlt className="h-4 w-4 mr-2" />
+                    {formData.source.name
+                      ? "Change Location"
+                      : "Select from Map"}
+                  </Button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowSourceMap(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-                >
-                  <FaMapMarkedAlt size={16} />
-                  {formData.source.name ? "Change Location" : "Select from Map"}
-                </button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </section>
 
-          {/* Destination Location with Map Picker */}
+          {/* Destination Location */}
           <section className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">
-              Destination Location
-            </h3>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex-1">
-                  {formData.destination.name ? (
-                    <div className="space-y-2">
-                      <p className="text-sm">
-                        <span className="font-medium">Name:</span>{" "}
-                        {formData.destination.name}
+            <h3 className="text-lg font-semibold">Destination Location</h3>
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    {formData.destination.name ? (
+                      <div className="space-y-1">
+                        <p className="text-sm">
+                          <span className="font-medium">Name:</span>{" "}
+                          {formData.destination.name}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Region:</span>{" "}
+                          {formData.destination.region || "N/A"}
+                        </p>
+                        <p className="text-sm">
+                          <span className="font-medium">Coordinates:</span>{" "}
+                          {formData.destination.latitude},{" "}
+                          {formData.destination.longitude}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        No location selected
                       </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Region:</span>{" "}
-                        {formData.destination.region || "N/A"}
-                      </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Coordinates:</span>{" "}
-                        {formData.destination.latitude},{" "}
-                        {formData.destination.longitude}
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-gray-500">
-                      No location selected
-                    </p>
-                  )}
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowDestinationMap(true)}
+                  >
+                    <FaMapMarkedAlt className="h-4 w-4 mr-2" />
+                    {formData.destination.name
+                      ? "Change Location"
+                      : "Select from Map"}
+                  </Button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowDestinationMap(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-                >
-                  <FaMapMarkedAlt size={16} />
-                  {formData.destination.name
-                    ? "Change Location"
-                    : "Select from Map"}
-                </button>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </section>
 
           {/* Map Modals */}
           {showSourceMap && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-              <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-xl flex flex-col">
+              <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-lg flex flex-col">
                 <div className="flex justify-between items-center px-6 py-4 border-b">
                   <h3 className="text-lg font-semibold">
                     Select Source Location
                   </h3>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowSourceMap(false)}
-                    className="text-gray-500 hover:text-gray-700"
                   >
-                    <IoCloseSharp size={24} />
-                  </button>
+                    <IoCloseSharp size={20} />
+                  </Button>
                 </div>
                 <div className="flex-1 p-4">
                   <MapPicker
                     onLocationSelect={(location) =>
                       handleLocationSelect("source", location)
                     }
-                    initialCenter={[20.5937, 78.9629]} // India center
+                    initialCenter={[20.5937, 78.9629]}
                     initialZoom={5}
                   />
                 </div>
@@ -940,24 +1049,25 @@ function AddTripModal({ handleModalClose }) {
 
           {showDestinationMap && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-              <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-xl flex flex-col">
+              <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-lg flex flex-col">
                 <div className="flex justify-between items-center px-6 py-4 border-b">
                   <h3 className="text-lg font-semibold">
                     Select Destination Location
                   </h3>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowDestinationMap(false)}
-                    className="text-gray-500 hover:text-gray-700"
                   >
-                    <IoCloseSharp size={24} />
-                  </button>
+                    <IoCloseSharp size={20} />
+                  </Button>
                 </div>
                 <div className="flex-1 p-4">
                   <MapPicker
                     onLocationSelect={(location) =>
                       handleLocationSelect("destination", location)
                     }
-                    initialCenter={[20.5937, 78.9629]} // India center
+                    initialCenter={[20.5937, 78.9629]}
                     initialZoom={5}
                   />
                 </div>
@@ -967,7 +1077,7 @@ function AddTripModal({ handleModalClose }) {
 
           {/* Description */}
           <section className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-800">Description</h3>
+            <h3 className="text-lg font-semibold">Description</h3>
             <textarea
               name="description"
               value={formData.description}
@@ -979,60 +1089,63 @@ function AddTripModal({ handleModalClose }) {
             />
           </section>
 
-          {/* Images with Upload */}
+          {/* Images */}
           <section className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-800">Images</h3>
-              <div className="relative">
-                <input
+              <h3 className="text-lg font-semibold">Images</h3>
+              <div>
+                <Input
                   type="file"
                   id="imageUpload"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  className="hidden"
                   disabled={uploadingImage}
+                  className="hidden"
                 />
-                <label
-                  htmlFor="imageUpload"
-                  className={`flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg cursor-pointer hover:bg-blue-100 ${
-                    uploadingImage ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    document.getElementById("imageUpload")?.click()
+                  }
+                  disabled={uploadingImage}
                 >
                   {uploadingImage ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Uploading...
                     </>
                   ) : (
                     <>
-                      <FaPlus size={14} />
+                      <Plus className="h-4 w-4 mr-2" />
                       Upload Image
                     </>
                   )}
-                </label>
+                </Button>
               </div>
             </div>
 
-            {/* Image List */}
             <div className="grid grid-cols-6 gap-4">
               {formData.images.map((url, index) => (
                 <div key={index} className="relative group">
                   <img
                     src={url}
                     alt={`Trip ${index + 1}`}
-                    className="w-full h-20 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-20 object-cover rounded-lg border"
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => removeImage(index)}
-                    className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <FaTrash size={12} />
-                  </button>
+                    <FaTrash size={10} />
+                  </Button>
                 </div>
               ))}
               {formData.images.length === 0 && (
-                <div className="col-span-6 text-center py-8 text-gray-400 border-2 border-dashed border-gray-200 rounded-lg">
+                <div className="col-span-6 text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
                   No images uploaded yet
                 </div>
               )}
@@ -1040,192 +1153,175 @@ function AddTripModal({ handleModalClose }) {
           </section>
 
           {/* Inclusions */}
-          <DynamicList
-            title="Inclusions"
-            items={formData.inclusions}
-            onChange={(i, v) => handleListChange("inclusions", i, v)}
-            onAdd={() => addListItem("inclusions")}
-            onRemove={(i) => removeListItem("inclusions", i)}
-            placeholder="Accommodation"
-          />
+          <section className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Inclusions</h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addListItem("inclusions")}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {formData.inclusions.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleListChange("inclusions", index, e.target.value)
+                    }
+                    placeholder={`Inclusion ${index + 1}`}
+                  />
+                  {formData.inclusions.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => removeListItem("inclusions", index)}
+                    >
+                      <FaTrash size={14} />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* Exclusions */}
-          <DynamicList
-            title="Exclusions"
-            items={formData.exclusions}
-            onChange={(i, v) => handleListChange("exclusions", i, v)}
-            onAdd={() => addListItem("exclusions")}
-            onRemove={(i) => removeListItem("exclusions", i)}
-            placeholder="Personal expenses"
-          />
+          <section className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Exclusions</h3>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => addListItem("exclusions")}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {formData.exclusions.map((item, index) => (
+                <div key={index} className="flex gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleListChange("exclusions", index, e.target.value)
+                    }
+                    placeholder={`Exclusion ${index + 1}`}
+                  />
+                  {formData.exclusions.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => removeListItem("exclusions", index)}
+                    >
+                      <FaTrash size={14} />
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
 
           {/* Itinerary */}
           <section className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-800">Itinerary</h3>
-              <button
+              <h3 className="text-lg font-semibold">Itinerary</h3>
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={addDay}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
               >
-                <FaPlus size={14} /> Add Day
-              </button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Day
+              </Button>
             </div>
 
             {formData.itinerary.map((day, dayIndex) => (
-              <div
-                key={dayIndex}
-                className="border border-gray-200 rounded-lg p-4 space-y-3"
-              >
-                <div className="flex justify-between items-center">
-                  <h4 className="font-medium text-gray-700">Day {day.day}</h4>
-                  {formData.itinerary.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeDay(dayIndex)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <FaTrash size={14} />
-                    </button>
-                  )}
-                </div>
-
-                {day.activities.map((activity, actIndex) => (
-                  <div key={actIndex} className="flex gap-2">
-                    <input
-                      value={activity}
-                      onChange={(e) =>
-                        handleActivity(dayIndex, actIndex, e.target.value)
-                      }
-                      placeholder="Activity"
-                      className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                    />
-                    {day.activities.length > 1 && (
-                      <button
+              <Card key={dayIndex}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-medium">Day {day.day}</h4>
+                    {formData.itinerary.length > 1 && (
+                      <Button
                         type="button"
-                        onClick={() => removeActivity(dayIndex, actIndex)}
-                        className="text-red-500 hover:text-red-700 p-2"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => removeDay(dayIndex)}
                       >
-                        <FaTrash size={14} />
-                      </button>
+                        <FaTrash size={14} className="mr-2" />
+                        Remove Day
+                      </Button>
                     )}
                   </div>
-                ))}
 
-                {/* <button
-                  type="button"
-                  onClick={() => addActivity(dayIndex)}
-                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  <FaPlus size={12} /> Add Activity
-                </button> */}
-              </div>
+                  {day.activities.map((activity, actIndex) => (
+                    <div key={actIndex} className="flex gap-2">
+                      <Input
+                        value={activity}
+                        onChange={(e) =>
+                          handleActivity(dayIndex, actIndex, e.target.value)
+                        }
+                        placeholder={`Activity ${actIndex + 1}`}
+                      />
+                      {day.activities.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => removeActivity(dayIndex, actIndex)}
+                        >
+                          <FaTrash size={14} />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => addActivity(dayIndex)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Activity
+                  </Button>
+                </CardContent>
+              </Card>
             ))}
           </section>
 
           {/* Footer */}
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => handleModalClose(false)}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
             >
               Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
+            </Button>
+            <Button type="submit" disabled={loading}>
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Creating...
                 </>
               ) : (
                 "Create Trip"
               )}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
     </div>
-  );
-}
-
-function Input({ label, ...props }) {
-  return (
-    <div>
-      <label className="text-sm text-gray-600">{label}</label>
-      <input
-        {...props}
-        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-      />
-    </div>
-  );
-}
-
-function Select({ label, options = [], ...props }) {
-  return (
-    <div>
-      <label className="text-sm text-gray-600">{label}</label>
-      <select
-        {...props}
-        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-      >
-        <option value="">Select {label}</option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
-function DynamicList({
-  title,
-  items,
-  onChange,
-  onAdd,
-  onRemove,
-  placeholder = "",
-}) {
-  return (
-    <section className="space-y-3">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
-        <button
-          type="button"
-          onClick={onAdd}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
-        >
-          <FaPlus size={14} /> Add
-        </button>
-      </div>
-      <div className="space-y-2">
-        {items.map((item, index) => (
-          <div key={index} className="flex gap-2">
-            <input
-              value={item}
-              onChange={(e) => onChange(index, e.target.value)}
-              placeholder={placeholder || `${title.slice(0, -1)} ${index + 1}`}
-              className="flex-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-            />
-            {items.length > 1 && (
-              <button
-                type="button"
-                onClick={() => onRemove(index)}
-                className="text-red-500 hover:text-red-700 p-2"
-              >
-                <FaTrash size={14} />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }
 

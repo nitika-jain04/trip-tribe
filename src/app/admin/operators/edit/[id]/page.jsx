@@ -9,6 +9,24 @@ import Cookies from "js-cookie";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+function extractIndianNumber(value) {
+  if (!value) return "";
+
+  let digits = value.replace(/\D/g, "");
+
+  // Remove 91 if present
+  if (digits.startsWith("91") && digits.length > 10) {
+    digits = digits.substring(2);
+  }
+
+  return digits.slice(-10);
+}
+
+function formatIndianNumber(digits) {
+  if (!digits) return "";
+  return `+91 ${digits}`;
+}
+
 export default function OperatorEditPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -40,7 +58,7 @@ export default function OperatorEditPage() {
           setFormData({
             name: data.result.name || "",
             email: data.result.email || "",
-            phone_number: data.result.phone_number || "",
+            phone_number: extractIndianNumber(data.result.phone_number || ""),
             contact_name: data.result.contact_name || "",
             description: data.result.business_description || "",
             website_url: data.result.website_url || "",
@@ -120,12 +138,20 @@ export default function OperatorEditPage() {
 
     const token = Cookies.get("token");
 
+    const formattedPhone = formatIndianNumber(formData.phone_number);
+
     // Only changed fields
     const requestBody = {};
 
     Object.keys(formData).forEach((key) => {
-      if ((formData[key] ?? "") !== (operator[key] ?? "")) {
-        requestBody[key] = formData[key];
+      if (key === "phone_number") {
+        if (formattedPhone !== operator.phone_number) {
+          requestBody.phone_number = formattedPhone;
+        }
+      } else {
+        if ((formData[key] ?? "") !== (operator[key] ?? "")) {
+          requestBody[key] = formData[key];
+        }
       }
     });
 
@@ -332,13 +358,30 @@ export default function OperatorEditPage() {
               <label className="text-sm font-medium text-gray-700">
                 {label}
               </label>
-              <input
-                name={key}
-                value={formData[key]}
-                onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                placeholder={`Enter ${label.toLowerCase()}`}
-              />
+
+              {key === "phone_number" ? (
+                <input
+                  name={key}
+                  value={formatIndianNumber(formData.phone_number)}
+                  onChange={(e) => {
+                    const cleaned = extractIndianNumber(e.target.value);
+                    setFormData((prev) => ({
+                      ...prev,
+                      phone_number: cleaned,
+                    }));
+                  }}
+                  className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  placeholder="+91 9876543210"
+                />
+              ) : (
+                <input
+                  name={key}
+                  value={formData[key]}
+                  onChange={handleChange}
+                  className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                  placeholder={`Enter ${label.toLowerCase()}`}
+                />
+              )}
             </div>
           ))}
 
