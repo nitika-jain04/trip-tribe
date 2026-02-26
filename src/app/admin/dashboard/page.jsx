@@ -246,7 +246,7 @@ export default function DashboardPage() {
           <StatCard
             title="Total Enquiries"
             value={stats.enquiries.total}
-            subtitle={`${stats.enquiries.new} new, ${stats.enquiries.in_progress} in progress`}
+            subtitle={`${stats.enquiries.new} new, ${stats.enquiries.in_progress} in-progress, ${stats.enquiries.closed} closed`}
             icon={MessageSquare}
             variant="warning"
           />
@@ -293,15 +293,6 @@ export default function DashboardPage() {
                     stroke="hsl(var(--primary))"
                     strokeWidth={2}
                     dot={{ fill: "hsl(var(--primary))" }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="enquiries"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={3}
-                    dot={{ fill: "hsl(var(--primary))" }}
-                    activeDot={{ r: 6 }}
-                    connectNulls={true}
                   />
                 </LineChart>
               </ResponsiveContainer>
