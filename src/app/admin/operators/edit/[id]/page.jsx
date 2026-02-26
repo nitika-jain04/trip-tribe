@@ -38,6 +38,7 @@ export default function OperatorEditPage() {
   const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Fetch operator
   useEffect(() => {
@@ -60,11 +61,19 @@ export default function OperatorEditPage() {
             email: data.result.email || "",
             phone_number: extractIndianNumber(data.result.phone_number || ""),
             contact_name: data.result.contact_name || "",
-            description: data.result.business_description || "",
+            description: data.result.description || "",
             website_url: data.result.website_url || "",
             logo_url: data.result.logo_url || "",
             status: data.result.status || "",
+
+            total_trips: data.result.total_trips || "",
+            trips_per_year: data.result.trips_per_year || "",
+            regions: data.result.regions || [],
+            trip: data.result.trip || [],
+            social_links: data.result.social_links || {},
           });
+
+          console.log("operator", data.result);
         } else {
           throw new Error(data.message || "Failed to fetch operator");
         }
@@ -129,9 +138,61 @@ export default function OperatorEditPage() {
     }
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!formData.name || formData.name.trim().length < 2) {
+      errors.name = "Operator name must be at least 2 characters.";
+    }
+
+    if (!formData.contact_name || formData.contact_name.trim().length < 2) {
+      errors.contact_name = "Contact person must be at least 2 characters.";
+    }
+
+    if (!formData.email) {
+      errors.email = "Email is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Invalid email format.";
+    }
+
+    if (!formData.phone_number || formData.phone_number.length !== 10) {
+      errors.phone_number = "Phone number must be 10 digits.";
+    }
+
+    if (
+      formData.website_url &&
+      !/^https?:\/\/.+\..+/.test(formData.website_url)
+    ) {
+      errors.website_url = "Invalid website URL.";
+    }
+
+    if (formData.total_trips && formData.total_trips < 0) {
+      errors.total_trips = "Total trips must be a positive number.";
+    }
+
+    if (formData.trips_per_year && formData.trips_per_year < 0) {
+      errors.trips_per_year = "Trips per year must be a positive number.";
+    }
+
+    // Social links validation
+    Object.entries(formData.social_links).forEach(([platform, url]) => {
+      if (url && !/^https?:\/\/.+\..+/.test(url)) {
+        errors[platform] = `Invalid URL for ${platform}`;
+      }
+    });
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!operator) return;
+
+    if (!validateForm()) {
+      setSaving(false);
+      return;
+    }
 
     setSaving(true);
     setError("");
@@ -148,10 +209,21 @@ export default function OperatorEditPage() {
         if (formattedPhone !== operator.phone_number) {
           requestBody.phone_number = formattedPhone;
         }
-      } else {
-        if ((formData[key] ?? "") !== (operator[key] ?? "")) {
-          requestBody[key] = formData[key];
+      } else if (key === "regions") {
+        if (
+          JSON.stringify(formData.regions) !== JSON.stringify(operator.regions)
+        ) {
+          requestBody.regions = formData.regions;
         }
+      } else if (key === "social_links") {
+        if (
+          JSON.stringify(formData.social_links) !==
+          JSON.stringify(operator.social_links)
+        ) {
+          requestBody.social_links = formData.social_links;
+        }
+      } else if ((formData[key] ?? "") !== (operator[key] ?? "")) {
+        requestBody[key] = formData[key];
       }
     });
 
@@ -281,6 +353,29 @@ export default function OperatorEditPage() {
     );
   }
 
+  // regions input handler (comma separated)
+  const handleRegionsChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      regions: value
+        .split(",")
+        .map((r) => r.trim())
+        .filter((r) => r.length > 0),
+    }));
+  };
+
+  // social links handler
+  const handleSocialLinkChange = (platform, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      social_links: {
+        ...prev.social_links,
+        [platform]: value,
+      },
+    }));
+  };
+
   return (
     <div className="p-6 bg-gray-50 min-h-screen space-y-6">
       <Link
@@ -297,7 +392,7 @@ export default function OperatorEditPage() {
         {/* Enhanced Error Display */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
@@ -362,13 +457,15 @@ export default function OperatorEditPage() {
               {key === "phone_number" ? (
                 <input
                   name={key}
-                  value={formatIndianNumber(formData.phone_number)}
+                  value={
+                    formData.phone_number ? `+91 ${formData.phone_number}` : ""
+                  }
                   onChange={(e) => {
-                    const cleaned = extractIndianNumber(e.target.value);
-                    setFormData((prev) => ({
-                      ...prev,
-                      phone_number: cleaned,
-                    }));
+                    let val = e.target.value.replace(/\D/g, "");
+                    if (val.startsWith("91") && val.length > 10)
+                      val = val.slice(2);
+                    val = val.slice(0, 10);
+                    setFormData((prev) => ({ ...prev, phone_number: val }));
                   }}
                   className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   placeholder="+91 9876543210"
@@ -381,6 +478,11 @@ export default function OperatorEditPage() {
                   className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                   placeholder={`Enter ${label.toLowerCase()}`}
                 />
+              )}
+              {fieldErrors[key] && (
+                <p className="text-admin-error text-sm mt-1">
+                  {fieldErrors[key]}
+                </p>
               )}
             </div>
           ))}
@@ -397,16 +499,101 @@ export default function OperatorEditPage() {
               <option value="INACTIVE">Inactive</option>
               <option value="SUSPENDED">Suspended</option>
             </select>
-            {/* <Dropdownadmin
-              name="status"
-              options={[
-                { index: 1, label: "Active", value: "ACTIVE" },
-                { index: 2, label: "Inactive", value: "INACTIVE" },
-                { index: 3, label: "Suspended", value: "SUSPENDED" },
-              ]}
-              onSelect={handleChange}
-              selectedValue={formData.status}
-            /> */}
+          </div>
+
+          {/* Total Trips */}
+          <div>
+            <label className="text-sm font-medium text-gray-700">
+              Total Trips
+            </label>
+            <input
+              type="number"
+              name="total_trips"
+              value={formData.total_trips}
+              onChange={handleChange}
+              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+            />
+          </div>
+
+          {/* Trips Per Year */}
+          <div>
+            <label className="text-sm font-medium text-gray-700">
+              Trips Per Year
+            </label>
+            <input
+              type="number"
+              name="trips_per_year"
+              value={formData.trips_per_year}
+              onChange={handleChange}
+              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+            />
+          </div>
+
+          {/* Regions */}
+          <div className="col-span-2">
+            <label className="text-sm font-medium text-gray-700">
+              Regions (comma separated)
+            </label>
+            <input
+              value={formData.regions.join(", ")}
+              onChange={handleRegionsChange}
+              placeholder="West India, North India"
+              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+            />
+          </div>
+
+          {/* Social Links */}
+          <div className="col-span-2">
+            <label className="text-sm font-medium text-gray-700 mb-2 block">
+              Social Links
+            </label>
+
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                placeholder="YouTube URL"
+                value={formData.social_links.youtube || ""}
+                onChange={(e) =>
+                  handleSocialLinkChange("youtube", e.target.value)
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2"
+              />
+
+              <input
+                placeholder="Instagram URL"
+                value={formData.social_links.instagram || ""}
+                onChange={(e) =>
+                  handleSocialLinkChange("instagram", e.target.value)
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2"
+              />
+
+              <input
+                placeholder="Facebook URL"
+                value={formData.social_links.facebook || ""}
+                onChange={(e) =>
+                  handleSocialLinkChange("facebook", e.target.value)
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2"
+              />
+
+              <input
+                placeholder="Twitter URL"
+                value={formData.social_links.twitter || ""}
+                onChange={(e) =>
+                  handleSocialLinkChange("twitter", e.target.value)
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2"
+              />
+
+              <input
+                placeholder="Linkedin URL"
+                value={formData.social_links.linkedin || ""}
+                onChange={(e) =>
+                  handleSocialLinkChange("linkedin", e.target.value)
+                }
+                className="border border-gray-200 rounded-lg px-3 py-2"
+              />
+            </div>
           </div>
 
           <div className="col-span-2">

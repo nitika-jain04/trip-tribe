@@ -2,7 +2,6 @@
 
 import AdminGuard from "@/app/components/AdminGuard";
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import {
   MoreHorizontal,
@@ -49,13 +48,11 @@ import { IoCloseSharp } from "react-icons/io5";
 import Link from "next/link";
 import { formatPhoneNumber } from "@/lib/utils";
 
-function OperatorsPage() {
-  const router = useRouter();
-  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-  const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+function OperatorsPage() {
   const [operators, setOperators] = useState([]);
-  const [filteredOperators, setFilteredOperators] = useState([]);
   const [regions, setRegions] = useState([]);
   const [regionFilter, setRegionFilter] = useState("all");
   const [loading, setLoading] = useState(true);
@@ -69,6 +66,8 @@ function OperatorsPage() {
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("DESC");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchError, setSearchError] = useState("");
 
   // Fetch operators from API
   const getOperators = useCallback(async () => {
@@ -85,11 +84,9 @@ function OperatorsPage() {
     try {
       const params = new URLSearchParams();
 
-      // ✅ ALWAYS send pagination
       params.append("page", String(page));
       params.append("limit", String(limit));
 
-      // ✅ ONLY send when filtered
       if (statusFilter && statusFilter !== "all") {
         params.append("status", statusFilter.toUpperCase());
       }
@@ -106,8 +103,10 @@ function OperatorsPage() {
         params.append("sortOrder", sortOrder);
       }
 
-      if (searchQuery && searchQuery.trim() !== "") {
-        params.append("search", searchQuery.trim());
+      const searchValue = debouncedSearch?.trim();
+
+      if (searchValue && searchValue.length >= 2) {
+        params.append("search", searchValue);
       }
 
       const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
@@ -133,26 +132,59 @@ function OperatorsPage() {
       const pagination = data?.result?.pagination || {};
 
       setOperators(operatorsArray);
-      setFilteredOperators(operatorsArray);
-
-      // ✅ pagination from backend
       setTotalOperators(pagination.total || 0);
       setTotalPages(pagination.pages || 1);
     } catch (err) {
       console.error("Fetch error:", err);
       setError(err.message);
       setOperators([]);
-      setFilteredOperators([]);
     } finally {
       setLoading(false);
     }
-  }, [page, limit, statusFilter, sortBy, sortOrder, searchQuery]);
+  }, [page, limit, statusFilter, sortBy, sortOrder, debouncedSearch]);
 
   useEffect(() => {
+    const searchValue = debouncedSearch?.trim();
+
+    if (searchValue && searchValue.length < 2) {
+      setOperators([]);
+      setTotalOperators(0);
+      setTotalPages(1);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     getOperators();
+
     const interval = setInterval(() => getOperators(), 10 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [getOperators]);
+  }, [getOperators, debouncedSearch]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const value = searchQuery.trim();
+
+      if (value.length === 0) {
+        setSearchError("");
+        setDebouncedSearch("");
+
+        setPage(1);
+        getOperators();
+      } else if (value.length < 2) {
+        setSearchError("Search must be at least 2 characters");
+        setOperators([]);
+        setTotalOperators(0);
+        setTotalPages(1);
+      } else {
+        setSearchError("");
+        setDebouncedSearch(value);
+        setPage(1);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const handleAddModalClose = (value) => {
     setShowAddModal(value);
@@ -163,6 +195,35 @@ function OperatorsPage() {
   //   router.push(`/admin/operators/${operator.id}`);
   // const handleEditOperator = (operator) =>
   //   router.push(`/admin/operators/edit/${operator.id}`);
+
+  const handleUpdateOperator = async (operatorId, newStatus) => {
+    const token = Cookies.get("token");
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${operatorId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert("Something went wrong!");
+      }
+
+      alert("Operator updated successfully!");
+      getOperators();
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
 
   const handleDeleteOperator = async (operatorId) => {
     const confirmed = window.confirm(
@@ -216,21 +277,22 @@ function OperatorsPage() {
           </Button>
         </div>
 
-        {/* Filters */}
-        {/* <Card> */}
         <CardContent className="pt-2">
           <div className="flex flex-col sm:flex-row gap-4 w-150">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search operators..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-10"
-              />
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search operators..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {searchError && (
+                <p className="text-sm text-red-500 mt-1">{searchError}</p>
+              )}
             </div>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -266,7 +328,7 @@ function OperatorsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>All Operators ({filteredOperators.length})</CardTitle>
+            <CardTitle>All Operators ({operators.length})</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -288,7 +350,7 @@ function OperatorsPage() {
                 <p>{error}</p>
                 <Button onClick={getOperators}>Retry</Button>
               </div>
-            ) : filteredOperators.length === 0 ? (
+            ) : operators.length === 0 ? (
               <div className="flex flex-col items-center py-16 text-gray-500">
                 <p>No operators found</p>
               </div>
@@ -305,7 +367,7 @@ function OperatorsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredOperators.map((op) => (
+                  {operators.map((op) => (
                     <TableRow key={op.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -319,8 +381,16 @@ function OperatorsPage() {
                             />
                           </div>
                           <div>
-                            <p className="font-medium">{op.name}</p>
-                            <p className="text-sm text-muted-foreground">
+                            <p
+                              className="font-medium truncate max-w-30"
+                              title={op.name}
+                            >
+                              {op.name}
+                            </p>
+                            <p
+                              className="text-sm text-muted-foreground truncate max-w-30"
+                              title={op.email}
+                            >
                               {op.email}
                             </p>
                           </div>
@@ -328,8 +398,16 @@ function OperatorsPage() {
                       </TableCell>
 
                       <TableCell>
-                        <p className="text-sm">{op.contact_name}</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p
+                          className="text-sm truncate max-w-30"
+                          title={op.contact_name}
+                        >
+                          {op.contact_name}
+                        </p>
+                        <p
+                          className="text-sm text-muted-foreground truncate max-w-30"
+                          title={op.phone_number}
+                        >
                           {formatPhoneNumber(op.phone_number)}
                         </p>
                       </TableCell>
@@ -372,7 +450,12 @@ function OperatorsPage() {
                             </DropdownMenuItem>
                             {op.status === "INACTIVE" && (
                               <>
-                                <DropdownMenuItem className="text-success">
+                                <DropdownMenuItem
+                                  className="text-success"
+                                  onClick={() =>
+                                    handleUpdateOperator(op.id, "ACTIVE")
+                                  }
+                                >
                                   <UserCheck className="h-4 w-4 mr-2" />
                                   Approve
                                 </DropdownMenuItem>
@@ -387,13 +470,23 @@ function OperatorsPage() {
                               </>
                             )}
                             {op.status === "ACTIVE" && (
-                              <DropdownMenuItem className="text-destructive">
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() =>
+                                  handleUpdateOperator(op.id, "SUSPENDED")
+                                }
+                              >
                                 <UserX className="h-4 w-4 mr-2" />
                                 Suspend
                               </DropdownMenuItem>
                             )}
                             {op.status === "SUSPENDED" && (
-                              <DropdownMenuItem className="text-success">
+                              <DropdownMenuItem
+                                className="text-success"
+                                onClick={() =>
+                                  handleUpdateOperator(op.id, "ACTIVE")
+                                }
+                              >
                                 <UserCheck className="h-4 w-4 mr-2" />
                                 Reactivate
                               </DropdownMenuItem>
@@ -491,9 +584,6 @@ function AddOperatorModal({ handleModalClose }) {
     const formDataToSend = new FormData();
     formDataToSend.append("image", file);
 
-    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-    const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
-
     console.log("req", formDataToSend);
 
     try {
@@ -529,35 +619,78 @@ function AddOperatorModal({ handleModalClose }) {
     }
   }
 
+  const validateForm = () => {
+    const errors = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = "Operator name is required";
+    } else if (formData.name.trim().length < 2) {
+      errors.name = "Operator name must be at least 2 characters";
+    }
+
+    // Contact name validation
+    if (!formData.contact_name.trim()) {
+      errors.contact_name = "Contact person name is required";
+    } else if (formData.contact_name.trim().length < 2) {
+      errors.contact_name = "Contact name must be at least 2 characters";
+    }
+
+    // Email validation
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = "Invalid email address";
+    }
+
+    // Phone validation
+    if (!formData.phone_number) {
+      errors.phone_number = "Phone number is required";
+    } else if (!/^[6-9]\d{9}$/.test(formData.phone_number)) {
+      errors.phone_number = "Invalid Indian phone number";
+    }
+
+    // Website validation
+    if (
+      formData.website_url &&
+      !/^https?:\/\/(www\.)?[\w\-]+(\.[\w\-]+)+[/#?]?.*$/.test(
+        formData.website_url,
+      )
+    ) {
+      errors.website_url = "Enter valid website URL (https://...)";
+    }
+
+    // Social links validation
+    const socialPatterns = {
+      instagram: /^https?:\/\/(www\.)?instagram\.com\/.+$/,
+      facebook: /^https?:\/\/(www\.)?facebook\.com\/.+$/,
+      twitter: /^https?:\/\/(www\.)?(twitter|x)\.com\/.+$/,
+      linkedin: /^https?:\/\/(www\.)?linkedin\.com\/.+$/,
+      youtube: /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/.+$/,
+    };
+
+    Object.entries(formData.social_links).forEach(([platform, url]) => {
+      if (url && !socialPatterns[platform].test(url)) {
+        errors[`social_links.${platform}`] = `Enter valid ${platform} URL`;
+      }
+    });
+
+    setFieldErrors(errors);
+
+    return Object.keys(errors).length === 0;
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     const token = Cookies.get("token");
-
-    // Validate phone number - accept Indian format
-    if (!/^[6-9]\d{9}$/.test(formData.phone_number)) {
-      alert("Please enter a valid Indian phone number");
-      setLoading(false);
-      return;
-    }
-
-    // Validate email
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      alert("Please enter a valid email address");
-      setLoading(false);
-      return;
-    }
-
-    // Validate website URL if provided
-    if (formData.website_url && !/^https?:\/\/.+/.test(formData.website_url)) {
-      alert(
-        "Please enter a valid website URL (starting with http:// or https://)",
-      );
-      setLoading(false);
-      return;
-    }
 
     const requestBody = {
       name: formData.name,
@@ -574,7 +707,7 @@ function AddOperatorModal({ handleModalClose }) {
       website_url: formData.website_url || undefined,
       logo_url: formData.logo_url || undefined,
       // rating: parseFloat(formData.rating) || 4.5,
-      status: formData.status,
+      // status: formData.status,
 
       total_trips:
         formData.total_trips !== "" ? Number(formData.total_trips) : undefined,
@@ -596,9 +729,6 @@ function AddOperatorModal({ handleModalClose }) {
     Object.keys(requestBody).forEach(
       (key) => requestBody[key] === undefined && delete requestBody[key],
     );
-
-    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-    const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
     console.log("add op req", requestBody);
 
@@ -669,7 +799,7 @@ function AddOperatorModal({ handleModalClose }) {
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-[#4ED0C3]/10 file:text-[#4ED0C3] hover:file:bg-[#4ED0C3]/20"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-[#4ED0C3]/10 file:text-[#4ED0C3] hover:file:bg-[#4ED0C3]/20"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Upload a logo image (JPG, PNG, SVG)
@@ -695,15 +825,18 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Operator Name */}
             <div>
               <label className="text-sm text-gray-600">Operator Name *</label>
-              <input
+              <Input
                 type="text"
                 name="name"
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="Wanderlust Adventures"
               />
+              {fieldErrors.name && (
+                <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>
+              )}
             </div>
 
             {/* Contact Person Name */}
@@ -711,13 +844,13 @@ function AddOperatorModal({ handleModalClose }) {
               <label className="text-sm text-gray-600">
                 Contact Person Name *
               </label>
-              <input
+              <Input
                 type="text"
                 name="contact_name"
                 required
                 value={formData.contact_name}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="Priya Sharma"
               />
             </div>
@@ -725,14 +858,19 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Email */}
             <div>
               <label className="text-sm text-gray-600">Email *</label>
-              <input
+              <Input
                 type="email"
                 name="email"
                 required
                 value={formData.email}
-                onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
-                placeholder="hello@wanderlust.com"
+                onChange={(e) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    email: e.target.value.toLowerCase(),
+                  }));
+                }}
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                placeholder="hello@wanders.com"
               />
             </div>
 
@@ -758,7 +896,7 @@ function AddOperatorModal({ handleModalClose }) {
                       phone_number: digits,
                     }));
                   }}
-                  className="pl-12 text-sm"
+                  className="pl-12 text-sm mt-1"
                   required
                 />
               </div>
@@ -767,13 +905,13 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Region */}
             <div>
               <label className="text-sm text-gray-600">Region *</label>
-              <input
+              <Input
                 type="text"
                 name="regions"
                 required
                 value={formData.regions}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="North India, Himalayas"
               />
             </div>
@@ -781,13 +919,13 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Total Trips */}
             <div>
               <label className="text-sm text-gray-600">Total Trips</label>
-              <input
+              <Input
                 type="number"
                 name="total_trips"
                 value={formData.total_trips}
                 onChange={handleChange}
                 min="0"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="150"
               />
             </div>
@@ -795,22 +933,22 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Trips Per Year */}
             <div>
               <label className="text-sm text-gray-600">Trips Per Year</label>
-              <input
+              <Input
                 type="number"
                 name="trips_per_year"
                 value={formData.trips_per_year}
                 onChange={handleChange}
                 min="0"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="25"
               />
             </div>
 
             {/* Status */}
-            <div>
+            {/* <div>
               <label className="text-sm text-gray-600">Status *</label>
               <select
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 name="status"
                 required
                 value={formData.status}
@@ -823,7 +961,7 @@ function AddOperatorModal({ handleModalClose }) {
                 <option value="INACTIVE">Inactive</option>
                 <option value="SUSPENDED">Suspended</option>
               </select>
-            </div>
+            </div> */}
 
             {/* Social Links Section */}
             <div className="col-span-2">
@@ -835,12 +973,12 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Website URL */}
             <div>
               <label className="text-sm text-gray-600">Website URL</label>
-              <input
+              <Input
                 type="url"
                 name="website_url"
                 value={formData.website_url}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="https://wanderlustadventures.com"
               />
             </div>
@@ -848,72 +986,97 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Instagram */}
             <div>
               <label className="text-sm text-gray-600">Instagram URL</label>
-              <input
+              <Input
                 type="url"
                 name="social_links.instagram"
                 value={formData.social_links.instagram}
                 onChange={handleChange}
                 placeholder="https://instagram.com/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
+              {fieldErrors["social_links.instagram"] && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fieldErrors["social_links.instagram"]}
+                </p>
+              )}
             </div>
 
             {/* Facebook */}
             <div>
               <label className="text-sm text-gray-600">Facebook URL</label>
-              <input
+              <Input
                 type="url"
                 name="social_links.facebook"
                 value={formData.social_links.facebook}
                 onChange={handleChange}
                 placeholder="https://facebook.com/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
+              {fieldErrors["social_links.facebook"] && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fieldErrors["social_links.facebook"]}
+                </p>
+              )}
             </div>
 
             {/* LinkedIn */}
             <div>
               <label className="text-sm text-gray-600">LinkedIn URL</label>
-              <input
+              <Input
                 type="url"
                 name="social_links.linkedin"
                 value={formData.social_links.linkedin}
                 onChange={handleChange}
                 placeholder="https://linkedin.com/company/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
+              {fieldErrors["social_links.linkedin"] && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fieldErrors["social_links.linkedin"]}
+                </p>
+              )}
             </div>
 
             {/* Twitter */}
             <div>
               <label className="text-sm text-gray-600">Twitter URL</label>
-              <input
+              <Input
                 type="url"
                 name="social_links.twitter"
                 value={formData.social_links.twitter}
                 onChange={handleChange}
                 placeholder="https://twitter.com/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
+              {fieldErrors["social_links.twitter"] && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fieldErrors["social_links.twitter"]}
+                </p>
+              )}
             </div>
 
             {/* YouTube */}
             <div>
               <label className="text-sm text-gray-600">YouTube URL</label>
-              <input
+              <Input
                 type="url"
                 name="social_links.youtube"
                 value={formData.social_links.youtube}
                 onChange={handleChange}
                 placeholder="https://youtube.com/@operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
+              {fieldErrors["social_links.youtube"] && (
+                <p className="text-red-500 text-xs mt-1">
+                  {fieldErrors["social_links.youtube"]}
+                </p>
+              )}
             </div>
 
             {/* Rating */}
             {/* <div>
               <label className="text-sm text-gray-600">Rating (0-5)</label>
-              <input
+              <Input
                 type="number"
                 name="rating"
                 step="0.1"
@@ -921,7 +1084,7 @@ function AddOperatorModal({ handleModalClose }) {
                 max="5"
                 value={formData.rating}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="4.5"
               />
             </div> */}
@@ -935,7 +1098,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.description}
                 onChange={handleChange}
                 rows="4"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="Describe the operator's services, specialties, and experience..."
               ></textarea>
             </div>

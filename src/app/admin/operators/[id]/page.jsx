@@ -12,9 +12,17 @@ import {
   AlertCircle,
   Loader2,
   Building2,
+  Globe,
+  Youtube,
+  Instagram,
+  Linkedin,
+  Facebook,
+  Twitter,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Cookies from "js-cookie";
+import { formatPhoneNumber } from "@/lib/utils";
+import { StatusBadge } from "@/app/components/admin/StatusBadge";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -26,48 +34,28 @@ export default function OperatorDetail() {
   const { id } = useParams();
   const router = useRouter();
 
-  const formatPhone = (phone) => {
-    if (!phone) return "N/A";
-
-    // Remove spaces and non-numeric chars except +
-    let cleaned = phone.replace(/[^\d+]/g, "");
-
-    // Remove + if present for processing
-    cleaned = cleaned.startsWith("+") ? cleaned.slice(1) : cleaned;
-
-    // Handle Indian numbers
-    if (cleaned.startsWith("91") && cleaned.length === 12) {
-      return `+91 ${cleaned.slice(2)}`;
-    }
-
-    if (cleaned.length === 10) {
-      return `+91 ${cleaned}`;
-    }
-
-    return `+${cleaned}`; // fallback
+  const socialIcons = {
+    youtube: Youtube,
+    instagram: Instagram,
+    linkedin: Linkedin,
+    facebook: Facebook,
+    twitter: Twitter,
   };
 
   useEffect(() => {
     const fetchOperator = async () => {
       const token = Cookies.get("token");
       setError(null);
-
       try {
         const res = await fetch(
           `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           },
         );
-
         const data = await res.json();
-        if (data.success) {
-          setOperator(data.result);
-        } else {
-          throw new Error(data.message || "Failed to fetch operator");
-        }
+        if (data.success) setOperator(data.result);
+        else throw new Error(data.message || "Failed to fetch operator");
       } catch (err) {
         console.error(err);
         setError(err.message || "Failed to fetch operator");
@@ -75,11 +63,9 @@ export default function OperatorDetail() {
         setLoading(false);
       }
     };
-
     if (id) fetchOperator();
   }, [id]);
 
-  // Enhanced Loading State
   if (loading) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
@@ -87,25 +73,21 @@ export default function OperatorDetail() {
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
-          <ArrowLeft size={25} />
-          Back to Operators
+          <ArrowLeft size={25} /> Back to Operators
         </Link>
-        <div className="">
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-            <p className="text-gray-600 font-medium">
-              Loading operator details...
-            </p>
-            <p className="text-sm text-gray-400 mt-1">
-              Please wait while we fetch the data
-            </p>
-          </div>
+        <div className="flex flex-col items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+          <p className="text-gray-600 font-medium">
+            Loading operator details...
+          </p>
+          <p className="text-sm text-gray-400 mt-1">
+            Please wait while we fetch the data
+          </p>
         </div>
       </div>
     );
   }
 
-  // Enhanced Error State
   if (error) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
@@ -113,8 +95,7 @@ export default function OperatorDetail() {
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
-          <ArrowLeft size={25} />
-          Back to Operators
+          <ArrowLeft size={25} /> Back to Operators
         </Link>
         <div className="bg-white rounded-lg border shadow-sm p-6">
           <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
@@ -125,8 +106,7 @@ export default function OperatorDetail() {
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
             >
-              <Loader2 className="w-4 h-4" />
-              Try Again
+              <Loader2 className="w-4 h-4" /> Try Again
             </button>
           </div>
         </div>
@@ -134,7 +114,6 @@ export default function OperatorDetail() {
     );
   }
 
-  // Not Found State
   if (!operator) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
@@ -142,8 +121,7 @@ export default function OperatorDetail() {
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
-          <ArrowLeft size={25} />
-          Back to Operators
+          <ArrowLeft size={25} /> Back to Operators
         </Link>
         <div className="bg-white rounded-lg border shadow-sm p-6">
           <div className="flex flex-col items-center justify-center py-16">
@@ -171,13 +149,11 @@ export default function OperatorDetail() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
-      {/* Back link */}
       <Link
         href="/admin/operators"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
       >
-        <ArrowLeft size={25} />
-        Back to Operators
+        <ArrowLeft size={25} /> Back to Operators
       </Link>
 
       {/* Header Card */}
@@ -186,20 +162,17 @@ export default function OperatorDetail() {
           src={operator.logo_url || "/vercel.svg"}
           alt={operator.name}
           className="h-36 w-36 rounded-xl object-cover border"
-          onError={(e) => {
-            e.currentTarget.src = "/vercel.svg";
-          }}
+          onError={(e) => (e.currentTarget.src = "/vercel.svg")}
         />
 
         <div className="flex-1 space-y-3">
           <div className="flex justify-between items-center gap-3 flex-wrap">
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl font-semibold">{operator.name}</h1>
-              <p
-                className={`px-3 py-1 text-xs rounded-full w-fit font-medium ${statusStyle}`}
-              >
-                {operator.status}
-              </p>
+              <StatusBadge
+                status={operator.status?.toLowerCase()}
+                className="w-fit"
+              />
             </div>
             <Button
               variant="outline"
@@ -210,17 +183,11 @@ export default function OperatorDetail() {
             </Button>
           </div>
 
-          {/* <div
-            className={`px-3 py-1 text-xs rounded-full w-fit font-medium ${statusStyle}`}
-          >
-            {operator.status}
-          </div> */}
-
           <div className="text-muted-foreground">
             {operator.description || "No description provided"}
           </div>
 
-          <div className="flex flex-wrap justify-between text-sm text-muted-foreground pt-2">
+          <div className="flex flex-wrap justify-between text-sm text-muted-foreground pt-2 gap-3">
             <span className="flex items-center gap-2">
               <Mail size={17} />
               <p className="text-black/80 font-medium">
@@ -230,18 +197,23 @@ export default function OperatorDetail() {
             <span className="flex items-center gap-2">
               <Phone size={17} />
               <p className="text-black/80 font-medium">
-                {formatPhone(operator.phone_number)}
+                {formatPhoneNumber(operator.phone_number)}
               </p>
             </span>
-            {/* {operator.website_url && (
+            {operator.website_url && (
               <a
                 href={operator.website_url}
                 target="_blank"
-                className="hover:underline"
+                rel="noreferrer"
+                className="flex items-center gap-2 hover:underline"
               >
-                {operator.website_url}
+                <Globe size={17} />{" "}
+                <span className="text-black/80 font-medium">
+                  {operator.website_url}
+                </span>
               </a>
-            )} */}
+            )}
+
             <span className="flex items-center gap-2">
               <Calendar size={17} />
               <p className="text-black/80 font-medium">
@@ -261,11 +233,7 @@ export default function OperatorDetail() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Trips"
-          value={operator.total_trips ?? operator.tripsCount ?? 0}
-        />
-
+        <StatCard label="Total Trips" value={operator.total_trips ?? 0} />
         <StatCard label="Trips Per Year" value={operator.trips_per_year ?? 0} />
         <StatCard
           label="Member Since"
@@ -286,23 +254,43 @@ export default function OperatorDetail() {
       </div>
 
       {/* Details Section */}
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
         <h2 className="text-lg font-semibold mb-4">Business Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-          {/* <DetailItem label="Email" value={operator.email} />
-          <DetailItem label="Phone" value={operator.phone_number} /> */}
           <DetailItem
             label="Contact Person"
             value={operator.contact_name || "N/A"}
           />
           <DetailItem label="Website" value={operator.website_url || "N/A"} />
-
           <DetailItem label="Total Trips" value={operator.total_trips ?? 0} />
-
           <DetailItem
             label="Trips Per Year"
             value={operator.trips_per_year ?? 0}
           />
+          <DetailItem
+            label="Regions"
+            value={operator.regions?.join(", ") || "N/A"}
+          />
+
+          {operator.social_links &&
+            Object.keys(operator.social_links).map((key) => {
+              return (
+                <DetailItem
+                  key={key}
+                  label={key.charAt(0).toUpperCase() + key.slice(1)}
+                  value={
+                    <a
+                      href={operator.social_links[key]}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-teal-600 hover:underline"
+                    >
+                      {operator.social_links[key]}
+                    </a>
+                  }
+                />
+              );
+            })}
         </div>
       </div>
     </div>
