@@ -291,7 +291,7 @@ function OperatorsPage() {
               </div>
 
               {searchError && (
-                <p className="text-sm text-red-500 mt-1">{searchError}</p>
+                <p className="text-sm text-admin-error mt-1">{searchError}</p>
               )}
             </div>
 
@@ -622,18 +622,17 @@ function AddOperatorModal({ handleModalClose }) {
   const validateForm = () => {
     const errors = {};
 
-    // Name validation
-    if (!formData.name.trim()) {
-      errors.name = "Operator name is required";
-    } else if (formData.name.trim().length < 2) {
-      errors.name = "Operator name must be at least 2 characters";
+    const startsWithValidChar = /^[A-Za-z][A-Za-z\s.'-]*$/;
+
+    if (!formData.name || formData.name.trim().length < 2) {
+      errors.name = "Operator name must be at least 2 characters.";
     }
 
-    // Contact name validation
-    if (!formData.contact_name.trim()) {
-      errors.contact_name = "Contact person name is required";
-    } else if (formData.contact_name.trim().length < 2) {
-      errors.contact_name = "Contact name must be at least 2 characters";
+    if (!formData.contact_name || formData.contact_name.trim().length < 2) {
+      errors.contact_name = "Contact person must be at least 2 characters.";
+    } else if (!startsWithValidChar.test(formData.contact_name.trim())) {
+      errors.contact_name =
+        "Contact person cannot start with a special character.";
     }
 
     // Email validation
@@ -657,7 +656,7 @@ function AddOperatorModal({ handleModalClose }) {
         formData.website_url,
       )
     ) {
-      errors.website_url = "Enter valid website URL (https://...)";
+      errors.website_url = "Enter valid website URL (https:// or http://)";
     }
 
     // Social links validation
@@ -680,10 +679,23 @@ function AddOperatorModal({ handleModalClose }) {
     return Object.keys(errors).length === 0;
   };
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector(".text-admin-error");
+      if (firstError) {
+        firstError.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
+  };
+
   async function handleSubmit(e) {
     e.preventDefault();
 
     if (!validateForm()) {
+      scrollToFirstError();
       return;
     }
 
@@ -782,7 +794,7 @@ function AddOperatorModal({ handleModalClose }) {
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
+              <p className="text-admin-error text-sm">{error}</p>
             </div>
           )}
 
@@ -835,7 +847,9 @@ function AddOperatorModal({ handleModalClose }) {
                 placeholder="Wanderlust Adventures"
               />
               {fieldErrors.name && (
-                <p className="text-red-500 text-xs mt-1">{fieldErrors.name}</p>
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.name}
+                </p>
               )}
             </div>
 
@@ -853,6 +867,11 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="Priya Sharma"
               />
+              {fieldErrors.contact_name && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.contact_name}
+                </p>
+              )}
             </div>
 
             {/* Email */}
@@ -872,6 +891,11 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="hello@wanders.com"
               />
+              {fieldErrors.email && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.email}
+                </p>
+              )}
             </div>
 
             {/* Phone Number */}
@@ -900,6 +924,11 @@ function AddOperatorModal({ handleModalClose }) {
                   required
                 />
               </div>
+              {fieldErrors.phone_number && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.phone_number}
+                </p>
+              )}
             </div>
 
             {/* Region */}
@@ -981,6 +1010,11 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
                 placeholder="https://wanderlustadventures.com"
               />
+              {fieldErrors.website_url && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.website_url}
+                </p>
+              )}
             </div>
 
             {/* Instagram */}
@@ -995,7 +1029,7 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
               {fieldErrors["social_links.instagram"] && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-admin-error text-xs mt-1">
                   {fieldErrors["social_links.instagram"]}
                 </p>
               )}
@@ -1013,7 +1047,7 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
               {fieldErrors["social_links.facebook"] && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-admin-error text-xs mt-1">
                   {fieldErrors["social_links.facebook"]}
                 </p>
               )}
@@ -1031,7 +1065,7 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
               {fieldErrors["social_links.linkedin"] && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-admin-error text-xs mt-1">
                   {fieldErrors["social_links.linkedin"]}
                 </p>
               )}
@@ -1049,7 +1083,7 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
               {fieldErrors["social_links.twitter"] && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-admin-error text-xs mt-1">
                   {fieldErrors["social_links.twitter"]}
                 </p>
               )}
@@ -1067,7 +1101,7 @@ function AddOperatorModal({ handleModalClose }) {
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
               />
               {fieldErrors["social_links.youtube"] && (
-                <p className="text-red-500 text-xs mt-1">
+                <p className="text-admin-error text-xs mt-1">
                   {fieldErrors["social_links.youtube"]}
                 </p>
               )}

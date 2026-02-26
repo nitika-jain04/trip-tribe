@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { EyeIcon, EyeOff } from "lucide-react";
 import Cookies from "js-cookie";
+import Input from "../components/ui/input";
 
 export default function TestLogin() {
   const router = useRouter();
@@ -131,7 +132,7 @@ export default function TestLogin() {
           <form onSubmit={handleLogin} className="flex flex-col gap-5">
             <div>
               <label className="text-sm">Email</label>
-              <input
+              <Input
                 type="email"
                 required
                 value={email}
@@ -151,14 +152,14 @@ export default function TestLogin() {
                   className="w-full mt-1 focus:outline-none focus:border-white"
                 />
                 {showPassword ? (
-                  <EyeOff
+                  <EyeIcon
                     size={18}
                     onClick={() => {
                       setShowPassword(false);
                     }}
                   />
                 ) : (
-                  <EyeIcon
+                  <EyeOff
                     size={18}
                     onClick={() => {
                       setShowPassword(true);

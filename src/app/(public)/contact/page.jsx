@@ -149,14 +149,17 @@ export default function Contact() {
     try {
       const payload = {
         full_name: formData.name,
-        email: formData.email,
+        email: formData.email.toLowerCase(),
         phone_number: formData.phone,
         inquiry_type: formData.inquiryType.toUpperCase(),
         subject: formData.subject,
         message: formData.message,
-        trip_id: formData.tripId || null,
-        operator_id: formData.operatorId || null,
       };
+
+      if (formData.inquiryType === "trip") {
+        payload.trip_id = formData.tripId;
+        // payload.operator_id = formData.operatorId;
+      }
       console.log("req", payload);
 
       const response = await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
@@ -341,7 +344,7 @@ export default function Contact() {
                             });
                           }
                         }}
-                        className={`h-12 rounded-xl ${errors.name ? "border-red-500" : ""}`}
+                        className={`h-12 rounded-lg ${errors.name ? "border-red-500" : ""}`}
                         placeholder="Your name"
                       />
                       {errors.name && (
@@ -366,7 +369,7 @@ export default function Contact() {
                             });
                           }
                         }}
-                        className={`h-12 rounded-xl ${errors.email ? "border-red-500" : ""}`}
+                        className={`h-12 rounded-lg ${errors.email ? "border-red-500" : ""}`}
                         placeholder="you@email.com"
                       />
                       {errors.email && (
@@ -377,25 +380,37 @@ export default function Contact() {
 
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setFormData({ ...formData, phone: value });
 
-                        if (errors.phone) {
-                          setErrors((prev) => {
-                            const updated = { ...prev };
-                            delete updated.phone;
-                            return updated;
-                          });
-                        }
-                      }}
-                      className={`h-12 rounded-xl ${errors.phone ? "border-red-500" : ""}`}
-                      placeholder="+919876543210"
-                    />
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                        +91
+                      </span>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={(e) => {
+                          const digits = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+
+                          setFormData((prev) => ({
+                            ...prev,
+                            phone: digits,
+                          }));
+
+                          if (errors.phone) {
+                            setErrors((prev) => {
+                              const updated = { ...prev };
+                              delete updated.phone;
+                              return updated;
+                            });
+                          }
+                        }}
+                        className={`h-12 rounded-lg pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
+                        placeholder="9876543210"
+                      />
+                    </div>
                     {errors.phone && (
                       <p className="text-sm text-red-500">{errors.phone}</p>
                     )}
@@ -407,18 +422,16 @@ export default function Contact() {
                       required
                       value={formData.inquiryType}
                       onValueChange={(value) => {
-                        setFormData({ ...formData, inquiryType: value });
-
-                        if (errors.inquiryType) {
-                          setErrors((prev) => {
-                            const updated = { ...prev };
-                            delete updated.inquiryType;
-                            return updated;
-                          });
-                        }
+                        setFormData({
+                          ...formData,
+                          inquiryType: value,
+                          tripId: value === "trip" ? formData.tripId : "",
+                          operatorId:
+                            value === "trip" ? formData.operatorId : "",
+                        });
                       }}
                     >
-                      <SelectTrigger className="h-12 rounded-xl">
+                      <SelectTrigger className="h-12 rounded-lg">
                         <SelectValue placeholder="Select inquiry type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -447,7 +460,7 @@ export default function Contact() {
                             });
                           }}
                         >
-                          <SelectTrigger className="h-12 rounded-xl">
+                          <SelectTrigger className="h-12 rounded-lg">
                             <SelectValue placeholder="Select Trip" />
                           </SelectTrigger>
 
@@ -466,7 +479,7 @@ export default function Contact() {
                         <Label>Operator</Label>
 
                         <Select value={formData.operatorId} disabled>
-                          <SelectTrigger className="h-12 rounded-xl">
+                          <SelectTrigger className="h-12 rounded-lg">
                             <SelectValue placeholder="Operator auto-selected" />
                           </SelectTrigger>
 
@@ -499,7 +512,7 @@ export default function Contact() {
                           });
                         }
                       }}
-                      className={`h-12 rounded-xl ${errors.subject ? "border-red-500" : ""}`}
+                      className={`h-12 rounded-lg ${errors.subject ? "border-red-500" : ""}`}
                       placeholder="How can we help?"
                     />
                     {errors.subject && (
@@ -524,7 +537,7 @@ export default function Contact() {
                           });
                         }
                       }}
-                      className={`h-12 rounded-xl ${errors.message ? "border-red-500" : ""}`}
+                      className={`h-12 rounded-lg ${errors.message ? "border-red-500" : ""}`}
                       placeholder="Tell us more..."
                       rows={5}
                     />
@@ -576,7 +589,7 @@ export default function Contact() {
 
               <div className="mt-8 p-6 rounded-2xl bg-primary/5 border border-primary/10">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Clock className="w-5 h-5 text-primary" />
                   </div>
                   <div>

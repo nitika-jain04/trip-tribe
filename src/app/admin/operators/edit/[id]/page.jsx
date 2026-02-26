@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
+import Input from "@/app/components/ui/input";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -141,12 +142,20 @@ export default function OperatorEditPage() {
   const validateForm = () => {
     const errors = {};
 
+    // Regex: must start with letter or number
+    const startsWithValidChar = /^[A-Za-z][A-Za-z\s.'-]*$/;
+
     if (!formData.name || formData.name.trim().length < 2) {
       errors.name = "Operator name must be at least 2 characters.";
+    } else if (!startsWithValidChar.test(formData.name.trim())) {
+      errors.name = "Operator name cannot start with a special character.";
     }
 
     if (!formData.contact_name || formData.contact_name.trim().length < 2) {
       errors.contact_name = "Contact person must be at least 2 characters.";
+    } else if (!startsWithValidChar.test(formData.contact_name.trim())) {
+      errors.contact_name =
+        "Contact person cannot start with a special character.";
     }
 
     if (!formData.email) {
@@ -155,8 +164,10 @@ export default function OperatorEditPage() {
       errors.email = "Invalid email format.";
     }
 
-    if (!formData.phone_number || formData.phone_number.length !== 10) {
-      errors.phone_number = "Phone number must be 10 digits.";
+    if (!formData.phone_number) {
+      errors.phone_number = "Phone number is required";
+    } else if (!/^[6-9]\d{9}$/.test(formData.phone_number)) {
+      errors.phone_number = "Invalid phone number";
     }
 
     if (
@@ -185,12 +196,25 @@ export default function OperatorEditPage() {
     return Object.keys(errors).length === 0;
   };
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector(".text-admin-error");
+      if (firstError) {
+        firstError.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!operator) return;
 
     if (!validateForm()) {
       setSaving(false);
+      scrollToFirstError();
       return;
     }
 
@@ -295,7 +319,8 @@ export default function OperatorEditPage() {
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 p-8">
+        {" "}
         <div className="">
           <div className="flex flex-col items-center justify-center py-16">
             <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
@@ -322,7 +347,8 @@ export default function OperatorEditPage() {
           <ArrowLeft size={25} />
           Back to Operators
         </Link>
-        <div className="bg-white rounded-lg border shadow-sm p-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200 shadow-xl p-8 max-w-6xl mx-auto">
+          {" "}
           <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
             <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
             <p className="text-red-600 font-medium">Failed to load operator</p>
@@ -387,8 +413,9 @@ export default function OperatorEditPage() {
       </Link>
 
       <div className="bg-white rounded-lg border shadow-sm p-6">
-        <h1 className="text-2xl font-semibold mb-6">Edit Operator</h1>
-
+        <h1 className="text-3xl font-bold text-slate-800 tracking-tight mb-8">
+          Edit Operator
+        </h1>
         {/* Enhanced Error Display */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
@@ -397,7 +424,10 @@ export default function OperatorEditPage() {
           </div>
         )}
 
-        <form onSubmit={handleSave} className="grid grid-cols-2 gap-5">
+        <form
+          onSubmit={handleSave}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
           {/* Logo Upload with Better UX */}
           <div className="col-span-2">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -409,7 +439,7 @@ export default function OperatorEditPage() {
                   <img
                     src={formData.logo_url}
                     alt="Operator Logo"
-                    className="h-20 w-20 object-cover rounded-lg border-2 border-gray-200"
+                    className="h-24 w-24 object-cover rounded-xl border border-slate-200 shadow-sm"
                     onError={(e) => {
                       e.target.src = "/vercel.svg";
                       e.target.onerror = null;
@@ -422,12 +452,12 @@ export default function OperatorEditPage() {
               )}
               <div className="flex-1">
                 <div className="relative">
-                  <input
+                  <Input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-teal-50 file:text-teal-600 hover:file:bg-teal-100 disabled:opacity-50"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-teal-50 file:text-teal-600 hover:file:bg-teal-100 disabled:opacity-50"
                   />
                   {uploadingImage && (
                     <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
@@ -441,7 +471,6 @@ export default function OperatorEditPage() {
               </div>
             </div>
           </div>
-
           {[
             ["name", "Operator Name"],
             ["contact_name", "Contact Person"],
@@ -450,28 +479,41 @@ export default function OperatorEditPage() {
             ["website_url", "Website"],
           ].map(([key, label]) => (
             <div key={key}>
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
                 {label}
               </label>
 
               {key === "phone_number" ? (
-                <input
-                  name={key}
-                  value={
-                    formData.phone_number ? `+91 ${formData.phone_number}` : ""
-                  }
-                  onChange={(e) => {
-                    let val = e.target.value.replace(/\D/g, "");
-                    if (val.startsWith("91") && val.length > 10)
-                      val = val.slice(2);
-                    val = val.slice(0, 10);
-                    setFormData((prev) => ({ ...prev, phone_number: val }));
-                  }}
-                  className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                  placeholder="+91 9876543210"
-                />
+                <div className="relative text-center">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                    +91
+                  </span>
+
+                  <Input
+                    name={key}
+                    placeholder="9876543210"
+                    value={formData.phone_number}
+                    onChange={(e) => {
+                      const digits = e.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 10);
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        phone_number: digits,
+                      }));
+                    }}
+                    className="pl-12 text-sm mt-1"
+                    required
+                  />
+                  {/* {fieldErrors[key] && (
+                    <p className="text-admin-error text-xs mt-1">
+                      {fieldErrors[key]}
+                    </p>
+                  )} */}
+                </div>
               ) : (
-                <input
+                <Input
                   name={key}
                   value={formData[key]}
                   onChange={handleChange}
@@ -480,33 +522,34 @@ export default function OperatorEditPage() {
                 />
               )}
               {fieldErrors[key] && (
-                <p className="text-admin-error text-sm mt-1">
+                <p className="text-admin-error text-xs mt-1">
                   {fieldErrors[key]}
                 </p>
               )}
             </div>
           ))}
-
           <div>
-            <label className="text-sm font-medium text-gray-700">Status</label>
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
+              Status
+            </label>
             <select
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
             >
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
               <option value="SUSPENDED">Suspended</option>
             </select>
           </div>
-
           {/* Total Trips */}
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
+              {" "}
               Total Trips
             </label>
-            <input
+            <Input
               type="number"
               name="total_trips"
               value={formData.total_trips}
@@ -514,13 +557,12 @@ export default function OperatorEditPage() {
               className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
             />
           </div>
-
           {/* Trips Per Year */}
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
               Trips Per Year
             </label>
-            <input
+            <Input
               type="number"
               name="trips_per_year"
               value={formData.trips_per_year}
@@ -528,28 +570,25 @@ export default function OperatorEditPage() {
               className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
             />
           </div>
-
           {/* Regions */}
           <div className="col-span-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
               Regions (comma separated)
             </label>
-            <input
+            <Input
               value={formData.regions.join(", ")}
               onChange={handleRegionsChange}
               placeholder="West India, North India"
               className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
             />
           </div>
-
           {/* Social Links */}
-          <div className="col-span-2">
-            <label className="text-sm font-medium text-gray-700 mb-2 block">
+          <div className="col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-6">
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
               Social Links
             </label>
-
-            <div className="grid grid-cols-2 gap-4">
-              <input
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <Input
                 placeholder="YouTube URL"
                 value={formData.social_links.youtube || ""}
                 onChange={(e) =>
@@ -557,8 +596,12 @@ export default function OperatorEditPage() {
                 }
                 className="border border-gray-200 rounded-lg px-3 py-2"
               />
-
-              <input
+              {fieldErrors["social_links.youtube"] && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors["social_links.youtube"]}
+                </p>
+              )}
+              <Input
                 placeholder="Instagram URL"
                 value={formData.social_links.instagram || ""}
                 onChange={(e) =>
@@ -566,8 +609,7 @@ export default function OperatorEditPage() {
                 }
                 className="border border-gray-200 rounded-lg px-3 py-2"
               />
-
-              <input
+              <Input
                 placeholder="Facebook URL"
                 value={formData.social_links.facebook || ""}
                 onChange={(e) =>
@@ -575,8 +617,7 @@ export default function OperatorEditPage() {
                 }
                 className="border border-gray-200 rounded-lg px-3 py-2"
               />
-
-              <input
+              <Input
                 placeholder="Twitter URL"
                 value={formData.social_links.twitter || ""}
                 onChange={(e) =>
@@ -584,8 +625,7 @@ export default function OperatorEditPage() {
                 }
                 className="border border-gray-200 rounded-lg px-3 py-2"
               />
-
-              <input
+              <Input
                 placeholder="Linkedin URL"
                 value={formData.social_links.linkedin || ""}
                 onChange={(e) =>
@@ -595,9 +635,8 @@ export default function OperatorEditPage() {
               />
             </div>
           </div>
-
           <div className="col-span-2">
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
               Description
             </label>
             <textarea
@@ -605,11 +644,10 @@ export default function OperatorEditPage() {
               value={formData.description}
               onChange={handleChange}
               rows={4}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
               placeholder="Describe the operator's services, specialties, and experience..."
             />
           </div>
-
           <div className="col-span-2 flex justify-between items-center pt-6 border-t">
             <div>
               {/* <Button
@@ -636,14 +674,14 @@ export default function OperatorEditPage() {
             <div className="flex gap-3">
               <Link
                 href={`/admin/operators/${id}`}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+                className="px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={saving || uploadingImage}
-                className="px-6 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {saving ? (
                   <>

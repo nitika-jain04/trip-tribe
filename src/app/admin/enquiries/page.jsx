@@ -514,12 +514,14 @@ function Enquiries() {
                             </Link>
                           </DropdownMenuItem>
 
-                          <DropdownMenuItem
-                            onClick={() => handleCloseEnquiry(enquiry.id)}
-                          >
-                            <CheckCircle className="mr-2" size={15} />
-                            Mark as Closed
-                          </DropdownMenuItem>
+                          {enquiry.status.toLowerCase() !== "closed" && (
+                            <DropdownMenuItem
+                              onClick={() => handleCloseEnquiry(enquiry.id)}
+                            >
+                              <CheckCircle className="mr-2" size={15} />
+                              Mark as Closed
+                            </DropdownMenuItem>
+                          )}
 
                           <DropdownMenuItem
                             onClick={() => handleDelete(enquiry.id)}
