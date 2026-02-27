@@ -134,6 +134,8 @@ function Page() {
 
       const data = await res.json();
 
+      console.log("response trip", data.result.trips);
+
       if (res.ok && data.success) {
         setTrips(data.result.trips || []);
         setTotalTrips(data.result.pagination?.total || 0);
@@ -259,7 +261,7 @@ function Page() {
               </SelectContent>
             </Select>
 
-            <Select
+            {/* <Select
               value={destinationFilter}
               onValueChange={setDestinationFilter}
             >
@@ -290,7 +292,7 @@ function Page() {
                     </option>
                   ))}
               </SelectContent>
-            </Select>
+            </Select> */}
 
             <Select
               value={difficultyFilter}
@@ -378,13 +380,16 @@ function Page() {
                               </div>
                             )}
                             <div>
-                              <p className="font-medium">
+                              <p
+                                className="font-medium text-ellipsis line-clamp-1 cursor-pointer"
+                                title={trip.name}
+                              >
                                 {trip.name || "N/A"}
                               </p>
-                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                              {/* <p className="text-sm text-muted-foreground flex items-center gap-1">
                                 <SlLocationPin size={12} />
                                 {trip.destination?.name || "N/A"}
-                              </p>
+                              </p> */}
                             </div>
                           </div>
                         </TableCell>

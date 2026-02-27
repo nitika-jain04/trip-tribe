@@ -522,7 +522,7 @@ function OperatorsPage() {
                                 <DropdownMenuItem
                                   className="text-success"
                                   onClick={() =>
-                                    handleUpdateOperator(op.id, "APPROVE")
+                                    handleUpdateOperator(op.id, "ACTIVE")
                                   }
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
@@ -542,7 +542,7 @@ function OperatorsPage() {
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() =>
-                                  handleUpdateOperator(op.id, "SUSPEND")
+                                  handleUpdateOperator(op.id, "INACTIVE")
                                 }
                               >
                                 <UserX className="h-4 w-4 mr-2" />
@@ -553,7 +553,7 @@ function OperatorsPage() {
                               <DropdownMenuItem
                                 className="text-success"
                                 onClick={() =>
-                                  handleUpdateOperator(op.id, "REACTIVATE")
+                                  handleUpdateOperator(op.id, "ACTIVE")
                                 }
                               >
                                 <UserCheck className="h-4 w-4 mr-2" />
