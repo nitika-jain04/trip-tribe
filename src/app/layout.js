@@ -1,14 +1,6 @@
 import "./globals.css";
 import { Toaster } from "./components/ui/toaster";
 
-// export const metadata = {
-//   title: {
-//     default: "TripTribe",
-//     template: "%s | TripTribe",
-//   },
-//   description: "India's first community trip aggregator",
-// };
-
 export const metadata = {
   title: "TripTribe",
   description:

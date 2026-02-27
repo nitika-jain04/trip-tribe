@@ -169,7 +169,7 @@ export default function EnquiryDetail() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl p-6">
+    <div className="space-y-6 max-w-4xl p-2 md:p-6">
       {/* Back Button */}
       <Button variant="ghost" asChild>
         <Link href="/admin/enquiries">
@@ -199,9 +199,9 @@ export default function EnquiryDetail() {
             Traveller Information
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pl-6">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="h-6 w-6 text-primary" />
             </div>
             <div>
@@ -209,7 +209,7 @@ export default function EnquiryDetail() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="flex items-center gap-3 text-sm">
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
               <span>
@@ -298,7 +298,7 @@ export default function EnquiryDetail() {
             Traveller Message
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pl-6">
           {/* Subject */}
           {enquiry.subject && (
             <div>
@@ -320,7 +320,7 @@ export default function EnquiryDetail() {
         <CardHeader>
           <CardTitle>Admin Actions</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pl-6">
           <div className="space-y-2">
             <Label>Status</Label>
             <Select value={status} onValueChange={setStatus} disabled={loading}>

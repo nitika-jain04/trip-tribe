@@ -12,6 +12,7 @@ import {
   UserCheck,
   UserX,
   Trash2,
+  Plus,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/app/components/ui/button";
@@ -47,6 +48,7 @@ import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { IoCloseSharp } from "react-icons/io5";
 import Link from "next/link";
 import { formatPhoneNumber } from "@/lib/utils";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -68,6 +70,7 @@ function OperatorsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
 
   // Fetch operators from API
   const getOperators = useCallback(async () => {
@@ -140,6 +143,7 @@ function OperatorsPage() {
       setOperators([]);
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
   }, [page, limit, statusFilter, sortBy, sortOrder, debouncedSearch]);
 
@@ -168,9 +172,7 @@ function OperatorsPage() {
       if (value.length === 0) {
         setSearchError("");
         setDebouncedSearch("");
-
         setPage(1);
-        getOperators();
       } else if (value.length < 2) {
         setSearchError("Search must be at least 2 characters");
         setOperators([]);
@@ -208,7 +210,7 @@ function OperatorsPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ status: newStatus }),
+          body: JSON.stringify({ application_status: newStatus }),
         },
       );
 
@@ -258,6 +260,75 @@ function OperatorsPage() {
     }
   };
 
+  const PageSkeleton = () => (
+    <div className="space-y-6 p-6">
+      {/* Title Skeleton */}
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-4 w-72" />
+      </div>
+
+      {/* Filters Skeleton */}
+      <div className="flex gap-2 flex-wrap">
+        <Skeleton className="h-10 w-80" />
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-10 w-40" />
+      </div>
+
+      {/* Table Skeleton */}
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-40" />
+        </CardHeader>
+
+        <CardContent className="space-y-4">
+          {/* Table header */}
+          <div className="grid grid-cols-5 gap-4 border-b pb-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-16 ml-auto" />
+          </div>
+
+          {/* Table rows */}
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="grid grid-cols-5 gap-4 items-center py-2">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+
+              <Skeleton className="h-4 w-28" />
+
+              <Skeleton className="h-4 w-24" />
+
+              <Skeleton className="h-6 w-20 rounded-full" />
+
+              <Skeleton className="h-8 w-8 ml-auto rounded-md" />
+            </div>
+          ))}
+
+          {/* Pagination skeleton */}
+          <div className="flex justify-between items-center pt-4 border-t">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-4 w-24" />
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-20" />
+              <Skeleton className="h-9 w-20" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  if (initialLoading) {
+    return <PageSkeleton />;
+  }
+
   return (
     <AdminGuard>
       <div className="space-y-6 p-6">
@@ -269,10 +340,8 @@ function OperatorsPage() {
               Manage trip operators on the platform
             </p>
           </div>
-          <Button
-            // label="Add Operator"
-            onClick={() => setShowAddModal(true)}
-          >
+          <Button onClick={() => setShowAddModal(true)}>
+            <Plus className="h-4 w-4" />
             Add Operator
           </Button>
         </div>
@@ -328,7 +397,7 @@ function OperatorsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>All Operators ({operators.length})</CardTitle>
+            <CardTitle>All Operators ({totalOperators})</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -453,7 +522,7 @@ function OperatorsPage() {
                                 <DropdownMenuItem
                                   className="text-success"
                                   onClick={() =>
-                                    handleUpdateOperator(op.id, "ACTIVE")
+                                    handleUpdateOperator(op.id, "APPROVE")
                                   }
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
@@ -473,7 +542,7 @@ function OperatorsPage() {
                               <DropdownMenuItem
                                 className="text-destructive"
                                 onClick={() =>
-                                  handleUpdateOperator(op.id, "SUSPENDED")
+                                  handleUpdateOperator(op.id, "SUSPEND")
                                 }
                               >
                                 <UserX className="h-4 w-4 mr-2" />
@@ -484,7 +553,7 @@ function OperatorsPage() {
                               <DropdownMenuItem
                                 className="text-success"
                                 onClick={() =>
-                                  handleUpdateOperator(op.id, "ACTIVE")
+                                  handleUpdateOperator(op.id, "REACTIVATE")
                                 }
                               >
                                 <UserCheck className="h-4 w-4 mr-2" />
@@ -510,7 +579,7 @@ function OperatorsPage() {
             Previous
           </Button>
           <Button
-            disabled={page === totalPages}
+            disabled={page >= totalPages}
             onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
           >
             Next

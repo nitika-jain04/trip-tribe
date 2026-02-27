@@ -403,7 +403,7 @@ export default function OperatorEditPage() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen space-y-6">
+    <div className="px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 min-h-screen space-y-6">
       <Link
         href={`/admin/operators/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -411,9 +411,8 @@ export default function OperatorEditPage() {
         <ArrowLeft size={25} />
         Back to Details
       </Link>
-
-      <div className="bg-white rounded-lg border shadow-sm p-6">
-        <h1 className="text-3xl font-bold text-slate-800 tracking-tight mb-8">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 tracking-tight mb-6 sm:mb-8">
           Edit Operator
         </h1>
         {/* Enhanced Error Display */}
@@ -423,17 +422,16 @@ export default function OperatorEditPage() {
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
-
         <form
           onSubmit={handleSave}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5 sm:gap-6"
         >
           {/* Logo Upload with Better UX */}
           <div className="col-span-2">
             <label className="text-sm font-medium text-gray-700 mb-1 block">
               Logo
             </label>
-            <div className="flex items-start gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-start gap-5">
               {formData.logo_url && (
                 <div className="flex flex-col items-center">
                   <img
@@ -471,6 +469,7 @@ export default function OperatorEditPage() {
               </div>
             </div>
           </div>
+
           {[
             ["name", "Operator Name"],
             ["contact_name", "Contact Person"],
@@ -484,11 +483,10 @@ export default function OperatorEditPage() {
               </label>
 
               {key === "phone_number" ? (
-                <div className="relative text-center">
+                <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
                     +91
                   </span>
-
                   <Input
                     name={key}
                     placeholder="9876543210"
@@ -508,9 +506,9 @@ export default function OperatorEditPage() {
                   />
                   {/* {fieldErrors[key] && (
                     <p className="text-admin-error text-xs mt-1">
-                      {fieldErrors[key]}
+                    {fieldErrors[key]}
                     </p>
-                  )} */}
+                    )} */}
                 </div>
               ) : (
                 <Input
@@ -587,7 +585,7 @@ export default function OperatorEditPage() {
             <label className="text-sm font-semibold text-slate-700 tracking-wide">
               Social Links
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               <Input
                 placeholder="YouTube URL"
                 value={formData.social_links.youtube || ""}
@@ -648,7 +646,7 @@ export default function OperatorEditPage() {
               placeholder="Describe the operator's services, specialties, and experience..."
             />
           </div>
-          <div className="col-span-2 flex justify-between items-center pt-6 border-t">
+          <div className="col-span-full flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pt-6 border-t">
             <div>
               {/* <Button
                 type="button"
@@ -670,18 +668,17 @@ export default function OperatorEditPage() {
                 )}
               </Button> */}
             </div>
-
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
                 href={`/admin/operators/${id}`}
-                className="px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={saving || uploadingImage}
-                className="px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {saving ? (
                   <>

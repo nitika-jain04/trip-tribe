@@ -21,6 +21,7 @@ import AdminGuard from "@/app/components/AdminGuard";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { ActivityFeed } from "@/app/components/admin/ActivityFeed";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -29,166 +30,99 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     operators: {
       total: 0,
-      active: 0,
-      inactive: 0,
-      suspended: 0,
+      pending_approval: 0,
+      change_percent: 0,
     },
     trips: {
       total: 0,
       live: 0,
       draft: 0,
       archived: 0,
+      change_percent: 0,
     },
     enquiries: {
       total: 0,
-      new: 0,
-      in_progress: 0,
-      closed: 0,
+      this_week: 0,
+      this_month: 0,
+      change_percent: 0,
     },
+    reviews_pending: 0,
   });
 
   const [enquiryChart, setEnquiryChart] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activities, setActivities] = useState([]);
+
+  const mapActivityType = (type) => {
+    switch (type) {
+      case "TRIP_ADDED":
+        return "trip";
+      case "NEW_ENQUIRY":
+        return "enquiry";
+      case "OPERATOR_REGISTERED":
+        return "operator";
+      case "REVIEW_SUBMITTED":
+        return "review";
+      default:
+        return "operator";
+    }
+  };
+
+  const formatAction = (type) => {
+    switch (type) {
+      case "TRIP_ADDED":
+        return "Trip added";
+      case "NEW_ENQUIRY":
+        return "New enquiry received";
+      case "OPERATOR_REGISTERED":
+        return "New operator registered";
+      case "REVIEW_SUBMITTED":
+        return "Review submitted";
+      default:
+        return "Activity";
+    }
+  };
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
         const token = Cookies.get("token");
 
-        const [operatorsRes, tripsRes, enquiriesStatsRes, enquiriesRes] =
-          await Promise.all([
-            fetch(`${BASE_URL}/api/${API_VERSION}/operators/admin`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-
-            fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-
-            fetch(`${BASE_URL}/api/${API_VERSION}/enquiries/admin/stats`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-
-            fetch(`${BASE_URL}/api/${API_VERSION}/enquiries/admin`, {
-              headers: { Authorization: `Bearer ${token}` },
-            }),
-          ]);
-
-        const operatorsData = await operatorsRes.json();
-        const tripsData = await tripsRes.json();
-        const enquiriesStatsData = await enquiriesStatsRes.json();
-        const enquiriesData = await enquiriesRes.json();
-
-        // -------- Operators --------
-        // -------- Operators --------
-        const operators = operatorsData?.result?.operators || [];
-
-        const activeOperators = operators.filter(
-          (op) => op.status === "ACTIVE",
-        ).length;
-
-        const inactiveOperators = operators.filter(
-          (op) => op.status === "INACTIVE",
-        ).length;
-
-        const suspendedOperators = operators.filter(
-          (op) => op.status === "SUSPENDED",
-        ).length;
-
-        // -------- Trips --------
-        const trips = tripsData?.result?.trips || [];
-
-        const liveTrips = trips.filter((t) => t.status === "PUBLISHED").length;
-
-        const draftTrips = trips.filter((t) => t.status === "DRAFT").length;
-
-        const archivedTrips = trips.filter(
-          (t) => t.status === "ARCHIVED",
-        ).length;
-
-        // -------- Enquiries stats --------
-        const enquiryStats = enquiriesStatsData?.result;
-
-        // -------- Enquiry graph --------
-        const enquiries = enquiriesData?.result?.data || [];
-
-        // const last7Days = {};
-        // const today = new Date();
-
-        // for (let i = 6; i >= 0; i--) {
-        //   const d = new Date();
-        //   d.setDate(today.getDate() - i);
-        //   const key = d.toLocaleDateString("en-US", { weekday: "short" });
-
-        //   last7Days[key] = 0;
-        // }
-
-        // enquiries.forEach((enq) => {
-        //   const date = new Date(enq.createdAt);
-        //   const key = date.toLocaleDateString("en-US", {
-        //     weekday: "short",
-        //   });
-
-        //   if (last7Days[key] !== undefined) {
-        //     last7Days[key]++;
-        //   }
-        // });
-
-        // const chartData = Object.entries(last7Days).map(
-        //   ([name, enquiries]) => ({
-        //     name,
-        //     enquiries,
-        //   }),
-        // );
-
-        const last7Days = {};
-        const today = new Date();
-
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(today.getDate() - i);
-
-          const dateKey = d.toISOString().split("T")[0]; // unique key
-          const dayLabel = d.toLocaleDateString("en-US", { weekday: "short" });
-
-          last7Days[dateKey] = {
-            name: dayLabel,
-            enquiries: 0,
-          };
-        }
-
-        enquiries.forEach((enq) => {
-          const dateKey = new Date(enq.createdAt).toISOString().split("T")[0];
-
-          if (last7Days[dateKey]) {
-            last7Days[dateKey].enquiries++;
-          }
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/dashboard`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        const chartData = Object.values(last7Days);
-        setEnquiryChart(chartData);
+        const data = await res.json();
+        console.log("response", data);
+        console.log("response", data.result);
 
-        setStats({
-          operators: {
-            total: operators.length,
-            active: activeOperators,
-            inactive: inactiveOperators,
-            suspended: suspendedOperators,
-          },
-          trips: {
-            total: trips.length,
-            live: liveTrips,
-            draft: draftTrips,
-            archived: archivedTrips,
-          },
-          enquiries: {
-            total: enquiryStats.total,
-            new: enquiryStats.byStatus.new,
-            in_progress: enquiryStats.byStatus.in_progress,
-            resolved: enquiryStats.byStatus.resolved,
-            closed: enquiryStats.byStatus.closed,
-          },
-        });
+        setActivities(data.result.recent_activity);
+
+        const result = data.result;
+
+        setStats(result.stats);
+
+        const formattedActivities = result.recent_activity.map(
+          (item, index) => ({
+            id: index,
+            type: mapActivityType(item.type),
+            action: formatAction(item.type),
+            description: item.message,
+            // timestamp: Date.now(),
+          }),
+        );
+
+        setActivities(formattedActivities);
+        // Map enquiry trends for chart
+        const formattedChart = result.charts.enquiry_trends.data.map(
+          (item) => ({
+            name: item.month,
+            enquiries: item.count,
+          }),
+        );
+
+        setEnquiryChart(formattedChart);
       } catch (err) {
         console.error(err);
       } finally {
@@ -230,7 +164,7 @@ export default function DashboardPage() {
           <StatCard
             title="Total Operators"
             value={stats.operators.total}
-            subtitle={`${stats.operators.active} active, ${stats.operators.inactive} inactive, ${stats.operators.suspended} suspended`}
+            subtitle={`${stats.operators.pending_approval} pending • +${stats.operators.change_percent}%`}
             icon={Users}
             variant="primary"
           />
@@ -242,14 +176,14 @@ export default function DashboardPage() {
             icon={MapPin}
             variant="success"
           />
-
           <StatCard
             title="Total Enquiries"
             value={stats.enquiries.total}
-            subtitle={`${stats.enquiries.new} new, ${stats.enquiries.in_progress} in-progress, ${stats.enquiries.closed} closed`}
+            subtitle={`${stats.enquiries.this_week} this week, ${stats.enquiries.this_month} this month`}
             icon={MessageSquare}
             variant="warning"
           />
+
           {/* <StatCard
           title="Pending Reviews"
           value={dashboardStats.pendingReviews}
@@ -263,7 +197,7 @@ export default function DashboardPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Enquiries This Week
+                Enquiry Trends (Last 6 Months)
                 <TrendingUp className="h-5 w-5 text-primary" />
               </CardTitle>
             </CardHeader>
@@ -380,14 +314,19 @@ export default function DashboardPage() {
           </Card> */}
 
           {/* Recent Activity Feed */}
-          {/* <Card>
+          <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
+              {(!activities || activities.length === 0) && (
+                <div className="text-sm text-muted-foreground text-center py-6">
+                  No recent activity
+                </div>
+              )}
               <ActivityFeed activities={activities} />
             </CardContent>
-          </Card> */}
+          </Card>
         </div>
       </div>
     </AdminGuard>

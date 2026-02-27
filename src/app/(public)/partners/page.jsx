@@ -126,9 +126,12 @@ export default function Partner() {
       newErrors.email = "Enter a valid email address";
     }
 
-    const cleanedPhone = formData.phone.replace(/[^\d+]/g, "");
-    if (!/^\+?\d{10,15}$/.test(cleanedPhone)) {
-      newErrors.phone = "Enter a valid phone number";
+    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (!phoneRegex.test(formData.phone.trim())) {
+      newErrors.phone = "Enter valid phone number";
     }
 
     if (!formData.tripCount) {
@@ -164,6 +167,7 @@ export default function Partner() {
     e.preventDefault();
 
     if (!validateForm()) {
+      scrollToFirstError();
       toast.error("Please fix the highlighted errors");
       return;
     }
@@ -244,6 +248,18 @@ export default function Partner() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector(".text-admin-error");
+      if (firstError) {
+        firstError.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
   };
 
   return (
@@ -486,24 +502,31 @@ export default function Partner() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      // onChange={(e) =>
-                      //   setFormData({ ...formData, phone: e.target.value })
-                      // }
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setFormData({ ...formData, phone: value });
+                    <div className="relative">
+                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                        +91
+                      </span>
+                      <Input
+                        id="phone"
+                        value={formData.phone}
+                        // onChange={(e) =>
+                        //   setFormData({ ...formData, phone: e.target.value })
+                        // }
+                        onChange={(e) => {
+                          const digits = e.target.value
+                            .replace(/\D/g, "")
+                            .slice(0, 10);
+                          setFormData({ ...formData, phone: digits });
 
-                        if (errors.phone) {
-                          setErrors({ ...errors, phone: "" });
-                        }
-                      }}
-                      placeholder="+91 98765 43210"
-                      className={errors.phone ? "border-red-500" : ""}
-                      // required
-                    />
+                          if (errors.phone) {
+                            setErrors({ ...errors, phone: "" });
+                          }
+                        }}
+                        placeholder="98765 43210"
+                        className={`pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
+                        // required
+                      />
+                    </div>
                     {errors.phone && (
                       <p className="text-sm text-red-500">{errors.phone}</p>
                     )}

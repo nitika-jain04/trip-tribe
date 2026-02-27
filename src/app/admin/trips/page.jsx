@@ -228,7 +228,7 @@ function Page() {
             </p>
           </div>
           <Button onClick={() => setShowModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-4 w-4" />
             Add New Trip
           </Button>
         </div>
@@ -282,11 +282,13 @@ function Page() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Operators</SelectItem>
-                {operators.map((op) => (
-                  <SelectItem key={op.id} value={op.id}>
-                    {op.name}
-                  </SelectItem>
-                ))}
+                {operators
+                  .filter((o) => o.status === "ACTIVE")
+                  .map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.name}
+                    </option>
+                  ))}
               </SelectContent>
             </Select>
 
@@ -429,7 +431,7 @@ function Page() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={trip.status || "DRAFT"} />
+                          <StatusBadge status={trip.status.toLowerCase()} />
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
@@ -530,6 +532,7 @@ function AddTripModal({ handleModalClose, operators }) {
       latitude: "",
       longitude: "",
       type: "CITY",
+      id: "",
     },
     destination: {
       name: "",
@@ -537,6 +540,7 @@ function AddTripModal({ handleModalClose, operators }) {
       latitude: "",
       longitude: "",
       type: "CITY",
+      id: "",
     },
     status: "PUBLISHED",
     images: [],
@@ -562,22 +566,59 @@ function AddTripModal({ handleModalClose, operators }) {
     }
   };
 
-  const handleLocationSelect = (type, locationData) => {
-    setFormData((p) => ({
-      ...p,
-      [type]: {
-        name: locationData.name || locationData.address || "",
-        region: locationData.region || "",
-        latitude: locationData.lat || locationData.latitude || "",
-        longitude: locationData.lng || locationData.longitude || "",
-        type: locationData.type || "CITY",
-      },
-    }));
+  const handleLocationSelect = async (type, locationData) => {
+    const token = Cookies.get("token");
 
-    if (type === "source") {
-      setShowSourceMap(false);
-    } else {
-      setShowDestinationMap(false);
+    const payload = {
+      name: locationData.name || locationData.address || "Unknown",
+      region: locationData.region || "",
+      latitude: String(locationData.lat ?? locationData.latitude),
+      longitude: String(locationData.lng ?? locationData.longitude),
+      type: "CITY", // temporarily hardcode for testing
+    };
+
+    console.log("Creating location with:", payload);
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to create location");
+      }
+
+      // 🔥 Save location WITH returned ID
+      setFormData((prev) => ({
+        ...prev,
+        [type]: {
+          id: data.result.id,
+          name: data.result.name,
+          region: data.result.region,
+          latitude: data.result.latitude,
+          longitude: data.result.longitude,
+          type: data.result.type,
+        },
+      }));
+
+      if (type === "source") {
+        setShowSourceMap(false);
+      } else {
+        setShowDestinationMap(false);
+      }
+    } catch (err) {
+      console.error("Location creation failed:", err);
+      alert(err.message);
     }
   };
 
@@ -690,20 +731,12 @@ function AddTripModal({ handleModalClose, operators }) {
       return;
     }
 
-    if (
-      !formData.source.latitude ||
-      !formData.source.longitude ||
-      !formData.source.name
-    ) {
+    if (!formData.source.id) {
       alert("Please select source location from map");
       return;
     }
 
-    if (
-      !formData.destination.latitude ||
-      !formData.destination.longitude ||
-      !formData.destination.name
-    ) {
+    if (!formData.destination.id) {
       alert("Please select destination location from map");
       return;
     }
@@ -730,20 +763,8 @@ function AddTripModal({ handleModalClose, operators }) {
       difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
       operator_id: formData.operator_id,
-      source: {
-        name: formData.source.name,
-        region: formData.source.region,
-        latitude: Number(formData.source.latitude),
-        longitude: Number(formData.source.longitude),
-        type: formData.source.type,
-      },
-      destination: {
-        name: formData.destination.name,
-        region: formData.destination.region,
-        latitude: Number(formData.destination.latitude),
-        longitude: Number(formData.destination.longitude),
-        type: formData.destination.type,
-      },
+      source_id: formData.source.id,
+      destination_id: formData.destination.id,
       status: formData.status,
       images: formData.images.filter(Boolean),
       inclusions: formData.inclusions.filter((item) => item.trim() !== ""),
@@ -755,6 +776,8 @@ function AddTripModal({ handleModalClose, operators }) {
         }))
         .filter((day) => day.activities.length > 0),
     };
+
+    console.log("req trip", payload);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
@@ -1033,7 +1056,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     <IoCloseSharp size={20} />
                   </Button>
                 </div>
-                <div className="flex-1 p-4">
+                <div className="flex-1 p-4 z-999">
                   <MapPicker
                     onLocationSelect={(location) =>
                       handleLocationSelect("source", location)
@@ -1061,7 +1084,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     <IoCloseSharp size={20} />
                   </Button>
                 </div>
-                <div className="flex-1 p-4">
+                <div className="flex-1 p-4 z-999">
                   <MapPicker
                     onLocationSelect={(location) =>
                       handleLocationSelect("destination", location)

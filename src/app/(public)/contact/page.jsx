@@ -116,8 +116,7 @@ export default function Contact() {
     if (!formData.phone.trim()) {
       newErrors.phone = "Phone number is required";
     } else if (!phoneRegex.test(formData.phone.trim())) {
-      newErrors.phone =
-        "Enter valid phone number like +919876543210 or 9876543210";
+      newErrors.phone = "Enter valid phone number like 9876543210";
     }
 
     if (!formData.subject.trim()) {
@@ -140,6 +139,7 @@ export default function Contact() {
     e.preventDefault();
 
     if (!validateForm()) {
+      scrollToFirstError();
       toast.error("Please fix the highlighted errors");
       return;
     }
@@ -237,6 +237,18 @@ export default function Contact() {
     } catch (err) {
       console.error(err);
     }
+  };
+
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector(".text-admin-error");
+      if (firstError) {
+        firstError.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
   };
 
   return (
