@@ -571,24 +571,38 @@ function OperatorsPage() {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-end gap-4">
-          <Button
-            disabled={page === 1}
-            onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-          >
-            Previous
-          </Button>
-          <Button
-            disabled={page >= totalPages}
-            onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-          >
-            Next
-          </Button>
-        </div>
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm text-muted-foreground">
+            Showing {(page - 1) * limit + 1} to{" "}
+            {Math.min(page * limit, totalOperators)} of {totalOperators}
+          </span>
 
-        {showAddModal && (
-          <AddOperatorModal handleModalClose={handleAddModalClose} />
-        )}
+          <span className="px-3 py-1 text-center text-sm">
+            Page {page} of {totalPages}
+          </span>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Previous
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </Button>
+          </div>
+
+          {showAddModal && (
+            <AddOperatorModal handleModalClose={handleAddModalClose} />
+          )}
+        </div>
       </div>
     </AdminGuard>
   );

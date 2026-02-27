@@ -537,39 +537,39 @@ function Enquiries() {
                 ))}
               </TableBody>
             </Table>
-
-            {/* Pagination */}
-            <div className="flex justify-between items-center mt-4">
-              <span className="text-sm text-muted-foreground">
-                Showing {(page - 1) * limit + 1} to{" "}
-                {Math.min(page * limit, totalItems)} of {totalItems}
-              </span>
-
-              <span className="px-3 py-1 text-center text-sm">
-                Page {page} of {totalPages}
-              </span>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  disabled={page === 1}
-                  onClick={() => setPage(page - 1)}
-                >
-                  Previous
-                </Button>
-
-                <Button
-                  variant="outline"
-                  disabled={page === totalPages}
-                  onClick={() => setPage(page + 1)}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-sm text-muted-foreground">
+          Showing {(page - 1) * limit + 1} to{" "}
+          {Math.min(page * limit, totalItems)} of {totalItems}
+        </span>
+
+        <span className="px-3 py-1 text-center text-sm">
+          Page {page} of {totalPages}
+        </span>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </Button>
+
+          <Button
+            variant="outline"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
