@@ -120,17 +120,6 @@ function Destinations() {
         <Button label="Add Destination" fnClose={() => setShowModal(true)} />
       </div>
 
-      {/* Enhanced Loading State */}
-      {/* {loading && (
-        <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
-          <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-          <p className="text-gray-600 font-medium">Loading destinations...</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Please wait while we fetch your data
-          </p>
-        </div>
-      )} */}
-
       {loading && <DestinationSkeleton />}
 
       {/* Enhanced Error State */}

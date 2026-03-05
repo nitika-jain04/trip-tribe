@@ -86,8 +86,6 @@ function Page() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
 
-  const router = useRouter();
-
   const fetchOperators = async () => {
     setLoadingOperators(true);
     const token = Cookies.get("token");

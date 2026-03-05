@@ -370,39 +370,39 @@ function OperatorsPage() {
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search operators..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-full"
-                  />
-                </div>
-
-                {searchError && (
-                  <p className="text-sm text-admin-error mt-1">{searchError}</p>
-                )}
+        {/* <Card> */}
+        <CardContent className="pt-2">
+          <div className="flex flex-col sm:flex-row gap-3 w-170">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search operators..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full"
+                />
               </div>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="suspended">Suspended</SelectItem>
-                  {/* <SelectItem value="pending">Pending</SelectItem> */}
-                </SelectContent>
-              </Select>
+              {searchError && (
+                <p className="text-sm text-admin-error mt-1">{searchError}</p>
+              )}
+            </div>
 
-              {/* <Select value={regionFilter} onValueChange={setRegionFilter}>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+                <SelectItem value="suspended">Suspended</SelectItem>
+                {/* <SelectItem value="pending">Pending</SelectItem> */}
+              </SelectContent>
+            </Select>
+
+            {/* <Select value={regionFilter} onValueChange={setRegionFilter}>
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="Region" />
                 </SelectTrigger>
@@ -416,9 +416,9 @@ function OperatorsPage() {
                   ))}
                 </SelectContent>
               </Select> */}
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+        {/* </Card> */}
 
         {/* Mobile View - Cards (visible on mobile, hidden on desktop) */}
         <div className="block sm:hidden">
