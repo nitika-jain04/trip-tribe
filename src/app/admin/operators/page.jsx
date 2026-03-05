@@ -261,24 +261,42 @@ function OperatorsPage() {
   };
 
   const PageSkeleton = () => (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       {/* Title Skeleton */}
       <div className="space-y-2">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-4 w-72" />
+        <Skeleton className="h-7 sm:h-8 w-36 sm:w-48" />
+        <Skeleton className="h-3 sm:h-4 w-56 sm:w-72" />
       </div>
 
       {/* Filters Skeleton */}
-      <div className="flex gap-2 flex-wrap">
-        <Skeleton className="h-10 w-80" />
-        <Skeleton className="h-10 w-40" />
-        <Skeleton className="h-10 w-48" />
-        <Skeleton className="h-10 w-40" />
-        <Skeleton className="h-10 w-40" />
+      <div className="flex flex-col sm:flex-row gap-2 sm:flex-wrap">
+        <Skeleton className="h-10 w-full sm:w-80" />
+        <Skeleton className="h-10 w-full sm:w-40" />
       </div>
 
-      {/* Table Skeleton */}
-      <Card>
+      {/* Mobile Cards Skeleton (visible on mobile, hidden on desktop) */}
+      <div className="block sm:hidden space-y-3">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-5 w-40" />
+                  <Skeleton className="h-4 w-32" />
+                  <div className="flex justify-between items-center mt-2">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Table Skeleton (hidden on mobile, visible on desktop) */}
+      <Card className="hidden sm:block">
         <CardHeader>
           <Skeleton className="h-6 w-40" />
         </CardHeader>
@@ -294,7 +312,7 @@ function OperatorsPage() {
           </div>
 
           {/* Table rows */}
-          {Array.from({ length: 10 }).map((_, i) => (
+          {Array.from({ length: 5 }).map((_, i) => (
             <div key={i} className="grid grid-cols-5 gap-4 items-center py-2">
               <div className="space-y-2">
                 <Skeleton className="h-4 w-32" />
@@ -312,7 +330,7 @@ function OperatorsPage() {
           ))}
 
           {/* Pagination skeleton */}
-          <div className="flex justify-between items-center pt-4 border-t">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t">
             <Skeleton className="h-4 w-48" />
             <Skeleton className="h-4 w-24" />
             <div className="flex gap-2">
@@ -331,53 +349,60 @@ function OperatorsPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Operators</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Operators
+            </h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-1">
               Manage trip operators on the platform
             </p>
           </div>
-          <Button onClick={() => setShowAddModal(true)}>
-            <Plus className="h-4 w-4" />
+          <Button
+            onClick={() => setShowAddModal(true)}
+            className="w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
             Add Operator
           </Button>
         </div>
 
-        <CardContent className="pt-2">
-          <div className="flex flex-col sm:flex-row gap-4 w-150">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search operators..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+        {/* Filters */}
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search operators..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 w-full"
+                  />
+                </div>
+
+                {searchError && (
+                  <p className="text-sm text-admin-error mt-1">{searchError}</p>
+                )}
               </div>
 
-              {searchError && (
-                <p className="text-sm text-admin-error mt-1">{searchError}</p>
-              )}
-            </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                  {/* <SelectItem value="pending">Pending</SelectItem> */}
+                </SelectContent>
+              </Select>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                {/* <SelectItem value="pending">Pending</SelectItem> */}
-              </SelectContent>
-            </Select>
-
-            {/* <Select value={regionFilter} onValueChange={setRegionFilter}>
+              {/* <Select value={regionFilter} onValueChange={setRegionFilter}>
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="Region" />
                 </SelectTrigger>
@@ -391,134 +416,127 @@ function OperatorsPage() {
                   ))}
                 </SelectContent>
               </Select> */}
-          </div>
-        </CardContent>
-        {/* </Card> */}
+            </div>
+          </CardContent>
+        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>All Operators ({totalOperators})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-6 p-6">
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
-                    <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-                    <p className="text-gray-600 font-medium">
-                      Loading operators...
-                    </p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Please wait while we fetch your data
-                    </p>
-                  </div>
-                </CardContent>
-              </div>
-            ) : error ? (
-              <div className="flex flex-col items-center py-16 text-red-500">
-                <p>{error}</p>
-                <Button onClick={getOperators}>Retry</Button>
-              </div>
-            ) : operators.length === 0 ? (
-              <div className="flex flex-col items-center py-16 text-gray-500">
-                <p>No operators found</p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Operator</TableHead>
-                    <TableHead>Contact</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead className="text-center">Trips</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {operators.map((op) => (
-                    <TableRow key={op.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="relative h-10 w-10 rounded-lg overflow-hidden">
-                            <Image
-                              src={op.logo_url || "/vercel.svg"}
-                              alt={op.name}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
-                          </div>
+        {/* Mobile View - Cards (visible on mobile, hidden on desktop) */}
+        <div className="block sm:hidden">
+          {loading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 text-teal-500 animate-spin" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : error ? (
+            <Card>
+              <CardContent className="p-8">
+                <div className="flex flex-col items-center text-red-500">
+                  <p className="text-center mb-4">{error}</p>
+                  <Button onClick={getOperators} variant="outline" size="sm">
+                    Retry
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : operators.length === 0 ? (
+            <Card>
+              <CardContent className="p-8">
+                <div className="flex flex-col items-center text-gray-500">
+                  <p className="text-center">No operators found</p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {operators.map((op) => (
+                <Card key={op.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+                        <Image
+                          src={op.logo_url || "/vercel.svg"}
+                          alt={op.name}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
                           <div>
-                            <p
-                              className="font-medium truncate max-w-30"
-                              title={op.name}
-                            >
+                            <p className="font-medium truncate" title={op.name}>
                               {op.name}
                             </p>
                             <p
-                              className="text-sm text-muted-foreground truncate max-w-30"
+                              className="text-sm text-muted-foreground truncate"
                               title={op.email}
                             >
                               {op.email}
                             </p>
                           </div>
-                        </div>
-                      </TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/operators/${op.id}`}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/operators/edit/${op.id}`}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                              {op.status === "INACTIVE" && (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-success"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, "ACTIVE")
+                                    }
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Approve
+                                  </DropdownMenuItem>
 
-                      <TableCell>
-                        <p
-                          className="text-sm truncate max-w-30"
-                          title={op.contact_name}
-                        >
-                          {op.contact_name}
-                        </p>
-                        <p
-                          className="text-sm text-muted-foreground truncate max-w-30"
-                          title={op.phone_number}
-                        >
-                          {formatPhoneNumber(op.phone_number)}
-                        </p>
-                      </TableCell>
-
-                      <TableCell className="text-muted-foreground">
-                        {Array.isArray(op.regions) && op.regions.length > 0
-                          ? op.regions.join(", ")
-                          : "-"}
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        {op.total_trips !== undefined && op.total_trips !== null
-                          ? Number(op.total_trips)
-                          : "-"}
-                      </TableCell>
-
-                      <TableCell>
-                        <StatusBadge status={op.status?.toLowerCase()} />
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/operators/${op.id}`}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/operators/edit/${op.id}`}>
-                                <Pencil className="h-4 w-4 mr-2" />
-                                Edit
-                              </Link>
-                            </DropdownMenuItem>
-                            {op.status === "INACTIVE" && (
-                              <>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteOperator(op.id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {op.status === "ACTIVE" && (
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() =>
+                                    handleUpdateOperator(op.id, "INACTIVE")
+                                  }
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Suspend
+                                </DropdownMenuItem>
+                              )}
+                              {op.status === "SUSPENDED" && (
                                 <DropdownMenuItem
                                   className="text-success"
                                   onClick={() =>
@@ -526,64 +544,260 @@ function OperatorsPage() {
                                   }
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
-                                  Approve
+                                  Reactivate
                                 </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                        <div className="mt-2 space-y-1">
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">
+                              Contact:
+                            </span>{" "}
+                            {op.contact_name}
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">
+                              Phone:
+                            </span>{" "}
+                            {formatPhoneNumber(op.phone_number)}
+                          </p>
+                          <p className="text-sm">
+                            <span className="text-muted-foreground">
+                              Region:
+                            </span>{" "}
+                            {Array.isArray(op.regions) && op.regions.length > 0
+                              ? op.regions.join(", ")
+                              : "-"}
+                          </p>
+                          <div className="flex justify-between items-center mt-2">
+                            <StatusBadge status={op.status?.toLowerCase()} />
+                            <span className="text-sm text-muted-foreground">
+                              Trips:{" "}
+                              {op.total_trips !== undefined &&
+                              op.total_trips !== null
+                                ? Number(op.total_trips)
+                                : "-"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
 
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteOperator(op.id)}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </>
-                            )}
-                            {op.status === "ACTIVE" && (
-                              <DropdownMenuItem
-                                className="text-destructive"
-                                onClick={() =>
-                                  handleUpdateOperator(op.id, "INACTIVE")
-                                }
-                              >
-                                <UserX className="h-4 w-4 mr-2" />
-                                Suspend
-                              </DropdownMenuItem>
-                            )}
-                            {op.status === "SUSPENDED" && (
-                              <DropdownMenuItem
-                                className="text-success"
-                                onClick={() =>
-                                  handleUpdateOperator(op.id, "ACTIVE")
-                                }
-                              >
-                                <UserCheck className="h-4 w-4 mr-2" />
-                                Reactivate
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
+        {/* Desktop View - Table (hidden on mobile, visible on desktop) */}
+        <Card className="hidden sm:block">
+          <CardHeader className="px-4 sm:px-6">
+            <CardTitle>All Operators ({totalOperators})</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 sm:px-6">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+                <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+                <p className="text-gray-600 font-medium">
+                  Loading operators...
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Please wait while we fetch your data
+                </p>
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center py-16 text-red-500">
+                <p>{error}</p>
+                <Button onClick={getOperators} className="mt-4">
+                  Retry
+                </Button>
+              </div>
+            ) : operators.length === 0 ? (
+              <div className="flex flex-col items-center py-16 text-gray-500">
+                <p>No operators found</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">
+                        Operator
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Contact
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Region
+                      </TableHead>
+                      <TableHead className="text-center whitespace-nowrap">
+                        Trips
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-right whitespace-nowrap">
+                        Actions
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {operators.map((op) => (
+                      <TableRow key={op.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
+                              <Image
+                                src={op.logo_url || "/vercel.svg"}
+                                alt={op.name}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                            <div className="min-w-0">
+                              <p
+                                className="font-medium truncate max-w-[150px] lg:max-w-[200px]"
+                                title={op.name}
+                              >
+                                {op.name}
+                              </p>
+                              <p
+                                className="text-sm text-muted-foreground truncate max-w-[150px] lg:max-w-[200px]"
+                                title={op.email}
+                              >
+                                {op.email}
+                              </p>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        <TableCell>
+                          <div className="min-w-0">
+                            <p
+                              className="text-sm truncate max-w-[120px] lg:max-w-[150px]"
+                              title={op.contact_name}
+                            >
+                              {op.contact_name}
+                            </p>
+                            <p
+                              className="text-sm text-muted-foreground truncate max-w-[120px] lg:max-w-[150px]"
+                              title={op.phone_number}
+                            >
+                              {formatPhoneNumber(op.phone_number)}
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="text-muted-foreground max-w-[150px] truncate">
+                          {Array.isArray(op.regions) && op.regions.length > 0
+                            ? op.regions.join(", ")
+                            : "-"}
+                        </TableCell>
+
+                        <TableCell className="text-center">
+                          {op.total_trips !== undefined &&
+                          op.total_trips !== null
+                            ? Number(op.total_trips)
+                            : "-"}
+                        </TableCell>
+
+                        <TableCell>
+                          <StatusBadge status={op.status?.toLowerCase()} />
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/operators/${op.id}`}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  View Details
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/operators/edit/${op.id}`}>
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Link>
+                              </DropdownMenuItem>
+                              {op.status === "INACTIVE" && (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-success"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, "ACTIVE")
+                                    }
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Approve
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteOperator(op.id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {op.status === "ACTIVE" && (
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() =>
+                                    handleUpdateOperator(op.id, "INACTIVE")
+                                  }
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Suspend
+                                </DropdownMenuItem>
+                              )}
+                              {op.status === "SUSPENDED" && (
+                                <DropdownMenuItem
+                                  className="text-success"
+                                  onClick={() =>
+                                    handleUpdateOperator(op.id, "ACTIVE")
+                                  }
+                                >
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Reactivate
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
 
-        <div className="flex justify-between items-center mt-4">
-          <span className="text-sm text-muted-foreground">
+        {/* Pagination */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+          <span className="text-sm text-muted-foreground order-2 sm:order-1">
             Showing {(page - 1) * limit + 1} to{" "}
             {Math.min(page * limit, totalOperators)} of {totalOperators}
           </span>
 
-          <span className="px-3 py-1 text-center text-sm">
+          <span className="px-3 py-1 text-center text-sm order-1 sm:order-2">
             Page {page} of {totalPages}
           </span>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 order-3">
             <Button
               variant="outline"
+              size="sm"
               disabled={page === 1}
               onClick={() => setPage(page - 1)}
             >
@@ -592,18 +806,19 @@ function OperatorsPage() {
 
             <Button
               variant="outline"
+              size="sm"
               disabled={page === totalPages}
               onClick={() => setPage(page + 1)}
             >
               Next
             </Button>
           </div>
-
-          {showAddModal && (
-            <AddOperatorModal handleModalClose={handleAddModalClose} />
-          )}
         </div>
       </div>
+
+      {showAddModal && (
+        <AddOperatorModal handleModalClose={handleAddModalClose} />
+      )}
     </AdminGuard>
   );
 }
@@ -859,14 +1074,16 @@ function AddOperatorModal({ handleModalClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="bg-white w-[70vw] h-[85vh] rounded-xl shadow-lg flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs">
+      <div className="bg-white w-full sm:w-[90vw] md:w-[80vw] lg:w-[70vw] h-[90vh] sm:h-[85vh] rounded-t-xl sm:rounded-xl shadow-lg flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold text-[#14181F]">Add Operator</h2>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
+          <h2 className="text-lg sm:text-xl font-semibold text-[#14181F]">
+            Add Operator
+          </h2>
           <button
             onClick={() => handleModalClose(false)}
-            className="text-gray-500 hover:text-black text-xl"
+            className="text-gray-500 hover:text-black text-xl p-1"
             disabled={loading || uploadingImage}
           >
             <IoCloseSharp />
@@ -874,34 +1091,37 @@ function AddOperatorModal({ handleModalClose }) {
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-admin-error text-sm">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-5">
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5"
+          >
             {/* Logo Upload */}
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className="text-sm text-gray-600 font-medium">
                 Upload Logo
               </label>
-              <div className="flex items-start gap-4 mt-1">
-                <div className="flex-1">
+              <div className="flex flex-col sm:flex-row items-start gap-4 mt-1">
+                <div className="flex-1 w-full">
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-[#4ED0C3]/10 file:text-[#4ED0C3] hover:file:bg-[#4ED0C3]/20"
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:bg-[#4ED0C3]/10 file:text-[#4ED0C3] hover:file:bg-[#4ED0C3]/20"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     Upload a logo image (JPG, PNG, SVG)
                   </p>
                 </div>
                 {formData.logo_url && (
-                  <div className="flex flex-col items-center">
+                  <div className="flex flex-col items-center sm:items-start">
                     <img
                       src={formData.logo_url}
                       alt="Uploaded Logo"
@@ -926,7 +1146,7 @@ function AddOperatorModal({ handleModalClose }) {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="Wanderlust Adventures"
               />
               {fieldErrors.name && (
@@ -947,7 +1167,7 @@ function AddOperatorModal({ handleModalClose }) {
                 required
                 value={formData.contact_name}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="Priya Sharma"
               />
               {fieldErrors.contact_name && (
@@ -971,7 +1191,7 @@ function AddOperatorModal({ handleModalClose }) {
                     email: e.target.value.toLowerCase(),
                   }));
                 }}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="hello@wanders.com"
               />
               {fieldErrors.email && (
@@ -1003,7 +1223,7 @@ function AddOperatorModal({ handleModalClose }) {
                       phone_number: digits,
                     }));
                   }}
-                  className="pl-12 text-sm mt-1"
+                  className="pl-12 text-sm mt-1 w-full"
                   required
                 />
               </div>
@@ -1023,7 +1243,7 @@ function AddOperatorModal({ handleModalClose }) {
                 required
                 value={formData.regions}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="North India, Himalayas"
               />
             </div>
@@ -1037,7 +1257,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.total_trips}
                 onChange={handleChange}
                 min="0"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="150"
               />
             </div>
@@ -1051,12 +1271,12 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.trips_per_year}
                 onChange={handleChange}
                 min="0"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="25"
               />
             </div>
 
-            {/* Status */}
+            {/* Status - Commented out */}
             {/* <div>
               <label className="text-sm text-gray-600">Status *</label>
               <select
@@ -1076,7 +1296,7 @@ function AddOperatorModal({ handleModalClose }) {
             </div> */}
 
             {/* Social Links Section */}
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className="text-sm text-gray-600">
                 Social Media Links
               </label>
@@ -1090,7 +1310,7 @@ function AddOperatorModal({ handleModalClose }) {
                 name="website_url"
                 value={formData.website_url}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="https://wanderlustadventures.com"
               />
               {fieldErrors.website_url && (
@@ -1109,7 +1329,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.social_links.instagram}
                 onChange={handleChange}
                 placeholder="https://instagram.com/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
               />
               {fieldErrors["social_links.instagram"] && (
                 <p className="text-admin-error text-xs mt-1">
@@ -1127,7 +1347,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.social_links.facebook}
                 onChange={handleChange}
                 placeholder="https://facebook.com/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
               />
               {fieldErrors["social_links.facebook"] && (
                 <p className="text-admin-error text-xs mt-1">
@@ -1145,7 +1365,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.social_links.linkedin}
                 onChange={handleChange}
                 placeholder="https://linkedin.com/company/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
               />
               {fieldErrors["social_links.linkedin"] && (
                 <p className="text-admin-error text-xs mt-1">
@@ -1163,7 +1383,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.social_links.twitter}
                 onChange={handleChange}
                 placeholder="https://twitter.com/operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
               />
               {fieldErrors["social_links.twitter"] && (
                 <p className="text-admin-error text-xs mt-1">
@@ -1181,7 +1401,7 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.social_links.youtube}
                 onChange={handleChange}
                 placeholder="https://youtube.com/@operator"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
               />
               {fieldErrors["social_links.youtube"] && (
                 <p className="text-admin-error text-xs mt-1">
@@ -1190,7 +1410,7 @@ function AddOperatorModal({ handleModalClose }) {
               )}
             </div>
 
-            {/* Rating */}
+            {/* Rating - Commented out */}
             {/* <div>
               <label className="text-sm text-gray-600">Rating (0-5)</label>
               <Input
@@ -1201,13 +1421,13 @@ function AddOperatorModal({ handleModalClose }) {
                 max="5"
                 value={formData.rating}
                 onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1"
                 placeholder="4.5"
               />
             </div> */}
 
             {/* Description */}
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className="text-sm text-gray-600">Description *</label>
               <textarea
                 name="description"
@@ -1215,16 +1435,17 @@ function AddOperatorModal({ handleModalClose }) {
                 value={formData.description}
                 onChange={handleChange}
                 rows="4"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
                 placeholder="Describe the operator's services, specialties, and experience..."
               ></textarea>
             </div>
 
-            <div className="col-span-2 flex justify-end gap-3 pt-6 mt-4 border-t">
+            {/* Modal Footer */}
+            <div className="col-span-1 sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 sm:pt-6 mt-2 border-t">
               <button
                 type="button"
                 onClick={() => handleModalClose(false)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
                 disabled={loading || uploadingImage}
               >
                 Cancel
@@ -1232,7 +1453,7 @@ function AddOperatorModal({ handleModalClose }) {
               <button
                 type="submit"
                 disabled={loading || uploadingImage}
-                className="px-6 py-2 bg-[#4ED0C3] text-white rounded-lg text-sm font-medium hover:bg-[#3db8ab] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-6 py-2 bg-[#4ED0C3] text-white rounded-lg text-sm font-medium hover:bg-[#3db8ab] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading
                   ? "Adding..."

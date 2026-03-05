@@ -110,9 +110,9 @@ export default function TestLogin() {
 
       {/* Content */}
       <div className="relative flex flex-col items-center gap-14 py-5 my-auto">
-        <div className="max-w-xl text-white px-10">
-          <h1 className="text-2xl lg:text-3xl text-center font-semibold">
-            THE GOAL OF LIFE IS LIVING IN AGREEMENT WITH NATURE.
+        <div className="max-w-2xl text-white px-10">
+          <h1 className="text-3xl text-center font-semibold">
+            FIND YOUR TRIBE, TRAVEL TOGETHER.
           </h1>
           <div className="w-full border-b-4 border-white mt-4" />
         </div>
@@ -187,7 +187,10 @@ export default function TestLogin() {
               {loading ? "Logging in..." : "LOGIN"}
             </button>
 
-            {/* <p className="text-center text-sm opacity-70 hover:underline cursor-pointer">
+            {/* <p
+              onClick={() => router.push("/forgot-password")}
+              className="text-center text-sm opacity-70 hover:underline cursor-pointer"
+            >
               Forgot Password?
             </p> */}
           </form>

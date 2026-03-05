@@ -121,7 +121,7 @@ function Destinations() {
       </div>
 
       {/* Enhanced Loading State */}
-      {loading && (
+      {/* {loading && (
         <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
           <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
           <p className="text-gray-600 font-medium">Loading destinations...</p>
@@ -129,7 +129,9 @@ function Destinations() {
             Please wait while we fetch your data
           </p>
         </div>
-      )}
+      )} */}
+
+      {loading && <DestinationSkeleton />}
 
       {/* Enhanced Error State */}
       {error && !loading && (
@@ -544,15 +546,7 @@ function Categories() {
       </div>
 
       {/* Loading State */}
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200 mt-5">
-          <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-          <p className="text-gray-600 font-medium">Loading categories...</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Please wait while we fetch your data
-          </p>
-        </div>
-      )}
+      {loading && <CategorySkeleton />}
 
       {/* Error State */}
       {error && !loading && (
@@ -656,3 +650,60 @@ function Categories() {
 }
 
 export default Page;
+
+function DestinationSkeleton() {
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden mt-5 animate-pulse">
+      {/* Header */}
+      <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4">
+        <div className="h-4 bg-gray-300 rounded w-24"></div>
+        <div className="h-4 bg-gray-300 rounded w-20"></div>
+        <div className="h-4 bg-gray-300 rounded w-16"></div>
+        <div className="h-4 bg-gray-300 rounded w-12"></div>
+        <div className="h-4 bg-gray-300 rounded w-10"></div>
+      </div>
+
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] px-3 py-4 border-t"
+        >
+          <div className="h-4 bg-gray-200 rounded w-32"></div>
+          <div className="h-4 bg-gray-200 rounded w-28"></div>
+          <div className="h-4 bg-gray-200 rounded w-20"></div>
+          <div className="h-4 bg-gray-200 rounded w-10"></div>
+          <div className="flex gap-2">
+            <div className="h-4 w-4 bg-gray-200 rounded"></div>
+            <div className="h-4 w-4 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CategorySkeleton() {
+  return (
+    <div className="border border-gray-200 rounded-lg overflow-hidden mt-5 animate-pulse">
+      <div className="grid grid-cols-[2.5fr_2fr_1fr] bg-gray-100 px-3 py-4">
+        <div className="h-4 bg-gray-300 rounded w-24"></div>
+        <div className="h-4 bg-gray-300 rounded w-16"></div>
+        <div className="h-4 bg-gray-300 rounded w-10"></div>
+      </div>
+
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="grid grid-cols-[2.5fr_2fr_1fr] px-3 py-4 border-t"
+        >
+          <div className="h-4 bg-gray-200 rounded w-28"></div>
+          <div className="h-4 bg-gray-200 rounded w-12"></div>
+          <div className="flex gap-2">
+            <div className="h-4 w-4 bg-gray-200 rounded"></div>
+            <div className="h-4 w-4 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}

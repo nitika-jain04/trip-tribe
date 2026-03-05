@@ -30,6 +30,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState({
     operators: {
       total: 0,
+      active: 0,
       pending_approval: 0,
       change_percent: 0,
     },
@@ -164,7 +165,7 @@ export default function DashboardPage() {
           <StatCard
             title="Total Operators"
             value={stats.operators.total}
-            subtitle={`${stats.operators.pending_approval} pending • +${stats.operators.change_percent}%`}
+            subtitle={`${stats.operators.active} active • ${stats.operators.pending_approval} pending • ${stats.operators.change_percent}%`}
             icon={Users}
             variant="primary"
           />
