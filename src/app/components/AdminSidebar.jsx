@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Logs } from "lucide-react";
 import { MdOutlineDashboard } from "react-icons/md";
 import { GoPeople } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
@@ -128,6 +128,13 @@ export default function AdminSidebar({ collapsed, toggle }) {
           label="Enquiries"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/enquiries"}
+        />
+        <SidebarLink
+          href="/admin/audit-logs"
+          icon={<Logs size={22} />}
+          label="Audit Logs"
+          collapsed={sidebarCollapsed}
+          isActive={pathname === "/admin/audit-logs"}
         />
         <SidebarLink
           href="/admin/settings"

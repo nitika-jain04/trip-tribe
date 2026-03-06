@@ -8,7 +8,15 @@ import { RiDeleteBinLine } from "react-icons/ri";
 import { LiaEditSolid } from "react-icons/lia";
 import { Button } from "@/app/components/adminFunctionCalls";
 import dynamic from "next/dynamic";
-import { X, Loader2, AlertCircle, MapPin, Search } from "lucide-react";
+import {
+  X,
+  Loader2,
+  AlertCircle,
+  MapPin,
+  Search,
+  Trash,
+  Edit,
+} from "lucide-react";
 import Cookies from "js-cookie";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -106,6 +114,43 @@ function Destinations() {
     }
   }, []);
 
+  const deleteDestination = async (locationId) => {
+    try {
+      const token = Cookies.get("token");
+
+      if (!token) {
+        alert("Authentication token missing");
+        return;
+      }
+
+      const confirmDelete = window.confirm(
+        "Are you sure you want to delete this destination?",
+      );
+
+      if (!confirmDelete) return;
+
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations/admin/${locationId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to delete destination");
+      }
+
+      // Refresh list
+      setDestinations((prev) => prev.filter((item) => item.id !== locationId));
+    } catch (error) {
+      console.error(error);
+      alert("Failed to delete destination");
+    }
+  };
+
   useEffect(() => {
     getAllDestinations();
   }, [getAllDestinations]);
@@ -183,12 +228,13 @@ function Destinations() {
               <div className="text-gray-600">{des?.tripCount ?? 0}</div>
 
               <div className="flex gap-2">
-                <LiaEditSolid
+                <Edit
                   size={20}
                   className="cursor-pointer text-gray-600 hover:text-teal-600 transition-colors"
                 />
-                <RiDeleteBinLine
+                <Trash
                   size={20}
+                  onClick={() => deleteDestination(des.id)}
                   className="cursor-pointer text-red-500 hover:text-red-700 transition-colors"
                 />
               </div>

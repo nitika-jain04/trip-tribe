@@ -169,7 +169,7 @@ export default function EnquiryDetail() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl p-2 md:p-6">
+    <div className="space-y-6 p-2 md:p-6">
       {/* Back Button */}
       <Button variant="ghost" asChild>
         <Link href="/admin/enquiries">
@@ -184,11 +184,13 @@ export default function EnquiryDetail() {
           <h1 className="text-3xl font-bold text-foreground">
             Enquiry Details
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Enquiry from {enquiry.full_name}
-          </p>
+          <div className="flex gap-5">
+            <p className="text-muted-foreground mt-1">
+              Enquiry from {enquiry.full_name}
+            </p>
+            <StatusBadge status={enquiry.status.toLowerCase()} />
+          </div>
         </div>
-        <StatusBadge status={enquiry.status.toLowerCase()} />
       </div>
 
       {/* Traveller Info */}
