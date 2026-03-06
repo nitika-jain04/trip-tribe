@@ -94,7 +94,7 @@ export default function TestLogin() {
       setEmail(remEmail);
       setRememberMe(true);
     }
-  });
+  }, []);
 
   return (
     <div className="min-h-screen relative flex items-center justify-center">
