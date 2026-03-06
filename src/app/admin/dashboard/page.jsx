@@ -110,7 +110,7 @@ export default function DashboardPage() {
             type: mapActivityType(item.type),
             action: formatAction(item.type),
             description: item.message,
-            // timestamp: Date.now(),
+            timestamp: item.created_at,
           }),
         );
 

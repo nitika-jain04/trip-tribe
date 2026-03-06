@@ -170,7 +170,12 @@ export default function OperatorDetail() {
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl font-semibold">{operator.name}</h1>
               <StatusBadge
-                status={operator.status?.toLowerCase()}
+                // status={operator.status?.toLowerCase()}
+                status={
+                  operator.application_status?.toUpperCase() === "PENDING"
+                    ? operator.application_status?.toLowerCase()
+                    : operator.status?.toLowerCase()
+                }
                 className="w-fit"
               />
             </div>
@@ -251,6 +256,10 @@ export default function OperatorDetail() {
               : "N/A"
           }
         />
+        {/* <StatCard
+          label="Application Status"
+          value={operator.application_status}
+        /> */}
       </div>
 
       {/* Details Section */}

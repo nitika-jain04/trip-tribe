@@ -459,7 +459,7 @@ function OperatorsPage() {
                 <Card key={op.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0">
                         <Image
                           src={op.logo_url || "/vercel.svg"}
                           alt={op.name}
@@ -648,7 +648,7 @@ function OperatorsPage() {
                       <TableRow key={op.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="relative h-10 w-10 rounded-lg overflow-hidden flex-shrink-0">
+                            <div className="relative h-10 w-10 rounded-lg overflow-hidden shrink-0">
                               <Image
                                 src={op.logo_url || "/vercel.svg"}
                                 alt={op.name}
@@ -659,13 +659,13 @@ function OperatorsPage() {
                             </div>
                             <div className="min-w-0">
                               <p
-                                className="font-medium truncate max-w-[150px] lg:max-w-[200px]"
+                                className="font-medium truncate max-w-37.5 lg:max-w-50"
                                 title={op.name}
                               >
                                 {op.name}
                               </p>
                               <p
-                                className="text-sm text-muted-foreground truncate max-w-[150px] lg:max-w-[200px]"
+                                className="text-sm text-muted-foreground truncate max-w-37.5 lg:max-w-50"
                                 title={op.email}
                               >
                                 {op.email}
@@ -677,13 +677,13 @@ function OperatorsPage() {
                         <TableCell>
                           <div className="min-w-0">
                             <p
-                              className="text-sm truncate max-w-[120px] lg:max-w-[150px]"
+                              className="text-sm truncate max-w-30 lg:max-w-37.5"
                               title={op.contact_name}
                             >
                               {op.contact_name}
                             </p>
                             <p
-                              className="text-sm text-muted-foreground truncate max-w-[120px] lg:max-w-[150px]"
+                              className="text-sm text-muted-foreground truncate max-w-[120px] lg:max-w-37.5"
                               title={op.phone_number}
                             >
                               {formatPhoneNumber(op.phone_number)}
@@ -691,7 +691,7 @@ function OperatorsPage() {
                           </div>
                         </TableCell>
 
-                        <TableCell className="text-muted-foreground max-w-[150px] truncate">
+                        <TableCell className="text-muted-foreground max-w-37.5 truncate">
                           {Array.isArray(op.regions) && op.regions.length > 0
                             ? op.regions.join(", ")
                             : "-"}
@@ -705,7 +705,13 @@ function OperatorsPage() {
                         </TableCell>
 
                         <TableCell>
-                          <StatusBadge status={op.status?.toLowerCase()} />
+                          <StatusBadge
+                            status={
+                              op.application_status === "PENDING"
+                                ? op.application_status?.toLowerCase()
+                                : op.status?.toLowerCase()
+                            }
+                          />
                         </TableCell>
 
                         <TableCell className="text-right">
@@ -728,12 +734,12 @@ function OperatorsPage() {
                                   Edit
                                 </Link>
                               </DropdownMenuItem>
-                              {op.status === "INACTIVE" && (
+                              {op.application_status === "PENDING" && (
                                 <>
                                   <DropdownMenuItem
                                     className="text-success"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "ACTIVE")
+                                      handleUpdateOperator(op.id, "APPROVED")
                                     }
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />

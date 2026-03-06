@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 import Input from "@/app/components/ui/input";
+import { Select } from "@/app/components/ui/select";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -139,6 +140,18 @@ export default function OperatorEditPage() {
     }
   };
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector(".text-admin-error");
+      if (firstError) {
+        firstError.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
+  };
+
   const validateForm = () => {
     const errors = {};
 
@@ -196,23 +209,12 @@ export default function OperatorEditPage() {
     return Object.keys(errors).length === 0;
   };
 
-  const scrollToFirstError = () => {
-    setTimeout(() => {
-      const firstError = document.querySelector(".text-admin-error");
-      if (firstError) {
-        firstError.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-    }, 100);
-  };
-
   const handleSave = async (e) => {
     e.preventDefault();
     if (!operator) return;
 
     if (!validateForm()) {
+      scrollToFirstError();
       setSaving(false);
       scrollToFirstError();
       return;
@@ -528,9 +530,12 @@ export default function OperatorEditPage() {
           ))}
           <div>
             <label className="text-sm font-semibold text-slate-700 tracking-wide">
-              Status
+              Application Status
             </label>
-            <select
+            <p className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
+              {operator?.application_status}
+            </p>
+            {/* <select
               name="status"
               value={formData.status}
               onChange={handleChange}
@@ -539,7 +544,32 @@ export default function OperatorEditPage() {
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
               <option value="SUSPENDED">Suspended</option>
+            </select> */}
+          </div>
+          <div>
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
+              Status
+            </label>
+
+            <select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              disabled={operator?.application_status === "PENDING"}
+              className={`w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200
+      ${operator?.application_status === "PENDING" ? "opacity-50 cursor-not-allowed" : ""}
+    `}
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+              <option value="SUSPENDED">Suspended</option>
             </select>
+
+            {operator?.application_status === "PENDING" && (
+              <p className="text-xs text-gray-500 mt-1">
+                Status cannot be changed while the operator approval is pending.
+              </p>
+            )}
           </div>
           {/* Total Trips */}
           <div>
