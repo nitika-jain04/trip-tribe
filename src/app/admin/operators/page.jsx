@@ -705,7 +705,7 @@ function OperatorsPage() {
                               {op.contact_name}
                             </p>
                             <p
-                              className="text-sm text-muted-foreground truncate max-w-[120px] lg:max-w-37.5"
+                              className="text-sm text-muted-foreground truncate max-w-30 lg:max-w-37.5"
                               title={op.phone_number}
                             >
                               {formatPhoneNumber(op.phone_number)}
