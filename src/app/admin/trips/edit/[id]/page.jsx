@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
+import { useToast } from "@/app/hooks/use-toast";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -15,6 +16,7 @@ export default function TripEditPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -103,7 +105,10 @@ export default function TripEditPage() {
     });
 
     if (Object.keys(requestBody).length === 0) {
-      alert("No changes detected");
+      toast({
+        title: "No Changes",
+        description: "No Changes Detected",
+      });
       setSaving(false);
       return;
     }
@@ -126,7 +131,10 @@ export default function TripEditPage() {
       if (!res.ok || !data.success)
         throw new Error(data.message || "Update failed");
 
-      alert("Trip updated successfully!");
+      toast({
+        title: "Trip Update",
+        description: "Trip Updated Successfully!",
+      });
       router.push(`/admin/trips/${id}`);
     } catch (err) {
       setError(err.message);

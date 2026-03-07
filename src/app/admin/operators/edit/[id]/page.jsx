@@ -255,7 +255,6 @@ export default function OperatorEditPage() {
     });
 
     if (Object.keys(requestBody).length === 0) {
-      // alert("No changes detected");
       toast({
         title: "Operator",
         description: "No changes detected!",
@@ -283,7 +282,6 @@ export default function OperatorEditPage() {
       if (!res.ok || !data.success)
         throw new Error(data.message || "Update failed");
 
-      // alert("Operator updated successfully!");
       toast({
         title: "Operator",
         description: "Operator updated successfully!",
@@ -318,7 +316,6 @@ export default function OperatorEditPage() {
       if (!res.ok || !data.success)
         throw new Error(data.message || "Delete failed");
 
-      // alert("Operator deleted");
       toast({
         title: "Operator",
         description: "Operator deleted successfully!",

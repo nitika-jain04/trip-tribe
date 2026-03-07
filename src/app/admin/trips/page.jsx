@@ -52,6 +52,7 @@ import { IoCloseSharp } from "react-icons/io5";
 import { FaPlus, FaTrash, FaMapMarkedAlt } from "react-icons/fa";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import Link from "next/link";
+import { useToast } from "@/app/hooks/use-toast";
 
 // Dynamically import map components to avoid SSR issues
 const MapPicker = dynamic(() => import("@/app/components/MapPickerTrip"), {
@@ -585,6 +586,7 @@ function AddTripModal({ handleModalClose, operators }) {
   const [showSourceMap, setShowSourceMap] = useState(false);
   const [showDestinationMap, setShowDestinationMap] = useState(false);
   const [error, setError] = useState("");
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -794,27 +796,47 @@ function AddTripModal({ handleModalClose, operators }) {
 
     // Validation
     if (new Date(formData.end_date) <= new Date(formData.start_date)) {
-      alert("End date must be after start date");
+      toast({
+        title: "Error",
+        description: "End date must be after start date",
+        variant: "desctructive",
+      });
       return;
     }
 
     if (!formData.source.id) {
-      alert("Please select source location from map");
+      toast({
+        title: "Error",
+        description: "Please select source location from map",
+        variant: "desctructive",
+      });
       return;
     }
 
     if (!formData.destination.id) {
-      alert("Please select destination location from map");
+      toast({
+        title: "Error",
+        description: "Please select destination location from map",
+        variant: "desctructive",
+      });
       return;
     }
 
     if (!formData.operator_id) {
-      alert("Please select operator");
+      toast({
+        title: "Error",
+        description: "Please select operator",
+        variant: "desctructive",
+      });
       return;
     }
 
     if (!formData.name.trim()) {
-      alert("Trip name required");
+      toast({
+        title: "Error",
+        description: "Trip name required",
+        variant: "desctructive",
+      });
       return;
     }
 
@@ -861,7 +883,10 @@ function AddTripModal({ handleModalClose, operators }) {
         throw new Error(data.message || "Failed to create trip");
       }
 
-      alert("Trip created successfully!");
+      toast({
+        title: "Trip Update",
+        description: "Trip updated successfully!",
+      });
       handleModalClose(false);
     } catch (err) {
       console.error("Create failed:", err);

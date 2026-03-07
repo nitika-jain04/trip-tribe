@@ -220,7 +220,6 @@ function OperatorsPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        // alert("Something went wrong!");
         toast({
           title: "Error",
           description: err.message,
@@ -228,7 +227,6 @@ function OperatorsPage() {
         });
       }
 
-      // alert("Operator updated successfully!");
       toast({
         title: "Operator",
         description: "Operator updated successfully!",
@@ -265,7 +263,6 @@ function OperatorsPage() {
         throw new Error(data.message || "Failed to delete operator");
       }
 
-      // alert("Operator deleted successfully");
       toast({
         title: "Operator",
         description: "Operator deleted successfully!",
@@ -273,7 +270,6 @@ function OperatorsPage() {
 
       getOperators(); // refresh list
     } catch (err) {
-      // alert(err.message || "Something went wrong while deleting");
       toast({
         title: "Error",
         description: err.message,
@@ -1119,7 +1115,6 @@ function AddOperatorModal({ handleModalClose }) {
       }
 
       handleModalClose(false);
-      // alert("Operator added successfully!");
     } catch (err) {
       console.error("Error adding operator:", err);
       setError(err.message || "Something went wrong");

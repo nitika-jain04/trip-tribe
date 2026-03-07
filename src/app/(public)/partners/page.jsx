@@ -16,7 +16,7 @@ import {
   BarChart3,
   Headphones,
 } from "lucide-react";
-import { toast } from "@/app/components/ui/sonner";
+import { useToast } from "@/app/hooks/use-toast";
 
 const benefits = [
   {
@@ -108,6 +108,7 @@ export default function Partner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const { toast } = useToast();
 
   const validateForm = () => {
     const newErrors = {};
@@ -168,7 +169,11 @@ export default function Partner() {
 
     if (!validateForm()) {
       scrollToFirstError();
-      toast.error("Please fix the highlighted errors");
+      toast({
+        title: "Error",
+        description: "Please fix the errors",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -229,7 +234,10 @@ export default function Partner() {
       }
 
       // Success
-      toast.success(data.message || "Application submitted successfully!");
+      toast({
+        title: "Partnership Mail",
+        description: "Mail sent successfully",
+      });
       setIsSubmitted(true);
 
       setFormData({
@@ -244,7 +252,11 @@ export default function Partner() {
       });
     } catch (err) {
       console.error("Application submission error:", err);
-      toast.error(err.message || "Please fix the form errors");
+      toast({
+        title: "Error",
+        description: "Please fix the errors",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }

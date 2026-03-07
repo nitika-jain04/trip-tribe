@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { IoCloseSharp } from "react-icons/io5";
+import { useToast } from "@/app/hooks/use-toast";
+import { toast } from "sonner";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -75,6 +77,7 @@ function Destinations() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const toast = useToast();
 
   const getAllDestinations = useCallback(async () => {
     try {
@@ -121,7 +124,10 @@ function Destinations() {
       const token = Cookies.get("token");
 
       if (!token) {
-        alert("Authentication token missing");
+        toast({
+          title: "Authentication Token",
+          description: "Authentication Token Missing!",
+        });
         return;
       }
 
@@ -149,7 +155,11 @@ function Destinations() {
       setDestinations((prev) => prev.filter((item) => item.id !== locationId));
     } catch (error) {
       console.error(error);
-      alert("Failed to delete destination");
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -207,18 +217,18 @@ function Destinations() {
       {/* Table */}
       {!loading && !error && destinations.length > 0 && (
         <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
-          <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
+          <div className="grid grid-cols-[2.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
             <div>Destination</div>
             <div>Region</div>
             <div>Type</div>
-            <div>Trips</div>
+            {/* <div>Trips</div> */}
             <div>Actions</div>
           </div>
 
           {destinations.map((des, i) => (
             <div
               key={des.id || i}
-              className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] px-3 py-4 hover:bg-gray-50 transition-colors border-t border-gray-100"
+              className="grid grid-cols-[2.5fr_2fr_2fr_2fr_1fr] px-3 py-4 hover:bg-gray-50 transition-colors border-t border-gray-100"
             >
               <div className="font-medium">{des?.name || "-"}</div>
               <div className="text-gray-600">{des?.region || "-"}</div>
@@ -227,7 +237,7 @@ function Destinations() {
                   {des?.type || "-"}
                 </span>
               </div>
-              <div className="text-gray-600">{des?.tripCount ?? 0}</div>
+              {/* <div className="text-gray-600">{des?.tripCount ?? 0}</div> */}
 
               <div className="flex gap-2">
                 <Edit
@@ -359,7 +369,7 @@ function AddDestinationModal({ onClose, refresh }) {
 
   const handleSubmit = async () => {
     if (!form.latitude || !form.longitude) {
-      alert("Pick a location first.");
+      toast({ title: "Location", description: "Pick a location first!" });
       return;
     }
 
@@ -391,11 +401,19 @@ function AddDestinationModal({ onClose, refresh }) {
         refresh();
         onClose();
       } else {
-        alert("Failed to save destination");
+        toast({
+          title: "Error",
+          description: "Failed to save destination",
+          variant: "destructive",
+        });
       }
     } catch (err) {
       console.error(err);
-      alert("Error saving destination");
+      toast({
+        title: "Error",
+        description: "Failed to save destination",
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -571,13 +589,10 @@ function Categories() {
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
-        <h2 className="text-lg sm:text-xl font-semibold text-[#14181F]">
-          Manage trip categories and tags
-        </h2>
+      <div className="flex justify-between">
+        <p className="text-[#65758b]">Manage trip categories and tags</p>
 
         <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
       </div>
@@ -630,7 +645,7 @@ function Categories() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
-                  <LiaEditSolid
+                  <Edit
                     size={20}
                     className="cursor-pointer text-gray-600 hover:text-teal-600 transition-colors"
                   />
@@ -655,7 +670,7 @@ function Categories() {
       {/* Add Category Modal - To be implemented */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white w-[450px] p-6 rounded-xl space-y-4">
+          <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Add Category</h2>
               <button

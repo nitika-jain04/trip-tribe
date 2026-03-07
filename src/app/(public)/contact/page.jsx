@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   HelpCircle,
 } from "lucide-react";
-import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -23,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -96,6 +96,7 @@ export default function Contact() {
   const [operators, setOperators] = useState([]);
 
   const [errors, setErrors] = useState({});
+  const { toast } = useToast();
 
   const validateForm = () => {
     const newErrors = {};
@@ -140,7 +141,11 @@ export default function Contact() {
 
     if (!validateForm()) {
       scrollToFirstError();
-      toast.error("Please fix the highlighted errors");
+      toast({
+        title: "Error",
+        description: "Please fix the errors",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -174,7 +179,11 @@ export default function Contact() {
 
       if (response.ok && data.success) {
         setIsSubmitted(true);
-        toast.success(data.message || "Message sent successfully!");
+        toast({
+          title: "Contact Mail",
+          description: "Mail sent successfully",
+        });
+
         setFormData({
           name: "",
           email: "",
@@ -204,11 +213,19 @@ export default function Contact() {
           }));
         }
 
-        toast.error(message);
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error submitting enquiry:", error);
-      toast.error("Network error. Please try again later.");
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
