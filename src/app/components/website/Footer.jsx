@@ -55,7 +55,7 @@ export function Footer() {
           <div className="col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-6">
               <img
-                src="/triptribe-logo.jpeg"
+                src="/triptribe-logo-final.png"
                 alt="TripTribe"
                 className="h-10 w-10 rounded-xl object-cover"
               />

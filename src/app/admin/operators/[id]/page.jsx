@@ -23,6 +23,7 @@ import { Button } from "@/app/components/ui/button";
 import Cookies from "js-cookie";
 import { formatPhoneNumber } from "@/lib/utils";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
+import Image from "next/image";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -158,10 +159,12 @@ export default function OperatorDetail() {
 
       {/* Header Card */}
       <div className="bg-white mt-3 rounded-lg shadow-sm border px-6 py-4 flex flex-col md:flex-row gap-6 items-start">
-        <img
+        <Image
+          height={200}
+          width={200}
           src={operator.logo_url || "/vercel.svg"}
           alt={operator.name}
-          className="h-36 w-36 rounded-xl object-cover border"
+          className="rounded-xl object-cover border"
           onError={(e) => (e.currentTarget.src = "/vercel.svg")}
         />
 

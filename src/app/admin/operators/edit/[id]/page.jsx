@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 import Input from "@/app/components/ui/input";
-import { Select } from "@/app/components/ui/select";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -30,6 +30,7 @@ function formatIndianNumber(digits) {
 }
 
 export default function OperatorEditPage() {
+  const { toast } = useToast();
   const { id } = useParams();
   const router = useRouter();
 
@@ -254,7 +255,11 @@ export default function OperatorEditPage() {
     });
 
     if (Object.keys(requestBody).length === 0) {
-      alert("No changes detected");
+      // alert("No changes detected");
+      toast({
+        title: "Operator",
+        description: "No changes detected!",
+      });
       setSaving(false);
       return;
     }
@@ -278,7 +283,11 @@ export default function OperatorEditPage() {
       if (!res.ok || !data.success)
         throw new Error(data.message || "Update failed");
 
-      alert("Operator updated successfully!");
+      // alert("Operator updated successfully!");
+      toast({
+        title: "Operator",
+        description: "Operator updated successfully!",
+      });
       router.push(`/admin/operators/${id}`);
     } catch (err) {
       setError(err.message);
@@ -309,7 +318,11 @@ export default function OperatorEditPage() {
       if (!res.ok || !data.success)
         throw new Error(data.message || "Delete failed");
 
-      alert("Operator deleted");
+      // alert("Operator deleted");
+      toast({
+        title: "Operator",
+        description: "Operator deleted successfully!",
+      });
       router.push("/admin/operators");
     } catch (err) {
       setError(err.message);

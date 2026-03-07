@@ -49,6 +49,7 @@ import { IoCloseSharp } from "react-icons/io5";
 import Link from "next/link";
 import { formatPhoneNumber } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -71,6 +72,8 @@ function OperatorsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
+
+  const { toast } = useToast();
 
   // Fetch operators from API
   const getOperators = useCallback(async () => {
@@ -217,10 +220,19 @@ function OperatorsPage() {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        alert("Something went wrong!");
+        // alert("Something went wrong!");
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        });
       }
 
-      alert("Operator updated successfully!");
+      // alert("Operator updated successfully!");
+      toast({
+        title: "Operator",
+        description: "Operator updated successfully!",
+      });
       getOperators();
     } catch (err) {
       console.error(err.message);
@@ -253,10 +265,20 @@ function OperatorsPage() {
         throw new Error(data.message || "Failed to delete operator");
       }
 
-      alert("Operator deleted successfully");
+      // alert("Operator deleted successfully");
+      toast({
+        title: "Operator",
+        description: "Operator deleted successfully!",
+      });
+
       getOperators(); // refresh list
     } catch (err) {
-      alert(err.message || "Something went wrong while deleting");
+      // alert(err.message || "Something went wrong while deleting");
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -855,6 +877,7 @@ function AddOperatorModal({ handleModalClose }) {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
+  const { toast } = useToast();
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -1070,7 +1093,7 @@ function AddOperatorModal({ handleModalClose }) {
       }
 
       handleModalClose(false);
-      alert("Operator added successfully!");
+      // alert("Operator added successfully!");
     } catch (err) {
       console.error("Error adding operator:", err);
       setError(err.message || "Something went wrong");

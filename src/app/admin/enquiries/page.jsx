@@ -43,7 +43,6 @@ import {
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
-import { IoClose } from "react-icons/io5";
 import { useRouter } from "next/navigation";
 import { BiComment } from "react-icons/bi";
 import { formatPhoneNumber } from "@/lib/utils";
@@ -391,7 +390,7 @@ function Enquiries() {
             setPage(1);
             setFromDate(e.target.value);
           }}
-          className="w-fit focus:outline-none focus:border-none placeholder:text-black"
+          className="w-40 focus:outline-none focus:border-none placeholder:text-black"
         />
 
         <Input
@@ -406,7 +405,7 @@ function Enquiries() {
             setPage(1);
             setToDate(e.target.value);
           }}
-          className="w-fit focus:outline-none focus:border-none placeholder:text-black"
+          className="w-40 focus:outline-none focus:border-none placeholder:text-black"
         />
       </CardContent>
       {/* </Card> */}

@@ -16,7 +16,7 @@ export const metadata = {
     siteName: "TripTribe",
     images: [
       {
-        url: "https://triptribe.in/triptribe-logo.jpeg",
+        url: "https://triptribe.in/triptribe-logo-final.png",
         width: 1200,
         height: 630,
         alt: "TripTribe Home",

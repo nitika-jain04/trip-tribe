@@ -41,9 +41,9 @@ export function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
             <img
-              src="/triptribe-logo-no-text.png"
+              src="/triptribe-logo-final.png"
               alt="TripTribe"
-              className="h-10 w-10 rounded-lg transition-transform duration-300 group-hover:scale-105"
+              className="h-12 w-12 rounded-lg transition-transform duration-300 group-hover:scale-105"
             />
             <span
               className={`font-display text-xl font-semibold transition-colors ${pathname === "/" && !isScrolled ? "text-white" : "text-foreground"}`}

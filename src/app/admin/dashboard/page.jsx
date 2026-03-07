@@ -31,6 +31,8 @@ export default function DashboardPage() {
     operators: {
       total: 0,
       active: 0,
+      inactive: 0,
+      suspended: 0,
       pending_approval: 0,
       change_percent: 0,
     },
@@ -84,6 +86,54 @@ export default function DashboardPage() {
     }
   };
 
+  // useEffect(() => {
+  //   const fetchDashboardStats = async () => {
+  //     try {
+  //       const token = Cookies.get("token");
+
+  //       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/dashboard`, {
+  //         method: "GET",
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
+
+  //       const data = await res.json();
+  //       console.log("response", data);
+  //       console.log("response", data.result);
+
+  //       const result = data.result;
+
+  //       setStats(result.stats);
+
+  //       const formattedActivities = result.recent_activity.map(
+  //         (item, index) => ({
+  //           id: index,
+  //           type: mapActivityType(item.type),
+  //           action: formatAction(item.type),
+  //           description: item.message,
+  //           timestamp: item.created_at,
+  //         }),
+  //       );
+
+  //       setActivities(formattedActivities);
+  //       // Map enquiry trends for chart
+  //       const formattedChart = result.charts.enquiry_trends.data.map(
+  //         (item) => ({
+  //           name: item.month,
+  //           enquiries: item.count,
+  //         }),
+  //       );
+
+  //       setEnquiryChart(formattedChart);
+  //     } catch (err) {
+  //       console.error(err);
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchDashboardStats();
+  // }, []);
+
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
@@ -95,14 +145,41 @@ export default function DashboardPage() {
         });
 
         const data = await res.json();
-        console.log("response", data);
-        console.log("response", data.result);
+        const result = data?.result;
 
-        setActivities(data.result.recent_activity);
+        if (!result) return;
 
-        const result = data.result;
+        /* ---------- Stats Mapping ---------- */
 
-        setStats(result.stats);
+        setStats({
+          operators: {
+            total: result.stats.operators.total,
+            active: result.stats.operators.status_counts?.ACTIVE || 0,
+            inactive: result.stats.operators.status_counts?.INACTIVE || 0,
+            suspended: result.stats.operators.status_counts?.SUSPENDED || 0,
+            pending_approval: result.stats.operators.pending_approval || 0,
+            change_percent: result.stats.operators.change_percent || 0,
+          },
+
+          trips: {
+            total: result.stats.trips.total,
+            live: result.stats.trips.status_counts?.PUBLISHED || 0,
+            draft: result.stats.trips.status_counts?.DRAFT || 0,
+            archived: result.stats.trips.status_counts?.ARCHIVED || 0,
+            change_percent: result.stats.trips.change_percent || 0,
+          },
+
+          enquiries: {
+            total: result.stats.enquiries.total,
+            this_week: result.stats.enquiries.this_week,
+            this_month: result.stats.enquiries.this_month,
+            change_percent: result.stats.enquiries.change_percent,
+          },
+
+          reviews_pending: result.stats.reviews_pending || 0,
+        });
+
+        /* ---------- Activity Mapping ---------- */
 
         const formattedActivities = result.recent_activity.map(
           (item, index) => ({
@@ -115,7 +192,9 @@ export default function DashboardPage() {
         );
 
         setActivities(formattedActivities);
-        // Map enquiry trends for chart
+
+        /* ---------- Chart Mapping ---------- */
+
         const formattedChart = result.charts.enquiry_trends.data.map(
           (item) => ({
             name: item.month,
@@ -125,7 +204,7 @@ export default function DashboardPage() {
 
         setEnquiryChart(formattedChart);
       } catch (err) {
-        console.error(err);
+        console.error("Dashboard fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -165,7 +244,7 @@ export default function DashboardPage() {
           <StatCard
             title="Total Operators"
             value={stats.operators.total}
-            subtitle={`${stats.operators.active} active • ${stats.operators.pending_approval} pending • ${stats.operators.change_percent}%`}
+            subtitle={`${stats.operators.active} active • ${stats.operators.inactive} inactive • ${stats.operators.suspended} suspended • ${stats.operators.pending_approval} pending`}
             icon={Users}
             variant="primary"
           />

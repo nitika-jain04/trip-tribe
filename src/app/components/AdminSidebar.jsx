@@ -67,9 +67,13 @@ export default function AdminSidebar({ collapsed, toggle }) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-6">
         <div className="flex items-center gap-3 overflow-hidden">
-          <div className="bg-linear-to-br from-teal-400 to-teal-500 text-slate-900 p-2.5 rounded-xl shadow-lg shadow-teal-500/20 shrink-0">
-            <LuMountain size={20} />
-          </div>
+          {/* <div className="bg-linear-to-br from-teal-400 to-teal-500 text-slate-900 p-2.5 rounded-xl shadow-lg shadow-teal-500/20 shrink-0"> */}
+          <img
+            src="/triptribe-logo-final.png"
+            alt=""
+            className="h-12 w-12 rounded-md"
+          />
+          {/* </div> */}
 
           <div
             className={`transition-all duration-300 overflow-hidden ${
@@ -189,7 +193,7 @@ function SidebarLink({ href, icon, label, collapsed, isActive }) {
         className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-in-out
         ${collapsed ? "max-w-0 opacity-0" : "max-w-40 opacity-100 ml-1"}
         ${isActive ? "text-teal-400 font-medium" : ""}`}
-        title={label} // show full text on hover
+        title={label}
       >
         {label}
       </span>

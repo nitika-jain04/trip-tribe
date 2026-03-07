@@ -16,8 +16,10 @@ import {
   Search,
   Trash,
   Edit,
+  Plus,
 } from "lucide-react";
 import Cookies from "js-cookie";
+import { IoCloseSharp } from "react-icons/io5";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -400,15 +402,17 @@ function AddDestinationModal({ onClose, refresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white w-[650px] p-6 rounded-xl space-y-4">
+    <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
+      <div className="bg-white w-162.5 p-6 rounded-xl space-y-4">
         <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Add Destination</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-500">
+            Add Destination
+          </h2>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            className="text-gray-500 hover:text-black text-xl p-1"
           >
-            <X size={20} />
+            <IoCloseSharp />
           </button>
         </div>
 
@@ -567,17 +571,15 @@ function Categories() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
-        <p className="text-[#65758b] text-base">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+        <h2 className="text-lg sm:text-xl font-semibold text-[#14181F]">
           Manage trip categories and tags
-        </p>
+        </h2>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-teal-500 text-white text-base px-4 py-2 rounded-lg hover:bg-teal-600 transition-colors"
-        >
-          + Add Category
-        </button>
+        <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Category
+        </Button>
       </div>
 
       {/* Loading State */}

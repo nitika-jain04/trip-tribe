@@ -121,46 +121,54 @@ function AuditLogs() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [search, actionFilter, page, limit, router]);
+  }, [search, actionFilter, entityType, fromDate, toDate, page, limit, router]);
 
   useEffect(() => {
     fetchLogs();
   }, [fetchLogs]);
 
   const actionBadge = (action) => {
-    const styles = {
-      CREATE: "bg-green-100 text-green-700",
-      UPDATE: "bg-blue-100 text-blue-700",
-      DELETE: "bg-red-100 text-red-700",
-      LOGIN: "bg-purple-100 text-purple-700",
-    };
+    if (!action) return null;
+
+    const actionType = action.toLowerCase();
+
+    let style = "bg-gray-100 text-gray-700";
+
+    if (actionType.includes("create")) style = "bg-green-100 text-green-700";
+
+    if (actionType.includes("update")) style = "bg-blue-100 text-blue-700";
+
+    if (actionType.includes("delete")) style = "bg-red-100 text-red-700";
+
+    if (actionType.includes("login")) style = "bg-purple-100 text-purple-700";
 
     return (
-      <span
-        className={`px-2 py-1 rounded text-xs font-semibold ${
-          styles[action] || "bg-gray-100"
-        }`}
-      >
-        {action}
+      <span className={`px-2 py-1 rounded-md text-xs font-semibold ${style}`}>
+        {action.replaceAll("_", " ")}
       </span>
     );
   };
 
   const entityBadge = (entity) => {
+    if (!entity) return null;
+
+    const entityType = entity.toLowerCase();
+
     const styles = {
-      TRIP: "bg-orange-100 text-orange-700",
-      USER: "bg-indigo-100 text-indigo-700",
-      OPERATOR: "bg-teal-100 text-teal-700",
-      LOCATION: "bg-yellow-100 text-yellow-700",
+      trip: "bg-orange-100 text-orange-700",
+      user: "bg-indigo-100 text-indigo-700",
+      operator: "bg-teal-100 text-teal-700",
+      location: "bg-yellow-100 text-yellow-700",
+      enquiry: "bg-pink-100 text-pink-700",
     };
 
     return (
       <span
-        className={`px-2 py-1 rounded text-xs font-semibold ${
-          styles[entity] || "bg-gray-100"
+        className={`px-2 py-1 rounded-md text-xs font-semibold ${
+          styles[entityType] || "bg-gray-100 text-gray-700"
         }`}
       >
-        {entity}
+        {entityType.charAt(0).toUpperCase() + entityType.slice(1)}
       </span>
     );
   };
@@ -226,7 +234,7 @@ function AuditLogs() {
           />
         </div>
 
-        <Select
+        {/* <Select
           value={actionFilter}
           onValueChange={(value) => {
             setPage(1);
@@ -241,10 +249,10 @@ function AuditLogs() {
             <SelectItem value="all">Action</SelectItem>
             <SelectItem value="CREATE">Create</SelectItem>
             <SelectItem value="UPDATE">Update</SelectItem>
-            <SelectItem value="DELETE">Delete</SelectItem>
-            <SelectItem value="LOGIN">Login</SelectItem>
+            <SelectItem value="LOCATION_DELETE">Delete</SelectItem>
+            <SelectItem value="USER_LOGIN">Login</SelectItem>
           </SelectContent>
-        </Select>
+        </Select> */}
 
         <Select
           value={entityType}
@@ -259,14 +267,15 @@ function AuditLogs() {
 
           <SelectContent>
             <SelectItem value="all">Entity</SelectItem>
-            <SelectItem value="TRIP">Trip</SelectItem>
-            <SelectItem value="USER">User</SelectItem>
-            <SelectItem value="OPERATOR">Operator</SelectItem>
-            <SelectItem value="LOCATION">Location</SelectItem>
+            <SelectItem value="trip">Trip</SelectItem>
+            <SelectItem value="user">User</SelectItem>
+            <SelectItem value="operator">Operator</SelectItem>
+            <SelectItem value="location">Location</SelectItem>
+            <SelectItem value="enquiry">Enquiry</SelectItem>
           </SelectContent>
         </Select>
 
-        <Input
+        {/* <Input
           type="date"
           className="w-44"
           value={fromDate}
@@ -274,9 +283,23 @@ function AuditLogs() {
             setPage(1);
             setFromDate(e.target.value);
           }}
+        /> */}
+        <Input
+          type={fromDate ? "date" : "text"}
+          placeholder="Start Date"
+          value={fromDate}
+          onFocus={(e) => (e.target.type = "date")}
+          onBlur={(e) => {
+            if (!e.target.value) e.target.type = "text";
+          }}
+          onChange={(e) => {
+            setPage(1);
+            setFromDate(e.target.value);
+          }}
+          className="w-44 focus:outline-none focus:border-none placeholder:text-black"
         />
 
-        <Input
+        {/* <Input
           type="date"
           className="w-44"
           value={toDate}
@@ -284,6 +307,21 @@ function AuditLogs() {
             setPage(1);
             setToDate(e.target.value);
           }}
+        /> */}
+
+        <Input
+          type={toDate ? "date" : "text"}
+          placeholder="End Date"
+          value={toDate}
+          onFocus={(e) => (e.target.type = "date")}
+          onBlur={(e) => {
+            if (!e.target.value) e.target.type = "text";
+          }}
+          onChange={(e) => {
+            setPage(1);
+            setFromDate(e.target.value);
+          }}
+          className="w-44 focus:outline-none focus:border-none placeholder:text-black"
         />
       </CardContent>
 
@@ -306,18 +344,49 @@ function AuditLogs() {
                 <TableRow>
                   <TableHead>Action</TableHead>
                   <TableHead>Entity</TableHead>
-                  <TableHead>Actor</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Changes</TableHead>
+                  <TableHead>Old Values</TableHead>
+                  <TableHead>New Values</TableHead>
+                  <TableHead>Actor</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
+                {logs.length === 0 && (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="text-center py-10 text-muted-foreground"
+                    >
+                      No audit logs found
+                    </TableCell>
+                  </TableRow>
+                )}
+
                 {logs.map((log) => (
                   <TableRow key={log.id}>
                     <TableCell>{actionBadge(log.action)}</TableCell>
+                    {/* <TableCell>{log.action}</TableCell> */}
 
                     <TableCell>{entityBadge(log.entity_type)}</TableCell>
+
+                    <TableCell>
+                      {new Date(log.createdAt).toLocaleString()}
+                    </TableCell>
+
+                    <TableCell
+                      className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
+                      title={JSON.stringify(log.old_values)}
+                    >
+                      {log.old_values ? JSON.stringify(log.old_values) : "-"}
+                    </TableCell>
+
+                    <TableCell
+                      className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
+                      title={JSON.stringify(log.new_values)}
+                    >
+                      {log.new_values ? JSON.stringify(log.new_values) : "-"}
+                    </TableCell>
 
                     <TableCell>
                       <div className="flex flex-col">
@@ -326,14 +395,6 @@ function AuditLogs() {
                           {log.actor?.email}
                         </span>
                       </div>
-                    </TableCell>
-
-                    <TableCell>
-                      {new Date(log.createdAt).toLocaleDateString()}
-                    </TableCell>
-
-                    <TableCell className="text-xs text-muted-foreground">
-                      {log.new_values ? JSON.stringify(log.new_values) : "-"}
                     </TableCell>
                   </TableRow>
                 ))}
