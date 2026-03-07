@@ -24,6 +24,14 @@ const statusConfig = {
     label: "Live",
     className: "bg-success/10 text-success border-success/20",
   },
+  PUBLISHED: {
+    label: "Live",
+    className: "bg-success/10 text-success border-success/20",
+  },
+  CANCELLED: {
+    label: "Cancelled",
+    className: "bg-warning/10 text-warning border-warning/20",
+  },
   draft: {
     label: "Draft",
     className: "bg-muted text-muted-foreground border-border",

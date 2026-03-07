@@ -220,7 +220,7 @@ export default function MapPicker({
 
         {/* Search Results */}
         {searchResults.length > 0 && (
-          <div className="absolute left-4 right-4 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+          <div className="absolute left-4 right-4 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-999">
             {searchResults.map((result, index) => (
               <button
                 key={index}

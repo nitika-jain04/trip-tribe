@@ -17,6 +17,7 @@ import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { MdChairAlt } from "react-icons/md";
 import Cookies from "js-cookie";
+import { StatusBadge } from "@/app/components/admin/StatusBadge";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -220,11 +221,10 @@ export default function TripDetail() {
           <CardContent className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">{trip.name}</h1>
-              <span
-                className={`px-3 py-1 text-xs rounded-full font-medium ${statusStyle}`}
-              >
-                {trip.status}
-              </span>
+              <StatusBadge
+                status={trip.status}
+                // className={`px-3 py-1 text-xs rounded-full font-medium ${statusStyle}`}
+              />
             </div>
 
             <p className="text-muted-foreground">{trip.description}</p>

@@ -526,16 +526,39 @@ function OperatorsPage() {
                                   Edit
                                 </Link>
                               </DropdownMenuItem>
-                              {op.status === "INACTIVE" && (
+                              {op.application_status === "PENDING" && (
                                 <>
                                   <DropdownMenuItem
                                     className="text-success"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "ACTIVE")
+                                      handleUpdateOperator(op.id, "APPROVED")
                                     }
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
                                     Approve
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    className="text-warning"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, "REJECTED")
+                                    }
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {op.status === "ACTIVE" && (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, "INACTIVE")
+                                    }
+                                  >
+                                    <UserX className="h-4 w-4 mr-2" />
+                                    Suspend
                                   </DropdownMenuItem>
 
                                   <DropdownMenuItem
@@ -547,26 +570,15 @@ function OperatorsPage() {
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              {op.status === "ACTIVE" && (
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() =>
-                                    handleUpdateOperator(op.id, "INACTIVE")
-                                  }
-                                >
-                                  <UserX className="h-4 w-4 mr-2" />
-                                  Suspend
-                                </DropdownMenuItem>
-                              )}
-                              {op.status === "SUSPENDED" && (
+                              {op.status === "REJECTED" && (
                                 <DropdownMenuItem
                                   className="text-success"
                                   onClick={() =>
-                                    handleUpdateOperator(op.id, "ACTIVE")
+                                    handleUpdateOperator(op.id, "APPROVED")
                                   }
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
-                                  Reactivate
+                                  Approve
                                 </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
@@ -756,6 +768,7 @@ function OperatorsPage() {
                                   Edit
                                 </Link>
                               </DropdownMenuItem>
+
                               {op.application_status === "PENDING" && (
                                 <>
                                   <DropdownMenuItem
@@ -769,6 +782,30 @@ function OperatorsPage() {
                                   </DropdownMenuItem>
 
                                   <DropdownMenuItem
+                                    className="text-warning"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, "REJECTED")
+                                    }
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Reject
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+
+                              {op.status === "ACTIVE" && (
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-destructive"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, "INACTIVE")
+                                    }
+                                  >
+                                    <UserX className="h-4 w-4 mr-2" />
+                                    Inactivate
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
                                     onClick={() => handleDeleteOperator(op.id)}
                                     className="text-destructive"
                                   >
@@ -777,26 +814,15 @@ function OperatorsPage() {
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              {op.status === "ACTIVE" && (
-                                <DropdownMenuItem
-                                  className="text-destructive"
-                                  onClick={() =>
-                                    handleUpdateOperator(op.id, "INACTIVE")
-                                  }
-                                >
-                                  <UserX className="h-4 w-4 mr-2" />
-                                  Suspend
-                                </DropdownMenuItem>
-                              )}
-                              {op.status === "SUSPENDED" && (
+                              {op.application_status === "REJECTED" && (
                                 <DropdownMenuItem
                                   className="text-success"
                                   onClick={() =>
-                                    handleUpdateOperator(op.id, "ACTIVE")
+                                    handleUpdateOperator(op.id, "APPROVED")
                                   }
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
-                                  Reactivate
+                                  Approve
                                 </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>

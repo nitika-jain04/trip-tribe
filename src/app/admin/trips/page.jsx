@@ -92,7 +92,7 @@ function Page() {
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin?page=1&limit=100`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE`,
         {
           method: "GET",
           headers: {
@@ -497,7 +497,7 @@ function Page() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <StatusBadge status={trip.status?.toLowerCase()} />
+                          <StatusBadge status={trip.status} />
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
