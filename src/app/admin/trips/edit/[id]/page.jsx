@@ -134,6 +134,7 @@ export default function TripEditPage() {
       toast({
         title: "Trip Update",
         description: "Trip Updated Successfully!",
+        variant: "success",
       });
       router.push(`/admin/trips/${id}`);
     } catch (err) {

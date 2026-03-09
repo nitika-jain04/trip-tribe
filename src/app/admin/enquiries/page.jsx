@@ -187,6 +187,7 @@ function Enquiries() {
       toast({
         title: "Enquiry Deleted",
         description: "Enquiry deleted successfully",
+        variant: "success",
       });
 
       fetchEnquiries();
@@ -225,6 +226,7 @@ function Enquiries() {
       toast({
         title: "Enquiry Closed",
         description: "Enquiry closed successfully",
+        variant: "success",
       });
 
       fetchEnquiries();

@@ -141,13 +141,6 @@ export default function OperatorDetail() {
     );
   }
 
-  const statusStyle =
-    operator.status === "ACTIVE"
-      ? "bg-green-100 text-green-700"
-      : operator.status === "INACTIVE"
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-red-100 text-red-700";
-
   return (
     <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
       <Link
@@ -172,15 +165,22 @@ export default function OperatorDetail() {
           <div className="flex justify-between items-center gap-3 flex-wrap">
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl font-semibold">{operator.name}</h1>
-              <StatusBadge
-                // status={operator.status?.toLowerCase()}
-                status={
-                  operator.application_status?.toUpperCase() === "PENDING"
-                    ? operator.application_status?.toLowerCase()
-                    : operator.status?.toLowerCase()
-                }
-                className="w-fit"
-              />
+              <div className="flex gap-2">
+                <StatusBadge
+                  status={operator.status?.toLowerCase()}
+                  // status={
+                  //   operator.application_status?.toUpperCase() === "PENDING"
+                  //     ? operator.application_status?.toLowerCase()
+                  //     : operator.status?.toLowerCase()
+                  // }
+                  className="w-fit"
+                />
+                <StatusBadge
+                  // status={operator.status?.toLowerCase()}
+                  status={operator.application_status?.toLowerCase()}
+                  className="w-fit"
+                />
+              </div>
             </div>
             <Button
               variant="outline"

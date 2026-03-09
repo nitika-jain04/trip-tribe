@@ -93,7 +93,7 @@ function Page() {
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE&application_status=APPROVED`,
         {
           method: "GET",
           headers: {
@@ -886,6 +886,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Trip Update",
         description: "Trip updated successfully!",
+        variant: "success",
       });
       handleModalClose(false);
     } catch (err) {
