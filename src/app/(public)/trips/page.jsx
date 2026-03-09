@@ -143,7 +143,7 @@ function TripsContent() {
           return {
             id: trip.id,
             name: trip.name,
-            image: "/loginimg.jpeg",
+            image: trip.images[0],
 
             destination: destinationLocation.name,
             region: destinationLocation.region,

@@ -135,38 +135,155 @@ export default function Page() {
   const [loadingLocations, setLoadingLocations] = useState(true);
   const [error, setError] = useState(null);
 
+  // async function getLocations() {
+  //   try {
+  //     setLoadingLocations(true);
+  //     setError(null);
+
+  //     const res = await fetch(
+  //       `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=10`,
+  //       {
+  //         method: "GET",
+  //       },
+  //     );
+
+  //     if (!res.ok) throw new Error("Failed to fetch locations");
+
+  //     const data = await res.json();
+  //     console.log("locations", data.result?.locations);
+
+  //     if (data.success) {
+  //       const transformedLocations = (data.result?.locations || []).map(
+  //         (loc) => ({
+  //           name: loc.name,
+  //           region: loc.region,
+  //           type: loc.type,
+  //           trips: Math.floor(Math.random() * 15) + 5,
+  //           image: destinationImages[loc.name] || "/loginimg.jpeg",
+  //         }),
+  //       );
+  //       setLocations(transformedLocations);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching locations:", err);
+  //     setError("Failed to load locations");
+  //   } finally {
+  //     setLoadingLocations(false);
+  //   }
+  // }
+  // async function getLocations() {
+  //   try {
+  //     setLoadingLocations(true);
+  //     setError(null);
+
+  //     const res = await fetch(
+  //       `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10&group_by=location`,
+  //       {
+  //         method: "GET",
+  //       },
+  //     );
+
+  //     if (!res.ok) throw new Error("Failed to fetch destinations");
+
+  //     const data = await res.json();
+
+  //     console.log("destinations", data.result?.groups);
+
+  //     if (data.success) {
+  //       const transformedLocations = (data.result?.groups || []).map(
+  //         (group) => {
+  //           const firstTrip = group.trips?.[0];
+
+  //           return {
+  //             name: group.location_name,
+  //             region: "", // API does not return region
+  //             type: "destination",
+  //             trips: group.total_trips,
+  //             image:
+  //               firstTrip?.images?.[0] ||
+  //               destinationImages[group.location_name],
+  //           };
+  //         },
+  //       );
+
+  //       setLocations(transformedLocations);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching destinations:", err);
+  //     setError("Failed to load destinations");
+  //   } finally {
+  //     setLoadingLocations(false);
+  //   }
+  // }
+
   async function getLocations() {
     try {
       setLoadingLocations(true);
       setError(null);
 
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=10`,
+        `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10&group_by=location`,
         {
           method: "GET",
         },
       );
 
-      if (!res.ok) throw new Error("Failed to fetch locations");
+      if (!res.ok) throw new Error("Failed to fetch destinations");
 
       const data = await res.json();
-      console.log("locations", data.result?.locations);
 
-      if (data.success) {
-        const transformedLocations = (data.result?.locations || []).map(
-          (loc) => ({
-            name: loc.name,
-            region: loc.region,
-            type: loc.type,
-            trips: Math.floor(Math.random() * 15) + 5,
-            image: destinationImages[loc.name] || "/loginimg.jpeg",
-          }),
-        );
-        setLocations(transformedLocations);
-      }
+      if (!data.success) return;
+
+      const groups = data.result?.groups || [];
+
+      const locationCache = {};
+
+      const fetchLocation = async (id) => {
+        if (!id) return { region: "Unknown" };
+        if (locationCache[id]) return locationCache[id];
+
+        try {
+          const res = await fetch(
+            `${BASE_URL}/api/${API_VERSION}/locations/${id}`,
+          );
+
+          const data = await res.json();
+
+          const locationData = {
+            region: data?.result?.region || "Unknown",
+          };
+
+          locationCache[id] = locationData;
+          return locationData;
+        } catch {
+          return { region: "Unknown" };
+        }
+      };
+
+      const transformedLocations = await Promise.all(
+        groups.map(async (group) => {
+          const firstTrip = group.trips?.[0];
+
+          const locationData = await fetchLocation(firstTrip?.destination_id);
+
+          return {
+            id: firstTrip?.destination_id || group.location_name,
+            name: group.location_name,
+            region: locationData.region,
+            type: "destination",
+            trips: group.total_trips,
+            image:
+              firstTrip?.images?.[0] ||
+              destinationImages[group.location_name] ||
+              "/loginimg.jpeg",
+          };
+        }),
+      );
+
+      setLocations(transformedLocations);
     } catch (err) {
-      console.error("Error fetching locations:", err);
-      setError("Failed to load locations");
+      console.error("Error fetching destinations:", err);
+      setError("Failed to load destinations");
     } finally {
       setLoadingLocations(false);
     }
@@ -214,98 +331,107 @@ export default function Page() {
       const data = await res.json();
       if (!data.success) return;
 
-      console.log("trips", data.result.trips);
-
       const rawTrips = data.result?.trips || [];
 
-      const operatorCache = {};
-      const locationCache = {};
+      /* -----------------------------
+       collect unique ids
+    ------------------------------ */
 
-      const fetchOperator = async (id) => {
-        if (!id) return "Unknown";
-        if (operatorCache[id]) return operatorCache[id];
+      const operatorIds = [...new Set(rawTrips.map((t) => t.operator_id))];
+      const locationIds = [
+        ...new Set(
+          rawTrips.flatMap((t) =>
+            [t.source_id, t.destination_id].filter(Boolean),
+          ),
+        ),
+      ];
 
-        try {
-          const res = await fetch(
-            `${BASE_URL}/api/${API_VERSION}/operators/${id}`,
-          );
-          const data = await res.json();
+      /* -----------------------------
+       fetch operators in parallel
+    ------------------------------ */
 
-          const name = data?.result?.name || "Unknown";
-          operatorCache[id] = name;
-          return name;
-        } catch {
-          return "Unknown";
-        }
-      };
-
-      const fetchLocation = async (id) => {
-        if (!id) return { name: "Unknown", region: "Unknown" };
-        if (locationCache[id]) return locationCache[id];
-
-        try {
-          const res = await fetch(
-            `${BASE_URL}/api/${API_VERSION}/locations/${id}`,
-          );
-          const data = await res.json();
-
-          const locationData = {
-            name: data?.result?.name || "Unknown",
-            region: data?.result?.region || "Unknown",
-          };
-
-          locationCache[id] = locationData;
-          return locationData;
-        } catch {
-          return { name: "Unknown", region: "Unknown" };
-        }
-      };
-
-      // --- enrich trips in parallel ---
-      const enrichedTrips = await Promise.all(
-        rawTrips.map(async (trip) => {
-          const [operatorName, sourceLocation, destinationLocation] =
-            await Promise.all([
-              fetchOperator(trip.operator_id),
-              fetchLocation(trip.source_id),
-              fetchLocation(trip.destination_id),
-            ]);
-
-          const start = new Date(trip.start_date);
-          const end = new Date(trip.end_date);
-
-          const durationDays =
-            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-          return {
-            id: trip.id,
-            name: trip.name,
-
-            // ✅ match JSX image structure
-            images: trip.images?.length > 0 ? trip.images : ["/loginimg.jpeg"],
-
-            destination: destinationLocation.name,
-            region: destinationLocation.region,
-
-            // ✅ provider should be string (because JSX prints it directly)
-            provider: operatorName,
-
-            // ✅ match JSX price
-            price: Number(trip.price) || 0,
-
-            duration: `${durationDays} days`,
-            groupSize: `${trip.total_seats} people`,
-
-            difficulty:
-              trip.difficulty?.charAt(0) +
-                trip.difficulty?.slice(1).toLowerCase() || "Moderate",
-
-            rating: 4.5,
-            reviewCount: 0,
-            verified: true,
-          };
+      const operators = await Promise.all(
+        operatorIds.map(async (id) => {
+          try {
+            const res = await fetch(
+              `${BASE_URL}/api/${API_VERSION}/operators/${id}`,
+            );
+            const data = await res.json();
+            return [id, data?.result?.name || "Unknown"];
+          } catch {
+            return [id, "Unknown"];
+          }
         }),
       );
+
+      const operatorMap = Object.fromEntries(operators);
+
+      /* -----------------------------
+       fetch locations in parallel
+    ------------------------------ */
+
+      const locations = await Promise.all(
+        locationIds.map(async (id) => {
+          try {
+            const res = await fetch(
+              `${BASE_URL}/api/${API_VERSION}/locations/${id}`,
+            );
+            const data = await res.json();
+
+            return [
+              id,
+              {
+                name: data?.result?.name || "Unknown",
+                region: data?.result?.region || "Unknown",
+              },
+            ];
+          } catch {
+            return [id, { name: "Unknown", region: "Unknown" }];
+          }
+        }),
+      );
+
+      const locationMap = Object.fromEntries(locations);
+
+      /* -----------------------------
+       transform trips
+    ------------------------------ */
+
+      const enrichedTrips = rawTrips.map((trip) => {
+        const source = locationMap[trip.source_id] || {};
+        const destination = locationMap[trip.destination_id] || {};
+
+        const start = new Date(trip.start_date);
+        const end = new Date(trip.end_date);
+
+        const durationDays =
+          Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+        return {
+          id: trip.id,
+          name: trip.name,
+
+          images: trip.images?.length ? trip.images : ["/loginimg.jpeg"],
+
+          destination: destination.name,
+          region: destination.region,
+
+          provider: operatorMap[trip.operator_id] || "Unknown",
+
+          price: Number(trip.price) || 0,
+
+          duration: `${durationDays} days`,
+          groupSize: `${trip.total_seats} people`,
+
+          difficulty:
+            trip.difficulty?.charAt(0) +
+              trip.difficulty?.slice(1).toLowerCase() || "Moderate",
+
+          rating: 4.5,
+          reviewCount: 0,
+          verified: true,
+        };
+      });
 
       setTrips(enrichedTrips);
     } catch (err) {
@@ -747,16 +873,16 @@ export default function Page() {
               {locations.slice(0, 6).map((location) => (
                 <Link
                   key={location.name}
-                  href={`/trips?destination=${location.name}`}
+                  href={`/trips?location_type=destination}`}
                   className="group relative aspect-4/3 rounded-2xl overflow-hidden"
                 >
                   <img
                     src={location.image}
                     alt={location.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    onError={(e) => {
-                      e.currentTarget.src = "/loginimg.jpeg";
-                    }}
+                    // onError={(e) => {
+                    //   e.currentTarget.src = "/loginimg.jpeg";
+                    // }}
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-6">
