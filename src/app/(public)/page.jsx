@@ -222,7 +222,7 @@ export default function Page() {
       setError(null);
 
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/trips?location_type=destination`,
+        `${BASE_URL}/api/${API_VERSION}/trips?group_by=location`,
         {
           method: "GET",
         },
