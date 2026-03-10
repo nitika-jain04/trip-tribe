@@ -30,7 +30,7 @@ function page() {
         <p className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
           Terms of Use
         </p>
-        <p className="text-sm text-overlay-muted">Last updated: March 2024</p>
+        <p className="text-sm text-overlay-muted">Last updated: March 2026</p>
       </div>
 
       {/* Acceptance */}

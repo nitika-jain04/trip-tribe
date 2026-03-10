@@ -35,7 +35,7 @@ function page() {
           Privacy Policy
         </p>
 
-        <p className="text-sm text-overlay-muted">Last updated: March 2024</p>
+        <p className="text-sm text-overlay-muted">Last updated: March 2026</p>
       </div>
 
       <div className="bg-card rounded-2xl shadow-sm border border-border p-6 md:p-8 flex flex-col gap-5">
