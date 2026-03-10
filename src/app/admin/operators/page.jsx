@@ -69,6 +69,7 @@ function OperatorsPage() {
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("DESC");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -93,13 +94,13 @@ function OperatorsPage() {
       params.append("page", String(page));
       params.append("limit", String(limit));
 
+      if (sourceFilter && sourceFilter !== "all") {
+        params.append("source", sourceFilter.toUpperCase());
+      }
+
       if (statusFilter && statusFilter !== "all") {
         params.append("status", statusFilter.toUpperCase());
       }
-
-      // if (sourceFilter && sourceFilter !== "all") {
-      //   params.append("source", sourceFilter);
-      // }
 
       if (sortBy) {
         params.append("sortBy", sortBy);
@@ -148,7 +149,15 @@ function OperatorsPage() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [page, limit, statusFilter, sortBy, sortOrder, debouncedSearch]);
+  }, [
+    page,
+    limit,
+    statusFilter,
+    sourceFilter,
+    sortBy,
+    sortOrder,
+    debouncedSearch,
+  ]);
 
   useEffect(() => {
     const searchValue = debouncedSearch?.trim();
@@ -195,11 +204,6 @@ function OperatorsPage() {
     setShowAddModal(value);
     if (!value) getOperators();
   };
-
-  // const handleViewDetails = (operator) =>
-  //   router.push(`/admin/operators/${operator.id}`);
-  // const handleEditOperator = (operator) =>
-  //   router.push(`/admin/operators/edit/${operator.id}`);
 
   const handleUpdateOperator = async (operatorId, payload) => {
     const token = Cookies.get("token");
@@ -423,6 +427,28 @@ function OperatorsPage() {
                 <SelectItem value="inactive">Inactive</SelectItem>
                 <SelectItem value="suspended">Suspended</SelectItem>
                 {/* <SelectItem value="pending">Pending</SelectItem> */}
+              </SelectContent>
+            </Select>
+
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="admin_created">Admin</SelectItem>
+                <SelectItem value="application">Application</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* <SelectItem value="all">All</SelectItem> */}
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="created_at">Create Date</SelectItem>
               </SelectContent>
             </Select>
 
@@ -1125,11 +1151,11 @@ function AddOperatorModal({ handleModalClose }) {
     // Website validation
     if (
       formData.website_url &&
-      !/^https?:\/\/(www\.)?[\w\-]+(\.[\w\-]+)+[/#?]?.*$/.test(
+      !/^https?:\/\/(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+[/#?]?.*$/.test(
         formData.website_url,
       )
     ) {
-      errors.website_url = "Enter valid website URL (https:// or http://)";
+      errors.website_url = "Enter valid website URL";
     }
 
     // Social links validation

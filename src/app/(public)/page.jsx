@@ -222,7 +222,7 @@ export default function Page() {
       setError(null);
 
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10&group_by=location`,
+        `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10group_by=location`,
         {
           method: "GET",
         },
@@ -879,7 +879,7 @@ export default function Page() {
                   <img
                     src={location.image}
                     alt={location.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-full object-cover aspect-square transition-transform duration-500 group-hover:scale-110"
                     // onError={(e) => {
                     //   e.currentTarget.src = "/loginimg.jpeg";
                     // }}
