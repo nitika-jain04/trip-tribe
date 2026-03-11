@@ -2,15 +2,12 @@
 
 import AdminGuard from "@/app/components/AdminGuard";
 import React, { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
   MoreHorizontal,
   Eye,
   Pencil,
-  Copy,
-  Archive,
   Loader2,
   AlertCircle,
   MapPin,
