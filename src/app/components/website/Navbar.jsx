@@ -61,9 +61,8 @@ export function Navbar() {
                 className={`px-4 py-2 text-body-sm font-medium rounded-full transition-colors duration-200 ${
                   pathname === item.href
                     ? "text-primary bg-primary-light"
-                    : isScrolled
-                      ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      : "text-background/80 hover:text-background hover:bg-background/10"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  // : "text-background/80 hover:text-background hover:bg-background/10"
                 }`}
               >
                 {item.name}

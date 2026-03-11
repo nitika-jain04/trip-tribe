@@ -182,6 +182,7 @@ export default function Contact() {
         toast({
           title: "Contact Mail",
           description: "Mail sent successfully",
+          variant: "success",
         });
 
         setFormData({

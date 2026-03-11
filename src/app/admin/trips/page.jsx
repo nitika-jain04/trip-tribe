@@ -72,6 +72,7 @@ function Page() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [sortBy, setSortBy] = useState("created_at");
   const [showModal, setShowModal] = useState(false);
   const [operators, setOperators] = useState([]);
   const [loadingOperators, setLoadingOperators] = useState(false);
@@ -83,6 +84,7 @@ function Page() {
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
+  const { toast } = useToast();
 
   const fetchOperators = async () => {
     setLoadingOperators(true);
@@ -90,7 +92,7 @@ function Page() {
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE&application_status=APPROVED`,
         {
           method: "GET",
           headers: {
@@ -135,6 +137,10 @@ function Page() {
         params.append("search", searchValue);
       }
 
+      if (sortBy) {
+        params.append("sortBy", sortBy);
+      }
+
       const url = `${BASE_URL}/api/${API_VERSION}/trips/admin?${params.toString()}`;
 
       const res = await fetch(url, {
@@ -162,7 +168,7 @@ function Page() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [page, limit, statusFilter, difficultyFilter, debouncedSearch]);
+  }, [page, limit, statusFilter, sortBy, difficultyFilter, debouncedSearch]);
 
   useEffect(() => {
     fetchOperators();
@@ -366,6 +372,19 @@ function Page() {
                 ))}
               </SelectContent>
             </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* <SelectItem value="all">All</SelectItem> */}
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="created_at">Create Date</SelectItem>
+                <SelectItem value="price">Price</SelectItem>
+                <SelectItem value="start_date">Start Date</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
 
@@ -439,7 +458,7 @@ function Page() {
                             )}
                             <div>
                               <p
-                                className="font-medium line-clamp-1 max-w-[200px]"
+                                className="font-medium line-clamp-1"
                                 title={trip.name}
                               >
                                 {trip.name || "N/A"}
@@ -449,7 +468,7 @@ function Page() {
                         </TableCell>
                         <TableCell className="text-muted-foreground">
                           <p
-                            className="truncate max-w-[150px]"
+                            className="line-clamp-1"
                             title={getOperatorName(trip.operator_id)}
                           >
                             {getOperatorName(trip.operator_id)}
@@ -591,7 +610,7 @@ function AddTripModal({ handleModalClose, operators }) {
     price: "",
     start_date: "",
     end_date: "",
-    difficulty: "HARD",
+    difficulty: "",
     total_seats: "",
     operator_id: "",
     source: {
@@ -610,7 +629,7 @@ function AddTripModal({ handleModalClose, operators }) {
       type: "CITY",
       id: "",
     },
-    status: "PUBLISHED",
+    status: "",
     images: [],
     inclusions: [""],
     exclusions: [""],
@@ -883,6 +902,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Trip Update",
         description: "Trip updated successfully!",
+        variant: "success",
       });
       handleModalClose(false);
     } catch (err) {

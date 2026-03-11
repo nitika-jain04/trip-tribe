@@ -67,9 +67,7 @@ function TripsContent() {
 
   async function getPublishedTrips() {
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`,
-      );
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips`);
 
       if (!res.ok) throw new Error("Failed to fetch trips");
 
@@ -143,7 +141,7 @@ function TripsContent() {
           return {
             id: trip.id,
             name: trip.name,
-            image: "/loginimg.jpeg",
+            image: trip.images[0],
 
             destination: destinationLocation.name,
             region: destinationLocation.region,
@@ -414,7 +412,7 @@ function TripsContent() {
                       <SelectItem value="price-high">
                         Price: High to Low
                       </SelectItem>
-                      <SelectItem value="rating">Highest Rated</SelectItem>
+                      {/* <SelectItem value="rating">Highest Rated</SelectItem> */}
                       <SelectItem value="duration">Duration</SelectItem>
                     </SelectContent>
                   </Select>

@@ -237,6 +237,7 @@ export default function Partner() {
       toast({
         title: "Partnership Mail",
         description: "Mail sent successfully",
+        variant: "success",
       });
       setIsSubmitted(true);
 

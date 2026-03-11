@@ -69,6 +69,7 @@ function OperatorsPage() {
   const [sortBy, setSortBy] = useState("created_at");
   const [sortOrder, setSortOrder] = useState("DESC");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
@@ -93,13 +94,13 @@ function OperatorsPage() {
       params.append("page", String(page));
       params.append("limit", String(limit));
 
+      if (sourceFilter && sourceFilter !== "all") {
+        params.append("source", sourceFilter.toUpperCase());
+      }
+
       if (statusFilter && statusFilter !== "all") {
         params.append("status", statusFilter.toUpperCase());
       }
-
-      // if (sourceFilter && sourceFilter !== "all") {
-      //   params.append("source", sourceFilter);
-      // }
 
       if (sortBy) {
         params.append("sortBy", sortBy);
@@ -148,7 +149,15 @@ function OperatorsPage() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [page, limit, statusFilter, sortBy, sortOrder, debouncedSearch]);
+  }, [
+    page,
+    limit,
+    statusFilter,
+    sourceFilter,
+    sortBy,
+    sortOrder,
+    debouncedSearch,
+  ]);
 
   useEffect(() => {
     const searchValue = debouncedSearch?.trim();
@@ -196,12 +205,7 @@ function OperatorsPage() {
     if (!value) getOperators();
   };
 
-  // const handleViewDetails = (operator) =>
-  //   router.push(`/admin/operators/${operator.id}`);
-  // const handleEditOperator = (operator) =>
-  //   router.push(`/admin/operators/edit/${operator.id}`);
-
-  const handleUpdateOperator = async (operatorId, newStatus) => {
+  const handleUpdateOperator = async (operatorId, payload) => {
     const token = Cookies.get("token");
 
     try {
@@ -213,7 +217,7 @@ function OperatorsPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ application_status: newStatus }),
+          body: JSON.stringify(payload),
         },
       );
 
@@ -230,10 +234,15 @@ function OperatorsPage() {
       toast({
         title: "Operator",
         description: "Operator updated successfully!",
+        variant: "success",
       });
       getOperators();
     } catch (err) {
-      console.error(err.message);
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -266,6 +275,7 @@ function OperatorsPage() {
       toast({
         title: "Operator",
         description: "Operator deleted successfully!",
+        variant: "success",
       });
 
       getOperators(); // refresh list
@@ -420,6 +430,28 @@ function OperatorsPage() {
               </SelectContent>
             </Select>
 
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources</SelectItem>
+                <SelectItem value="admin_created">Admin</SelectItem>
+                <SelectItem value="application">Application</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* <SelectItem value="all">All</SelectItem> */}
+                <SelectItem value="name">Name</SelectItem>
+                <SelectItem value="created_at">Create Date</SelectItem>
+              </SelectContent>
+            </Select>
+
             {/* <Select value={regionFilter} onValueChange={setRegionFilter}>
                 <SelectTrigger className="w-full sm:w-40">
                   <SelectValue placeholder="Region" />
@@ -516,18 +548,20 @@ function OperatorsPage() {
                                   View Details
                                 </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
+                              {/* <DropdownMenuItem asChild>
                                 <Link href={`/admin/operators/edit/${op.id}`}>
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Edit
                                 </Link>
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                               {op.application_status === "PENDING" && (
                                 <>
                                   <DropdownMenuItem
                                     className="text-success"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "APPROVED")
+                                      handleUpdateOperator(op.id, {
+                                        application_status: "APPROVED",
+                                      })
                                     }
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
@@ -537,46 +571,102 @@ function OperatorsPage() {
                                   <DropdownMenuItem
                                     className="text-warning"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "REJECTED")
+                                      handleUpdateOperator(op.id, {
+                                        application_status: "REJECTED",
+                                      })
                                     }
                                   >
-                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    <UserX className="h-4 w-4 mr-2" />
                                     Reject
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              {op.status === "ACTIVE" && (
-                                <>
+                              {op.application_status === "APPROVED" &&
+                                op.status === "SUSPENDED" && (
                                   <DropdownMenuItem
-                                    className="text-destructive"
+                                    className="text-success"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "INACTIVE")
+                                      handleUpdateOperator(op.id, {
+                                        status: "ACTIVE",
+                                      })
                                     }
                                   >
                                     <UserX className="h-4 w-4 mr-2" />
-                                    Suspend
+                                    Activate
                                   </DropdownMenuItem>
+                                )}
+                              {op.application_status === "APPROVED" &&
+                                op.status === "ACTIVE" && (
+                                  <>
+                                    <DropdownMenuItem asChild>
+                                      <Link
+                                        href={`/admin/operators/edit/${op.id}`}
+                                      >
+                                        <Pencil className="h-4 w-4 mr-2" />
+                                        Edit
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() =>
+                                        handleUpdateOperator(op.id, {
+                                          status: "INACTIVE",
+                                        })
+                                      }
+                                    >
+                                      <UserX className="h-4 w-4 mr-2" />
+                                      Inactivate
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() =>
+                                        handleUpdateOperator(op.id, {
+                                          status: "SUSPENDED",
+                                        })
+                                      }
+                                    >
+                                      <UserX className="h-4 w-4 mr-2" />
+                                      Suspend
+                                    </DropdownMenuItem>
 
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleDeleteOperator(op.id)
+                                      }
+                                      className="text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              {op.application_status === "APPROVED" &&
+                                op.status === "INACTIVE" && (
                                   <DropdownMenuItem
-                                    onClick={() => handleDeleteOperator(op.id)}
                                     className="text-destructive"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, {
+                                        status: "ACTIVE",
+                                      })
+                                    }
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                    Delete
+                                    <UserX className="h-4 w-4 mr-2" />
+                                    Activate
                                   </DropdownMenuItem>
-                                </>
-                              )}
-                              {op.status === "REJECTED" && (
+                                )}
+                              {/* {op.application_status === "REJECTED" && (
                                 <DropdownMenuItem
                                   className="text-success"
                                   onClick={() =>
-                                    handleUpdateOperator(op.id, "APPROVED")
+                                    handleUpdateOperator(op.id, {
+                                      application_status: "APPROVED",
+                                    })
                                   }
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
                                   Approve
                                 </DropdownMenuItem>
-                              )}
+                              )} */}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -737,7 +827,8 @@ function OperatorsPage() {
                         <TableCell>
                           <StatusBadge
                             status={
-                              op.application_status === "PENDING"
+                              op.application_status === "PENDING" ||
+                              op.application_status === "REJECTED"
                                 ? op.application_status?.toLowerCase()
                                 : op.status?.toLowerCase()
                             }
@@ -758,19 +849,21 @@ function OperatorsPage() {
                                   View Details
                                 </Link>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
+                              {/* <DropdownMenuItem asChild>
                                 <Link href={`/admin/operators/edit/${op.id}`}>
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Edit
                                 </Link>
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
 
                               {op.application_status === "PENDING" && (
                                 <>
                                   <DropdownMenuItem
                                     className="text-success"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "APPROVED")
+                                      handleUpdateOperator(op.id, {
+                                        application_status: "APPROVED",
+                                      })
                                     }
                                   >
                                     <UserCheck className="h-4 w-4 mr-2" />
@@ -780,41 +873,98 @@ function OperatorsPage() {
                                   <DropdownMenuItem
                                     className="text-warning"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "REJECTED")
+                                      handleUpdateOperator(op.id, {
+                                        application_status: "REJECTED",
+                                      })
                                     }
                                   >
-                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    <UserX className="h-4 w-4 mr-2" />
                                     Reject
                                   </DropdownMenuItem>
                                 </>
                               )}
 
-                              {op.status === "ACTIVE" && (
-                                <>
+                              {op.application_status === "APPROVED" &&
+                                op.status === "ACTIVE" && (
+                                  <>
+                                    <DropdownMenuItem asChild>
+                                      <Link
+                                        href={`/admin/operators/edit/${op.id}`}
+                                      >
+                                        <Pencil className="h-4 w-4 mr-2" />
+                                        Edit
+                                      </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      className="text-warning"
+                                      onClick={() =>
+                                        handleUpdateOperator(op.id, {
+                                          status: "INACTIVE",
+                                        })
+                                      }
+                                    >
+                                      <UserX className="h-4 w-4 mr-2" />
+                                      Inactivate
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      className="text-destructive"
+                                      onClick={() =>
+                                        handleUpdateOperator(op.id, {
+                                          status: "SUSPENDED",
+                                        })
+                                      }
+                                    >
+                                      <UserX className="h-4 w-4 mr-2" />
+                                      Suspend
+                                    </DropdownMenuItem>
+
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        handleDeleteOperator(op.id)
+                                      }
+                                      className="text-error"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                              {op.application_status === "APPROVED" &&
+                                op.status === "INACTIVE" && (
                                   <DropdownMenuItem
-                                    className="text-destructive"
+                                    className="text-success"
                                     onClick={() =>
-                                      handleUpdateOperator(op.id, "INACTIVE")
+                                      handleUpdateOperator(op.id, {
+                                        status: "ACTIVE",
+                                      })
                                     }
                                   >
                                     <UserX className="h-4 w-4 mr-2" />
-                                    Inactivate
+                                    Activate
                                   </DropdownMenuItem>
-
+                                )}
+                              {op.application_status === "APPROVED" &&
+                                op.status === "SUSPENDED" && (
                                   <DropdownMenuItem
-                                    onClick={() => handleDeleteOperator(op.id)}
-                                    className="text-destructive"
+                                    className="text-success"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, {
+                                        status: "ACTIVE",
+                                      })
+                                    }
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                    Delete
+                                    <UserX className="h-4 w-4 mr-2" />
+                                    Activate
                                   </DropdownMenuItem>
-                                </>
-                              )}
+                                )}
                               {op.application_status === "REJECTED" && (
                                 <DropdownMenuItem
                                   className="text-success"
                                   onClick={() =>
-                                    handleUpdateOperator(op.id, "APPROVED")
+                                    handleUpdateOperator(op.id, {
+                                      application_status: "APPROVED",
+                                    })
                                   }
                                 >
                                   <UserCheck className="h-4 w-4 mr-2" />
@@ -1001,11 +1151,11 @@ function AddOperatorModal({ handleModalClose }) {
     // Website validation
     if (
       formData.website_url &&
-      !/^https?:\/\/(www\.)?[\w\-]+(\.[\w\-]+)+[/#?]?.*$/.test(
+      !/^https?:\/\/(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+[/#?]?.*$/.test(
         formData.website_url,
       )
     ) {
-      errors.website_url = "Enter valid website URL (https:// or http://)";
+      errors.website_url = "Enter valid website URL";
     }
 
     // Social links validation

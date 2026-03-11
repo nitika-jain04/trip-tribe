@@ -258,6 +258,7 @@ export default function OperatorEditPage() {
       toast({
         title: "Operator",
         description: "No changes detected!",
+        variant: "success",
       });
       setSaving(false);
       return;
@@ -285,6 +286,7 @@ export default function OperatorEditPage() {
       toast({
         title: "Operator",
         description: "Operator updated successfully!",
+        variant: "success",
       });
       router.push(`/admin/operators/${id}`);
     } catch (err) {
@@ -319,6 +321,7 @@ export default function OperatorEditPage() {
       toast({
         title: "Operator",
         description: "Operator deleted successfully!",
+        variant: "success",
       });
       router.push("/admin/operators");
     } catch (err) {
