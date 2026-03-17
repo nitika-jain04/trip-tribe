@@ -19,7 +19,7 @@ import {
   Loader,
   Loader2,
 } from "lucide-react";
-import { tripTypes, destinations } from "@/app/data/tripData";
+import { destinations } from "@/app/data/tripData";
 import {
   Select,
   SelectContent,
@@ -64,6 +64,7 @@ function TripsContent() {
   const [showCompare, setShowCompare] = useState(false);
   const [trips, setTrips] = useState([]);
   const [loadingTrips, setLoadingTrips] = useState(true);
+  const [tripTypesData, setTripTypesData] = useState(["All Types"]);
 
   async function getPublishedTrips() {
     try {
@@ -161,7 +162,7 @@ function TripsContent() {
             verified: true,
 
             inclusions: trip.inclusions || [],
-            type: "Adventure",
+            type: trip.trip_type?.name || "Other",
           };
         }),
       );
@@ -173,8 +174,27 @@ function TripsContent() {
     }
   }
 
+  async function getTripTypes() {
+    try {
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+
+      if (!res.ok) throw new Error("Failed to fetch trip types");
+
+      const data = await res.json();
+
+      const types = data?.result?.trip_types || [];
+
+      const formatted = ["All Types", ...types.map((t) => t.name)];
+
+      setTripTypesData(formatted);
+    } catch (err) {
+      console.error("Failed to fetch trip types", err);
+    }
+  }
+
   useEffect(() => {
     getPublishedTrips();
+    getTripTypes();
 
     const interval = setInterval(
       () => {
@@ -244,7 +264,7 @@ function TripsContent() {
       <div>
         <h4 className="font-medium text-foreground mb-3">Trip Type</h4>
         <div className="space-y-2">
-          {tripTypes.map((type) => (
+          {tripTypesData.map((type) => (
             <button
               key={type}
               onClick={() => setSelectedType(type)}
@@ -279,7 +299,7 @@ function TripsContent() {
         </div>
       </div>
 
-      <div>
+      {/* <div>
         <h4 className="font-medium text-foreground mb-3">
           Popular Destinations
         </h4>
@@ -294,7 +314,7 @@ function TripsContent() {
             </button>
           ))}
         </div>
-      </div>
+      </div> */}
     </div>
   );
 

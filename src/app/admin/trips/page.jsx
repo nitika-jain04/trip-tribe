@@ -2,7 +2,6 @@
 
 import AdminGuard from "@/app/components/AdminGuard";
 import React, { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
@@ -604,8 +603,10 @@ function AddTripModal({ handleModalClose, operators }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
   const [showDestinationMap, setShowDestinationMap] = useState(false);
+  const [tripTypes, setTripTypes] = useState([]);
+  const [loadingTripTypes, setLoadingTripTypes] = useState(false);
   const [error, setError] = useState("");
-  const toast = useToast();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -615,6 +616,7 @@ function AddTripModal({ handleModalClose, operators }) {
     end_date: "",
     difficulty: "",
     total_seats: "",
+    type_id: "",
     operator_id: "",
     source: {
       name: "",
@@ -638,6 +640,36 @@ function AddTripModal({ handleModalClose, operators }) {
     exclusions: [""],
     itinerary: [{ day: 1, activities: [""] }],
   });
+
+  const fetchTripTypes = async () => {
+    const token = Cookies.get("token");
+    setLoadingTripTypes(true);
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/trip-types/admin`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setTripTypes(data.result.trip_types || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch trip types:", err);
+    } finally {
+      setLoadingTripTypes(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTripTypes();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -872,6 +904,7 @@ function AddTripModal({ handleModalClose, operators }) {
       difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
       operator_id: formData.operator_id,
+      type_id: formData.type_id,
       source_id: formData.source.id,
       destination_id: formData.destination.id,
       status: formData.status,
@@ -1003,7 +1036,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     <option value="HARD">Hard</option>
                   </select>
                 </div>
-                <div>
+                {/* <div>
                   <label className="text-sm text-gray-600 mb-1 block">
                     Status *
                   </label>
@@ -1018,7 +1051,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     <option value="DRAFT">Draft</option>
                     <option value="ARCHIVED">Archived</option>
                   </select>
-                </div>
+                </div> */}
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">
                     Start Date *
@@ -1064,6 +1097,29 @@ function AddTripModal({ handleModalClose, operators }) {
                   {operators.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Trip Type *
+                </label>
+                <select
+                  name="type_id"
+                  value={formData.type_id}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]"
+                >
+                  <option value="">
+                    {loadingTripTypes ? "Loading..." : "Select Trip Type"}
+                  </option>
+
+                  {tripTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
                     </option>
                   ))}
                 </select>
