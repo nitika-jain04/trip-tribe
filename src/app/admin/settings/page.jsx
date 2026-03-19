@@ -20,7 +20,6 @@ import {
 import Cookies from "js-cookie";
 import { IoCloseSharp } from "react-icons/io5";
 import { useToast } from "@/app/hooks/use-toast";
-import { toast } from "sonner";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -76,7 +75,7 @@ function Destinations() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const toast = useToast();
+  const { toast } = useToast();
 
   const getAllDestinations = useCallback(async () => {
     try {
@@ -156,7 +155,7 @@ function Destinations() {
       console.error(error);
       toast({
         title: "Error",
-        description: err.message,
+        description: error.message || "Failed to delete destination",
         variant: "destructive",
       });
     }
@@ -279,6 +278,8 @@ function Destinations() {
 
 //////////////////// MODAL ////////////////////
 function AddDestinationModal({ onClose, refresh }) {
+  const { toast } = useToast();
+
   const MapPicker = dynamic(() => import("@/app/components/MapPicker"), {
     ssr: false,
     loading: () => (
@@ -295,6 +296,8 @@ function AddDestinationModal({ onClose, refresh }) {
     latitude: "",
     longitude: "",
   });
+  const [locationTypes, setLocationTypes] = useState([]);
+  const [typesLoading, setTypesLoading] = useState(false);
 
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState([]);
@@ -304,6 +307,37 @@ function AddDestinationModal({ onClose, refresh }) {
   const searchTimeout = useRef(null);
 
   const controllerRef = useRef(null);
+
+  useEffect(() => {
+    const getLocationTypes = async () => {
+      try {
+        setTypesLoading(true);
+
+        const res = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/locations/types/all`,
+        );
+
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok || !data?.success) {
+          throw new Error("Failed to fetch location types");
+        }
+
+        setLocationTypes(data?.result?.types || []);
+      } catch (err) {
+        console.error(err);
+        toast({
+          title: "Error",
+          description: "Failed to load location types",
+          variant: "destructive",
+        });
+      } finally {
+        setTypesLoading(false);
+      }
+    };
+
+    getLocationTypes();
+  }, [toast]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -376,6 +410,14 @@ function AddDestinationModal({ onClose, refresh }) {
       return;
     }
 
+    if (!form.type) {
+      toast({
+        title: "Type",
+        description: "Please select a destination type",
+      });
+      return;
+    }
+
     const token = Cookies.get("token");
     setSaving(true);
 
@@ -400,21 +442,21 @@ function AddDestinationModal({ onClose, refresh }) {
         },
       );
 
-      if (res.ok) {
-        refresh();
-        onClose();
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to save destination",
-          variant: "destructive",
-        });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.success) {
+        throw new Error(
+          data?.error?.message || data?.message || "Failed to save destination",
+        );
       }
+
+      refresh();
+      onClose();
     } catch (err) {
       console.error(err);
       toast({
         title: "Error",
-        description: "Failed to save destination",
+        description: err.message || "Failed to save destination",
         variant: "destructive",
       });
     } finally {
@@ -451,12 +493,21 @@ function AddDestinationModal({ onClose, refresh }) {
           onChange={(e) => setForm({ ...form, region: e.target.value })}
         />
 
-        <input
-          placeholder="Type"
-          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+        <select
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
           value={form.type}
           onChange={(e) => setForm({ ...form, type: e.target.value })}
-        />
+          disabled={typesLoading}
+        >
+          <option value="">
+            {typesLoading ? "Loading types..." : "Select destination type"}
+          </option>
+          {locationTypes.map((type) => (
+            <option key={type} value={type}>
+              {type.replaceAll("_", " ")}
+            </option>
+          ))}
+        </select>
 
         {/* 🔍 Search */}
         <div className="relative">
@@ -727,6 +778,8 @@ function Categories() {
 }
 
 function AddCategoryModal({ onClose, refresh }) {
+  const { toast } = useToast();
+
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -844,6 +897,8 @@ function AddCategoryModal({ onClose, refresh }) {
   );
 }
 function EditCategoryModal({ data, onClose, refresh }) {
+  const { toast } = useToast();
+
   const [form, setForm] = useState({
     name: data.category || "",
     description: data.description || "",

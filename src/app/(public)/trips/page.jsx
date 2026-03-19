@@ -75,8 +75,6 @@ function TripsContent() {
       const data = await res.json();
       if (!data.success) return;
 
-      console.log("trips", data.result.trips);
-
       const rawTrips = data.result?.trips || [];
 
       // --- caches to avoid duplicate API calls ---
@@ -162,7 +160,7 @@ function TripsContent() {
             verified: true,
 
             inclusions: trip.inclusions || [],
-            type: trip.trip_type?.name || "Other",
+            type: trip.type?.name || "Other",
           };
         }),
       );
@@ -220,7 +218,7 @@ function TripsContent() {
     }
 
     if (selectedType !== "All Types") {
-      result = result.filter((trip) => trip.type === selectedType);
+      result = result.filter((trip) => trip?.type === selectedType);
     }
 
     if (selectedDifficulty !== "All") {
