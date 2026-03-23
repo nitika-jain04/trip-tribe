@@ -62,7 +62,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
       className={`fixed left-0 top-0 h-screen bg-linear-to-b from-slate-900 via-slate-900 to-slate-800 text-white
         shadow-2xl shadow-black/20 border-r border-slate-700/50
         transition-all duration-300 ease-in-out z-50
-        ${sidebarCollapsed ? "w-28" : "w-64"}`}
+        ${sidebarCollapsed ? "w-16" : "w-64"}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-6">
@@ -71,7 +71,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
           <img
             src="/triptribe-logo-final.png"
             alt=""
-            className="h-12 w-12 rounded-md"
+            className={`h-12 w-12 rounded-md ${collapsed ? "hidden" : "visible"}`}
           />
           {/* </div> */}
 

@@ -8,8 +8,6 @@ import {
   MoreHorizontal,
   Eye,
   Pencil,
-  Copy,
-  Archive,
   Loader2,
   AlertCircle,
   MapPin,
@@ -229,6 +227,47 @@ function Page() {
     setShowModal(value);
     if (value === false) {
       getAllTrips();
+    }
+  };
+
+  const handleUpdateTrip = async (tripId, payload) => {
+    const token = Cookies.get("token");
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/trips/admin/${tripId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        });
+      }
+
+      toast({
+        title: "Trip",
+        description: "Trip updated successfully!",
+        variant: "success",
+      });
+      getOperators();
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -538,6 +577,19 @@ function Page() {
                                   Edit
                                 </Link>
                               </DropdownMenuItem>
+                              {trip.status === "DRAFT" && (
+                                <DropdownMenuItem
+                                  className="text-success"
+                                  onClick={() =>
+                                    handleUpdateTrip(trip.id, {
+                                      status: "PUBLISHED",
+                                    })
+                                  }
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Activate
+                                </DropdownMenuItem>
+                              )}
                               {/* <DropdownMenuItem>
                                 <Copy className="h-4 w-4 mr-2" />
                                 Duplicate
@@ -686,6 +738,18 @@ function AddTripModal({ handleModalClose, operators }) {
     } else {
       setFormData((p) => ({ ...p, [name]: value }));
     }
+  };
+
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector(".text-admin-error");
+      if (firstError) {
+        firstError.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
   };
 
   const handleLocationSelect = async (type, locationData) => {
@@ -850,7 +914,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "End date must be after start date",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -859,7 +923,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Please select source location from map",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -868,7 +932,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Please select destination location from map",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -877,7 +941,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Please select operator",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -886,7 +950,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Trip name required",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -944,6 +1008,7 @@ function AddTripModal({ handleModalClose, operators }) {
     } catch (err) {
       console.error("Create failed:", err);
       setError(err.message);
+      scrollToFirstError();
     } finally {
       setLoading(false);
     }
