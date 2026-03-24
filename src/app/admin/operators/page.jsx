@@ -50,6 +50,7 @@ import Link from "next/link";
 import { formatPhoneNumber } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { useToast } from "@/app/hooks/use-toast";
+import { FaRegUser } from "react-icons/fa";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -67,7 +68,7 @@ function OperatorsPage() {
   const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("created_at");
-  const [sortOrder, setSortOrder] = useState("DESC");
+  const [sortOrder, setSortOrder] = useState("ASC");
   const [searchQuery, setSearchQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -172,9 +173,6 @@ function OperatorsPage() {
     }
 
     getOperators();
-
-    const interval = setInterval(() => getOperators(), 10 * 60 * 1000);
-    return () => clearInterval(interval);
   }, [getOperators, debouncedSearch]);
 
   useEffect(() => {
@@ -302,29 +300,8 @@ function OperatorsPage() {
         <Skeleton className="h-10 w-full sm:w-40" />
       </div>
 
-      {/* Mobile Cards Skeleton (visible on mobile, hidden on desktop) */}
-      <div className="block sm:hidden space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <Skeleton className="h-12 w-12 rounded-lg" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-5 w-40" />
-                  <Skeleton className="h-4 w-32" />
-                  <div className="flex justify-between items-center mt-2">
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                    <Skeleton className="h-8 w-8 rounded-md" />
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Table Skeleton (hidden on mobile, visible on desktop) */}
-      <Card className="hidden sm:block">
+      <Card className="hidden sm:block border shadow-sm">
         <CardHeader>
           <Skeleton className="h-6 w-40" />
         </CardHeader>
@@ -379,15 +356,17 @@ function OperatorsPage() {
     <AdminGuard>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Page Header */}
+        {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
               Operators
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground mt-1">
-              Manage trip operators on the platform
+            <p className="text-sm text-muted-foreground mt-1">
+              Manage and monitor all trip operators
             </p>
           </div>
+
           <Button
             onClick={() => setShowAddModal(true)}
             className="w-full sm:w-auto"
@@ -400,323 +379,67 @@ function OperatorsPage() {
         {/* Filters */}
         {/* <Card> */}
         <CardContent className="pt-2">
-          <div className="flex flex-col sm:flex-row gap-3 w-170">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search operators..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-
-              {searchError && (
-                <p className="text-sm text-admin-error mt-1">{searchError}</p>
-              )}
+          <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search operators..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full"
+              />
             </div>
 
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="suspended">Suspended</SelectItem>
-                {/* <SelectItem value="pending">Pending</SelectItem> */}
-              </SelectContent>
-            </Select>
-
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                <SelectItem value="admin_created">Admin</SelectItem>
-                <SelectItem value="application">Application</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Sort By" />
-              </SelectTrigger>
-              <SelectContent>
-                {/* <SelectItem value="all">All</SelectItem> */}
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="created_at">Create Date</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* <Select value={regionFilter} onValueChange={setRegionFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Region" />
+            {/* Filters Right Side */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Regions</SelectItem>
-                  {regions.map((region, index) => (
-                    <SelectItem key={index} value={region}>
-                      {" "}
-                      {region}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
                 </SelectContent>
-              </Select> */}
+              </Select>
+
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  <SelectItem value="admin_created">Admin</SelectItem>
+                  <SelectItem value="application">Application</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full sm:w-[150px]">
+                  <SelectValue placeholder="Sort By" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="created_at">Create Date</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Search error */}
+          {searchError && (
+            <p className="text-sm text-destructive mt-2">{searchError}</p>
+          )}
         </CardContent>
         {/* </Card> */}
-
-        {/* Mobile View - Cards (visible on mobile, hidden on desktop) */}
-        <div className="block sm:hidden">
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-6 h-6 text-teal-500 animate-spin" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : error ? (
-            <Card>
-              <CardContent className="p-8">
-                <div className="flex flex-col items-center text-red-500">
-                  <p className="text-center mb-4">{error}</p>
-                  <Button onClick={getOperators} variant="outline" size="sm">
-                    Retry
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : operators.length === 0 ? (
-            <Card>
-              <CardContent className="p-8">
-                <div className="flex flex-col items-center text-gray-500">
-                  <p className="text-center">No operators found</p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {operators.map((op) => (
-                <Card key={op.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0">
-                        <Image
-                          src={op.logo_url || "/vercel.svg"}
-                          alt={op.name}
-                          fill
-                          className="object-cover"
-                          unoptimized
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium truncate" title={op.name}>
-                              {op.name}
-                            </p>
-                            <p
-                              className="text-sm text-muted-foreground truncate"
-                              title={op.email}
-                            >
-                              {op.email}
-                            </p>
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/operators/${op.id}`}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Link>
-                              </DropdownMenuItem>
-                              {/* <DropdownMenuItem asChild>
-                                <Link href={`/admin/operators/edit/${op.id}`}>
-                                  <Pencil className="h-4 w-4 mr-2" />
-                                  Edit
-                                </Link>
-                              </DropdownMenuItem> */}
-                              {op.application_status === "PENDING" && (
-                                <>
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        application_status: "APPROVED",
-                                      })
-                                    }
-                                  >
-                                    <UserCheck className="h-4 w-4 mr-2" />
-                                    Approve
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuItem
-                                    className="text-warning"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        application_status: "REJECTED",
-                                      })
-                                    }
-                                  >
-                                    <UserX className="h-4 w-4 mr-2" />
-                                    Reject
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {op.application_status === "APPROVED" &&
-                                op.status === "SUSPENDED" && (
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        status: "ACTIVE",
-                                      })
-                                    }
-                                  >
-                                    <UserX className="h-4 w-4 mr-2" />
-                                    Activate
-                                  </DropdownMenuItem>
-                                )}
-                              {op.application_status === "APPROVED" &&
-                                op.status === "ACTIVE" && (
-                                  <>
-                                    <DropdownMenuItem asChild>
-                                      <Link
-                                        href={`/admin/operators/edit/${op.id}`}
-                                      >
-                                        <Pencil className="h-4 w-4 mr-2" />
-                                        Edit
-                                      </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-destructive"
-                                      onClick={() =>
-                                        handleUpdateOperator(op.id, {
-                                          status: "INACTIVE",
-                                        })
-                                      }
-                                    >
-                                      <UserX className="h-4 w-4 mr-2" />
-                                      Inactivate
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-destructive"
-                                      onClick={() =>
-                                        handleUpdateOperator(op.id, {
-                                          status: "SUSPENDED",
-                                        })
-                                      }
-                                    >
-                                      <UserX className="h-4 w-4 mr-2" />
-                                      Suspend
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handleDeleteOperator(op.id)
-                                      }
-                                      className="text-destructive"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              {op.application_status === "APPROVED" &&
-                                op.status === "INACTIVE" && (
-                                  <DropdownMenuItem
-                                    className="text-destructive"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        status: "ACTIVE",
-                                      })
-                                    }
-                                  >
-                                    <UserX className="h-4 w-4 mr-2" />
-                                    Activate
-                                  </DropdownMenuItem>
-                                )}
-                              {/* {op.application_status === "REJECTED" && (
-                                <DropdownMenuItem
-                                  className="text-success"
-                                  onClick={() =>
-                                    handleUpdateOperator(op.id, {
-                                      application_status: "APPROVED",
-                                    })
-                                  }
-                                >
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Approve
-                                </DropdownMenuItem>
-                              )} */}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                        <div className="mt-2 space-y-1">
-                          <p className="text-sm">
-                            <span className="text-muted-foreground">
-                              Contact:
-                            </span>{" "}
-                            {op.contact_name}
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-muted-foreground">
-                              Phone:
-                            </span>{" "}
-                            {formatPhoneNumber(op.phone_number)}
-                          </p>
-                          <p className="text-sm">
-                            <span className="text-muted-foreground">
-                              Region:
-                            </span>{" "}
-                            {Array.isArray(op.regions) && op.regions.length > 0
-                              ? op.regions.join(", ")
-                              : "-"}
-                          </p>
-                          <div className="flex justify-between items-center mt-2">
-                            <StatusBadge status={op.status?.toLowerCase()} />
-                            <span className="text-sm text-muted-foreground">
-                              Trips:{" "}
-                              {op.total_trips !== undefined &&
-                              op.total_trips !== null
-                                ? Number(op.total_trips)
-                                : "-"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Desktop View - Table (hidden on mobile, visible on desktop) */}
-        <Card className="hidden sm:block">
-          <CardHeader className="px-4 sm:px-6">
+        <Card className="hidden sm:block border shadow-sm">
+          <CardHeader className="px-4 sm:px-6 pb-2">
             <CardTitle>All Operators ({totalOperators})</CardTitle>
           </CardHeader>
-          <CardContent className="px-4 sm:px-6">
+          <CardContent className="px-4 sm:px-6 pt-2">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
                 <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
@@ -768,14 +491,21 @@ function OperatorsPage() {
                       <TableRow key={op.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
-                            <div className="relative h-10 w-10 rounded-lg overflow-hidden shrink-0">
-                              <Image
-                                src={op.logo_url || "/vercel.svg"}
-                                alt={op.name}
-                                fill
-                                className="object-cover"
-                                unoptimized
-                              />
+                            <div className="relative h-10 w-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+                              {op.logo_url ? (
+                                <Image
+                                  src={op.logo_url || "/vercel.svg"}
+                                  alt={op.name}
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              ) : (
+                                <FaRegUser
+                                  className="text-gray-500"
+                                  size={20}
+                                />
+                              )}
                             </div>
                             <div className="min-w-0">
                               <p
@@ -984,34 +714,36 @@ function OperatorsPage() {
         </Card>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
-          <span className="text-sm text-muted-foreground order-2 sm:order-1">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-4">
+          <p className="text-sm text-muted-foreground">
             Showing {(page - 1) * limit + 1} to{" "}
             {Math.min(page * limit, totalOperators)} of {totalOperators}
-          </span>
+          </p>
 
-          <span className="px-3 py-1 text-center text-sm order-1 sm:order-2">
-            Page {page} of {totalPages}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              Page {page} of {totalPages}
+            </span>
 
-          <div className="flex gap-2 order-3">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-            >
-              Previous
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+              >
+                Previous
+              </Button>
 
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
-            >
-              Next
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === totalPages}
+                onClick={() => setPage(page + 1)}
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
       </div>

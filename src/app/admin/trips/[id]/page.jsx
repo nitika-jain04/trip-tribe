@@ -18,6 +18,8 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { MdChairAlt } from "react-icons/md";
 import Cookies from "js-cookie";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
+import { BiTrip } from "react-icons/bi";
+import { GoTriangleUp } from "react-icons/go";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -267,7 +269,7 @@ export default function TripDetail() {
                 value={operator?.name || "N/A"}
               />
               <InfoItem
-                icon={<MapPin size={16} />}
+                icon={<BiTrip size={16} />}
                 label="Route"
                 value={`${source?.name || "N/A"} → ${destination?.name || "N/A"}`}
               />
@@ -278,6 +280,14 @@ export default function TripDetail() {
                 label="Seats Available"
                 icon={<MdChairAlt size={16} />}
                 value={trip.total_seats}
+              />
+            </div>
+
+            <div>
+              <InfoItem
+                label="Trip Type"
+                icon={<GoTriangleUp size={16} />}
+                value={trip.type?.name}
               />
             </div>
           </CardContent>

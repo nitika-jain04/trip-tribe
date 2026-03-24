@@ -77,6 +77,7 @@ function Page() {
   const [operators, setOperators] = useState([]);
   const [loadingOperators, setLoadingOperators] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [refresh, setRefresh] = useState(0);
 
   // Filter states
   const [search, setSearch] = useState("");
@@ -172,7 +173,7 @@ function Page() {
 
   useEffect(() => {
     fetchOperators();
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     const searchValue = debouncedSearch?.trim();
@@ -187,7 +188,7 @@ function Page() {
     }
 
     getAllTrips();
-  }, [getAllTrips, debouncedSearch]);
+  }, [getAllTrips, debouncedSearch, refresh]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -212,11 +213,6 @@ function Page() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    const interval = setInterval(getAllTrips, 2 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [getAllTrips]);
-
   const getOperatorName = (id) => {
     if (!id) return "N/A";
     const operator = operators.find((operator) => operator.id === id);
@@ -226,7 +222,48 @@ function Page() {
   const handleModalClose = (value) => {
     setShowModal(value);
     if (value === false) {
-      getAllTrips();
+      setRefresh((prev) => prev + 1);
+    }
+  };
+
+  const handleUpdateTrip = async (tripId, payload) => {
+    const token = Cookies.get("token");
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/trips/admin/${tripId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        toast({
+          title: "Error",
+          description: data.message,
+          variant: "destructive",
+        });
+      }
+
+      toast({
+        title: "Trip",
+        description: "Trip updated successfully!",
+        variant: "success",
+      });
+      setRefresh((prev) => prev + 1);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -536,6 +573,19 @@ function Page() {
                                   Edit
                                 </Link>
                               </DropdownMenuItem>
+                              {trip.status === "DRAFT" && (
+                                <DropdownMenuItem
+                                  className="text-success"
+                                  onClick={() =>
+                                    handleUpdateTrip(trip.id, {
+                                      status: "PUBLISHED",
+                                    })
+                                  }
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Activate
+                                </DropdownMenuItem>
+                              )}
                               {/* <DropdownMenuItem>
                                 <Copy className="h-4 w-4 mr-2" />
                                 Duplicate
@@ -601,8 +651,10 @@ function AddTripModal({ handleModalClose, operators }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
   const [showDestinationMap, setShowDestinationMap] = useState(false);
+  const [tripTypes, setTripTypes] = useState([]);
+  const [loadingTripTypes, setLoadingTripTypes] = useState(false);
   const [error, setError] = useState("");
-  const toast = useToast();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -612,6 +664,7 @@ function AddTripModal({ handleModalClose, operators }) {
     end_date: "",
     difficulty: "",
     total_seats: "",
+    type_id: "",
     operator_id: "",
     source: {
       name: "",
@@ -636,6 +689,36 @@ function AddTripModal({ handleModalClose, operators }) {
     itinerary: [{ day: 1, activities: [""] }],
   });
 
+  const fetchTripTypes = async () => {
+    const token = Cookies.get("token");
+    setLoadingTripTypes(true);
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/trip-types/admin`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setTripTypes(data.result.trip_types || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch trip types:", err);
+    } finally {
+      setLoadingTripTypes(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTripTypes();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -653,6 +736,18 @@ function AddTripModal({ handleModalClose, operators }) {
     }
   };
 
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const firstError = document.querySelector(".text-admin-error");
+      if (firstError) {
+        firstError.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }, 100);
+  };
+
   const handleLocationSelect = async (type, locationData) => {
     const token = Cookies.get("token");
 
@@ -665,6 +760,7 @@ function AddTripModal({ handleModalClose, operators }) {
     };
 
     try {
+      // Try creating location
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/locations/admin`,
         {
@@ -679,29 +775,57 @@ function AddTripModal({ handleModalClose, operators }) {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
+      // ✅ SUCCESS CASE
+      if (res.ok && data.success) {
+        setFormData((prev) => ({
+          ...prev,
+          [type]: data.result,
+        }));
+      }
+      // ❗ DUPLICATE CASE
+      else if (data?.error?.message?.includes("already exists")) {
+        // 🔁 Fetch existing location
+        const searchRes = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/locations/admin?search=${encodeURIComponent(payload.name)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        const searchData = await searchRes.json();
+
+        if (searchRes.ok && searchData.success) {
+          const existingLocation = searchData.result.locations?.find(
+            (loc) => loc.name.toLowerCase() === payload.name.toLowerCase(),
+          );
+
+          if (existingLocation) {
+            setFormData((prev) => ({
+              ...prev,
+              [type]: existingLocation,
+            }));
+          } else {
+            throw new Error("Location exists but not found in search");
+          }
+        } else {
+          throw new Error("Failed to fetch existing location");
+        }
+      }
+      // ❌ OTHER ERRORS
+      else {
         throw new Error(data.message || "Failed to create location");
       }
 
-      setFormData((prev) => ({
-        ...prev,
-        [type]: {
-          id: data.result.id,
-          name: data.result.name,
-          region: data.result.region,
-          latitude: data.result.latitude,
-          longitude: data.result.longitude,
-          type: data.result.type,
-        },
-      }));
-
+      // Close map
       if (type === "source") {
         setShowSourceMap(false);
       } else {
         setShowDestinationMap(false);
       }
     } catch (err) {
-      console.error("Location creation failed:", err);
+      console.error("Location handling failed:", err);
       setError(err.message);
     }
   };
@@ -815,7 +939,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "End date must be after start date",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -824,7 +948,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Please select source location from map",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -833,7 +957,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Please select destination location from map",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -842,7 +966,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Please select operator",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -851,7 +975,7 @@ function AddTripModal({ handleModalClose, operators }) {
       toast({
         title: "Error",
         description: "Trip name required",
-        variant: "desctructive",
+        variant: "destructive",
       });
       return;
     }
@@ -869,6 +993,7 @@ function AddTripModal({ handleModalClose, operators }) {
       difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
       operator_id: formData.operator_id,
+      type_id: formData.type_id,
       source_id: formData.source.id,
       destination_id: formData.destination.id,
       status: formData.status,
@@ -908,6 +1033,7 @@ function AddTripModal({ handleModalClose, operators }) {
     } catch (err) {
       console.error("Create failed:", err);
       setError(err.message);
+      scrollToFirstError();
     } finally {
       setLoading(false);
     }
@@ -1000,7 +1126,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     <option value="HARD">Hard</option>
                   </select>
                 </div>
-                <div>
+                {/* <div>
                   <label className="text-sm text-gray-600 mb-1 block">
                     Status *
                   </label>
@@ -1015,7 +1141,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     <option value="DRAFT">Draft</option>
                     <option value="ARCHIVED">Archived</option>
                   </select>
-                </div>
+                </div> */}
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">
                     Start Date *
@@ -1061,6 +1187,29 @@ function AddTripModal({ handleModalClose, operators }) {
                   {operators.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-600 mb-1 block">
+                  Trip Type *
+                </label>
+                <select
+                  name="type_id"
+                  value={formData.type_id}
+                  onChange={handleChange}
+                  required
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]"
+                >
+                  <option value="">
+                    {loadingTripTypes ? "Loading..." : "Select Trip Type"}
+                  </option>
+
+                  {tripTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
                     </option>
                   ))}
                 </select>

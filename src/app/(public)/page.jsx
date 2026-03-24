@@ -135,87 +135,6 @@ export default function Page() {
   const [loadingLocations, setLoadingLocations] = useState(true);
   const [error, setError] = useState(null);
 
-  // async function getLocations() {
-  //   try {
-  //     setLoadingLocations(true);
-  //     setError(null);
-
-  //     const res = await fetch(
-  //       `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=10`,
-  //       {
-  //         method: "GET",
-  //       },
-  //     );
-
-  //     if (!res.ok) throw new Error("Failed to fetch locations");
-
-  //     const data = await res.json();
-  //     console.log("locations", data.result?.locations);
-
-  //     if (data.success) {
-  //       const transformedLocations = (data.result?.locations || []).map(
-  //         (loc) => ({
-  //           name: loc.name,
-  //           region: loc.region,
-  //           type: loc.type,
-  //           trips: Math.floor(Math.random() * 15) + 5,
-  //           image: destinationImages[loc.name] || "/loginimg.jpeg",
-  //         }),
-  //       );
-  //       setLocations(transformedLocations);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error fetching locations:", err);
-  //     setError("Failed to load locations");
-  //   } finally {
-  //     setLoadingLocations(false);
-  //   }
-  // }
-  // async function getLocations() {
-  //   try {
-  //     setLoadingLocations(true);
-  //     setError(null);
-
-  //     const res = await fetch(
-  //       `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10&group_by=location`,
-  //       {
-  //         method: "GET",
-  //       },
-  //     );
-
-  //     if (!res.ok) throw new Error("Failed to fetch destinations");
-
-  //     const data = await res.json();
-
-  //     console.log("destinations", data.result?.groups);
-
-  //     if (data.success) {
-  //       const transformedLocations = (data.result?.groups || []).map(
-  //         (group) => {
-  //           const firstTrip = group.trips?.[0];
-
-  //           return {
-  //             name: group.location_name,
-  //             region: "", // API does not return region
-  //             type: "destination",
-  //             trips: group.total_trips,
-  //             image:
-  //               firstTrip?.images?.[0] ||
-  //               destinationImages[group.location_name],
-  //           };
-  //         },
-  //       );
-
-  //       setLocations(transformedLocations);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error fetching destinations:", err);
-  //     setError("Failed to load destinations");
-  //   } finally {
-  //     setLoadingLocations(false);
-  //   }
-  // }
-
   async function getLocations() {
     try {
       setLoadingLocations(true);
@@ -333,10 +252,6 @@ export default function Page() {
 
       const rawTrips = data.result?.trips || [];
 
-      /* -----------------------------
-       collect unique ids
-    ------------------------------ */
-
       const operatorIds = [...new Set(rawTrips.map((t) => t.operator_id))];
       const locationIds = [
         ...new Set(
@@ -345,10 +260,6 @@ export default function Page() {
           ),
         ),
       ];
-
-      /* -----------------------------
-       fetch operators in parallel
-    ------------------------------ */
 
       const operators = await Promise.all(
         operatorIds.map(async (id) => {
@@ -454,17 +365,6 @@ export default function Page() {
     getLocations();
     getActiveOperators();
     getPublishedTrips();
-
-    const interval = setInterval(
-      () => {
-        getLocations();
-        getActiveOperators();
-        getPublishedTrips();
-      },
-      10 * 60 * 1000,
-    );
-
-    return () => clearInterval(interval);
   }, []);
 
   // Create datalist options from locations
@@ -1010,7 +910,7 @@ export default function Page() {
       </section>
 
       {/* Final CTA */}
-      <section className="section bg-gradient-to-br from-primary-light via-background to-background">
+      <section className="section bg-linear-to-br from-primary-light via-background to-background">
         <div className="container-premium text-center">
           <div className="max-w-3xl mx-auto">
             <h2 className="font-display text-display md:text-display-lg text-foreground mb-6">

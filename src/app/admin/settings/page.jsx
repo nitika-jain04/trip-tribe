@@ -5,9 +5,8 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SlLocationPin } from "react-icons/sl";
 import { LuTag } from "react-icons/lu";
 import { RiDeleteBinLine } from "react-icons/ri";
-import { LiaEditSolid } from "react-icons/lia";
-import { Button } from "@/app/components/adminFunctionCalls";
 import dynamic from "next/dynamic";
+import { Button } from "@/app/components/ui/button";
 import {
   X,
   Loader2,
@@ -21,7 +20,6 @@ import {
 import Cookies from "js-cookie";
 import { IoCloseSharp } from "react-icons/io5";
 import { useToast } from "@/app/hooks/use-toast";
-import { toast } from "sonner";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -77,7 +75,7 @@ function Destinations() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const toast = useToast();
+  const { toast } = useToast();
 
   const getAllDestinations = useCallback(async () => {
     try {
@@ -157,7 +155,7 @@ function Destinations() {
       console.error(error);
       toast({
         title: "Error",
-        description: err.message,
+        description: error.message || "Failed to delete destination",
         variant: "destructive",
       });
     }
@@ -174,7 +172,11 @@ function Destinations() {
           Manage travel destinations displayed on the platform
         </p>
 
-        <Button label="Add Destination" fnClose={() => setShowModal(true)} />
+        {/* <Button label="Add Destination" fnClose={() => setShowModal(true)} /> */}
+        <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Destination
+        </Button>
       </div>
 
       {loading && <DestinationSkeleton />}
@@ -240,10 +242,10 @@ function Destinations() {
               {/* <div className="text-gray-600">{des?.tripCount ?? 0}</div> */}
 
               <div className="flex gap-2">
-                <Edit
+                {/* <Edit
                   size={20}
                   className="cursor-pointer text-gray-600 hover:text-teal-600 transition-colors"
-                />
+                /> */}
                 <Trash
                   size={20}
                   onClick={() => deleteDestination(des.id)}
@@ -276,6 +278,8 @@ function Destinations() {
 
 //////////////////// MODAL ////////////////////
 function AddDestinationModal({ onClose, refresh }) {
+  const { toast } = useToast();
+
   const MapPicker = dynamic(() => import("@/app/components/MapPicker"), {
     ssr: false,
     loading: () => (
@@ -292,6 +296,8 @@ function AddDestinationModal({ onClose, refresh }) {
     latitude: "",
     longitude: "",
   });
+  const [locationTypes, setLocationTypes] = useState([]);
+  const [typesLoading, setTypesLoading] = useState(false);
 
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState([]);
@@ -301,6 +307,37 @@ function AddDestinationModal({ onClose, refresh }) {
   const searchTimeout = useRef(null);
 
   const controllerRef = useRef(null);
+
+  useEffect(() => {
+    const getLocationTypes = async () => {
+      try {
+        setTypesLoading(true);
+
+        const res = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/locations/types/all`,
+        );
+
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok || !data?.success) {
+          throw new Error("Failed to fetch location types");
+        }
+
+        setLocationTypes(data?.result?.types || []);
+      } catch (err) {
+        console.error(err);
+        toast({
+          title: "Error",
+          description: "Failed to load location types",
+          variant: "destructive",
+        });
+      } finally {
+        setTypesLoading(false);
+      }
+    };
+
+    getLocationTypes();
+  }, [toast]);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -373,6 +410,14 @@ function AddDestinationModal({ onClose, refresh }) {
       return;
     }
 
+    if (!form.type) {
+      toast({
+        title: "Type",
+        description: "Please select a destination type",
+      });
+      return;
+    }
+
     const token = Cookies.get("token");
     setSaving(true);
 
@@ -397,21 +442,21 @@ function AddDestinationModal({ onClose, refresh }) {
         },
       );
 
-      if (res.ok) {
-        refresh();
-        onClose();
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to save destination",
-          variant: "destructive",
-        });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.success) {
+        throw new Error(
+          data?.error?.message || data?.message || "Failed to save destination",
+        );
       }
+
+      refresh();
+      onClose();
     } catch (err) {
       console.error(err);
       toast({
         title: "Error",
-        description: "Failed to save destination",
+        description: err.message || "Failed to save destination",
         variant: "destructive",
       });
     } finally {
@@ -420,7 +465,7 @@ function AddDestinationModal({ onClose, refresh }) {
   };
 
   return (
-    <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white w-162.5 p-6 rounded-xl space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-500">
@@ -448,12 +493,21 @@ function AddDestinationModal({ onClose, refresh }) {
           onChange={(e) => setForm({ ...form, region: e.target.value })}
         />
 
-        <input
-          placeholder="Type"
-          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+        <select
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
           value={form.type}
           onChange={(e) => setForm({ ...form, type: e.target.value })}
-        />
+          disabled={typesLoading}
+        >
+          <option value="">
+            {typesLoading ? "Loading types..." : "Select destination type"}
+          </option>
+          {locationTypes.map((type) => (
+            <option key={type} value={type}>
+              {type.replaceAll("_", " ")}
+            </option>
+          ))}
+        </select>
 
         {/* 🔍 Search */}
         <div className="relative">
@@ -551,25 +605,51 @@ function Categories() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [editData, setEditData] = useState(null);
 
   // Simulate API fetch with loading state
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        // Simulate API call delay
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setError(null);
 
-        const mockCategories = [
-          { id: 1, category: "Treks", trips: 32, color: "green" },
-          { id: 2, category: "Backpacking", trips: 20, color: "pink" },
-          { id: 3, category: "Workstations", trips: 8, color: "blue" },
-          { id: 4, category: "Weekend Trips", trips: 12, color: "teal" },
-          { id: 5, category: "Wellness", trips: 3, color: "yellow" },
-        ];
+        const token = Cookies.get("token");
 
-        setCategories(mockCategories);
+        if (!token) {
+          setError("Authentication token missing");
+          return;
+        }
+
+        const res = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/trip-types/admin`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+
+        const data = await res.json();
+
+        const tripTypes = data?.result?.trip_types ?? [];
+
+        const formatted = tripTypes.map((item, index) => ({
+          id: item.id,
+          category: item.name,
+          description: item.description,
+          trips: item.trip_count ?? 0,
+          color: ["green", "pink", "blue", "teal", "yellow"][index % 5],
+        }));
+
+        setCategories(formatted);
       } catch (err) {
+        console.error(err);
         setError("Failed to load categories");
       } finally {
         setLoading(false);
@@ -593,6 +673,7 @@ function Categories() {
         <p className="text-[#65758b]">Manage trip categories and tags</p>
 
         <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
       </div>
@@ -613,8 +694,9 @@ function Categories() {
       {!loading && !error && (
         <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
           {/* Header Row */}
-          <div className="grid grid-cols-[2.5fr_2fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
+          <div className="grid grid-cols-[1.5fr_2fr_2fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
             <div>Category</div>
+            <div>Description</div>
             <div>Trips</div>
             <div>Actions</div>
           </div>
@@ -627,7 +709,7 @@ function Categories() {
             categories.map((category, index) => (
               <div
                 key={category.id}
-                className="grid grid-cols-[2.5fr_2fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
+                className="grid grid-cols-[1.5fr_2fr_2fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
               >
                 {/* Category */}
                 <div>
@@ -640,6 +722,8 @@ function Categories() {
                   </span>
                 </div>
 
+                <div>{category.description}</div>
+
                 {/* Trips */}
                 <div className="text-gray-600">{category.trips}</div>
 
@@ -647,12 +731,13 @@ function Categories() {
                 <div className="flex items-center gap-2">
                   <Edit
                     size={20}
+                    onClick={() => setEditData(category)}
                     className="cursor-pointer text-gray-600 hover:text-teal-600 transition-colors"
                   />
-                  <RiDeleteBinLine
+                  {/* <RiDeleteBinLine
                     size={20}
                     className="text-red-500 cursor-pointer hover:text-red-700 transition-colors"
-                  />
+                  /> */}
                 </div>
               </div>
             ))
@@ -669,35 +754,268 @@ function Categories() {
 
       {/* Add Category Modal - To be implemented */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-          <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Add Category</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-1 hover:bg-gray-100 rounded-lg"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <p className="text-gray-500 text-center py-8">
-              Category creation form will go here
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="border px-4 py-2 rounded w-full hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button className="bg-teal-600 text-white px-4 py-2 rounded w-full hover:bg-teal-700">
-                Save Category
-              </button>
-            </div>
-          </div>
-        </div>
+        <AddCategoryModal
+          onClose={() => setShowModal(false)}
+          refresh={() => {
+            setShowModal(false);
+            window.location.reload(); // simple refresh (same pattern as you used elsewhere)
+          }}
+        />
+      )}
+
+      {editData && (
+        <EditCategoryModal
+          data={editData}
+          onClose={() => setEditData(null)}
+          refresh={() => {
+            setEditData(null);
+            window.location.reload();
+          }}
+        />
       )}
     </>
+  );
+}
+
+function AddCategoryModal({ onClose, refresh }) {
+  const { toast } = useToast();
+
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+  });
+
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.description) {
+      toast({
+        title: "Missing Fields",
+        description: "Please fill all fields",
+      });
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const token = Cookies.get("token");
+
+      if (!token) {
+        toast({
+          title: "Auth Error",
+          description: "Token missing",
+        });
+        return;
+      }
+
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/trip-types/admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(form),
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to create category");
+      }
+
+      refresh();
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to create category",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+      <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Add Category</h2>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-lg"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Inputs */}
+        <input
+          placeholder="Category Name"
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+
+        <textarea
+          placeholder="Description"
+          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="border px-4 py-2 rounded w-full hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="bg-teal-600 text-white px-4 py-2 rounded w-full hover:bg-teal-700 flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Category"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+function EditCategoryModal({ data, onClose, refresh }) {
+  const { toast } = useToast();
+
+  const [form, setForm] = useState({
+    name: data.category || "",
+    description: data.description || "",
+    is_active: true,
+  });
+
+  const [saving, setSaving] = useState(false);
+
+  const handleSubmit = async () => {
+    try {
+      setSaving(true);
+
+      const token = Cookies.get("token");
+
+      if (!token) {
+        toast({
+          title: "Auth Error",
+          description: "Token missing",
+        });
+        return;
+      }
+
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/trip-types/admin/${data.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(form),
+        },
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to update category");
+      }
+
+      refresh();
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Failed to update category",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+      <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Edit Category</h2>
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-lg"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Inputs */}
+        <input
+          placeholder="Category Name"
+          className="border p-2 w-full rounded"
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+        />
+
+        <textarea
+          placeholder="Description"
+          className="border p-2 w-full rounded"
+          value={form.description}
+          onChange={(e) => setForm({ ...form, description: e.target.value })}
+        />
+
+        {/* Active toggle */}
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={form.is_active}
+            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+          />
+          Active
+        </label>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            disabled={saving}
+            className="border px-4 py-2 rounded w-full"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="bg-teal-600 text-white px-4 py-2 rounded w-full flex items-center justify-center gap-2"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              "Update Category"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

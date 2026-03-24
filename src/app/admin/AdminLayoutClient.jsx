@@ -45,7 +45,7 @@ export default function AdminLayoutClient({ children }) {
 
         <div
           className={`flex-1 transition-all duration-300 ${
-            collapsed ? "ml-28" : "ml-64"
+            collapsed ? "ml-16" : "ml-64"
           }`}
         >
           {children}

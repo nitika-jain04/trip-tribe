@@ -12,6 +12,7 @@ export default function TripEditPage() {
   const router = useRouter();
 
   const [trip, setTrip] = useState(null);
+  const [tripTypesData, setTripTypesData] = useState(["All Types"]);
   const [formData, setFormData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -20,6 +21,22 @@ export default function TripEditPage() {
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+    async function getTripTypes() {
+    try {
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+
+      if (!res.ok) throw new Error("Failed to fetch trip types");
+
+      const data = await res.json();
+
+      const types = data?.result?.trip_types || [];
+
+      setTripTypesData(types);
+    } catch (err) {
+      console.error("Failed to fetch trip types", err);
+    }
+  }
 
   // Fetch trip
   useEffect(() => {
@@ -38,7 +55,10 @@ export default function TripEditPage() {
         const data = await res.json();
 
         if (data.success) {
-          setTrip(data.result);
+          setTrip({
+            ...data.result,
+            type_id: data.result?.type?.id || "",
+          });
           setFormData({
             name: data.result.name || "",
             price: data.result.price || "",
@@ -52,6 +72,7 @@ export default function TripEditPage() {
             exclusions: data.result.exclusions || [],
             itinerary: data.result.itinerary || [],
             status: data.result.status || "",
+            type_id: data.result?.type?.id || "",
           });
         } else {
           throw new Error(data.message || "Failed to fetch trip");
@@ -63,13 +84,18 @@ export default function TripEditPage() {
       }
     };
 
+    getTripTypes();
+
     if (id) fetchTrip();
   }, [id]);
 
   // Basic field change
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "type_id" ? value : value,
+    }));
   };
 
   // Array input handler (comma separated)
@@ -320,6 +346,25 @@ export default function TripEditPage() {
               <option value="PUBLISHED">Published</option>
             </select>
           </div>
+
+           <div>
+            <label className="text-sm font-medium text-gray-700">
+              Trip Type
+            </label>
+            <select
+              name="type_id"
+              value={formData?.type_id || ""}
+              onChange={handleChange}
+              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+            >
+              {tripTypesData.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
 
           {/* Description */}
           <div className="col-span-2">
