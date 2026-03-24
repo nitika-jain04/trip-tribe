@@ -24,6 +24,7 @@ import Cookies from "js-cookie";
 import { formatPhoneNumber } from "@/lib/utils";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Image from "next/image";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -34,6 +35,7 @@ export default function OperatorDetail() {
   const [error, setError] = useState(null);
   const { id } = useParams();
   const router = useRouter();
+  const { toast } = useToast();
 
   const socialIcons = {
     youtube: Youtube,
@@ -56,7 +58,12 @@ export default function OperatorDetail() {
         );
         const data = await res.json();
         if (data.success) setOperator(data.result);
-        else throw new Error(data.message || "Failed to fetch operator");
+        else
+          toast({
+            title: "Error",
+            description: "Failed to fetch operator",
+            variant: "destructive",
+          });
       } catch (err) {
         console.error(err);
         setError(err.message || "Failed to fetch operator");

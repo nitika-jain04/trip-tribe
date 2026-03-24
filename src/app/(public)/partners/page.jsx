@@ -230,7 +230,12 @@ export default function Partner() {
           }));
         }
 
-        throw new Error(message);
+        // throw new Error(message);
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
       }
 
       // Success
@@ -458,7 +463,7 @@ export default function Partner() {
                       className={errors.contactName ? "border-red-500" : ""}
                     />
                     {errors.contactName && (
-                      <p className="text-sm text-red-500">
+                      <p className="text-sm text-admin-error">
                         {errors.contactName}
                       </p>
                     )}
@@ -481,7 +486,7 @@ export default function Partner() {
                       className={errors.companyName ? "border-red-500" : ""}
                     />
                     {errors.companyName && (
-                      <p className="text-sm text-red-500">
+                      <p className="text-sm text-admin-error">
                         {errors.companyName}
                       </p>
                     )}
@@ -510,7 +515,7 @@ export default function Partner() {
                       className={errors.email ? "border-red-500" : ""}
                     />
                     {errors.email && (
-                      <p className="text-sm text-red-500">{errors.email}</p>
+                      <p className="text-sm text-admin-error">{errors.email}</p>
                     )}
                   </div>
                   <div className="flex flex-col gap-3">
@@ -541,7 +546,7 @@ export default function Partner() {
                       />
                     </div>
                     {errors.phone && (
-                      <p className="text-sm text-red-500">{errors.phone}</p>
+                      <p className="text-sm text-admin-error">{errors.phone}</p>
                     )}
                   </div>
                 </div>
@@ -567,7 +572,7 @@ export default function Partner() {
                     // required
                   />
                   {errors.website && (
-                    <p className="text-sm text-red-500">{errors.website}</p>
+                    <p className="text-sm text-admin-error">{errors.website}</p>
                   )}
                 </div>
 
@@ -594,7 +599,9 @@ export default function Partner() {
                       className={errors.tripCount ? "border-red-500" : ""}
                     />
                     {errors.tripCount && (
-                      <p className="text-sm text-red-500">{errors.tripCount}</p>
+                      <p className="text-sm text-admin-error">
+                        {errors.tripCount}
+                      </p>
                     )}
                   </div>
                   <div className="flex flex-col gap-3">
@@ -618,7 +625,9 @@ export default function Partner() {
                       className={errors.regions ? "border-red-500" : ""}
                     />
                     {errors.regions && (
-                      <p className="text-sm text-red-500">{errors.regions}</p>
+                      <p className="text-sm text-admin-error">
+                        {errors.regions}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -645,7 +654,7 @@ export default function Partner() {
                     // required
                   />
                   {errors.about && (
-                    <p className="text-sm text-red-500">{errors.about}</p>
+                    <p className="text-sm text-admin-error">{errors.about}</p>
                   )}
                 </div>
 

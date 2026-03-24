@@ -78,7 +78,12 @@ export default function OperatorEditPage() {
 
           console.log("operator", data.result);
         } else {
-          throw new Error(data.message || "Failed to fetch operator");
+          // throw new Error(data.message || "Failed to fetch operator");
+          toast({
+            title: "Error",
+            description: "Failed to fetch operator",
+            variant: "destructive",
+          });
         }
       } catch (err) {
         console.error(err);
@@ -125,8 +130,15 @@ export default function OperatorEditPage() {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Upload failed");
+      // if (!res.ok || !data.success) {
+      //    throw new Error(data.message || "Upload failed");
+      // }
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Upload failed",
+          variant: "destructive",
+        });
       }
 
       // ✅ update logo_url after upload
@@ -161,8 +173,6 @@ export default function OperatorEditPage() {
 
     if (!formData.name || formData.name.trim().length < 2) {
       errors.name = "Operator name must be at least 2 characters.";
-    } else if (!startsWithValidChar.test(formData.name.trim())) {
-      errors.name = "Operator name cannot start with a special character.";
     }
 
     if (!formData.contact_name || formData.contact_name.trim().length < 2) {
@@ -280,8 +290,15 @@ export default function OperatorEditPage() {
       );
 
       const data = await res.json();
-      if (!res.ok || !data.success)
-        throw new Error(data.message || "Update failed");
+      // if (!res.ok || !data.success)
+      //   throw new Error(data.message || "Update failed");
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Update failed",
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Operator",
@@ -315,8 +332,16 @@ export default function OperatorEditPage() {
       );
 
       const data = await res.json();
-      if (!res.ok || !data.success)
-        throw new Error(data.message || "Delete failed");
+
+      // if (!res.ok || !data.success)
+      //   throw new Error(data.message || "Delete failed");
+      if (!res.ok || !data.success) {
+        toast({
+          title: "Error",
+          description: "Delete failed",
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Operator",

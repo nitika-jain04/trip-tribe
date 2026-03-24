@@ -1,4 +1,5 @@
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 const footerLinks = {
@@ -152,7 +153,7 @@ export function Footer() {
       <div className="border-t border-background/10">
         <div className="container-premium py-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-body-sm text-background/50">
-            <p>© 2024 TripTribe. All rights reserved.</p>
+            <p>© 2026 TripTribe. All rights reserved.</p>
             <p>Connecting travelers with curated experiences.</p>
           </div>
         </div>

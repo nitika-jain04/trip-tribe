@@ -214,7 +214,7 @@ export const trips = [
       "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=800&q=80",
     difficulty: "Easy",
     groupSize: "6-10",
-    type: "Workation",
+    type: "Workstation",
     highlights: [
       "Coffee Plantation Tour",
       "Abbey Falls",
@@ -370,6 +370,6 @@ export const tripTypes = [
   "Wellness",
   "Cultural",
   "Adventure",
-  "Workation",
+  "Workstation",
   "Weekend",
 ];

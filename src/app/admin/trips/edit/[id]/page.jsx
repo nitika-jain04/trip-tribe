@@ -22,11 +22,18 @@ export default function TripEditPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-    async function getTripTypes() {
+  async function getTripTypes() {
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
 
-      if (!res.ok) throw new Error("Failed to fetch trip types");
+      // if (!res.ok) throw new Error("Failed to fetch trip types");
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch trip types",
+          variant: "destructive",
+        });
+      }
 
       const data = await res.json();
 
@@ -75,7 +82,12 @@ export default function TripEditPage() {
             type_id: data.result?.type?.id || "",
           });
         } else {
-          throw new Error(data.message || "Failed to fetch trip");
+          // throw new Error(data.message || "Failed to fetch trip");
+          toast({
+            title: "Error",
+            description: "Failed to fetch trip",
+            variant: "destructive",
+          });
         }
       } catch (err) {
         setError(err.message || "Failed to fetch trip");
@@ -154,8 +166,15 @@ export default function TripEditPage() {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success)
-        throw new Error(data.message || "Update failed");
+      // if (!res.ok || !data.success)
+      //   throw new Error(data.message || "Update failed");
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Failed to update",
+          variant: "destructive",
+        });
+      }
 
       toast({
         title: "Trip Update",
@@ -347,7 +366,7 @@ export default function TripEditPage() {
             </select>
           </div>
 
-           <div>
+          <div>
             <label className="text-sm font-medium text-gray-700">
               Trip Type
             </label>
@@ -364,7 +383,6 @@ export default function TripEditPage() {
               ))}
             </select>
           </div>
-
 
           {/* Description */}
           <div className="col-span-2">

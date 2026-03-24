@@ -23,8 +23,6 @@ import {
   X,
   GitCompare,
   SlidersHorizontal,
-  Loader,
-  Loader2,
 } from "lucide-react";
 import { destinations } from "@/app/data/tripData";
 import {
@@ -47,6 +45,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import Image from "next/image";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -64,6 +64,7 @@ function TripsContent() {
   const [trips, setTrips] = useState([]);
   const [loadingTrips, setLoadingTrips] = useState(true);
   const [tripTypesData, setTripTypesData] = useState(["All Types"]);
+  const { toast } = useToast();
 
   // Track if data is already fetching
   const isFetchingRef = useRef(false);
@@ -85,7 +86,15 @@ function TripsContent() {
       if (showLoader) setLoadingTrips(true);
 
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips`);
-      if (!res.ok) throw new Error("Failed to fetch trips");
+      // if (!res.ok) throw new Error("Failed to fetch trips");
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch trips",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const data = await res.json();
       if (!data.success) return;
@@ -234,7 +243,13 @@ function TripsContent() {
       }
 
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
-      if (!res.ok) throw new Error("Failed to fetch trip types");
+      // if (!res.ok) throw new Error("Failed to fetch trip types");
+      if (!res.ok)
+        toast({
+          title: "Error",
+          description: "Failed to fetch trip types",
+          variant: "destructive",
+        });
 
       const data = await res.json();
       const types = data?.result?.trip_types || [];
@@ -495,7 +510,7 @@ function TripsContent() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md:grid-cols-2 gap-6 mt-5">
                 {!loadingTrips && filteredTrips.length > 0 ? (
                   filteredTrips.map((trip) => (
                     <div
@@ -708,13 +723,13 @@ function TripsContent() {
                           </span>
                           <span>{trip.groupSize}</span>
                         </div>
-                        <div className="flex justify-between">
+                        {/* <div className="flex justify-between">
                           <span className="text-muted-foreground">Rating</span>
                           <span className="flex items-center gap-1">
                             <Star className="w-4 h-4 fill-accent text-accent" />
                             {trip.rating}
                           </span>
-                        </div>
+                        </div> */}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
                             Difficulty

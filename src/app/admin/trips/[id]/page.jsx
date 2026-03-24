@@ -20,6 +20,8 @@ import Cookies from "js-cookie";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { BiTrip } from "react-icons/bi";
 import { GoTriangleUp } from "react-icons/go";
+import Image from "next/image";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -32,6 +34,7 @@ export default function TripDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { id } = useParams();
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchTripAndRelated = async () => {
@@ -50,7 +53,12 @@ export default function TripDetail() {
 
         const tripData = await tripRes.json();
         if (!tripData.success) {
-          throw new Error(tripData.message || "Failed to fetch trip");
+          // throw new Error(tripData.message || "Failed to fetch trip");
+          toast({
+            title: "Error",
+            description: "Failed to fetch trip",
+            variant: "destructive",
+          });
         }
 
         const tripResult = tripData.result;

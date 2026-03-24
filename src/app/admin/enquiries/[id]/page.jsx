@@ -69,7 +69,14 @@ export default function EnquiryDetail() {
         const fetchedEnquiry =
           data?.result?.data?.find((e) => e.id === id) || data?.result || null;
 
-        if (!fetchedEnquiry) throw new Error("Enquiry not found");
+        // if (!fetchedEnquiry) throw new Error("Enquiry not found");
+        if (!fetchedEnquiry) {
+          toast({
+            title: "Error",
+            description: "Enquiry not found",
+            variant: "destructive",
+          });
+        }
 
         setEnquiry(fetchedEnquiry);
         setStatus(fetchedEnquiry.status?.toLowerCase() || "new");
@@ -106,9 +113,16 @@ export default function EnquiryDetail() {
         },
       );
 
+      // if (!res.ok) {
+      //   const errData = await res.json();
+      //   throw new Error(errData?.message || "Failed to update enquiry");
+      // }
       if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData?.message || "Failed to update enquiry");
+        toast({
+          title: "Error",
+          description: "Failed to update enquiry ",
+          variant: "destructive",
+        });
       }
 
       const updatedData = await res.json();

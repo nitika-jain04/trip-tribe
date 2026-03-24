@@ -47,12 +47,11 @@ export function AdminNav() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/auth/profile`,
-          { headers: {
-              Authorization: `Bearer ${token}`,
-            },}
-        );
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/auth/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!res.ok) throw new Error("Unauthorized");
 
@@ -111,7 +110,7 @@ export function AdminNav() {
                   "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   isActive(item.href)
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -136,9 +135,7 @@ export function AdminNav() {
           <DropdownMenuContent align="end" className="w-48">
             <div className="px-2 py-1.5">
               <p className="text-sm font-medium">{user?.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {user?.email}
-              </p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
               <p className="text-xs text-muted-foreground">
                 {user?.role?.name}
               </p>

@@ -4,7 +4,6 @@ import AdminGuard from "@/app/components/AdminGuard";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SlLocationPin } from "react-icons/sl";
 import { LuTag } from "react-icons/lu";
-import { RiDeleteBinLine } from "react-icons/ri";
 import dynamic from "next/dynamic";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -25,6 +24,7 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function Page() {
   const [activeTab, setActiveTab] = useState("destinations");
+  const { toast } = useToast();
 
   return (
     <AdminGuard>
@@ -99,8 +99,15 @@ function Destinations() {
         },
       );
 
+      // if (!res.ok) {
+      //   throw new Error("Failed to fetch destinations");
+      // }
       if (!res.ok) {
-        throw new Error("Failed to fetch destinations");
+        toast({
+          title: "Error",
+          description: "Failed to fetch destinations",
+          variant: "destructive",
+        });
       }
 
       const data = await res.json();
@@ -349,8 +356,15 @@ function AddDestinationModal({ onClose, refresh }) {
 
         const data = await res.json().catch(() => null);
 
+        // if (!res.ok || !data?.success) {
+        //   throw new Error("Failed to fetch location types");
+        // }
         if (!res.ok || !data?.success) {
-          throw new Error("Failed to fetch location types");
+          toast({
+            title: "Error",
+            description: "Failed to fetch location types",
+            variant: "destructive",
+          });
         }
 
         setLocationTypes(data?.result?.types || []);
@@ -683,8 +697,15 @@ function Categories() {
           },
         );
 
+        // if (!res.ok) {
+        //   throw new Error("Failed to fetch categories");
+        // }
         if (!res.ok) {
-          throw new Error("Failed to fetch categories");
+          toast({
+            title: "Error",
+            description: "Failed to fetch categories",
+            variant: "destructive",
+          });
         }
 
         const data = await res.json();
@@ -873,8 +894,15 @@ function AddCategoryModal({ onClose, refresh }) {
         },
       );
 
+      // if (!res.ok) {
+      //   throw new Error("Failed to create category");
+      // }
       if (!res.ok) {
-        throw new Error("Failed to create category");
+        toast({
+          title: "Error",
+          description: "Failed to create category",
+          variant: "destructive",
+        });
       }
 
       refresh();
@@ -985,8 +1013,15 @@ function EditCategoryModal({ data, onClose, refresh }) {
         },
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to update category");
+      // if (!res.ok) {
+      //   throw new Error("Failed to update category");
+      // }
+      if (!res.ok || !data?.success) {
+        toast({
+          title: "Error",
+          description: "Failed to update category",
+          variant: "destructive",
+        });
       }
 
       refresh();

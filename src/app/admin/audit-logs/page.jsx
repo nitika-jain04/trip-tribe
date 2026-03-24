@@ -28,6 +28,7 @@ import {
 import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -54,6 +55,7 @@ function AuditLogs() {
   const [entityType, setEntityType] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const { toast } = useToast();
 
   const fetchLogs = useCallback(async () => {
     const token = Cookies.get("token");
@@ -103,7 +105,13 @@ function AuditLogs() {
         },
       );
 
-      if (!res.ok) throw new Error("Failed to fetch audit logs");
+      // if (!res.ok) throw new Error("Failed to fetch audit logs");
+      if (!res.ok)
+        toast({
+          title: "Error",
+          description: "Failed to fetch audit logs",
+          variant: "destructive",
+        });
 
       const data = await res.json();
 

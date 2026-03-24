@@ -11,6 +11,7 @@ import {
   Search,
   GitCompare,
 } from "lucide-react";
+import Image from "next/image";
 
 const values = [
   {

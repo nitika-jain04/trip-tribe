@@ -6,6 +6,7 @@ import Image from "next/image";
 import { EyeIcon, EyeOff } from "lucide-react";
 import Cookies from "js-cookie";
 import Input from "../components/ui/input";
+import { useToast } from "../hooks/use-toast";
 
 export default function TestLogin() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function TestLogin() {
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { toast } = useToast();
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -36,8 +38,15 @@ export default function TestLogin() {
 
       const data = await res.json();
 
+      // if (!res.ok || !data.success) {
+      //   throw new Error(data.message || "Incorrect email / password");
+      // }
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Incorrect email / password");
+        toast({
+          title: "Error",
+          description: "Incorrect email / password",
+          variant: "destructive",
+        });
       }
 
       const { token, user } = data.result;

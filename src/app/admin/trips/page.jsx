@@ -79,6 +79,7 @@ function Page() {
   const [loadingOperators, setLoadingOperators] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refresh, setRefresh] = useState(0);
+  const { toast } = useToast();
 
   // Filter states
   const [search, setSearch] = useState("");
@@ -86,7 +87,6 @@ function Page() {
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
-  const { toast } = useToast();
 
   const fetchOperators = async () => {
     setLoadingOperators(true);
@@ -160,7 +160,12 @@ function Page() {
         setTotalTrips(data.result.pagination?.total || 0);
         setTotalPages(data.result.pagination?.pages || 1);
       } else {
-        throw new Error(data.message || "Failed to fetch trips");
+        // throw new Error(data.message || "Failed to fetch trips");
+        toast({
+          title: "Error",
+          description: "Failed to fetch trips",
+          variant: "destructive",
+        });
       }
     } catch (err) {
       console.error(err.message);
@@ -469,7 +474,7 @@ function Page() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[300px]">Trip</TableHead>
+                      <TableHead className="w-75">Trip</TableHead>
                       <TableHead>Operator</TableHead>
                       <TableHead>Price</TableHead>
                       <TableHead>Dates</TableHead>
@@ -808,15 +813,30 @@ function AddTripModal({ handleModalClose, operators }) {
               [type]: existingLocation,
             }));
           } else {
-            throw new Error("Location exists but not found in search");
+            // throw new Error("Location exists but not found in search");
+            toast({
+              title: "Error",
+              description: "Location exists but not found in search",
+              variant: "destructive",
+            });
           }
         } else {
-          throw new Error("Failed to fetch existing location");
+          // throw new Error("Failed to fetch existing location");
+          toast({
+            title: "Error",
+            description: "Failed to fetch existing location",
+            variant: "destructive",
+          });
         }
       }
       // ❌ OTHER ERRORS
       else {
-        throw new Error(data.message || "Failed to create location");
+        toast({
+          title: "Error",
+          description: "Failed to create location",
+          variant: "destructive",
+        });
+        // throw new Error(data.message || "Failed to create location");
       }
 
       // Close map
@@ -859,7 +879,12 @@ function AddTripModal({ handleModalClose, operators }) {
           images: [...p.images, data.result.url],
         }));
       } else {
-        throw new Error(data.message || "Failed to upload image");
+        // throw new Error(data.message || "Failed to upload image");
+        toast({
+          title: "Error",
+          description: "Failed to upload image",
+          variant: "destructive",
+        });
       }
     } catch (err) {
       console.error("Upload failed:", err);
@@ -1022,7 +1047,11 @@ function AddTripModal({ handleModalClose, operators }) {
       const data = await res.json();
 
       if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to create trip");
+        toast({
+          title: "Error",
+          description: "Failed to create trip",
+          variant: "destructive",
+        });
       }
 
       toast({

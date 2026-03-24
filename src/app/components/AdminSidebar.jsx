@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 import { BiComment } from "react-icons/bi";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
+import { useToast } from "../hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -18,6 +19,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
   const [userProfile, setUserProfile] = useState({ name: "", email: "" });
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const pathname = usePathname();
+  const { toast } = useToast();
 
   // Detect small screens
   useEffect(() => {
@@ -43,7 +45,15 @@ export default function AdminSidebar({ collapsed, toggle }) {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!res.ok) throw new Error("Unauthorized");
+        // if (!res.ok) throw new Error("Unauthorized");
+        if (!res.ok) {
+          toast({
+            title: "Error",
+            description: "Unauthorised",
+            variant: "destructive",
+          });
+        }
+
         const data = await res.json();
         if (data.success) setUserProfile(data.result);
       } catch (err) {

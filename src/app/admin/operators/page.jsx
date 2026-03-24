@@ -132,8 +132,15 @@ function OperatorsPage() {
 
       console.log("Response:", data);
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to fetch operators");
+      // if (!res.ok || !data.success) {
+      //   throw new Error(data.message || "Failed to fetch operators");
+      // }
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch operators",
+          variant: "destructive",
+        });
       }
 
       const operatorsArray = data?.result?.operators || [];
@@ -266,9 +273,15 @@ function OperatorsPage() {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to delete operator");
-      }
+      // if (!res.ok || !data.success) {
+      //   throw new Error(data.message || "Failed to delete operator");
+      // }
+      if (!res.ok)
+        toast({
+          title: "Error",
+          description: "Failed to delete operator",
+          variant: "destructive",
+        });
 
       toast({
         title: "Operator",
@@ -720,30 +733,28 @@ function OperatorsPage() {
             {Math.min(page * limit, totalOperators)} of {totalOperators}
           </p>
 
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
-            </span>
+          <span className="px-3 py-1 text-center text-sm">
+            Page {page} of {totalPages}
+          </span>
 
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
-              >
-                Previous
-              </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Previous
+            </Button>
 
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={page === totalPages}
-                onClick={() => setPage(page + 1)}
-              >
-                Next
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </Button>
           </div>
         </div>
       </div>
@@ -828,15 +839,27 @@ function AddOperatorModal({ handleModalClose }) {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Image upload failed");
-      }
+      // if (!res.ok || !data.success) {
+      //   throw new Error(data.message || "Image upload failed");
+      // }
+      if (!res.ok)
+        toast({
+          title: "Error",
+          description: "Failed to upload image",
+          variant: "destructive",
+        });
 
       const imageUrl = data.result?.url;
 
-      if (!imageUrl) {
-        throw new Error("No image URL returned from server");
-      }
+      // if (!imageUrl) {
+      //   throw new Error("No image URL returned from server");
+      // }
+      if (!res.ok)
+        toast({
+          title: "Error",
+          description: "No Image URL returned from the server",
+          variant: "destructive",
+        });
 
       setFormData((prev) => ({
         ...prev,
@@ -990,11 +1013,17 @@ function AddOperatorModal({ handleModalClose }) {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
-        throw new Error(
-          data.message || data.error?.message || "Failed to add operator",
-        );
-      }
+      // if (!res.ok || !data.success) {
+      //   throw new Error(
+      //     data.message || data.error?.message || "Failed to add operator",
+      //   );
+      // }
+      if (!res.ok)
+        toast({
+          title: "Error",
+          description: "Failed to add operator",
+          variant: "destructive",
+        });
 
       handleModalClose(false);
     } catch (err) {

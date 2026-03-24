@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Loader2, Search } from "lucide-react";
+import { useToast } from "../hooks/use-toast";
 
 // Fix for default markers in Leaflet with Next.js
 delete L.Icon.Default.prototype._getIconUrl;
@@ -29,6 +30,7 @@ export default function MapPicker({
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -68,8 +70,15 @@ export default function MapPicker({
           },
         );
 
-        if (!response.ok) {
-          throw new Error("Reverse geocoding failed");
+        // if (!response.ok) {
+        //   throw new Error("Reverse geocoding failed");
+        // }
+        if (!res.ok) {
+          toast({
+            title: "Error",
+            description: "Reverse geocoding failed",
+            variant: "destructive",
+          });
         }
 
         const data = await response.json();
@@ -135,8 +144,15 @@ export default function MapPicker({
           },
         );
 
-        if (!response.ok) {
-          throw new Error("Search failed");
+        // if (!response.ok) {
+        //   throw new Error("Search failed");
+        // }
+        if (!res.ok) {
+          toast({
+            title: "Error",
+            description: "Search failed",
+            variant: "destructive",
+          });
         }
 
         const data = await response.json();
