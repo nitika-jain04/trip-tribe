@@ -193,15 +193,6 @@ function TripsContent() {
   useEffect(() => {
     getPublishedTrips();
     getTripTypes();
-
-    const interval = setInterval(
-      () => {
-        getPublishedTrips();
-      },
-      10 * 60 * 1000,
-    );
-
-    return () => clearInterval(interval);
   }, []);
 
   const filteredTrips = useMemo(() => {

@@ -77,6 +77,7 @@ function Page() {
   const [operators, setOperators] = useState([]);
   const [loadingOperators, setLoadingOperators] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [refresh, setRefresh] = useState(0);
 
   // Filter states
   const [search, setSearch] = useState("");
@@ -172,7 +173,7 @@ function Page() {
 
   useEffect(() => {
     fetchOperators();
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     const searchValue = debouncedSearch?.trim();
@@ -187,7 +188,7 @@ function Page() {
     }
 
     getAllTrips();
-  }, [getAllTrips, debouncedSearch]);
+  }, [getAllTrips, debouncedSearch, refresh]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -212,11 +213,6 @@ function Page() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    const interval = setInterval(getAllTrips, 2 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [getAllTrips]);
-
   const getOperatorName = (id) => {
     if (!id) return "N/A";
     const operator = operators.find((operator) => operator.id === id);
@@ -226,7 +222,7 @@ function Page() {
   const handleModalClose = (value) => {
     setShowModal(value);
     if (value === false) {
-      getAllTrips();
+      setRefresh((prev) => prev + 1);
     }
   };
 
@@ -251,7 +247,7 @@ function Page() {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: err.message,
+          description: data.message,
           variant: "destructive",
         });
       }
@@ -261,7 +257,7 @@ function Page() {
         description: "Trip updated successfully!",
         variant: "success",
       });
-      getOperators();
+      setRefresh((prev) => prev + 1);
     } catch (err) {
       toast({
         title: "Error",
@@ -751,59 +747,6 @@ function AddTripModal({ handleModalClose, operators }) {
       }
     }, 100);
   };
-
-  // const handleLocationSelect = async (type, locationData) => {
-  //   const token = Cookies.get("token");
-
-  //   const payload = {
-  //     name: locationData.name || locationData.address || "Unknown",
-  //     region: locationData.region || "",
-  //     latitude: String(locationData.lat ?? locationData.latitude),
-  //     longitude: String(locationData.lng ?? locationData.longitude),
-  //     type: "CITY",
-  //   };
-
-  //   try {
-  //     const res = await fetch(
-  //       `${BASE_URL}/api/${API_VERSION}/locations/admin`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify(payload),
-  //       },
-  //     );
-
-  //     const data = await res.json();
-
-  //     if (!res.ok || !data.success) {
-  //       throw new Error(data.message || "Failed to create location");
-  //     }
-
-  //     setFormData((prev) => ({
-  //       ...prev,
-  //       [type]: {
-  //         id: data.result.id,
-  //         name: data.result.name,
-  //         region: data.result.region,
-  //         latitude: data.result.latitude,
-  //         longitude: data.result.longitude,
-  //         type: data.result.type,
-  //       },
-  //     }));
-
-  //     if (type === "source") {
-  //       setShowSourceMap(false);
-  //     } else {
-  //       setShowDestinationMap(false);
-  //     }
-  //   } catch (err) {
-  //     console.error("Location creation failed:", err);
-  //     setError(err.message);
-  //   }
-  // };
 
   const handleLocationSelect = async (type, locationData) => {
     const token = Cookies.get("token");

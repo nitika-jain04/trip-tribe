@@ -173,9 +173,6 @@ function OperatorsPage() {
     }
 
     getOperators();
-
-    const interval = setInterval(() => getOperators(), 10 * 60 * 1000);
-    return () => clearInterval(interval);
   }, [getOperators, debouncedSearch]);
 
   useEffect(() => {
@@ -437,7 +434,6 @@ function OperatorsPage() {
           )}
         </CardContent>
         {/* </Card> */}
-
         {/* Desktop View - Table (hidden on mobile, visible on desktop) */}
         <Card className="hidden sm:block border shadow-sm">
           <CardHeader className="px-4 sm:px-6 pb-2">
