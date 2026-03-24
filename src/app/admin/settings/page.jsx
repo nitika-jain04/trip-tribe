@@ -145,17 +145,47 @@ function Destinations() {
         },
       );
 
-      if (!res.ok) {
-        throw new Error("Failed to delete destination");
+      const data = await res.json().catch(() => null);
+
+      // ✅ 🔥 HANDLE VALIDATION ERROR FIRST (no throw)
+      if (data?.error?.code === "VALIDATION_ERROR") {
+        toast({
+          title: "Cannot Delete",
+          description:
+            data?.error?.message ||
+            "Trips exist for this destination. Delete trips first.",
+          variant: "destructive",
+        });
+        return; // ❌ STOP here
       }
 
-      // Refresh list
+      // ❗ other API errors
+      if (!res.ok || !data?.success) {
+        toast({
+          title: "Error",
+          description:
+            data?.error?.message ||
+            data?.message ||
+            "Failed to delete destination",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // ✅ Success
       setDestinations((prev) => prev.filter((item) => item.id !== locationId));
+
+      toast({
+        title: "Success",
+        description: "Destination deleted successfully",
+      });
     } catch (error) {
       console.error(error);
+
+      // ❗ Only unexpected errors land here
       toast({
-        title: "Error",
-        description: error.message || "Failed to delete destination",
+        title: "Something went wrong",
+        description: "Please try again later",
         variant: "destructive",
       });
     }
@@ -427,8 +457,6 @@ function AddDestinationModal({ onClose, refresh }) {
       longitude: String(form.longitude || ""),
     };
 
-    console.log("req", payload);
-
     try {
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/locations/admin`,
@@ -444,19 +472,43 @@ function AddDestinationModal({ onClose, refresh }) {
 
       const data = await res.json().catch(() => null);
 
-      if (!res.ok || !data?.success) {
-        throw new Error(
-          data?.error?.message || data?.message || "Failed to save destination",
-        );
+      // ✅ HANDLE DUPLICATE FIRST (NO THROW)
+      if (data?.error?.code === "VALIDATION_ERROR") {
+        toast({
+          title: "Duplicate Destination",
+          description: "A destination with this name already exists",
+          variant: "destructive",
+        });
+        return; // ❗ stop here, no throw
       }
+
+      // ❌ Other errors
+      if (!res.ok || !data?.success) {
+        toast({
+          title: "Error",
+          description:
+            data?.error?.message ||
+            data?.message ||
+            "Failed to save destination",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // ✅ Success
+      toast({
+        title: "Success",
+        description: "Destination created successfully",
+      });
 
       refresh();
       onClose();
     } catch (err) {
       console.error(err);
+
       toast({
         title: "Error",
-        description: err.message || "Failed to save destination",
+        description: "Something went wrong",
         variant: "destructive",
       });
     } finally {
