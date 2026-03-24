@@ -752,6 +752,59 @@ function AddTripModal({ handleModalClose, operators }) {
     }, 100);
   };
 
+  // const handleLocationSelect = async (type, locationData) => {
+  //   const token = Cookies.get("token");
+
+  //   const payload = {
+  //     name: locationData.name || locationData.address || "Unknown",
+  //     region: locationData.region || "",
+  //     latitude: String(locationData.lat ?? locationData.latitude),
+  //     longitude: String(locationData.lng ?? locationData.longitude),
+  //     type: "CITY",
+  //   };
+
+  //   try {
+  //     const res = await fetch(
+  //       `${BASE_URL}/api/${API_VERSION}/locations/admin`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify(payload),
+  //       },
+  //     );
+
+  //     const data = await res.json();
+
+  //     if (!res.ok || !data.success) {
+  //       throw new Error(data.message || "Failed to create location");
+  //     }
+
+  //     setFormData((prev) => ({
+  //       ...prev,
+  //       [type]: {
+  //         id: data.result.id,
+  //         name: data.result.name,
+  //         region: data.result.region,
+  //         latitude: data.result.latitude,
+  //         longitude: data.result.longitude,
+  //         type: data.result.type,
+  //       },
+  //     }));
+
+  //     if (type === "source") {
+  //       setShowSourceMap(false);
+  //     } else {
+  //       setShowDestinationMap(false);
+  //     }
+  //   } catch (err) {
+  //     console.error("Location creation failed:", err);
+  //     setError(err.message);
+  //   }
+  // };
+
   const handleLocationSelect = async (type, locationData) => {
     const token = Cookies.get("token");
 
@@ -764,6 +817,7 @@ function AddTripModal({ handleModalClose, operators }) {
     };
 
     try {
+      // Try creating location
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/locations/admin`,
         {
@@ -778,29 +832,57 @@ function AddTripModal({ handleModalClose, operators }) {
 
       const data = await res.json();
 
-      if (!res.ok || !data.success) {
+      // ✅ SUCCESS CASE
+      if (res.ok && data.success) {
+        setFormData((prev) => ({
+          ...prev,
+          [type]: data.result,
+        }));
+      }
+      // ❗ DUPLICATE CASE
+      else if (data?.error?.message?.includes("already exists")) {
+        // 🔁 Fetch existing location
+        const searchRes = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/locations/admin?search=${encodeURIComponent(payload.name)}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        const searchData = await searchRes.json();
+
+        if (searchRes.ok && searchData.success) {
+          const existingLocation = searchData.result.locations?.find(
+            (loc) => loc.name.toLowerCase() === payload.name.toLowerCase(),
+          );
+
+          if (existingLocation) {
+            setFormData((prev) => ({
+              ...prev,
+              [type]: existingLocation,
+            }));
+          } else {
+            throw new Error("Location exists but not found in search");
+          }
+        } else {
+          throw new Error("Failed to fetch existing location");
+        }
+      }
+      // ❌ OTHER ERRORS
+      else {
         throw new Error(data.message || "Failed to create location");
       }
 
-      setFormData((prev) => ({
-        ...prev,
-        [type]: {
-          id: data.result.id,
-          name: data.result.name,
-          region: data.result.region,
-          latitude: data.result.latitude,
-          longitude: data.result.longitude,
-          type: data.result.type,
-        },
-      }));
-
+      // Close map
       if (type === "source") {
         setShowSourceMap(false);
       } else {
         setShowDestinationMap(false);
       }
     } catch (err) {
-      console.error("Location creation failed:", err);
+      console.error("Location handling failed:", err);
       setError(err.message);
     }
   };

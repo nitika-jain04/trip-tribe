@@ -6,7 +6,6 @@ import { MdOutlineDashboard } from "react-icons/md";
 import { GoPeople } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
 import { GrLocation } from "react-icons/gr";
-import { LuMountain } from "react-icons/lu";
 import { usePathname } from "next/navigation";
 import { BiComment } from "react-icons/bi";
 import { useState, useEffect } from "react";
@@ -91,7 +90,8 @@ export default function AdminSidebar({ collapsed, toggle }) {
 
         <button
           onClick={toggle}
-          className="hover:bg-slate-700 p-1 rounded-lg border border-slate-700 transition-colors duration-200 shrink-0"
+          className="hover:bg-white/10 p-2 rounded-lg border border-white/10 
+  transition-all duration-200 hover:scale-105"
         >
           {sidebarCollapsed ? (
             <ChevronRight size={18} className="text-gray-400" />
@@ -104,7 +104,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
       <div className="border-b border-slate-700/50 mx-4 mb-6" />
 
       {/* Menu */}
-      <nav className="flex flex-col gap-1.5 px-3">
+      <nav className="flex flex-col gap-2 px-3">
         <SidebarLink
           href="/admin/dashboard"
           icon={<MdOutlineDashboard size={22} />}
@@ -151,13 +151,19 @@ export default function AdminSidebar({ collapsed, toggle }) {
 
       {/* Footer */}
       {!sidebarCollapsed && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-white/5 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-200">
+            <div className="h-10 w-10 rounded-full bg-linear-to-br from-teal-400 to-teal-600 flex items-center justify-center text-sm font-semibold text-black">
+              {userProfile.name?.charAt(0) || "A"}
+            </div>
+
+            <div className="flex-1 overflow-hidden">
+              <p className="text-sm font-medium text-white truncate">
                 {userProfile.name}
               </p>
-              <p className="text-xs text-gray-500">{userProfile.email}</p>
+              <p className="text-xs text-gray-400 truncate">
+                {userProfile.email}
+              </p>
             </div>
           </div>
         </div>
