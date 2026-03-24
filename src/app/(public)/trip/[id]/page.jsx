@@ -105,7 +105,7 @@ function TripPage() {
           verified: true,
           type: "Adventure",
           startDate: raw.start_date,
-          highlights: raw.itinerary?.flatMap((d) => d.activities) || [],
+          highlights: raw.itinerary || [],
           inclusions: raw.inclusions || [],
           exclusions: raw.exclusions || [],
         });
@@ -161,7 +161,7 @@ function TripPage() {
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {trip.images?.map((img, i) => (
-                    <div
+                  <div
                     key={i}
                     className="aspect-square rounded-lg overflow-hidden bg-muted"
                   >
@@ -364,7 +364,7 @@ function TripPage() {
                       About This Trip
                     </h3>
                     <p className="text-body text-muted-foreground leading-relaxed">
-                     {trip.description}
+                      {trip.description}
                     </p>
                   </div>
                 </div>
@@ -375,7 +375,7 @@ function TripPage() {
                       Trip Details
                     </h4>
                     <dl className="space-y-3 text-body-sm">
-                       <div className="flex justify-between">
+                      <div className="flex justify-between">
                         <dt className="text-muted-foreground">Source</dt>
                         <dd className="font-medium">{trip.source}</dd>
                       </div>
@@ -411,16 +411,30 @@ function TripPage() {
                   Day-by-Day Itinerary
                 </h3>
                 <div className="space-y-6">
-                  {trip.highlights.map((h, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-display text-heading-sm shrink-0">
-                        {i + 1}
-                      </div>
-                      <div className="flex-1 card-premium py-2 px-3">
-                        <h4 className="font-semibold text-foreground mb-2">
-                          {h}
-                        </h4>
-                        {/* <p className="text-body text-muted-foreground">{h.}</p> */}
+                  {trip.highlights.map((dayItem, index) => (
+                    <div key={index} className="flex gap-4">
+                      {/* Day Number */}
+                      <h4 className="font-semibold h-fit p-1.5 rounded-sm mb-2 bg-primary text-primary-foreground">
+                        Day {dayItem.day}
+                      </h4>
+
+                      {/* Activities */}
+                      <div className="flex-1 card-premium py-3 px-4">
+                        {/* <h4 className="font-semibold w-fit p-1.5 rounded-sm mb-2 bg-primary text-primary-foreground">
+                          Day {dayItem.day}
+                        </h4> */}
+
+                        <ul className="space-y-2">
+                          {dayItem.activities.map((activity, i) => (
+                            <li
+                              key={i}
+                              className="flex items-start gap-2 text-body text-muted-foreground"
+                            >
+                              <span className="w-2 h-2 mt-2 rounded-full bg-primary shrink-0" />
+                              {activity}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     </div>
                   ))}

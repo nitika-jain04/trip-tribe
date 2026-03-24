@@ -12,6 +12,7 @@ import {
   AlertCircle,
   MapPin,
   IndianRupee,
+  UserX,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";

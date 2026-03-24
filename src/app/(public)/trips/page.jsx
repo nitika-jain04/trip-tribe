@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useMemo, Suspense, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  Suspense,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
@@ -46,17 +53,9 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function TripsContent() {
   const searchParams = useSearchParams();
-
-  const slugify = (text) =>
-    text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("destination") || "",
   );
-
   const [selectedType, setSelectedType] = useState("All Types");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [sortBy, setSortBy] = useState("recommended");
@@ -66,10 +65,26 @@ function TripsContent() {
   const [loadingTrips, setLoadingTrips] = useState(true);
   const [tripTypesData, setTripTypesData] = useState(["All Types"]);
 
-  async function getPublishedTrips() {
-    try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips`);
+  // Track if data is already fetching
+  const isFetchingRef = useRef(false);
+  const initialLoadRef = useRef(false);
 
+  const slugify = (text) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+  // Memoize the fetch function to prevent recreation
+  const fetchTripsAndUpdateCache = useCallback(async (showLoader = true) => {
+    // Prevent duplicate fetches
+    if (isFetchingRef.current) return;
+
+    try {
+      isFetchingRef.current = true;
+      if (showLoader) setLoadingTrips(true);
+
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips`);
       if (!res.ok) throw new Error("Failed to fetch trips");
 
       const data = await res.json();
@@ -77,123 +92,169 @@ function TripsContent() {
 
       const rawTrips = data.result?.trips || [];
 
-      // --- caches to avoid duplicate API calls ---
-      const operatorCache = {};
-      const locationCache = {};
+      // Extract UNIQUE IDs
+      const operatorIds = [
+        ...new Set(rawTrips.map((t) => t.operator_id).filter(Boolean)),
+      ];
+      const locationIds = [
+        ...new Set(
+          rawTrips
+            .flatMap((t) => [t.source_id, t.destination_id])
+            .filter(Boolean),
+        ),
+      ];
 
-      const fetchOperator = async (id) => {
-        if (!id) return "Unknown";
-        if (operatorCache[id]) return operatorCache[id];
+      // Batch fetch PARALLEL
+      const [operatorsRes, locationsRes] = await Promise.all([
+        fetch(
+          `${BASE_URL}/api/${API_VERSION}/operators?ids=${operatorIds.join(",")}`,
+        ),
+        fetch(
+          `${BASE_URL}/api/${API_VERSION}/locations?ids=${locationIds.join(",")}`,
+        ),
+      ]);
 
-        try {
-          const res = await fetch(
-            `${BASE_URL}/api/${API_VERSION}/operators/${id}`,
-          );
-          const data = await res.json();
+      const operatorsData = await operatorsRes.json();
+      const locationsData = await locationsRes.json();
 
-          const name = data?.result?.name || "Unknown";
-          operatorCache[id] = name;
-          return name;
-        } catch {
-          return "Unknown";
-        }
-      };
+      // Build lookup maps
+      const operatorMap = {};
+      (operatorsData?.result.operators || []).forEach((op) => {
+        operatorMap[op.id] = op.name;
+      });
 
-      const fetchLocation = async (id) => {
-        if (!id) return { name: "Unknown", region: "Unknown" };
-        if (locationCache[id]) return locationCache[id];
+      const locationMap = {};
+      (locationsData?.result.locations || []).forEach((loc) => {
+        locationMap[loc.id] = {
+          name: loc.name,
+          region: loc.region,
+        };
+      });
 
-        try {
-          const res = await fetch(
-            `${BASE_URL}/api/${API_VERSION}/locations/${id}`,
-          );
-          const data = await res.json();
+      // Enrich trips
+      const enrichedTrips = rawTrips.map((trip) => {
+        const start = new Date(trip.start_date);
+        const end = new Date(trip.end_date);
+        const durationDays =
+          Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-          const locationData = {
-            name: data?.result?.name || "Unknown",
-            region: data?.result?.region || "Unknown",
-          };
+        const destination = locationMap[trip.destination_id] || {
+          name: "Unknown",
+          region: "Unknown",
+        };
 
-          locationCache[id] = locationData;
-          return locationData;
-        } catch {
-          return { name: "Unknown", region: "Unknown" };
-        }
-      };
+        return {
+          id: trip.id,
+          name: trip.name,
+          image: trip.images[0],
+          destination: destination.name,
+          region: destination.region,
+          provider: {
+            name: operatorMap[trip.operator_id] || "Unknown",
+          },
+          priceFrom: Number(trip.price),
+          duration: `${durationDays} days`,
+          groupSize: `${trip.total_seats} people`,
+          difficulty:
+            trip.difficulty?.charAt(0) +
+              trip.difficulty?.slice(1).toLowerCase() || "Moderate",
+          rating: 4.5,
+          reviewCount: 0,
+          verified: true,
+          inclusions: trip.inclusions || [],
+          type: trip.type?.name || "Other",
+        };
+      });
 
-      // --- enrich trips in parallel ---
-      const enrichedTrips = await Promise.all(
-        rawTrips.map(async (trip) => {
-          const [operatorName, sourceLocation, destinationLocation] =
-            await Promise.all([
-              fetchOperator(trip.operator_id),
-              fetchLocation(trip.source_id),
-              fetchLocation(trip.destination_id),
-            ]);
-
-          const start = new Date(trip.start_date);
-          const end = new Date(trip.end_date);
-
-          const durationDays =
-            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-          return {
-            id: trip.id,
-            name: trip.name,
-            image: trip.images[0],
-
-            destination: destinationLocation.name,
-            region: destinationLocation.region,
-
-            provider: { name: operatorName },
-
-            priceFrom: Number(trip.price),
-            duration: `${durationDays} days`,
-            groupSize: `${trip.total_seats} people`,
-
-            difficulty:
-              trip.difficulty?.charAt(0) +
-                trip.difficulty?.slice(1).toLowerCase() || "Moderate",
-
-            rating: 4.5,
-            reviewCount: 0,
-            verified: true,
-
-            inclusions: trip.inclusions || [],
-            type: trip.type?.name || "Other",
-          };
-        }),
-      );
-
+      // Update UI once with final data
       setTrips(enrichedTrips);
+
+      // Cache everything
+      sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
+      sessionStorage.setItem("trips_cache_timestamp", Date.now().toString());
+      sessionStorage.setItem("operator_map", JSON.stringify(operatorMap));
+      sessionStorage.setItem("location_map", JSON.stringify(locationMap));
+
       setLoadingTrips(false);
     } catch (err) {
-      console.error("Failed to get trips", err);
+      console.error("Fetch failed", err);
+      setLoadingTrips(false);
+    } finally {
+      isFetchingRef.current = false;
     }
-  }
+  }, []);
 
-  async function getTripTypes() {
+  // Optimized getPublishedTrips with cache validation
+  const getPublishedTrips = useCallback(async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+      const cachedTrips = sessionStorage.getItem("trips_cache");
+      const cachedTimestamp = sessionStorage.getItem("trips_cache_timestamp");
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache duration
 
+      const isCacheValid =
+        cachedTrips &&
+        cachedTimestamp &&
+        Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION;
+
+      if (isCacheValid) {
+        setTrips(JSON.parse(cachedTrips));
+        setLoadingTrips(false);
+
+        // ✅ Only revalidate in background if cache is old (but still valid)
+        const timeSinceCache = Date.now() - parseInt(cachedTimestamp);
+        if (timeSinceCache > CACHE_DURATION / 2) {
+          // Revalidate in background without showing loader
+          fetchTripsAndUpdateCache(false);
+        }
+        return;
+      }
+
+      // No valid cache, fetch fresh
+      await fetchTripsAndUpdateCache(true);
+    } catch (err) {
+      console.error("Failed to get trips", err);
+      setLoadingTrips(false);
+    }
+  }, [fetchTripsAndUpdateCache]);
+
+  // Get trip types with caching
+  const getTripTypes = useCallback(async () => {
+    try {
+      const cachedTypes = sessionStorage.getItem("trip_types_cache");
+      const cachedTimestamp = sessionStorage.getItem("trip_types_timestamp");
+      const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache for types
+
+      if (
+        cachedTypes &&
+        cachedTimestamp &&
+        Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION
+      ) {
+        setTripTypesData(JSON.parse(cachedTypes));
+        return;
+      }
+
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
       if (!res.ok) throw new Error("Failed to fetch trip types");
 
       const data = await res.json();
-
       const types = data?.result?.trip_types || [];
-
       const formatted = ["All Types", ...types.map((t) => t.name)];
 
       setTripTypesData(formatted);
+      sessionStorage.setItem("trip_types_cache", JSON.stringify(formatted));
+      sessionStorage.setItem("trip_types_timestamp", Date.now().toString());
     } catch (err) {
       console.error("Failed to fetch trip types", err);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    getPublishedTrips();
-    getTripTypes();
-  }, []);
+    if (!initialLoadRef.current) {
+      initialLoadRef.current = true;
+      getPublishedTrips();
+      getTripTypes();
+    }
+  }, [getPublishedTrips, getTripTypes]);
 
   const filteredTrips = useMemo(() => {
     let result = [...trips];
@@ -272,7 +333,7 @@ function TripsContent() {
       <div>
         <h4 className="font-medium text-foreground mb-3">Difficulty</h4>
         <div className="space-y-2">
-          {["All", "Easy", "Moderate", "Challenging"].map((diff) => (
+          {["All", "Easy", "Moderate", "Hard"].map((diff) => (
             <button
               key={diff}
               onClick={() => setSelectedDifficulty(diff)}
@@ -344,6 +405,12 @@ function TripsContent() {
         </div>
       </section>
 
+      {loadingTrips && (
+        <div className="max-w-2xl mx-auto mt-4">
+          <div className="h-4 w-40 bg-muted rounded animate-pulse mx-auto" />
+        </div>
+      )}
+
       <section className="section bg-background">
         <div className="container-premium">
           <div className="flex gap-8">
@@ -357,7 +424,7 @@ function TripsContent() {
             </div>
 
             <div className="flex-1">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <Sheet>
                     <SheetTrigger asChild>
@@ -429,135 +496,159 @@ function TripsContent() {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                {filteredTrips.map((trip) => (
-                  <div
-                    key={trip.id}
-                    className="card-premium overflow-hidden group"
-                  >
-                    <Link href={`/trip/${trip.id}`}>
-                      <div className="aspect-16/10 relative overflow-hidden">
-                        <img
-                          src={trip.image}
-                          alt={trip.name}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        {trip.verified && (
-                          <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
-                            <Shield className="w-3 h-3" />
-                            Verified
-                          </div>
-                        )}
-                        <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
-                          {trip.type}
-                        </div>
-                      </div>
-                    </Link>
-
-                    <div className="p-6">
-                      <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
-                        <MapPin className="w-4 h-4" />
-                        {trip.destination}
-                        {trip.region !== "Unknown" && `, ${trip.region}`}
-                      </div>
-
+                {!loadingTrips && filteredTrips.length > 0 ? (
+                  filteredTrips.map((trip) => (
+                    <div
+                      key={trip.id}
+                      className="card-premium overflow-hidden group"
+                    >
+                      {" "}
                       <Link href={`/trip/${trip.id}`}>
-                        <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors">
-                          {trip.name}
-                        </h3>
-                      </Link>
-
-                      <div className="flex items-center gap-4 text-body-sm text-muted-foreground mb-3">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {trip.duration}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {trip.groupSize}
-                        </span>
-                        <span
-                          className={`px-2 py-0.5 rounded-sm text-xs ${
-                            trip.difficulty === "Easy"
-                              ? "bg-success/10 text-success"
-                              : trip.difficulty === "Moderate"
-                                ? "bg-warning/10 text-warning"
-                                : "bg-error/10 text-error"
-                          }`}
-                        >
-                          {trip.difficulty}
-                        </span>
-                      </div>
-
-                      <p className="text-body-sm text-muted-foreground mb-4">
-                        by{" "}
-                        <span className="text-foreground font-medium">
-                          {trip.provider.name}
-                        </span>
-                      </p>
-
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
-                        {/* <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 fill-accent text-accent" />
-                          <span className="text-body-sm font-medium">
-                            {trip.rating}
-                          </span>
-                          <span className="text-body-sm text-muted-foreground">
-                            ({trip.reviewCount} reviews)
-                          </span>
-                        </div> */}
-                        <p className="font-display text-heading-sm text-primary">
-                          ₹{trip.priceFrom.toLocaleString()}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-3 mt-4">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id={`compare-${trip.id}`}
-                            checked={compareList.includes(trip.id)}
-                            onCheckedChange={() => toggleCompare(trip.id)}
-                          />
-                          <label
-                            htmlFor={`compare-${trip.id}`}
-                            className="text-body-sm text-muted-foreground cursor-pointer"
+                        {" "}
+                        <div className="aspect-16/10 relative overflow-hidden">
+                          {" "}
+                          <img
+                            src={trip.image}
+                            alt={trip.name}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          />{" "}
+                          {trip.verified && (
+                            <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
+                              {" "}
+                              <Shield className="w-3 h-3" /> Verified{" "}
+                            </div>
+                          )}{" "}
+                          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
+                            {" "}
+                            {trip.type}{" "}
+                          </div>{" "}
+                        </div>{" "}
+                      </Link>{" "}
+                      <div className="p-6">
+                        {" "}
+                        <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
+                          {" "}
+                          <MapPin className="w-4 h-4" /> {trip.destination}{" "}
+                          {trip.region !== "Unknown" && `, ${trip.region}`}{" "}
+                        </div>{" "}
+                        <Link href={`/trip/${trip.id}`}>
+                          {" "}
+                          <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors">
+                            {" "}
+                            {trip.name}{" "}
+                          </h3>{" "}
+                        </Link>{" "}
+                        <div className="flex items-center gap-4 text-body-sm text-muted-foreground mb-3">
+                          {" "}
+                          <span className="flex items-center gap-1">
+                            {" "}
+                            <Calendar className="w-4 h-4" />{" "}
+                            {trip.duration}{" "}
+                          </span>{" "}
+                          <span className="flex items-center gap-1">
+                            {" "}
+                            <Users className="w-4 h-4" /> {trip.groupSize}{" "}
+                          </span>{" "}
+                          <span
+                            className={`px-2 py-0.5 rounded-sm text-xs ${trip.difficulty === "Easy" ? "bg-success/10 text-success" : trip.difficulty === "Moderate" ? "bg-warning/10 text-warning" : "bg-error/10 text-error"}`}
                           >
-                            Compare
-                          </label>
-                        </div>
-                        <Link href={`/trip/${trip.id}`} className="flex-1">
-                          <Button className="btn-primary w-full">
-                            View Details
-                          </Button>
-                        </Link>
-                      </div>
+                            {" "}
+                            {trip.difficulty}{" "}
+                          </span>{" "}
+                        </div>{" "}
+                        <p className="text-body-sm text-muted-foreground mb-4">
+                          {" "}
+                          by{" "}
+                          <span className="text-foreground font-medium">
+                            {" "}
+                            {trip.provider.name}{" "}
+                          </span>{" "}
+                        </p>{" "}
+                        <div className="flex items-center justify-between pt-4 border-t border-border">
+                          {" "}
+                          {/* <div className="flex items-center gap-1"> <Star className="w-4 h-4 fill-accent text-accent" /> <span className="text-body-sm font-medium"> {trip.rating} </span> <span className="text-body-sm text-muted-foreground"> ({trip.reviewCount} reviews) </span> </div> */}{" "}
+                          <p className="font-display text-heading-sm text-primary">
+                            {" "}
+                            ₹{trip.priceFrom.toLocaleString()}{" "}
+                          </p>{" "}
+                        </div>{" "}
+                        <div className="flex items-center gap-3 mt-4">
+                          {" "}
+                          <div className="flex items-center gap-2">
+                            {" "}
+                            <Checkbox
+                              id={`compare-${trip.id}`}
+                              checked={compareList.includes(trip.id)}
+                              onCheckedChange={() => toggleCompare(trip.id)}
+                            />{" "}
+                            <label
+                              htmlFor={`compare-${trip.id}`}
+                              className="text-body-sm text-muted-foreground cursor-pointer"
+                            >
+                              {" "}
+                              Compare{" "}
+                            </label>{" "}
+                          </div>{" "}
+                          <Link href={`/trip/${trip.id}`} className="flex-1">
+                            {" "}
+                            <Button className="btn-primary w-full">
+                              {" "}
+                              View Details{" "}
+                            </Button>{" "}
+                          </Link>{" "}
+                        </div>{" "}
+                      </div>{" "}
+                    </div>
+                  ))
+                ) : !loadingTrips ? (
+                  <div className="col-span-full flex flex-col items-center justify-center text-center py-1">
+                    <img
+                      src="/no-result.webp"
+                      alt="No results"
+                      className="w-48 mb-6 opacity-80"
+                    />
+
+                    <h3 className="text-heading-md font-display mb-2 text-foreground">
+                      No trips found
+                    </h3>
+
+                    <p className="text-muted-foreground mb-6 max-w-md">
+                      We couldn’t find any trips for{" "}
+                      <span className="font-medium text-foreground">
+                        {searchQuery}
+                      </span>
+                      . Try a different destination or explore popular trips.
+                    </p>
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-3 justify-center">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setSelectedType("All Types");
+                          setSelectedDifficulty("All");
+                        }}
+                      >
+                        Clear Filters
+                      </Button>
+
+                      <Button
+                        onClick={() => setSearchQuery("")}
+                        className="btn-primary"
+                      >
+                        Explore All Trips
+                      </Button>
                     </div>
                   </div>
-                ))}
+                ) : null}
               </div>
 
               {loadingTrips && (
-                <div className="text-center py-16 flex flex-col items-center justify-center">
-                  <p className="text-body-lg text-muted-foreground mb-4">
-                    <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-                    {/* <p className="text-gray-600 font-medium">
-                      Loading featured trips...
-                    </p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Discover amazing adventures
-                    </p> */}
-                  </p>
-                  <p className="text-gray-600 font-medium">
-                    Hang tight! Trip Incoming
-                  </p>
-                  {/* <Button
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedType("All Types");
-                      setSelectedDifficulty("All");
-                    }}
-                  >
-                    Clear Filters
-                  </Button> */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TripCardSkeleton key={i} />
+                  ))}
                 </div>
               )}
             </div>
@@ -670,3 +761,37 @@ export default function TripsPage() {
     </Suspense>
   );
 }
+
+const TripCardSkeleton = () => (
+  <div className="card-premium overflow-hidden animate-pulse">
+    {/* Image */}
+    <div className="aspect-16/10 bg-muted" />
+
+    <div className="p-6">
+      {/* Location */}
+      <div className="h-4 w-1/3 bg-muted rounded mb-3" />
+
+      {/* Title */}
+      <div className="h-5 w-3/4 bg-muted rounded mb-3" />
+
+      {/* Meta */}
+      <div className="flex gap-3 mb-4">
+        <div className="h-4 w-16 bg-muted rounded" />
+        <div className="h-4 w-16 bg-muted rounded" />
+        <div className="h-4 w-12 bg-muted rounded" />
+      </div>
+
+      {/* Provider */}
+      <div className="h-4 w-1/2 bg-muted rounded mb-4" />
+
+      {/* Price */}
+      <div className="h-6 w-24 bg-muted rounded mb-4" />
+
+      {/* Buttons */}
+      <div className="flex gap-3">
+        <div className="h-10 w-24 bg-muted rounded" />
+        <div className="h-10 flex-1 bg-muted rounded" />
+      </div>
+    </div>
+  </div>
+);
