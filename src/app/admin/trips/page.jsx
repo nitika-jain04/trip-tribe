@@ -371,7 +371,7 @@ function Page() {
 
         {/* Filters */}
         <CardContent className="pt-2">
-          <div className="flex flex-col sm:flex-row gap-4 w-190">
+          <div className="flex flex-col sm:flex-row gap-2 min-w-150 max-w-200">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

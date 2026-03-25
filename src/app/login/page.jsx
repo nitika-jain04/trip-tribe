@@ -36,22 +36,31 @@ export default function TestLogin() {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => null);
 
-      // if (!res.ok || !data.success) {
-      //   throw new Error(data.message || "Incorrect email / password");
-      // }
-      if (!res.ok || !data.success) {
+      // ❌ Wrong credentials / API failure response
+      if (!res.ok || !data?.success) {
         toast({
           title: "Error",
-          description: "Incorrect email / password",
+          description: data?.message || "Incorrect email / password",
           variant: "destructive",
         });
+        return; // 🚨 STOP here
       }
 
-      const { token, user } = data.result;
+      // ✅ Safe destructuring
+      const { token, user } = data.result || {};
 
-      // ✅ Save cookies only for /admin routes
+      if (!token || !user) {
+        toast({
+          title: "Error",
+          description: "Invalid server response",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // ✅ Save cookies
       if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
         Cookies.set("token", token, {
           expires: 1,
@@ -65,13 +74,13 @@ export default function TestLogin() {
         });
       }
 
+      // ✅ Remember me logic
       if (rememberMe) {
         Cookies.set("rememberedEmail", email, {
           expires: 1,
           sameSite: "strict",
           path: "/",
         });
-
         Cookies.set("rememberMe", "true", {
           expires: 1,
           sameSite: "strict",
@@ -82,16 +91,22 @@ export default function TestLogin() {
         Cookies.remove("rememberMe", { path: "/" });
       }
 
+      // ✅ Redirect
       router.push(
         user.role === "ADMIN" || user.role === "SUPER_ADMIN"
           ? "/admin/dashboard"
           : "/",
       );
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      // 🔥 THIS handles "Failed to fetch"
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
-      setPassword(""); // clear password after attempt
+      setPassword("");
     }
   };
 

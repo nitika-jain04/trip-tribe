@@ -139,6 +139,7 @@ export default function OperatorEditPage() {
           description: "Upload failed",
           variant: "destructive",
         });
+        return;
       }
 
       // ✅ update logo_url after upload
@@ -290,14 +291,16 @@ export default function OperatorEditPage() {
       );
 
       const data = await res.json();
-      // if (!res.ok || !data.success)
-      //   throw new Error(data.message || "Update failed");
-      if (!res.ok) {
+      console.log("response", data);
+
+      if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: "Update failed",
+          description: data.message || "Update failed",
           variant: "destructive",
         });
+        setSaving(false);
+        return;
       }
 
       toast({
@@ -305,6 +308,7 @@ export default function OperatorEditPage() {
         description: "Operator updated successfully!",
         variant: "success",
       });
+
       router.push(`/admin/operators/${id}`);
     } catch (err) {
       setError(err.message);
@@ -341,6 +345,9 @@ export default function OperatorEditPage() {
           description: "Delete failed",
           variant: "destructive",
         });
+        setSaving(false);
+        setDeleteConfirm(false);
+        return;
       }
 
       toast({

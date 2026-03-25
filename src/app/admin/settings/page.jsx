@@ -185,6 +185,7 @@ function Destinations() {
       toast({
         title: "Success",
         description: "Destination deleted successfully",
+        variant: "success",
       });
     } catch (error) {
       console.error(error);
@@ -513,6 +514,7 @@ function AddDestinationModal({ onClose, refresh }) {
       toast({
         title: "Success",
         description: "Destination created successfully",
+        variant: "success",
       });
 
       refresh();
@@ -829,9 +831,8 @@ function Categories() {
       {showModal && (
         <AddCategoryModal
           onClose={() => setShowModal(false)}
-          refresh={() => {
-            setShowModal(false);
-            window.location.reload(); // simple refresh (same pattern as you used elsewhere)
+          onAddCategory={(newCategory) => {
+            setCategories((prev) => [...prev, newCategory]);
           }}
         />
       )}
@@ -850,7 +851,7 @@ function Categories() {
   );
 }
 
-function AddCategoryModal({ onClose, refresh }) {
+function AddCategoryModal({ onClose, onAddCategory }) {
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -894,18 +895,40 @@ function AddCategoryModal({ onClose, refresh }) {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to create category");
-      // }
-      if (!res.ok) {
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.success) {
         toast({
           title: "Error",
-          description: "Failed to create category",
+          description:
+            data?.error?.message ||
+            data?.message ||
+            "Failed to create category",
           variant: "destructive",
         });
+        return;
       }
 
-      refresh();
+      // ✅ Create formatted category (same shape as table)
+      const newCategory = {
+        id: data.result.id,
+        category: data.result.name,
+        description: data.result.description,
+        trips: 0, // new category → no trips
+        color: ["green", "pink", "blue", "teal", "yellow"][
+          Math.floor(Math.random() * 5)
+        ],
+      };
+
+      onAddCategory(newCategory);
+
+      toast({
+        title: "Success",
+        description: "Category created successfully",
+        variant: "success",
+      });
+
+      onClose();
     } catch (err) {
       console.error(err);
       toast({
