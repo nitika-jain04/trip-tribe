@@ -101,7 +101,6 @@ export default function Page() {
       if (!res.ok) throw new Error(`Request failed: ${res.status}`);
       return await res.json();
     } catch (err) {
-      // Show toaster
       toast({
         title: "Network Error",
         description: err.message || "Failed to fetch data",
@@ -111,76 +110,6 @@ export default function Page() {
       return null;
     }
   };
-
-  // Single function to fetch all homepage data
-  // const fetchHomePageData = async () => {
-  //   setLoading(true);
-  //   setError(null);
-
-  //   try {
-  //     // Fetch all data in parallel
-  //     const [locationsRes, operatorsRes, tripsRes] = await Promise.all([
-  //       fetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`, {
-  //         method: "GET",
-  //       }),
-  //       fetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`, {
-  //         method: "GET",
-  //       }),
-  //       fetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`),
-  //     ]);
-
-  //     // Check responses
-  //     if (!locationsRes.ok || !operatorsRes.ok || !tripsRes.ok) {
-  //       toast({
-  //         title: "Error",
-  //         description: "Failed to fetch homepage data. Please try again later.",
-  //         variant: "destructive",
-  //       });
-  //       setError("Failed to fetch homepage data");
-  //       setLoading(false);
-  //       return;
-  //     }
-
-  //     // Parse responses
-  //     const [locationsData, operatorsData, tripsData] = await Promise.all([
-  //       locationsRes.json(),
-  //       operatorsRes.json(),
-  //       tripsRes.json(),
-  //     ]);
-
-  //     // Process locations
-  //     const processedLocations = await processLocations(locationsData);
-
-  //     // Process operators
-  //     const processedOperators = operatorsData.success
-  //       ? operatorsData.result?.operators || []
-  //       : [];
-
-  //     processedOperators.forEach((op) => {
-  //       operatorCache[op.id] = op.name;
-  //     });
-
-  //     // Process trips with enrichment
-  //     const processedTrips = tripsData.success
-  //       ? await enrichTripsWithDetails(tripsData.result?.trips || [])
-  //       : [];
-
-  //     // Update all state at once
-  //     setLocations(processedLocations);
-  //     setOperators(processedOperators);
-  //     setTrips(processedTrips);
-  //   } catch (err) {
-  //     console.error("Error fetching homepage data:", err);
-  //     toast({
-  //       title: "Error",
-  //       description: err.message || "Something went wrong while fetching data",
-  //       variant: "destructive",
-  //     });
-  //     setError(err.message || "Failed to load homepage data");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const fetchHomePageData = async () => {
     setLoading(true);

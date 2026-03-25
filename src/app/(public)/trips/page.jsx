@@ -24,7 +24,6 @@ import {
   GitCompare,
   SlidersHorizontal,
 } from "lucide-react";
-import { destinations } from "@/app/data/tripData";
 import {
   Select,
   SelectContent,
