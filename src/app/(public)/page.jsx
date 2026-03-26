@@ -327,7 +327,7 @@ export default function Page() {
               onSubmit={handleSearch}
               className="max-w-3xl mx-auto animate-fade-up delay-150"
             >
-              <div className="bg-background/95 backdrop-blur-lg rounded-2xl p-3 md:p-4 shadow-2xl">
+              <div className="bg-background/95 backdrop-blur-lg rounded-2xl p-3 shadow-2xl">
                 <div className="flex flex-col md:flex-row gap-1">
                   <div className="flex-1 relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
