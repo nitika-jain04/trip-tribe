@@ -42,6 +42,9 @@ export default function OperatorEditPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editingValue, setEditingValue] = useState("");
+  const [regionInput, setRegionInput] = useState("");
 
   // Fetch operator
   useEffect(() => {
@@ -426,18 +429,6 @@ export default function OperatorEditPage() {
     );
   }
 
-  // regions input handler (comma separated)
-  const handleRegionsChange = (e) => {
-    const value = e.target.value;
-    setFormData((prev) => ({
-      ...prev,
-      regions: value
-        .split(",")
-        .map((r) => r.trim())
-        .filter((r) => r.length > 0),
-    }));
-  };
-
   // social links handler
   const handleSocialLinkChange = (platform, value) => {
     setFormData((prev) => ({
@@ -645,15 +636,142 @@ export default function OperatorEditPage() {
           </div>
           {/* Regions */}
           <div className="col-span-2">
-            <label className="text-sm font-semibold text-slate-700 tracking-wide">
-              Regions (comma separated)
-            </label>
-            <Input
-              value={formData.regions.join(", ")}
-              onChange={handleRegionsChange}
-              placeholder="West India, North India"
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-            />
+            <div className="col-span-2">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Regions
+              </label>
+
+              {/* Input + Add */}
+              <div className="flex gap-2 mt-2">
+                <Input
+                  placeholder="Type region and press Enter"
+                  value={regionInput}
+                  onChange={(e) => setRegionInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+
+                      const value = regionInput.trim();
+                      if (!value) return;
+
+                      if (formData.regions.includes(value)) {
+                        toast({
+                          title: "Duplicate",
+                          description: "Region already added",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
+                      setFormData((prev) => ({
+                        ...prev,
+                        regions: [...prev.regions, value],
+                      }));
+
+                      setRegionInput(""); // ✅ clears input
+                    }
+                  }}
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const value = regionInput.trim();
+
+                    if (!value) return;
+
+                    if (formData.regions.includes(value)) {
+                      toast({
+                        title: "Duplicate",
+                        description: "Region already added",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    setFormData((prev) => ({
+                      ...prev,
+                      regions: [...prev.regions, value],
+                    }));
+
+                    setRegionInput(""); // ✅ clear
+                  }}
+                  className="px-4 py-2 bg-black text-white rounded-lg text-sm"
+                >
+                  Add
+                </button>
+              </div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap gap-2 mt-3">
+                {formData.regions.map((region, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 border rounded-full text-sm"
+                  >
+                    {editingIndex === index ? (
+                      <input
+                        value={editingValue}
+                        autoFocus
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        onBlur={() => {
+                          if (!editingValue.trim()) {
+                            setEditingIndex(null);
+                            return;
+                          }
+
+                          const updatedRegions = [...formData.regions];
+                          updatedRegions[index] = editingValue.trim();
+
+                          setFormData((prev) => ({
+                            ...prev,
+                            regions: updatedRegions,
+                          }));
+
+                          setEditingIndex(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.target.blur();
+                          }
+                        }}
+                        className="bg-transparent border-b border-gray-400 outline-none text-sm"
+                      />
+                    ) : (
+                      <span
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setEditingIndex(index);
+                          setEditingValue(region);
+                        }}
+                      >
+                        {region}
+                      </span>
+                    )}
+
+                    {/* Delete */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          regions: prev.regions.filter((_, i) => i !== index),
+                        }));
+                      }}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {formData.regions.length === 0 && (
+                <p className="text-xs text-gray-500 mt-2">
+                  No regions added yet
+                </p>
+              )}
+            </div>
           </div>
           {/* Social Links */}
           <div className="col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-6">
@@ -716,7 +834,7 @@ export default function OperatorEditPage() {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows={4}
+              rows={8}
               className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
               placeholder="Describe the operator's services, specialties, and experience..."
             />
