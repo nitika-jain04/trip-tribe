@@ -227,7 +227,7 @@ export default function Page() {
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (searchDestination) params.set("destination", searchDestination);
+    if (searchDestination) params.set("search", searchDestination);
     if (searchDates) params.set("dates", searchDates);
     router.push(`/trips?${params.toString()}`);
   };
@@ -328,7 +328,7 @@ export default function Page() {
               className="max-w-3xl mx-auto animate-fade-up delay-150"
             >
               <div className="bg-background/95 backdrop-blur-lg rounded-2xl p-3 md:p-4 shadow-2xl">
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex flex-col md:flex-row gap-1">
                   <div className="flex-1 relative">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
@@ -336,7 +336,7 @@ export default function Page() {
                       placeholder="Where do you want to go?"
                       value={searchDestination}
                       onChange={(e) => setSearchDestination(e.target.value)}
-                      className="pl-12 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
+                      className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                       list="destinations-list"
                     />
                     <datalist id="destinations-list">
@@ -356,7 +356,7 @@ export default function Page() {
                         if (!e.target.value) e.target.type = "text";
                       }}
                       onChange={(e) => setSearchDates(e.target.value)}
-                      className="pl-12 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
+                      className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
                   </div>
                   <Button
@@ -548,7 +548,7 @@ export default function Page() {
           {/* Trips Grid */}
           {!isLoading && !hasError && trips.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trips.slice(0, 3).map((trip) => (
+              {trips.slice(0, 10).map((trip) => (
                 <Link
                   key={trip.id}
                   href={`/trip/${trip.id}`}
@@ -676,7 +676,7 @@ export default function Page() {
           {/* Destinations Grid */}
           {!isLoading && !hasError && locations.length > 0 && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {locations.slice(0, 6).map((location) => (
+              {locations.slice(0, 10).map((location) => (
                 <Link
                   key={location.name}
                   href={`/trips?group_by=location&location_type=destination&search=${location.name}`}
@@ -735,7 +735,7 @@ export default function Page() {
           {/* Providers Grid */}
           {!isLoading && !hasError && operators.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-5 md:gap-8">
-              {operators.slice(0, 6).map((provider) => (
+              {operators.slice(0, 10).map((provider) => (
                 <div
                   key={provider.id}
                   className="flex items-center gap-3 px-6 py-3 rounded-full bg-muted/50"

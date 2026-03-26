@@ -16,7 +16,6 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import {
   Search,
   MapPin,
-  Star,
   Shield,
   Calendar,
   Users,
@@ -44,8 +43,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
-import Image from "next/image";
 import { useToast } from "@/app/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -53,8 +52,12 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 function TripsContent() {
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("destination") || "",
+    searchParams.get("search") || "",
   );
+  const groupBy = searchParams.get("group_by");
+  const locationType = searchParams.get("location_type");
+  const search = searchParams.get("search");
+
   const [selectedType, setSelectedType] = useState("All Types");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [sortBy, setSortBy] = useState("recommended");
@@ -64,133 +67,155 @@ function TripsContent() {
   const [loadingTrips, setLoadingTrips] = useState(true);
   const [tripTypesData, setTripTypesData] = useState(["All Types"]);
   const { toast } = useToast();
+  const router = useRouter();
 
   // Track if data is already fetching
   const isFetchingRef = useRef(false);
   const initialLoadRef = useRef(false);
 
-  const slugify = (text) =>
-    text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-
   // Memoize the fetch function to prevent recreation
-  const fetchTripsAndUpdateCache = useCallback(async (showLoader = true) => {
-    // Prevent duplicate fetches
-    if (isFetchingRef.current) return;
+  const fetchTripsAndUpdateCache = useCallback(
+    async (showLoader = true) => {
+      // Prevent duplicate fetches
+      if (isFetchingRef.current) return;
 
-    try {
-      isFetchingRef.current = true;
-      if (showLoader) setLoadingTrips(true);
+      try {
+        isFetchingRef.current = true;
+        if (showLoader) setLoadingTrips(true);
 
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips`);
-      // if (!res.ok) throw new Error("Failed to fetch trips");
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch trips",
-          variant: "destructive",
+        let url = `${BASE_URL}/api/${API_VERSION}/trips`;
+
+        const params = new URLSearchParams();
+
+        // ✅ Only apply filters if search exists
+        if (search) {
+          params.set("group_by", groupBy || "location");
+          if (locationType) params.set("location_type", locationType);
+          params.set("search", search);
+        } else {
+          // ✅ Default trips list
+          params.set("page", 1);
+          params.set("limit", 10);
+        }
+
+        url += `?${params.toString()}`;
+
+        const res = await fetch(url);
+        // if (!res.ok) throw new Error("Failed to fetch trips");
+        if (!res.ok) {
+          toast({
+            title: "Error",
+            description: "Failed to fetch trips",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const data = await res.json();
+        if (!data.success) return;
+
+        let rawTrips = [];
+
+        if (search && (groupBy || "location") === "location") {
+          const groups = data.result?.groups || [];
+          rawTrips = groups.flatMap((g) => g.trips || []);
+        } else {
+          rawTrips = data.result?.trips || [];
+        }
+
+        // Extract UNIQUE IDs
+        const operatorIds = [
+          ...new Set(rawTrips.map((t) => t.operator_id).filter(Boolean)),
+        ];
+        const locationIds = [
+          ...new Set(
+            rawTrips
+              .flatMap((t) => [t.source_id, t.destination_id])
+              .filter(Boolean),
+          ),
+        ];
+
+        // Batch fetch PARALLEL
+        const [operatorsRes, locationsRes] = await Promise.all([
+          fetch(
+            `${BASE_URL}/api/${API_VERSION}/operators?ids=${operatorIds.join(",")}`,
+          ),
+          fetch(
+            `${BASE_URL}/api/${API_VERSION}/locations?ids=${locationIds.join(",")}`,
+          ),
+        ]);
+
+        const operatorsData = await operatorsRes.json();
+        const locationsData = await locationsRes.json();
+
+        // Build lookup maps
+        const operatorMap = {};
+        (operatorsData?.result.operators || []).forEach((op) => {
+          operatorMap[op.id] = op.name;
         });
-        return;
+
+        const locationMap = {};
+        (locationsData?.result.locations || []).forEach((loc) => {
+          locationMap[loc.id] = {
+            name: loc.name,
+            region: loc.region,
+          };
+        });
+
+        // Enrich trips
+        const enrichedTrips = rawTrips.map((trip) => {
+          const start = new Date(trip.start_date);
+          const end = new Date(trip.end_date);
+          const durationDays =
+            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+          const destination = locationMap[trip.destination_id] || {
+            name: "Unknown",
+            region: "Unknown",
+          };
+
+          return {
+            id: trip.id,
+            name: trip.name,
+            image: trip.images[0],
+            destination: destination.name,
+            region: destination.region,
+            provider: {
+              name: operatorMap[trip.operator_id] || "Unknown",
+            },
+            priceFrom: Number(trip.price),
+            duration: `${durationDays} days`,
+            groupSize: `${trip.total_seats} people`,
+            difficulty:
+              trip.difficulty?.charAt(0) +
+                trip.difficulty?.slice(1).toLowerCase() || "Moderate",
+            rating: 4.5,
+            reviewCount: 0,
+            verified: true,
+            inclusions: trip.inclusions || [],
+            type: trip.type?.name || "Other",
+          };
+        });
+
+        // Update UI once with final data
+        setTrips(enrichedTrips);
+
+        // Cache everything
+        sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
+        sessionStorage.setItem("trips_cache_timestamp", Date.now().toString());
+        sessionStorage.setItem("operator_map", JSON.stringify(operatorMap));
+        sessionStorage.setItem("location_map", JSON.stringify(locationMap));
+
+        setLoadingTrips(false);
+      } catch (err) {
+        console.error("Fetch failed", err);
+        setLoadingTrips(false);
+      } finally {
+        isFetchingRef.current = false;
       }
-
-      const data = await res.json();
-      if (!data.success) return;
-
-      const rawTrips = data.result?.trips || [];
-
-      // Extract UNIQUE IDs
-      const operatorIds = [
-        ...new Set(rawTrips.map((t) => t.operator_id).filter(Boolean)),
-      ];
-      const locationIds = [
-        ...new Set(
-          rawTrips
-            .flatMap((t) => [t.source_id, t.destination_id])
-            .filter(Boolean),
-        ),
-      ];
-
-      // Batch fetch PARALLEL
-      const [operatorsRes, locationsRes] = await Promise.all([
-        fetch(
-          `${BASE_URL}/api/${API_VERSION}/operators?ids=${operatorIds.join(",")}`,
-        ),
-        fetch(
-          `${BASE_URL}/api/${API_VERSION}/locations?ids=${locationIds.join(",")}`,
-        ),
-      ]);
-
-      const operatorsData = await operatorsRes.json();
-      const locationsData = await locationsRes.json();
-
-      // Build lookup maps
-      const operatorMap = {};
-      (operatorsData?.result.operators || []).forEach((op) => {
-        operatorMap[op.id] = op.name;
-      });
-
-      const locationMap = {};
-      (locationsData?.result.locations || []).forEach((loc) => {
-        locationMap[loc.id] = {
-          name: loc.name,
-          region: loc.region,
-        };
-      });
-
-      // Enrich trips
-      const enrichedTrips = rawTrips.map((trip) => {
-        const start = new Date(trip.start_date);
-        const end = new Date(trip.end_date);
-        const durationDays =
-          Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-        const destination = locationMap[trip.destination_id] || {
-          name: "Unknown",
-          region: "Unknown",
-        };
-
-        return {
-          id: trip.id,
-          name: trip.name,
-          image: trip.images[0],
-          destination: destination.name,
-          region: destination.region,
-          provider: {
-            name: operatorMap[trip.operator_id] || "Unknown",
-          },
-          priceFrom: Number(trip.price),
-          duration: `${durationDays} days`,
-          groupSize: `${trip.total_seats} people`,
-          difficulty:
-            trip.difficulty?.charAt(0) +
-              trip.difficulty?.slice(1).toLowerCase() || "Moderate",
-          rating: 4.5,
-          reviewCount: 0,
-          verified: true,
-          inclusions: trip.inclusions || [],
-          type: trip.type?.name || "Other",
-        };
-      });
-
-      // Update UI once with final data
-      setTrips(enrichedTrips);
-
-      // Cache everything
-      sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
-      sessionStorage.setItem("trips_cache_timestamp", Date.now().toString());
-      sessionStorage.setItem("operator_map", JSON.stringify(operatorMap));
-      sessionStorage.setItem("location_map", JSON.stringify(locationMap));
-
-      setLoadingTrips(false);
-    } catch (err) {
-      console.error("Fetch failed", err);
-      setLoadingTrips(false);
-    } finally {
-      isFetchingRef.current = false;
-    }
-  }, []);
+    },
+    [groupBy, locationType, search],
+  );
 
   // Optimized getPublishedTrips with cache validation
   const getPublishedTrips = useCallback(async () => {
@@ -263,12 +288,8 @@ function TripsContent() {
   }, []);
 
   useEffect(() => {
-    if (!initialLoadRef.current) {
-      initialLoadRef.current = true;
-      getPublishedTrips();
-      getTripTypes();
-    }
-  }, [getPublishedTrips, getTripTypes]);
+    fetchTripsAndUpdateCache(true);
+  }, [groupBy, locationType, search]);
 
   const filteredTrips = useMemo(() => {
     let result = [...trips];
@@ -311,7 +332,7 @@ function TripsContent() {
     return result;
   }, [trips, searchQuery, selectedType, selectedDifficulty, sortBy]);
 
-  const toggleCompare = (tripId) => {
+  const toggleCompare = useCallback((tripId) => {
     setCompareList((prev) =>
       prev.includes(tripId)
         ? prev.filter((id) => id !== tripId)
@@ -319,9 +340,19 @@ function TripsContent() {
           ? [...prev, tripId]
           : prev,
     );
-  };
+  }, []);
 
-  const compareTrips = trips.filter((t) => compareList.includes(t.id));
+  const compareTrips = useMemo(
+    () => trips.filter((t) => compareList.includes(t.id)),
+    [trips, compareList],
+  );
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+
+    // ✅ This removes ALL query params → /trips
+    router.push("/trips");
+  };
 
   const FiltersContent = () => (
     <div className="space-y-6">
@@ -408,7 +439,7 @@ function TripsContent() {
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={handleClearSearch}
                   className="absolute right-4 top-1/2 -translate-y-1/2"
                 >
                   <X className="w-5 h-5 text-muted-foreground hover:text-foreground" />
@@ -642,13 +673,14 @@ function TripsContent() {
                           setSearchQuery("");
                           setSelectedType("All Types");
                           setSelectedDifficulty("All");
+                          handleClearSearch();
                         }}
                       >
                         Clear Filters
                       </Button>
 
                       <Button
-                        onClick={() => setSearchQuery("")}
+                        onClick={handleClearSearch}
                         className="btn-primary"
                       >
                         Explore All Trips
