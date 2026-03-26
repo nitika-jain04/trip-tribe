@@ -554,7 +554,10 @@ function OperatorsPage() {
                           </div>
                         </TableCell>
 
-                        <TableCell className="text-muted-foreground max-w-37.5 truncate">
+                        <TableCell
+                          className="text-muted-foreground max-w-37.5 truncate cursor-pointer"
+                          title={op.regions}
+                        >
                           {Array.isArray(op.regions) && op.regions.length > 0
                             ? op.regions.join(", ")
                             : "-"}

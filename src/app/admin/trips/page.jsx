@@ -592,6 +592,32 @@ function Page() {
                                   Activate
                                 </DropdownMenuItem>
                               )}
+                              {trip.status === "ARCHIVED" && (
+                                <DropdownMenuItem
+                                  className="text-success"
+                                  onClick={() =>
+                                    handleUpdateTrip(trip.id, {
+                                      status: "DRAFT",
+                                    })
+                                  }
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Draft
+                                </DropdownMenuItem>
+                              )}
+                              {trip.status === "PUBLISHED" && (
+                                <DropdownMenuItem
+                                  className="text-success"
+                                  onClick={() =>
+                                    handleUpdateTrip(trip.id, {
+                                      status: "ARCHIVED",
+                                    })
+                                  }
+                                >
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Archive
+                                </DropdownMenuItem>
+                              )}
                               {/* <DropdownMenuItem>
                                 <Copy className="h-4 w-4 mr-2" />
                                 Duplicate
@@ -1248,7 +1274,7 @@ function AddTripModal({ handleModalClose, operators }) {
 
             {/* Source Location */}
             <section className="space-y-4">
-              <h3 className="text-lg font-semibold">Source Location</h3>
+              <h3 className="text-lg font-semibold">Source Location *</h3>
               <Card>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center">
@@ -1292,7 +1318,7 @@ function AddTripModal({ handleModalClose, operators }) {
 
             {/* Destination Location */}
             <section className="space-y-4">
-              <h3 className="text-lg font-semibold">Destination Location</h3>
+              <h3 className="text-lg font-semibold">Destination Location *</h3>
               <Card>
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center">

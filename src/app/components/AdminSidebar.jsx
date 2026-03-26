@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Logs } from "lucide-react";
+import { ChevronLeft, ChevronRight, LogOut, Logs } from "lucide-react";
 import { MdOutlineDashboard } from "react-icons/md";
 import { GoPeople } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
@@ -11,6 +11,8 @@ import { BiComment } from "react-icons/bi";
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { useToast } from "../hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { Button } from "./ui/button";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -20,8 +22,23 @@ export default function AdminSidebar({ collapsed, toggle }) {
   const [isSmallScreen, setIsSmallScreen] = useState(false);
   const pathname = usePathname();
   const { toast } = useToast();
+  const router = useRouter();
 
-  // Detect small screens
+  const handleLogout = () => {
+    Cookies.remove("token");
+    Cookies.remove("rememberedEmail");
+    Cookies.remove("rememberMe");
+    Cookies.remove("user");
+
+    toast({
+      title: "Logged out",
+      description: "You have been logged out successfully",
+      variant: "success",
+    });
+
+    router.push("/");
+  };
+
   useEffect(() => {
     const handleResize = () => {
       const small = window.innerWidth < 768;
@@ -33,7 +50,6 @@ export default function AdminSidebar({ collapsed, toggle }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Fetch user profile
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -63,12 +79,11 @@ export default function AdminSidebar({ collapsed, toggle }) {
     fetchUserProfile();
   }, []);
 
-  // Determine sidebar width: collapse on small screens automatically
   const sidebarCollapsed = isSmallScreen ? true : collapsed;
 
   return (
     <aside
-      className={`fixed left-0 top-0 h-screen bg-linear-to-b from-slate-900 via-slate-900 to-slate-800 text-white
+      className={`fixed left-0 top-0 h-full bg-linear-to-b from-slate-900 via-slate-900 to-slate-800 text-white
         shadow-2xl shadow-black/20 border-r border-slate-700/50
         transition-all duration-300 ease-in-out z-50
         ${sidebarCollapsed ? "w-16" : "w-64"}`}
@@ -157,9 +172,19 @@ export default function AdminSidebar({ collapsed, toggle }) {
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/settings"}
         />
+
+        <Button
+          onClick={handleLogout}
+          className="mt-auto flex gap-2 px-3 py-3"
+          title="Logout"
+        >
+          <span>
+            <LogOut />
+          </span>
+          {!sidebarCollapsed && <span>Logout</span>}
+        </Button>
       </nav>
 
-      {/* Footer */}
       {!sidebarCollapsed && (
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10 bg-white/5 backdrop-blur-md">
           <div className="flex items-center gap-3">
