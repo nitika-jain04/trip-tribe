@@ -72,8 +72,8 @@ export default function OperatorEditPage() {
             logo_url: data.result.logo_url || "",
             status: data.result.status || "",
 
-            total_trips: data.result.total_trips || "",
-            trips_per_year: data.result.trips_per_year || "",
+            total_trips: data.result.total_trips && "",
+            trips_per_year: data.result.trips_per_year && "",
             regions: data.result.regions || [],
             trip: data.result.trip || [],
             social_links: data.result.social_links || {},

@@ -106,12 +106,13 @@ function AuditLogs() {
       );
 
       // if (!res.ok) throw new Error("Failed to fetch audit logs");
-      if (!res.ok)
+      if (!res.ok) {
         toast({
           title: "Error",
           description: "Failed to fetch audit logs",
           variant: "destructive",
         });
+      }
 
       const data = await res.json();
 

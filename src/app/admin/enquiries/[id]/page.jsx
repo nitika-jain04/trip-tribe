@@ -132,14 +132,13 @@ export default function EnquiryDetail() {
 
       toast({
         title: "Enquiry Updated",
-        description: "The enquiry has been updated successfully.",
+        description: "The enquiry updated successfully.",
         variant: "success",
       });
     } catch (err) {
-      console.error("Error updating enquiry:", err);
       toast({
         title: "Error",
-        description: err.message || "Something went wrong",
+        description: "Error updating enquiry",
         variant: "destructive",
       });
     } finally {

@@ -718,6 +718,7 @@ function Categories() {
           id: item.id,
           category: item.name,
           description: item.description,
+          is_active: item.is_active,
           trips: item.trip_count ?? 0,
           color: ["green", "pink", "blue", "teal", "yellow"][index % 5],
         }));
@@ -841,9 +842,19 @@ function Categories() {
         <EditCategoryModal
           data={editData}
           onClose={() => setEditData(null)}
-          refresh={() => {
+          refresh={(updated) => {
+            setCategories((prev) =>
+              prev.map((cat) =>
+                cat.id === updated.id
+                  ? {
+                      ...cat,
+                      category: updated.name,
+                      description: updated.description,
+                    }
+                  : cat,
+              ),
+            );
             setEditData(null);
-            window.location.reload();
           }}
         />
       )}
@@ -1005,7 +1016,7 @@ function EditCategoryModal({ data, onClose, refresh }) {
   const [form, setForm] = useState({
     name: data.category || "",
     description: data.description || "",
-    is_active: true,
+    is_active: data.is_active ?? false,
   });
 
   const [saving, setSaving] = useState(false);
@@ -1023,6 +1034,8 @@ function EditCategoryModal({ data, onClose, refresh }) {
         });
         return;
       }
+      console.log("edit cat", JSON.stringify(form));
+      console.log("id", data.id);
 
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/trip-types/admin/${data.id}`,
@@ -1036,18 +1049,22 @@ function EditCategoryModal({ data, onClose, refresh }) {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to update category");
-      // }
-      if (!res.ok || !data?.success) {
+      const responseData = await res.json().catch(() => null);
+
+      if (!res.ok || !responseData?.success) {
         toast({
           title: "Error",
-          description: "Failed to update category",
+          description:
+            responseData?.error?.message ||
+            responseData?.message ||
+            "Failed to update category",
           variant: "destructive",
         });
+        return;
       }
 
-      refresh();
+      onClose();
+      refresh?.(responseData.result);
     } catch (err) {
       console.error(err);
       toast({
@@ -1094,7 +1111,12 @@ function EditCategoryModal({ data, onClose, refresh }) {
           <input
             type="checkbox"
             checked={form.is_active}
-            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                is_active: e.target.checked,
+              }))
+            }
           />
           Active
         </label>

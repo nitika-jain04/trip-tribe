@@ -1,7 +1,7 @@
 "use client";
 
 import AdminGuard from "@/app/components/AdminGuard";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Search,
@@ -185,11 +185,7 @@ function Page() {
     const searchValue = debouncedSearch?.trim();
 
     if (searchValue && searchValue.length < 2) {
-      setTrips([]);
-      setTotalTrips(0);
-      setTotalPages(1);
-      setError(null);
-      setLoading(false);
+      setSearchError("Search must be at least 2 characters");
       return;
     }
 
@@ -219,11 +215,15 @@ function Page() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const getOperatorName = (id) => {
-    if (!id) return "N/A";
-    const operator = operators.find((operator) => operator.id === id);
-    return operator ? operator.name : "N/A";
-  };
+  const operatorMap = useMemo(() => {
+    const map = {};
+    operators.forEach((op) => {
+      map[op.id] = op.name;
+    });
+    return map;
+  }, [operators]);
+
+  const getOperatorName = (id) => operatorMap[id] || "N/A";
 
   const handleModalClose = (value) => {
     setShowModal(value);
@@ -253,9 +253,10 @@ function Page() {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: data.message,
+          description: data.message || "Failed to update trip",
           variant: "destructive",
         });
+        return;
       }
 
       toast({
@@ -714,7 +715,7 @@ function AddTripModal({ handleModalClose, operators }) {
       type: "CITY",
       id: "",
     },
-    status: "",
+    status: "DRAFT",
     images: [],
     inclusions: [""],
     exclusions: [""],
@@ -737,9 +738,16 @@ function AddTripModal({ handleModalClose, operators }) {
 
       const data = await res.json();
 
-      if (res.ok && data.success) {
-        setTripTypes(data.result.trip_types || []);
+      if (!res.ok || !data.success) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch trip types",
+          variant: "destructive",
+        });
+        return;
       }
+
+      setTripTypes(data.result.trip_types || []);
     } catch (err) {
       console.error("Failed to fetch trip types:", err);
     } finally {
@@ -862,6 +870,7 @@ function AddTripModal({ handleModalClose, operators }) {
           description: "Failed to create location",
           variant: "destructive",
         });
+        return;
         // throw new Error(data.message || "Failed to create location");
       }
 
@@ -911,6 +920,7 @@ function AddTripModal({ handleModalClose, operators }) {
           description: "Failed to upload image",
           variant: "destructive",
         });
+        return;
       }
     } catch (err) {
       console.error("Upload failed:", err);
@@ -986,7 +996,15 @@ function AddTripModal({ handleModalClose, operators }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation
+    if (!formData.start_date || !formData.end_date) {
+      toast({
+        title: "Error",
+        description: "Please select both start and end date",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (new Date(formData.end_date) <= new Date(formData.start_date)) {
       toast({
         title: "Error",
@@ -1060,6 +1078,8 @@ function AddTripModal({ handleModalClose, operators }) {
         .filter((day) => day.activities.length > 0),
     };
 
+    console.log("trip body", payload);
+
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
         method: "POST",
@@ -1075,14 +1095,15 @@ function AddTripModal({ handleModalClose, operators }) {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: "Failed to create trip",
+          description: data.message || "Failed to create trip",
           variant: "destructive",
         });
+        return;
       }
 
       toast({
-        title: "Trip Update",
-        description: "Trip updated successfully!",
+        title: "Trip",
+        description: "Trip created successfully!",
         variant: "success",
       });
       handleModalClose(false);
@@ -1177,6 +1198,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     required
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]"
                   >
+                    <option value="">Select Difficulty</option>
                     <option value="EASY">Easy</option>
                     <option value="MODERATE">Moderate</option>
                     <option value="HARD">Hard</option>
@@ -1497,7 +1519,7 @@ function AddTripModal({ handleModalClose, operators }) {
             {/* Inclusions */}
             <section className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Inclusions</h3>
+                <h3 className="text-lg font-semibold">Inclusions *</h3>
                 <Button
                   type="button"
                   variant="outline"
@@ -1513,6 +1535,7 @@ function AddTripModal({ handleModalClose, operators }) {
                   <div key={index} className="flex gap-2">
                     <Input
                       value={item}
+                      required
                       onChange={(e) =>
                         handleListChange("inclusions", index, e.target.value)
                       }
@@ -1536,7 +1559,7 @@ function AddTripModal({ handleModalClose, operators }) {
             {/* Exclusions */}
             <section className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Exclusions</h3>
+                <h3 className="text-lg font-semibold">Exclusions *</h3>
                 <Button
                   type="button"
                   variant="outline"
@@ -1552,6 +1575,7 @@ function AddTripModal({ handleModalClose, operators }) {
                   <div key={index} className="flex gap-2">
                     <Input
                       value={item}
+                      required
                       onChange={(e) =>
                         handleListChange("exclusions", index, e.target.value)
                       }
@@ -1609,6 +1633,7 @@ function AddTripModal({ handleModalClose, operators }) {
                       <div key={actIndex} className="flex gap-2">
                         <Input
                           value={activity}
+                          required
                           onChange={(e) =>
                             handleActivity(dayIndex, actIndex, e.target.value)
                           }

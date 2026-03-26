@@ -273,15 +273,13 @@ function OperatorsPage() {
 
       const data = await res.json();
 
-      // if (!res.ok || !data.success) {
-      //   throw new Error(data.message || "Failed to delete operator");
-      // }
-      if (!res.ok)
-        toast({
+      if (!res.ok) {
+        return toast({
           title: "Error",
-          description: "Failed to delete operator",
+          description: data?.message || "Failed to delete operator",
           variant: "destructive",
         });
+      }
 
       toast({
         title: "Operator",
@@ -488,9 +486,9 @@ function OperatorsPage() {
                       <TableHead className="whitespace-nowrap">
                         Region
                       </TableHead>
-                      <TableHead className="text-center whitespace-nowrap">
+                      {/* <TableHead className="text-center whitespace-nowrap">
                         Trips
-                      </TableHead>
+                      </TableHead> */}
                       <TableHead className="whitespace-nowrap">
                         Status
                       </TableHead>
@@ -527,12 +525,13 @@ function OperatorsPage() {
                               >
                                 {op.name}
                               </p>
-                              <p
+                              <a
+                                href={`mailto:${op.email}`}
                                 className="text-sm text-muted-foreground truncate max-w-37.5 lg:max-w-50"
                                 title={op.email}
                               >
                                 {op.email}
-                              </p>
+                              </a>
                             </div>
                           </div>
                         </TableCell>
@@ -545,12 +544,13 @@ function OperatorsPage() {
                             >
                               {op.contact_name}
                             </p>
-                            <p
+                            <a
+                              href={`tel:+91 ${op.phone_number}`}
                               className="text-sm text-muted-foreground truncate max-w-30 lg:max-w-37.5"
                               title={op.phone_number}
                             >
                               {formatPhoneNumber(op.phone_number)}
-                            </p>
+                            </a>
                           </div>
                         </TableCell>
 
@@ -563,12 +563,12 @@ function OperatorsPage() {
                             : "-"}
                         </TableCell>
 
-                        <TableCell className="text-center">
+                        {/* <TableCell className="text-center">
                           {op.total_trips !== undefined &&
                           op.total_trips !== null
                             ? Number(op.total_trips)
                             : "-"}
-                        </TableCell>
+                        </TableCell> */}
 
                         <TableCell>
                           <StatusBadge
@@ -664,6 +664,22 @@ function OperatorsPage() {
                                       <UserX className="h-4 w-4 mr-2" />
                                       Suspend
                                     </DropdownMenuItem>
+                                  </>
+                                )}
+                              {op.application_status === "APPROVED" &&
+                                op.status === "INACTIVE" && (
+                                  <>
+                                    <DropdownMenuItem
+                                      className="text-success"
+                                      onClick={() =>
+                                        handleUpdateOperator(op.id, {
+                                          status: "ACTIVE",
+                                        })
+                                      }
+                                    >
+                                      <UserX className="h-4 w-4 mr-2" />
+                                      Activate
+                                    </DropdownMenuItem>
 
                                     <DropdownMenuItem
                                       onClick={() =>
@@ -675,20 +691,6 @@ function OperatorsPage() {
                                       Delete
                                     </DropdownMenuItem>
                                   </>
-                                )}
-                              {op.application_status === "APPROVED" &&
-                                op.status === "INACTIVE" && (
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        status: "ACTIVE",
-                                      })
-                                    }
-                                  >
-                                    <UserX className="h-4 w-4 mr-2" />
-                                    Activate
-                                  </DropdownMenuItem>
                                 )}
                               {op.application_status === "APPROVED" &&
                                 op.status === "SUSPENDED" && (

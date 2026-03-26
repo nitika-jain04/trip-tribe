@@ -785,11 +785,11 @@ export default function Page() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Link href="/blog">
+              {/* <Link href="/blog">
                 <Button className="btn-secondary text-body px-8 py-6">
                   Read Travel Stories
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>

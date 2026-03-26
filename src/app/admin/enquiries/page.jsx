@@ -116,12 +116,13 @@ function Enquiries() {
       );
 
       // if (!res.ok) throw new Error("Failed to fetch enquiries");
-      if (!res.ok)
+      if (!res.ok) {
         toast({
           title: "Error",
           description: "Failed to fetch enquiries",
           variant: "destructive",
         });
+      }
 
       const data = await res.json();
 
@@ -189,12 +190,13 @@ function Enquiries() {
       // if (!res.ok) {
       //   throw new Error("Failed to delete enquiry");
       // }
-      if (!res.ok)
+      if (!res.ok) {
         toast({
           title: "Error",
           description: "Failed to delete enquiry",
           variant: "destructive",
         });
+      }
 
       toast({
         title: "Enquiry Deleted",
@@ -234,12 +236,13 @@ function Enquiries() {
       // if (!res.ok) {
       //   throw new Error("Failed to close enquiry");
       // }
-      if (!res.ok)
+      if (!res.ok) {
         toast({
           title: "Error",
           description: "Failed to close enquiry",
           variant: "destructive",
         });
+      }
 
       toast({
         title: "Enquiry Closed",

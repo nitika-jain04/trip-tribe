@@ -268,12 +268,14 @@ function TripsContent() {
 
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
       // if (!res.ok) throw new Error("Failed to fetch trip types");
-      if (!res.ok)
+      if (!res.ok) {
         toast({
           title: "Error",
           description: "Failed to fetch trip types",
           variant: "destructive",
         });
+        return;
+      }
 
       const data = await res.json();
       const types = data?.result?.trip_types || [];
@@ -290,6 +292,12 @@ function TripsContent() {
   useEffect(() => {
     fetchTripsAndUpdateCache(true);
   }, [groupBy, locationType, search]);
+
+  useEffect(() => {
+    if (tripTypesData.length === 1) {
+      getTripTypes();
+    }
+  }, []);
 
   const filteredTrips = useMemo(() => {
     let result = [...trips];
@@ -350,7 +358,6 @@ function TripsContent() {
   const handleClearSearch = () => {
     setSearchQuery("");
 
-    // ✅ This removes ALL query params → /trips
     router.push("/trips");
   };
 

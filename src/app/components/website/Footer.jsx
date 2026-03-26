@@ -1,13 +1,12 @@
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 
 const footerLinks = {
   explore: [
-    { name: "Search Trips", href: "/trips" },
+    { name: "Search Trips", href: "/" },
     { name: "Destinations", href: "/trips" },
     { name: "Compare Trips", href: "/trips" },
-    { name: "Verified Reviews", href: "/trips" },
+    // { name: "Verified Reviews", href: "/trips" },
   ],
   company: [
     { name: "About Us", href: "/about" },

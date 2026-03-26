@@ -25,6 +25,7 @@ import { formatPhoneNumber } from "@/lib/utils";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Image from "next/image";
 import { useToast } from "@/app/hooks/use-toast";
+import { FaRegUser } from "react-icons/fa";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -159,14 +160,18 @@ export default function OperatorDetail() {
 
       {/* Header Card */}
       <div className="bg-white mt-3 rounded-lg shadow-sm border px-6 py-4 flex flex-col md:flex-row gap-6 items-start">
-        <Image
-          height={200}
-          width={200}
-          src={operator.logo_url || "/vercel.svg"}
-          alt={operator.name}
-          className="rounded-xl object-cover border"
-          onError={(e) => (e.currentTarget.src = "/vercel.svg")}
-        />
+        {operator.logo_url ? (
+          <Image
+            height={200}
+            width={200}
+            src={operator.logo_url}
+            alt={operator.name}
+            className="rounded-xl object-cover border"
+            onError={(e) => (e.currentTarget.src = "/vercel.svg")}
+          />
+        ) : (
+          <FaRegUser className="text-gray-500" size={30} />
+        )}
 
         <div className="flex-1 space-y-3">
           <div className="flex justify-between items-center gap-3 flex-wrap">
@@ -211,9 +216,12 @@ export default function OperatorDetail() {
             </span>
             <span className="flex items-center gap-2">
               <Phone size={17} />
-              <p className="text-black/80 font-medium">
+              <a
+                href={`tel:+91 ${operator.phone_number}`}
+                className="text-black/80 font-medium"
+              >
                 {formatPhoneNumber(operator.phone_number)}
-              </p>
+              </a>
             </span>
             {operator.website_url && (
               <a
@@ -248,8 +256,8 @@ export default function OperatorDetail() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Trips" value={operator.total_trips ?? 0} />
-        <StatCard label="Trips Per Year" value={operator.trips_per_year ?? 0} />
+        <StatCard label="Total Trips" value={operator.trip.length ?? 0} />
+        {/* <StatCard label="Trips Per Year" value={operator.trips_per_year ?? 0} /> */}
         <StatCard
           label="Member Since"
           value={
@@ -280,12 +288,9 @@ export default function OperatorDetail() {
             label="Contact Person"
             value={operator.contact_name || "N/A"}
           />
-          <DetailItem label="Website" value={operator.website_url || "N/A"} />
-          <DetailItem label="Total Trips" value={operator.total_trips ?? 0} />
-          <DetailItem
-            label="Trips Per Year"
-            value={operator.trips_per_year ?? 0}
-          />
+          <DetailItem label="Website" value={operator.website_url ?? "N/A"} />
+          <DetailItem label="Total Trips" value={operator.trip.length} />
+          {/* <DetailItem label="Trips Per Year" value={operator.trips_per_year} /> */}
           <DetailItem
             label="Regions"
             value={operator.regions?.join(", ") || "N/A"}
