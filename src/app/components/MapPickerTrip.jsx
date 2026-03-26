@@ -147,7 +147,7 @@ export default function MapPicker({
         // if (!response.ok) {
         //   throw new Error("Search failed");
         // }
-        if (!res.ok) {
+        if (!response.ok) {
           toast({
             title: "Error",
             description: "Search failed",
