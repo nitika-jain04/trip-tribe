@@ -15,6 +15,7 @@ import {
   Check,
   X,
   Loader2,
+  ImageIcon,
 } from "lucide-react";
 
 import {
@@ -154,11 +155,25 @@ function TripPage() {
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="space-y-4">
               <div className="aspect-4/3 rounded-2xl overflow-hidden">
-                <img
-                  src={trip.image}
-                  alt={trip.name}
-                  className="w-full h-full object-cover"
-                />
+                {trip.image ? (
+                  <img
+                    src={trip.image}
+                    alt={trip.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                      e.currentTarget.nextSibling.style.display = "flex";
+                    }}
+                  />
+                ) : null}
+
+                <div
+                  className={`w-full h-full items-center justify-center bg-gray-100 ${
+                    trip.image ? "hidden" : "flex"
+                  }`}
+                >
+                  <ImageIcon className="w-12 h-12 text-gray-400" />
+                </div>
               </div>
               <div className="grid grid-cols-4 gap-2">
                 {trip.images?.map((img, i) => (

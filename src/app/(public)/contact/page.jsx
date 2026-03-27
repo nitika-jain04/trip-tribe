@@ -216,7 +216,7 @@ export default function Contact() {
 
         toast({
           title: "Error",
-          description: err.message,
+          description: data?.error?.message,
           variant: "destructive",
         });
       }

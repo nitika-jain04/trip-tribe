@@ -13,6 +13,7 @@ import {
   MapPin,
   IndianRupee,
   UserX,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
@@ -88,7 +89,7 @@ function Page() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
 
-  const fetchOperators = async () => {
+  const fetchOperators = useCallback(async () => {
     setLoadingOperators(true);
     const token = Cookies.get("token");
 
@@ -114,11 +115,11 @@ function Page() {
     } finally {
       setLoadingOperators(false);
     }
-  };
+  }, []);
 
   const getAllTrips = useCallback(async () => {
     const token = Cookies.get("token");
-    setLoading(true);
+    if (!initialLoading) setLoading(true);
     setError(null);
 
     try {
@@ -135,6 +136,11 @@ function Page() {
       }
 
       const searchValue = debouncedSearch?.trim();
+      if (searchValue && searchValue.length < 2) {
+        setSearchError("Search must be at least 2 characters");
+        return;
+      }
+
       if (searchValue && searchValue.length >= 2) {
         params.append("search", searchValue);
       }
@@ -175,22 +181,27 @@ function Page() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [page, limit, statusFilter, sortBy, difficultyFilter, debouncedSearch]);
+  }, [
+    page,
+    limit,
+    statusFilter,
+    sortBy,
+    difficultyFilter,
+    debouncedSearch,
+    toast,
+  ]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, difficultyFilter, sortBy]);
 
   useEffect(() => {
     fetchOperators();
   }, [refresh]);
 
   useEffect(() => {
-    const searchValue = debouncedSearch?.trim();
-
-    if (searchValue && searchValue.length < 2) {
-      setSearchError("Search must be at least 2 characters");
-      return;
-    }
-
     getAllTrips();
-  }, [getAllTrips, debouncedSearch, refresh]);
+  }, [getAllTrips, refresh]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -202,9 +213,9 @@ function Page() {
         setPage(1);
       } else if (value.length < 2) {
         setSearchError("Search must be at least 2 characters");
-        setTrips([]);
-        setTotalTrips(0);
-        setTotalPages(1);
+        // setTrips([]);
+        // setTotalTrips(0);
+        // setTotalPages(1);
       } else {
         setSearchError("");
         setDebouncedSearch(value);
@@ -215,13 +226,10 @@ function Page() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const operatorMap = useMemo(() => {
-    const map = {};
-    operators.forEach((op) => {
-      map[op.id] = op.name;
-    });
-    return map;
-  }, [operators]);
+  const operatorMap = useMemo(
+    () => Object.fromEntries(operators.map((op) => [op.id, op.name])),
+    [operators],
+  );
 
   const getOperatorName = (id) => operatorMap[id] || "N/A";
 
@@ -232,47 +240,99 @@ function Page() {
     }
   };
 
-  const handleUpdateTrip = async (tripId, payload) => {
-    const token = Cookies.get("token");
+  const handleUpdateTrip = useCallback(
+    async (tripId, payload) => {
+      const token = Cookies.get("token");
 
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/trips/admin/${tripId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+      try {
+        const res = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/trips/admin/${tripId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
           },
-          body: JSON.stringify(payload),
-        },
-      );
+        );
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!res.ok || !data.success) {
+        if (!res.ok || !data.success) {
+          toast({
+            title: "Error",
+            description: data.message || "Failed to update trip",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Trip",
+          description: "Trip updated successfully!",
+          variant: "success",
+        });
+        setRefresh((prev) => prev + 1);
+      } catch (err) {
         toast({
           title: "Error",
-          description: data.message || "Failed to update trip",
+          description: err.message,
           variant: "destructive",
         });
-        return;
       }
+    },
+    [toast],
+  );
 
-      toast({
-        title: "Trip",
-        description: "Trip updated successfully!",
-        variant: "success",
-      });
-      setRefresh((prev) => prev + 1);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
-    }
-  };
+  const handleDeleteTrip = useCallback(
+    async (tripId) => {
+      const confirmed = window.confirm(
+        "Are you sure you want to delete this trip? This action cannot be undone.",
+      );
+
+      if (!confirmed) return;
+
+      const token = Cookies.get("token");
+
+      try {
+        const res = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/trips/admin/${tripId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          return toast({
+            title: "Error",
+            description: data?.error?.message,
+            variant: "destructive",
+          });
+        }
+
+        toast({
+          title: "Trip",
+          description: "Trip deleted successfully!",
+          variant: "success",
+        });
+
+        getAllTrips(); // refresh list
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        });
+      }
+    },
+    [getAllTrips, toast],
+  );
 
   const difficulties = ["EASY", "MODERATE", "HARD"];
 
@@ -493,6 +553,7 @@ function Page() {
                               <img
                                 src={trip.images[0]}
                                 alt={trip.name}
+                                loading="lazy"
                                 className="h-12 w-16 rounded object-cover"
                               />
                             ) : (
@@ -619,6 +680,15 @@ function Page() {
                                   Archive
                                 </DropdownMenuItem>
                               )}
+                              {trip.status === "CANCELLED" && (
+                                <DropdownMenuItem
+                                  className="text-success"
+                                  onClick={() => handleDeleteTrip(trip.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
                               {/* <DropdownMenuItem>
                                 <Copy className="h-4 w-4 mr-2" />
                                 Duplicate
@@ -741,7 +811,7 @@ function AddTripModal({ handleModalClose, operators }) {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: "Failed to fetch trip types",
+          description: data?.error?.message || "Failed to fetch trip types",
           variant: "destructive",
         });
         return;
@@ -889,6 +959,15 @@ function AddTripModal({ handleModalClose, operators }) {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image must be less than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const token = Cookies.get("token");
     setUploadingImage(true);
@@ -1456,11 +1535,12 @@ function AddTripModal({ handleModalClose, operators }) {
             {/* Images */}
             <section className="space-y-4">
               <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Images</h3>
+                <h3 className="text-lg font-semibold">Images *</h3>
                 <div>
                   <Input
                     type="file"
                     id="imageUpload"
+                    required
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}

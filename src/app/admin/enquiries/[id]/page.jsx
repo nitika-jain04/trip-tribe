@@ -76,6 +76,7 @@ export default function EnquiryDetail() {
             description: "Enquiry not found",
             variant: "destructive",
           });
+          return;
         }
 
         setEnquiry(fetchedEnquiry);

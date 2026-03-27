@@ -92,6 +92,7 @@ export default function Page() {
   const [trips, setTrips] = useState([]);
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [imgError, setImgError] = useState(false);
   const [error, setError] = useState(null);
   const { toast } = useToast();
 
@@ -178,10 +179,7 @@ export default function Page() {
           region: locationData.region,
           type: "destination",
           trips: group.total_trips,
-          image:
-            firstTrip?.images?.[0] ||
-            destinationImages[group.location_name] ||
-            "/loginimg.jpeg",
+          image: firstTrip?.images?.[0] || null,
         };
       }),
     );
@@ -206,7 +204,7 @@ export default function Page() {
         return {
           id: trip.id,
           name: trip.name,
-          images: trip.images?.length ? trip.images : ["/loginimg.jpeg"],
+          images: trip.images?.length ? trip.images : [],
           destination: destination.name,
           region: destination.region,
           provider: operatorName,
@@ -555,17 +553,15 @@ export default function Page() {
                   className="card-premium overflow-hidden group"
                 >
                   <div className="aspect-16/10 relative overflow-hidden bg-gray-100">
-                    {trip.images?.[0] ? (
+                    {trip.images?.[0] && !imgError ? (
                       <img
                         src={trip.images[0]}
                         alt={trip.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        onError={(e) => {
-                          e.currentTarget.src = "/loginimg.jpeg";
-                        }}
+                        onError={() => setImgError(true)}
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
                         <ImageIcon className="w-12 h-12 text-gray-400" />
                       </div>
                     )}
@@ -682,11 +678,24 @@ export default function Page() {
                   href={`/trips?group_by=location&location_type=destination&search=${location.name}`}
                   className="group relative aspect-4/3 rounded-2xl overflow-hidden"
                 >
-                  <img
-                    src={location.image}
-                    alt={location.name}
-                    className="w-full h-full object-cover aspect-square transition-transform duration-500 group-hover:scale-110"
-                  />
+                  {location.image ? (
+                    <img
+                      src={location.image}
+                      alt={location.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                        e.currentTarget.nextSibling.style.display = "flex";
+                      }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                      <ImageIcon className="w-12 h-12 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="hidden absolute inset-0 items-center justify-center bg-gray-100">
+                    <ImageIcon className="w-12 h-12 text-gray-400" />
+                  </div>
                   <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-6">
                     <h3 className="font-display text-heading-sm text-background mb-1">

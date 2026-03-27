@@ -231,7 +231,7 @@ function OperatorsPage() {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: err.message,
+          description: data?.error?.message,
           variant: "destructive",
         });
       }
@@ -276,7 +276,7 @@ function OperatorsPage() {
       if (!res.ok) {
         return toast({
           title: "Error",
-          description: data?.message || "Failed to delete operator",
+          description: data?.error?.message,
           variant: "destructive",
         });
       }
@@ -692,6 +692,7 @@ function OperatorsPage() {
                                     </DropdownMenuItem>
                                   </>
                                 )}
+
                               {op.application_status === "APPROVED" &&
                                 op.status === "SUSPENDED" && (
                                   <DropdownMenuItem
@@ -707,17 +708,27 @@ function OperatorsPage() {
                                   </DropdownMenuItem>
                                 )}
                               {op.application_status === "REJECTED" && (
-                                <DropdownMenuItem
-                                  className="text-success"
-                                  onClick={() =>
-                                    handleUpdateOperator(op.id, {
-                                      application_status: "APPROVED",
-                                    })
-                                  }
-                                >
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Approve
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-success"
+                                    onClick={() =>
+                                      handleUpdateOperator(op.id, {
+                                        application_status: "APPROVED",
+                                      })
+                                    }
+                                  >
+                                    <UserCheck className="h-4 w-4 mr-2" />
+                                    Approve
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteOperator(op.id)}
+                                    className="text-error"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>

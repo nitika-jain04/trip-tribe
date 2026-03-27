@@ -116,15 +116,17 @@ function Enquiries() {
       );
 
       // if (!res.ok) throw new Error("Failed to fetch enquiries");
+
+      const data = await res.json();
+
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to fetch enquiries",
+          description: "Failed to fetch enquiries" || data?.error?.message,
           variant: "destructive",
         });
+        return;
       }
-
-      const data = await res.json();
 
       if (data.success) {
         setEnquiries(data.result.data || []);
@@ -196,6 +198,7 @@ function Enquiries() {
           description: "Failed to delete enquiry",
           variant: "destructive",
         });
+        return;
       }
 
       toast({
@@ -242,6 +245,7 @@ function Enquiries() {
           description: "Failed to close enquiry",
           variant: "destructive",
         });
+        return;
       }
 
       toast({

@@ -770,10 +770,11 @@ function Categories() {
       {!loading && !error && (
         <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
           {/* Header Row */}
-          <div className="grid grid-cols-[1.5fr_2fr_2fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
+          <div className="grid grid-cols-[1.5fr_2fr_2fr_1fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
             <div>Category</div>
             <div>Description</div>
             <div>Trips</div>
+            <div>Status</div>
             <div>Actions</div>
           </div>
 
@@ -785,7 +786,7 @@ function Categories() {
             categories.map((category, index) => (
               <div
                 key={category.id}
-                className="grid grid-cols-[1.5fr_2fr_2fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
+                className="grid grid-cols-[1.5fr_2fr_2fr_1fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
               >
                 {/* Category */}
                 <div>
@@ -802,6 +803,18 @@ function Categories() {
 
                 {/* Trips */}
                 <div className="text-gray-600">{category.trips}</div>
+
+                <div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      category.is_active
+                        ? "bg-green-100 text-green-600"
+                        : "bg-red-100 text-red-600"
+                    }`}
+                  >
+                    {category.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
@@ -850,6 +863,7 @@ function Categories() {
                       ...cat,
                       category: updated.name,
                       description: updated.description,
+                      is_active: updated.is_active,
                     }
                   : cat,
               ),
@@ -877,6 +891,7 @@ function AddCategoryModal({ onClose, onAddCategory }) {
       toast({
         title: "Missing Fields",
         description: "Please fill all fields",
+        variant: "destructive",
       });
       return;
     }
@@ -925,6 +940,7 @@ function AddCategoryModal({ onClose, onAddCategory }) {
         id: data.result.id,
         category: data.result.name,
         description: data.result.description,
+        is_active: data.result.is_active,
         trips: 0, // new category → no trips
         color: ["green", "pink", "blue", "teal", "yellow"][
           Math.floor(Math.random() * 5)
