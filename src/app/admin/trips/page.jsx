@@ -123,7 +123,6 @@ function Page() {
     setError(null);
 
     try {
-      const params = new URLSearchParams();
       const params = new URLSearchParams({
         page,
         limit,
