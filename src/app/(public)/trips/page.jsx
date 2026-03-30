@@ -102,17 +102,20 @@ function TripsContent() {
         url += `?${params.toString()}`;
 
         const res = await fetch(url);
+
         // if (!res.ok) throw new Error("Failed to fetch trips");
+
+        const data = await res.json();
+
         if (!res.ok) {
           toast({
             title: "Error",
-            description: "Failed to fetch trips",
+            description: data?.error?.message || "Failed to fetch trips",
             variant: "destructive",
           });
           return;
         }
 
-        const data = await res.json();
         if (!data.success) return;
 
         let rawTrips = [];
@@ -269,16 +272,16 @@ function TripsContent() {
 
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
       // if (!res.ok) throw new Error("Failed to fetch trip types");
+
+      const data = await res.json();
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to fetch trip types",
+          description: data?.error?.message || "Failed to fetch trip types",
           variant: "destructive",
         });
         return;
       }
-
-      const data = await res.json();
       const types = data?.result?.trip_types || [];
       const formatted = ["All Types", ...types.map((t) => t.name)];
 

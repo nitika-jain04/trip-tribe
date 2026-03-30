@@ -189,9 +189,6 @@ function Enquiries() {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to delete enquiry");
-      // }
       if (!res.ok) {
         toast({
           title: "Error",

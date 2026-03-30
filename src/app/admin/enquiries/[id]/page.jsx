@@ -118,15 +118,16 @@ export default function EnquiryDetail() {
       //   const errData = await res.json();
       //   throw new Error(errData?.message || "Failed to update enquiry");
       // }
+
+      const updatedData = await res.json();
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to update enquiry ",
+          description:
+            updatedData?.error?.message || "Failed to update enquiry ",
           variant: "destructive",
         });
       }
-
-      const updatedData = await res.json();
 
       // update local state with latest data from server
       setEnquiry(updatedData.result || updatedData);

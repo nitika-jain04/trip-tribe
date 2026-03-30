@@ -7,6 +7,13 @@ import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { FaTrash } from "react-icons/fa";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -542,17 +549,20 @@ export default function TripEditPage() {
 
               <div>
                 <label className="text-sm font-medium">Difficulty*</label>
-                <select
-                  value={formData.difficulty}
-                  required
-                  onChange={(e) => handleChange("difficulty", e.target.value)}
-                  className="mt-1 w-full border rounded-lg px-3 py-2"
+                <Select
+                  value={formData.difficulty || ""}
+                  onValueChange={(value) => handleChange("difficulty", value)}
                 >
-                  <option value="">Select Difficulty</option>
-                  <option value="EASY">Easy</option>
-                  <option value="MODERATE">Moderate</option>
-                  <option value="HARD">Hard</option>
-                </select>
+                  <SelectTrigger className="mt-1 w-full border rounded-lg px-3 py-2">
+                    <SelectValue placeholder="Select Difficulty" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="EASY">Easy</SelectItem>
+                    <SelectItem value="MODERATE">Moderate</SelectItem>
+                    <SelectItem value="HARD">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
 
                 {errors.difficulty && (
                   <p className="text-xs text-admin-error mt-1">
@@ -563,19 +573,23 @@ export default function TripEditPage() {
 
               <div>
                 <label className="text-sm font-medium">Trip Type*</label>
-                <select
-                  value={formData.type_id || ""}
-                  required
-                  onChange={(e) => handleChange("type_id", e.target.value)}
-                  className="mt-1 w-full border rounded-lg px-3 py-2"
+                <Select
+                  value={formData.type_id?.toString() || ""}
+                  onValueChange={(value) => handleChange("type_id", value)}
                 >
-                  <option value="">Select Trip Type</option>
-                  {tripTypesData.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="mt-1 w-full border rounded-lg px-3 py-2">
+                    <SelectValue placeholder="Select Trip Type" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {tripTypesData.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
                 {errors.type_id && (
                   <p className="text-xs text-admin-error mt-1">
                     {errors.type_id}
@@ -599,54 +613,6 @@ export default function TripEditPage() {
               )}
             </div>
           </section>
-
-          {/* OPERATOR + TYPE */}
-          {/* <section className="bg-white border rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-6">Trip Type</h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Trip Type</label>
-                <select
-                  value={formData.type_id || ""}
-                  onChange={(e) => handleChange("type_id", e.target.value)}
-                  className="mt-1 w-full border rounded-lg px-3 py-2"
-                >
-                  <option value="">Select Trip Type</option>
-                  {tripTypesData.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          </section> */}
-
-          {/* LOCATIONS */}
-          {/* <section className="bg-white border rounded-xl shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-6">Locations</h3>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Source</label>
-                <input
-                  value={trip?.source?.name || "N/A"}
-                  readOnly
-                  className="mt-1 w-full border rounded-lg px-3 py-2 bg-gray-100"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">Destination</label>
-                <input
-                  value={trip?.destination?.name || "N/A"}
-                  readOnly
-                  className="mt-1 w-full border rounded-lg px-3 py-2 bg-gray-100"
-                />
-              </div>
-            </div>
-          </section> */}
 
           {/* IMAGES */}
           <section className="bg-white border rounded-xl shadow-sm p-6">

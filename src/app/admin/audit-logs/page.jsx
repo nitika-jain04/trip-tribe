@@ -106,15 +106,15 @@ function AuditLogs() {
       );
 
       // if (!res.ok) throw new Error("Failed to fetch audit logs");
+
+      const data = await res.json();
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to fetch audit logs",
+          description: data?.error?.message || "Failed to fetch audit logs",
           variant: "destructive",
         });
       }
-
-      const data = await res.json();
 
       if (data.success) {
         setLogs(data.result.logs || []);

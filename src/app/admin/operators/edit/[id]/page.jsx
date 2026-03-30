@@ -7,6 +7,13 @@ import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import Cookies from "js-cookie";
 import Input from "@/app/components/ui/input";
 import { useToast } from "@/app/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -587,7 +594,7 @@ export default function OperatorEditPage() {
               Status
             </label>
 
-            <select
+            {/* <select
               name="status"
               value={formData.status}
               onChange={handleChange}
@@ -599,7 +606,33 @@ export default function OperatorEditPage() {
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
               <option value="SUSPENDED">Suspended</option>
-            </select>
+            </select> */}
+
+            <Select
+              value={formData.status}
+              onValueChange={(value) =>
+                handleChange({ target: { name: "status", value } })
+              }
+              disabled={operator?.application_status === "PENDING"}
+            >
+              <SelectTrigger
+                className={`w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm
+    focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200
+    ${
+      operator?.application_status === "PENDING"
+        ? "opacity-50 cursor-not-allowed"
+        : ""
+    }`}
+              >
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="ACTIVE">Active</SelectItem>
+                <SelectItem value="INACTIVE">Inactive</SelectItem>
+                <SelectItem value="SUSPENDED">Suspended</SelectItem>
+              </SelectContent>
+            </Select>
 
             {operator?.application_status === "PENDING" && (
               <p className="text-xs text-gray-500 mt-1">

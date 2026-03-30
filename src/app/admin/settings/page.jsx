@@ -19,6 +19,13 @@ import {
 import Cookies from "js-cookie";
 import { IoCloseSharp } from "react-icons/io5";
 import { useToast } from "@/app/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -75,6 +82,12 @@ function Destinations() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [region, setRegion] = useState("");
+  const [regionsList, setRegionsList] = useState([]);
   const { toast } = useToast();
 
   const getAllDestinations = useCallback(async () => {
@@ -89,8 +102,17 @@ function Destinations() {
         return;
       }
 
+      // ✅ PARAMS
+      const params = new URLSearchParams();
+      params.append("page", String(page));
+      params.append("limit", String(limit));
+
+      if (region) {
+        params.append("region", region);
+      }
+
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
+        `${BASE_URL}/api/${API_VERSION}/locations/admin?${params.toString()}`,
         {
           method: "GET",
           headers: {
@@ -99,9 +121,6 @@ function Destinations() {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to fetch destinations");
-      // }
       if (!res.ok) {
         toast({
           title: "Error",
@@ -112,17 +131,30 @@ function Destinations() {
 
       const data = await res.json();
 
-      // Safe API parsing
       const locations = data?.result?.locations ?? [];
+      const pagination = data?.result?.pagination;
 
+      // ✅ USE BACKEND PAGINATION
       setDestinations(locations);
+      setTotalPages(pagination?.pages || 1);
+      setTotalItems(pagination?.total || 0);
+
+      const uniqueRegions = [
+        ...new Set(locations.map((loc) => loc.region).filter(Boolean)),
+      ];
+
+      setRegionsList((prev) => {
+        const newRegions = locations.map((loc) => loc.region).filter(Boolean);
+
+        return [...new Set([...prev, ...newRegions])];
+      });
     } catch (err) {
       console.error(err);
       setError("Failed to load destinations");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, limit, toast, region]);
 
   const deleteDestination = async (locationId) => {
     try {
@@ -182,6 +214,9 @@ function Destinations() {
       // ✅ Success
       setDestinations((prev) => prev.filter((item) => item.id !== locationId));
 
+      setPage(1);
+      getAllDestinations();
+
       toast({
         title: "Success",
         description: "Destination deleted successfully",
@@ -203,6 +238,10 @@ function Destinations() {
     getAllDestinations();
   }, [getAllDestinations]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [region]);
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between">
@@ -210,11 +249,39 @@ function Destinations() {
           Manage travel destinations displayed on the platform
         </p>
 
-        {/* <Button label="Add Destination" fnClose={() => setShowModal(true)} /> */}
-        <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Destination
-        </Button>
+        <div className="flex gap-3 items-center">
+          <Select
+            value={region || "all"}
+            onValueChange={(value) => {
+              setPage(1);
+              setRegion(value === "all" ? "" : value);
+            }}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Select Region">
+                {region || "All Regions"}
+              </SelectValue>{" "}
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+
+              {regionsList.map((reg) => (
+                <SelectItem key={reg} value={reg}>
+                  {reg}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            onClick={() => setShowModal(true)}
+            className="w-full sm:w-auto"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Destination
+          </Button>
+        </div>
       </div>
 
       {loading && <DestinationSkeleton />}
@@ -292,19 +359,44 @@ function Destinations() {
               </div>
             </div>
           ))}
-
-          {/* Summary */}
-          <div className="bg-gray-50 px-3 py-3 border-t border-gray-200 text-sm text-gray-600">
-            Showing {destinations.length} destinations
-          </div>
         </div>
       )}
+
+      <div className="flex justify-between items-center mt-4">
+        <span className="text-sm text-muted-foreground">
+          Showing {(page - 1) * limit + 1} to{" "}
+          {Math.min(page * limit, totalItems)} of {totalItems}
+        </span>
+
+        <span className="px-3 py-1 text-center text-sm">
+          Page {page} of {totalPages}
+        </span>
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </Button>
+
+          <Button
+            variant="outline"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
 
       {/* Modal */}
       {showModal && (
         <AddDestinationModal
           onClose={() => setShowModal(false)}
           refresh={() => {
+            setPage(1);
             getAllDestinations();
             setShowModal(false);
           }}
@@ -450,6 +542,16 @@ function AddDestinationModal({ onClose, refresh }) {
   };
 
   const handleSubmit = async () => {
+    if (!form.name) {
+      toast({ title: "Name", description: "Enter the location name!" });
+      return;
+    }
+
+    if (!form.region) {
+      toast({ title: "Region", description: "Enter the region!" });
+      return;
+    }
+
     if (!form.latitude || !form.longitude) {
       toast({ title: "Location", description: "Pick a location first!" });
       return;
@@ -561,7 +663,7 @@ function AddDestinationModal({ onClose, refresh }) {
           onChange={(e) => setForm({ ...form, region: e.target.value })}
         />
 
-        <select
+        {/* <select
           className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
           value={form.type}
           onChange={(e) => setForm({ ...form, type: e.target.value })}
@@ -575,7 +677,31 @@ function AddDestinationModal({ onClose, refresh }) {
               {type.replaceAll("_", " ")}
             </option>
           ))}
-        </select>
+        </select> */}
+        <Select
+          value={form.type}
+          onValueChange={(value) =>
+            setForm((prev) => ({ ...prev, type: value }))
+          }
+          disabled={typesLoading}
+        >
+          <SelectTrigger className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+            <SelectValue
+              placeholder={
+                typesLoading ? "Loading types..." : "Select destination type"
+              }
+            />
+          </SelectTrigger>
+
+          <SelectContent>
+            {!typesLoading &&
+              locationTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.replaceAll("_", " ")}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
 
         {/* 🔍 Search */}
         <div className="relative">

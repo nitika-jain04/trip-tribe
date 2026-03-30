@@ -798,7 +798,7 @@ function AddTripModal({ handleModalClose, operators }) {
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/trip-types/admin`,
+        `${BASE_URL}/api/${API_VERSION}/trip-types/admin?is_active=true`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -1129,6 +1129,42 @@ function AddTripModal({ handleModalClose, operators }) {
       return;
     }
 
+    if (formData.images.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please upload at least one image",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.difficulty) {
+      toast({
+        title: "Error",
+        description: "Please select difficulty",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.operator_id) {
+      toast({
+        title: "Error",
+        description: "Please select an operator",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.type_id) {
+      toast({
+        title: "Error",
+        description: "Please select trip type",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const token = Cookies.get("token");
     setLoading(true);
     setError("");
@@ -1174,7 +1210,7 @@ function AddTripModal({ handleModalClose, operators }) {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: data.message || "Failed to create trip",
+          description: data?.error?.message,
           variant: "destructive",
         });
         return;
@@ -1270,7 +1306,7 @@ function AddTripModal({ handleModalClose, operators }) {
                   <label className="text-sm text-gray-600 mb-1 block">
                     Difficulty *
                   </label>
-                  <select
+                  {/* <select
                     name="difficulty"
                     value={formData.difficulty}
                     onChange={handleChange}
@@ -1281,24 +1317,25 @@ function AddTripModal({ handleModalClose, operators }) {
                     <option value="EASY">Easy</option>
                     <option value="MODERATE">Moderate</option>
                     <option value="HARD">Hard</option>
-                  </select>
-                </div>
-                {/* <div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    Status *
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    required
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]"
+                  </select> */}
+                  <Select
+                    value={formData.difficulty}
+                    onValueChange={(value) =>
+                      handleChange({ target: { name: "difficulty", value } })
+                    }
                   >
-                    <option value="PUBLISHED">Published</option>
-                    <option value="DRAFT">Draft</option>
-                    <option value="ARCHIVED">Archived</option>
-                  </select>
-                </div> */}
+                    <SelectTrigger className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]">
+                      <SelectValue placeholder="Select Difficulty" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="EASY">Easy</SelectItem>
+                      <SelectItem value="MODERATE">Moderate</SelectItem>
+                      <SelectItem value="HARD">Hard</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">
                     Start Date *
@@ -1311,6 +1348,7 @@ function AddTripModal({ handleModalClose, operators }) {
                     required
                   />
                 </div>
+
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">
                     End Date *
@@ -1333,43 +1371,63 @@ function AddTripModal({ handleModalClose, operators }) {
                 <label className="text-sm text-gray-600 mb-1 block">
                   Operator *
                 </label>
-                <select
-                  name="operator_id"
-                  value={formData.operator_id}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]"
+
+                <Select
+                  value={formData.operator_id?.toString() || ""}
+                  onValueChange={(value) =>
+                    handleChange({ target: { name: "operator_id", value } })
+                  }
                 >
-                  <option value="">Select Operator</option>
-                  {operators.map((o) => (
-                    <option key={o.id} value={o.id}>
-                      {o.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]">
+                    <SelectValue placeholder="Select Operator" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {operators.map((o) => (
+                      <SelectItem key={o.id} value={o.id.toString()}>
+                        {o.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="text-sm text-gray-600 mb-1 block">
                   Trip Type *
                 </label>
-                <select
-                  name="type_id"
-                  value={formData.type_id}
-                  onChange={handleChange}
-                  required
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]"
+                <Select
+                  value={formData.type_id?.toString() || ""}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      type_id: value,
+                    }))
+                  }
+                  disabled={loadingTripTypes}
                 >
-                  <option value="">
-                    {loadingTripTypes ? "Loading..." : "Select Trip Type"}
-                  </option>
+                  <SelectTrigger className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]">
+                    <SelectValue
+                      placeholder={
+                        loadingTripTypes ? "Loading..." : "Select Trip Type"
+                      }
+                    />
+                  </SelectTrigger>
 
-                  {tripTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectContent>
+                    {loadingTripTypes ? (
+                      <SelectItem value="loading" disabled>
+                        Loading...
+                      </SelectItem>
+                    ) : (
+                      tripTypes.map((type) => (
+                        <SelectItem key={type.id} value={type.id.toString()}>
+                          {type.name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </section>
 
@@ -1540,7 +1598,6 @@ function AddTripModal({ handleModalClose, operators }) {
                   <Input
                     type="file"
                     id="imageUpload"
-                    required
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}
