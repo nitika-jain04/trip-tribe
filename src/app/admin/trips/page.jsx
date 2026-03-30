@@ -124,16 +124,16 @@ function Page() {
 
     try {
       const params = new URLSearchParams();
-      params.append("page", String(page));
-      params.append("limit", String(limit));
+      const params = new URLSearchParams({
+        page,
+        limit,
+        sortBy,
+      });
 
-      if (statusFilter && statusFilter !== "all") {
-        params.append("status", statusFilter.toUpperCase());
-      }
-
-      if (difficultyFilter && difficultyFilter !== "all") {
-        params.append("difficulty", difficultyFilter.toUpperCase());
-      }
+      if (statusFilter !== "all")
+        params.set("status", statusFilter.toUpperCase());
+      if (difficultyFilter !== "all")
+        params.set("difficulty", difficultyFilter.toUpperCase());
 
       const searchValue = debouncedSearch?.trim();
       if (searchValue && searchValue.length < 2) {
@@ -143,10 +143,6 @@ function Page() {
 
       if (searchValue && searchValue.length >= 2) {
         params.append("search", searchValue);
-      }
-
-      if (sortBy) {
-        params.append("sortBy", sortBy);
       }
 
       const url = `${BASE_URL}/api/${API_VERSION}/trips/admin?${params.toString()}`;
@@ -322,7 +318,11 @@ function Page() {
           variant: "success",
         });
 
-        getAllTrips(); // refresh list
+        if (trips.length === 1 && page > 1) {
+          setPage((prev) => prev - 1);
+        } else {
+          getAllTrips();
+        }
       } catch (err) {
         toast({
           title: "Error",
@@ -439,7 +439,10 @@ function Page() {
                 <Input
                   placeholder="Search trips..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
                   className="pl-10"
                 />
               </div>
@@ -730,7 +733,7 @@ function Page() {
 
             <Button
               variant="outline"
-              disabled={page === totalPages}
+              disabled={page >= totalPages}
               onClick={() => setPage(page + 1)}
             >
               Next

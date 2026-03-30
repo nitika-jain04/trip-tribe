@@ -41,6 +41,7 @@ export default function DashboardPage() {
       live: 0,
       draft: 0,
       archived: 0,
+      cancelled: 0,
       change_percent: 0,
     },
     enquiries: {
@@ -166,6 +167,7 @@ export default function DashboardPage() {
             live: result.stats.trips.status_counts?.PUBLISHED || 0,
             draft: result.stats.trips.status_counts?.DRAFT || 0,
             archived: result.stats.trips.status_counts?.ARCHIVED || 0,
+            cancelled: result.stats.trips.status_counts?.CANCELLED || 0,
             change_percent: result.stats.trips.change_percent || 0,
           },
 
@@ -252,7 +254,7 @@ export default function DashboardPage() {
           <StatCard
             title="Total Trips"
             value={stats.trips.total}
-            subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft, ${stats.trips.archived} archived`}
+            subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft, ${stats.trips.archived} archived, ${stats.trips.cancelled} cancelled`}
             icon={MapPin}
             variant="success"
           />
