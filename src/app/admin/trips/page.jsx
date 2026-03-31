@@ -52,8 +52,8 @@ import { FaPlus, FaTrash, FaMapMarkedAlt } from "react-icons/fa";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import Link from "next/link";
 import { useToast } from "@/app/hooks/use-toast";
+import useTripTypes from "@/app/hooks/use-triptypes";
 
-// Dynamically import map components to avoid SSR issues
 const MapPicker = dynamic(() => import("@/app/components/MapPickerTrip"), {
   ssr: false,
   loading: () => (
@@ -82,9 +82,12 @@ function Page() {
   const [refresh, setRefresh] = useState(0);
   const { toast } = useToast();
 
+  const { tripTypes, loadingTripTypes, error: tripTypesError } = useTripTypes();
+
   // Filter states
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
@@ -119,7 +122,7 @@ function Page() {
 
   const getAllTrips = useCallback(async () => {
     const token = Cookies.get("token");
-    if (!initialLoading) setLoading(true);
+    setLoading(true);
     setError(null);
 
     try {
@@ -131,6 +134,12 @@ function Page() {
 
       if (statusFilter !== "all")
         params.set("status", statusFilter.toUpperCase());
+
+      if (typeFilter !== "all") {
+        console.log(typeFilter);
+        params.set("type_id", typeFilter);
+      }
+
       if (difficultyFilter !== "all")
         params.set("difficulty", difficultyFilter.toUpperCase());
 
@@ -177,10 +186,12 @@ function Page() {
       setInitialLoading(false);
     }
   }, [
+    initialLoading,
     page,
     limit,
-    statusFilter,
     sortBy,
+    statusFilter,
+    typeFilter,
     difficultyFilter,
     debouncedSearch,
     toast,
@@ -188,7 +199,7 @@ function Page() {
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, difficultyFilter, sortBy]);
+  }, [statusFilter, difficultyFilter, sortBy, typeFilter]);
 
   useEffect(() => {
     fetchOperators();
@@ -431,7 +442,7 @@ function Page() {
 
         {/* Filters */}
         <CardContent className="pt-2">
-          <div className="flex flex-col sm:flex-row gap-2 min-w-150 max-w-200">
+          <div className="flex flex-col sm:flex-row gap-2 min-w-150 max-w-240">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -459,6 +470,20 @@ function Page() {
                 <SelectItem value="published">Live</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Trip Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {tripTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id.toString()}>
+                    {type.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -596,9 +621,9 @@ function Page() {
                                     trip.start_date,
                                   ).toLocaleDateString()}
                                 </p>
-                                <p className="text-muted-foreground whitespace-nowrap">
+                                {/* <p className="text-muted-foreground whitespace-nowrap">
                                   {new Date(trip.end_date).toLocaleDateString()}
-                                </p>
+                                </p> */}
                               </>
                             ) : (
                               "N/A"
@@ -756,9 +781,8 @@ function AddTripModal({ handleModalClose, operators }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
   const [showDestinationMap, setShowDestinationMap] = useState(false);
-  const [tripTypes, setTripTypes] = useState([]);
-  const [loadingTripTypes, setLoadingTripTypes] = useState(false);
   const [error, setError] = useState("");
+  const { tripTypes, loadingTripTypes, error: tripTypesError } = useTripTypes();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -793,43 +817,6 @@ function AddTripModal({ handleModalClose, operators }) {
     exclusions: [""],
     itinerary: [{ day: 1, activities: [""] }],
   });
-
-  const fetchTripTypes = async () => {
-    const token = Cookies.get("token");
-    setLoadingTripTypes(true);
-
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/trip-types/admin?is_active=true`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        toast({
-          title: "Error",
-          description: data?.error?.message || "Failed to fetch trip types",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setTripTypes(data.result.trip_types || []);
-    } catch (err) {
-      console.error("Failed to fetch trip types:", err);
-    } finally {
-      setLoadingTripTypes(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTripTypes();
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -1149,15 +1136,6 @@ function AddTripModal({ handleModalClose, operators }) {
       return;
     }
 
-    if (!formData.operator_id) {
-      toast({
-        title: "Error",
-        description: "Please select an operator",
-        variant: "destructive",
-      });
-      return;
-    }
-
     if (!formData.type_id) {
       toast({
         title: "Error",
@@ -1195,7 +1173,7 @@ function AddTripModal({ handleModalClose, operators }) {
         .filter((day) => day.activities.length > 0),
     };
 
-    console.log("trip body", payload);
+    //console.log("trip body", payload);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {

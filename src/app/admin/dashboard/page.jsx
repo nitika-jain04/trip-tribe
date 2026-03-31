@@ -87,54 +87,6 @@ export default function DashboardPage() {
     }
   };
 
-  // useEffect(() => {
-  //   const fetchDashboardStats = async () => {
-  //     try {
-  //       const token = Cookies.get("token");
-
-  //       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/dashboard`, {
-  //         method: "GET",
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-
-  //       const data = await res.json();
-  //       console.log("response", data);
-  //       console.log("response", data.result);
-
-  //       const result = data.result;
-
-  //       setStats(result.stats);
-
-  //       const formattedActivities = result.recent_activity.map(
-  //         (item, index) => ({
-  //           id: index,
-  //           type: mapActivityType(item.type),
-  //           action: formatAction(item.type),
-  //           description: item.message,
-  //           timestamp: item.created_at,
-  //         }),
-  //       );
-
-  //       setActivities(formattedActivities);
-  //       // Map enquiry trends for chart
-  //       const formattedChart = result.charts.enquiry_trends.data.map(
-  //         (item) => ({
-  //           name: item.month,
-  //           enquiries: item.count,
-  //         }),
-  //       );
-
-  //       setEnquiryChart(formattedChart);
-  //     } catch (err) {
-  //       console.error(err);
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchDashboardStats();
-  // }, []);
-
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {

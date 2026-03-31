@@ -34,8 +34,6 @@ const baskerville = Libre_Baskerville({
   subsets: ["latin"],
 });
 
-console.log(BASE_URL, API_VERSION);
-
 const stats = [
   { value: "20+", label: "Curated Trips" },
   { value: "10+", label: "Verified Providers" },

@@ -297,8 +297,6 @@ export default function TripEditPage() {
     const validationErrors = validateForm();
 
     if (Object.keys(validationErrors).length > 0) {
-      console.log("Validation Errors:", validationErrors);
-
       toast({
         title: "Validation Error",
         description: "Please fix the highlighted fields",

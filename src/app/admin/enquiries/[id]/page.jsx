@@ -50,7 +50,7 @@ export default function EnquiryDetail() {
     const fetchEnquiry = async () => {
       const token = Cookies.get("token");
 
-      console.log("id", id);
+      //console.log("id", id);
 
       try {
         const res = await fetch(
@@ -64,7 +64,7 @@ export default function EnquiryDetail() {
         );
         const data = await res.json();
 
-        console.log("res", data);
+        //console.log("res", data);
 
         const fetchedEnquiry =
           data?.result?.data?.find((e) => e.id === id) || data?.result || null;

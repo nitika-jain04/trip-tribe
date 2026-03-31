@@ -82,7 +82,7 @@ function OperatorsPage() {
     const token = Cookies.get("token");
 
     if (!token) {
-      console.log("No token found");
+      //console.log"No token found");
       return;
     }
 
@@ -119,7 +119,7 @@ function OperatorsPage() {
 
       const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
 
-      // console.log("Final URL:", url);
+      // //console.log"Final URL:", url);
 
       const res = await fetch(url, {
         method: "GET",
@@ -130,7 +130,7 @@ function OperatorsPage() {
 
       const data = await res.json();
 
-      console.log("Response:", data);
+      //console.log"Response:", data);
 
       // if (!res.ok || !data.success) {
       //   throw new Error(data.message || "Failed to fetch operators");
@@ -842,7 +842,7 @@ function AddOperatorModal({ handleModalClose }) {
     const formDataToSend = new FormData();
     formDataToSend.append("image", file);
 
-    console.log("req", formDataToSend);
+    //console.log"req", formDataToSend);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
@@ -1012,7 +1012,7 @@ function AddOperatorModal({ handleModalClose }) {
       (key) => requestBody[key] === undefined && delete requestBody[key],
     );
 
-    console.log("add op req", requestBody);
+    //console.log"add op req", requestBody);
 
     try {
       const res = await fetch(

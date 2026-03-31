@@ -45,6 +45,9 @@ export default function TestLogin() {
           description: data?.message || "Incorrect email / password",
           variant: "destructive",
         });
+
+        setEmail("");
+        setPassword("");
         return; // 🚨 STOP here
       }
 

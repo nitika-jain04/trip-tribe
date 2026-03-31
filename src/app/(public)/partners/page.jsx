@@ -196,8 +196,6 @@ export default function Partner() {
         business_description: formData.about,
       };
 
-      console.log("req", payload);
-
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/operators/apply`,
         {

@@ -165,7 +165,6 @@ export default function Contact() {
         payload.trip_id = formData.tripId;
         // payload.operator_id = formData.operatorId;
       }
-      console.log("req", payload);
 
       const response = await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
         method: "POST",

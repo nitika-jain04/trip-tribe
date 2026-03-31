@@ -1176,8 +1176,6 @@ function EditCategoryModal({ data, onClose, refresh }) {
         });
         return;
       }
-      console.log("edit cat", JSON.stringify(form));
-      console.log("id", data.id);
 
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/trip-types/admin/${data.id}`,

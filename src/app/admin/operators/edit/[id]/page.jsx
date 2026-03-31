@@ -86,7 +86,7 @@ export default function OperatorEditPage() {
             social_links: data.result.social_links || {},
           });
 
-          console.log("operator", data.result);
+          //console.log"operator", data.result);
         } else {
           // throw new Error(data.message || "Failed to fetch operator");
           toast({
@@ -285,8 +285,6 @@ export default function OperatorEditPage() {
       return;
     }
 
-    console.log("request", requestBody);
-
     try {
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
@@ -301,7 +299,6 @@ export default function OperatorEditPage() {
       );
 
       const data = await res.json();
-      console.log("response", data);
 
       if (!res.ok || !data.success) {
         toast({
