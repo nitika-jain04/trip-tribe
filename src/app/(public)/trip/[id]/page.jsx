@@ -26,40 +26,41 @@ import {
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-const locationCache = new Map();
-
-async function fetchLocation(locationId) {
-  if (!locationId) return { name: "Unknown", region: "" };
-
-  if (locationCache.has(locationId)) {
-    return locationCache.get(locationId);
-  }
-
-  try {
-    const res = await fetch(
-      `${BASE_URL}/api/${API_VERSION}/locations/${locationId}`,
-    );
-    const data = await res.json();
-    const locationData = {
-      name: data?.result?.name || "Unknown",
-      region: data?.result?.region || "",
-    };
-
-    // store in cache
-    locationCache.set(locationId, locationData);
-    return locationData;
-  } catch (err) {
-    console.error(`Error fetching location ${locationId}:`, err);
-    return { name: "Unknown", region: "" };
-  }
-}
-
 function TripPage() {
   const { id } = useParams();
 
   const [trip, setTrip] = useState(null);
   const [tripReviews, setTripReviews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState(null);
+
+  const locationCache = new Map();
+
+  async function fetchLocation(locationId) {
+    if (!locationId) return { name: "Unknown", region: "" };
+
+    if (locationCache.has(locationId)) {
+      return locationCache.get(locationId);
+    }
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations/${locationId}`,
+      );
+      const data = await res.json();
+      const locationData = {
+        name: data?.result?.name || "Unknown",
+        region: data?.result?.region || "",
+      };
+
+      // store in cache
+      locationCache.set(locationId, locationData);
+      return locationData;
+    } catch (err) {
+      console.error(`Error fetching location ${locationId}:`, err);
+      return { name: "Unknown", region: "" };
+    }
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -71,6 +72,7 @@ function TripPage() {
         // Fetch trip details
         const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`);
         const data = await res.json();
+
         if (!data?.success) {
           setTrip(null);
           return;
@@ -98,8 +100,9 @@ function TripPage() {
           id: raw.id,
           name: raw.name,
           description: raw.description || "",
-          image: raw.images?.[0] || "/placeholder.jpg",
-          images: raw.images?.length ? raw.images : ["/placeholder.jpg"],
+          image: setActiveImage(raw.images?.[0]),
+          // images: raw.images?.length && raw.images,
+          images: raw.images?.length && raw.images,
           source: source.name,
           destination: destination.name,
           region: destination.region,
@@ -162,15 +165,11 @@ function TripPage() {
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="space-y-4">
               <div className="aspect-4/3 rounded-2xl overflow-hidden">
-                {trip.image ? (
+                {activeImage ? (
                   <img
-                    src={trip.image}
+                    src={activeImage}
                     alt={trip.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      e.currentTarget.nextSibling.style.display = "flex";
-                    }}
                   />
                 ) : null}
 
@@ -182,20 +181,27 @@ function TripPage() {
                   <ImageIcon className="w-12 h-12 text-gray-400" />
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-2">
-                {trip.images?.map((img, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square rounded-lg overflow-hidden bg-muted"
-                  >
-                    <img
-                      src={img}
-                      alt={`${trip.name}`}
-                      className="w-full h-full object-cover opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
-                    />
-                  </div>
-                ))}
-              </div>
+              {trip.images?.length > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {trip.images?.map((img, i) => (
+                    <div
+                      key={i}
+                      className="aspect-square rounded-lg overflow-hidden bg-muted"
+                      onClick={() => setActiveImage(img)}
+                    >
+                      <img
+                        src={img}
+                        alt={trip.name}
+                        className={`w-full h-full object-cover cursor-pointer transition-opacity ${
+                          activeImage === img
+                            ? "opacity-100 ring-2 ring-primary"
+                            : "opacity-70 hover:opacity-100"
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div>

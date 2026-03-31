@@ -211,7 +211,9 @@ export default function OperatorDetail() {
             <span className="flex items-center gap-2">
               <Mail size={17} />
               <p className="text-black/80 font-medium">
-                {operator.email || "N/A"}
+                <a href={`mailto:${operator.email}`}>
+                  {operator.email || "N/A"}
+                </a>
               </p>
             </span>
             <span className="flex items-center gap-2">

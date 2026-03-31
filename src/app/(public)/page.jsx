@@ -117,9 +117,7 @@ export default function Page() {
         safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`),
         safeFetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`),
         safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`),
-        safeFetch(
-          `${BASE_URL}/api/${API_VERSION}/locations/admin?page=1&limit=100`,
-        ),
+        safeFetch(`${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=100`),
       ]);
 
     const locationMapData = buildLocationMap(locationsMasterData);

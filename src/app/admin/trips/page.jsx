@@ -492,6 +492,7 @@ function Page() {
                 <SelectItem value="published">Live</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
 
@@ -731,7 +732,7 @@ function Page() {
                               )}
                               {trip.status === "CANCELLED" && (
                                 <DropdownMenuItem
-                                  className="text-success"
+                                  className="text-error"
                                   onClick={() => handleDeleteTrip(trip.id)}
                                 >
                                   <Trash2 className="h-4 w-4 mr-2 text-error" />

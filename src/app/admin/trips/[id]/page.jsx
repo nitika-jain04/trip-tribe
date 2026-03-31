@@ -33,6 +33,7 @@ export default function TripDetail() {
   const [destination, setDestination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeImage, setActiveImage] = useState(null);
   const { id } = useParams();
   const { toast } = useToast();
 
@@ -53,16 +54,17 @@ export default function TripDetail() {
 
         const tripData = await tripRes.json();
         if (!tripData.success) {
-          // throw new Error(tripData.message || "Failed to fetch trip");
           toast({
             title: "Error",
             description: "Failed to fetch trip",
             variant: "destructive",
           });
+          return;
         }
 
         const tripResult = tripData.result;
         setTrip(tripResult);
+        setActiveImage(tripResult.images?.[0] || null);
 
         // Fetch operator + locations in parallel
         const requests = [];
@@ -213,11 +215,11 @@ export default function TripDetail() {
       {/* Hero Section */}
       <div className="bg-white mt-3 rounded-lg shadow-sm border px-6 py-4 flex flex-col md:flex-row gap-6 items-start">
         <div className="grid md:grid-cols-2 gap-0 w-full">
-          {trip.images?.[0] ? (
+          {activeImage ? (
             <img
-              src={trip.images[0]}
+              src={activeImage}
               alt={trip.name}
-              className="w-full h-72 md:h-full object-cover rounded-l-lg"
+              className="max-w-130 h-72 md:h-full object-fill bg-gray-100 rounded-l-lg"
               onError={(e) => {
                 e.currentTarget.src = "/vercel.svg";
               }}
@@ -308,12 +310,17 @@ export default function TripDetail() {
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold mb-4">Gallery</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {trip.images.slice(1).map((img, i) => (
+              {trip.images.map((img, i) => (
                 <img
                   key={i}
                   src={img}
                   alt={`trip-${i}`}
-                  className="h-32 w-full object-cover rounded-xl border border-gray-200 hover:opacity-90 transition-opacity"
+                  onClick={() => setActiveImage(img)}
+                  className={`h-32 w-full object-cover rounded-xl border cursor-pointer transition-all ${
+                    activeImage === img
+                      ? "border-teal-500 ring-2 ring-teal-300"
+                      : "border-gray-200 hover:opacity-90"
+                  }`}
                   onError={(e) => {
                     e.currentTarget.src = "/vercel.svg";
                   }}

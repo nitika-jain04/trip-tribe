@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -40,11 +40,13 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 export default function EnquiryDetail() {
   const { toast } = useToast();
   const { id } = useParams();
+  const router = useRouter();
 
   const [enquiry, setEnquiry] = useState(null);
   const [status, setStatus] = useState("new");
   const [adminNotes, setAdminNotes] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchEnquiry = async () => {
@@ -90,14 +92,14 @@ export default function EnquiryDetail() {
     };
 
     fetchEnquiry();
-  }, [id]);
+  }, [id, toast]);
 
   const handleSave = async () => {
     const token = Cookies.get("token");
     if (!enquiry) return;
 
     try {
-      setLoading(true); // optional: disable inputs while saving
+      setSaving(true);
 
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${enquiry.id}`,
@@ -114,12 +116,8 @@ export default function EnquiryDetail() {
         },
       );
 
-      // if (!res.ok) {
-      //   const errData = await res.json();
-      //   throw new Error(errData?.message || "Failed to update enquiry");
-      // }
-
       const updatedData = await res.json();
+
       if (!res.ok) {
         toast({
           title: "Error",
@@ -127,16 +125,24 @@ export default function EnquiryDetail() {
             updatedData?.error?.message || "Failed to update enquiry ",
           variant: "destructive",
         });
+        return;
       }
 
       // update local state with latest data from server
       setEnquiry(updatedData.result || updatedData);
 
-      toast({
-        title: "Enquiry Updated",
-        description: "The enquiry updated successfully.",
-        variant: "success",
-      });
+      if (res.ok) {
+        toast({
+          title: "Enquiry Updated",
+          description: "The enquiry updated successfully.",
+          variant: "success",
+        });
+
+        router.push("/admin/enquiries");
+        return;
+      }
+
+      router.refresh();
     } catch (err) {
       toast({
         title: "Error",
@@ -144,7 +150,7 @@ export default function EnquiryDetail() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -362,9 +368,8 @@ export default function EnquiryDetail() {
               disabled={loading}
             />
           </div>
-          <Button onClick={handleSave} disabled={loading}>
-            <Save className="h-4 w-4 mr-2" />
-            {loading ? "Saving..." : "Save Changes"}
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? "Saving..." : "Save Changes"}
           </Button>
         </CardContent>
       </Card>
