@@ -47,6 +47,7 @@ import { useRouter } from "next/navigation";
 import { BiComment } from "react-icons/bi";
 import { formatPhoneNumber } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import AdminGuard from "@/app/components/AdminGuard";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -79,11 +80,6 @@ function Enquiries() {
   const fetchEnquiries = useCallback(async () => {
     const token = Cookies.get("token");
 
-    if (!token) {
-      router.push("/");
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -115,14 +111,12 @@ function Enquiries() {
         },
       );
 
-      // if (!res.ok) throw new Error("Failed to fetch enquiries");
-
       const data = await res.json();
 
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to fetch enquiries" || data?.error?.message,
+          description: data?.error?.message || "Failed to fetch enquiries",
           variant: "destructive",
         });
         return;
@@ -132,8 +126,8 @@ function Enquiries() {
         setEnquiries(data.result.data || []);
         setTotalPages(data.result.pagination?.pages || 1);
         setTotalItems(data.result.pagination?.total || 0);
-        setPage(data.result.pagination?.page || 1);
-        setLimit(data.result.pagination?.limit || 10);
+        // setPage(data.result.pagination?.page || 1);
+        // setLimit(data.result.pagination?.limit || 10);
       }
     } catch (err) {
       setError(err.message);
@@ -167,13 +161,6 @@ function Enquiries() {
   }, [search]);
 
   useEffect(() => {
-    const token = Cookies.get("token");
-
-    if (!token) {
-      router.push("/");
-      return;
-    }
-
     fetchEnquiries();
   }, [fetchEnquiries, router]);
 
@@ -209,7 +196,9 @@ function Enquiries() {
         variant: "success",
       });
 
-      fetchEnquiries();
+      // fetchEnquiries();
+      setEnquiries((prev) => prev.filter((e) => e.id !== id));
+      setTotalItems((prev) => prev - 1);
     } catch (err) {
       toast({
         title: "Error",
@@ -256,7 +245,10 @@ function Enquiries() {
         variant: "success",
       });
 
-      fetchEnquiries();
+      // fetchEnquiries();
+      setEnquiries((prev) =>
+        prev.map((e) => (e.id === id ? { ...e, status: "CLOSED" } : e)),
+      );
     } catch (err) {
       toast({
         title: "Error",
@@ -346,263 +338,270 @@ function Enquiries() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Enquiries</h1>
-        <p className="text-muted-foreground">Manage all traveller enquiries</p>
-      </div>
-      {/* Filters */}
-      {/* <Card> */}
-      <CardContent className="pt-2 flex gap-2 flex-wrap w-full">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-3 h-4 w-4" />
-          <Input
-            className="pl-10"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        </div>
-
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => {
-            setPage(1);
-            setStatusFilter(value);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">Status</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={enquiryFilter}
-          onValueChange={(value) => {
-            setPage(1);
-            setEnquiryFilter(value);
-          }}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Inquiry Type" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">Enquiry Type</SelectItem>
-            <SelectItem value="GENERAL">General</SelectItem>
-            <SelectItem value="TRIP">Trip</SelectItem>
-            <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
-            <SelectItem value="SUPPORT">Support</SelectItem>
-            <SelectItem value="FEEDBACK">Feedback</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Input
-          type={fromDate ? "date" : "text"}
-          placeholder="Start Date"
-          value={fromDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setFromDate(e.target.value);
-          }}
-          className="w-40 focus:outline-none focus:border-none placeholder:text-black"
-        />
-
-        <Input
-          type={toDate ? "date" : "text"}
-          placeholder="End Date"
-          value={toDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setToDate(e.target.value);
-          }}
-          className="w-40 focus:outline-none focus:border-none placeholder:text-black"
-        />
-      </CardContent>
-      {/* </Card> */}
-
-      {!loading && !error && enquiries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
-          <BiComment className="w-12 h-12 text-gray-400 mb-4" />
-          <p className="text-gray-600 font-medium">No Enquiries found</p>
-          <p className="text-sm text-gray-400 mt-1">
-            {search && "No enquiries match your search criteria"}
+    <>
+      <div className="space-y-6 p-6">
+        <div>
+          <h1 className="text-3xl font-bold">Enquiries</h1>
+          <p className="text-muted-foreground">
+            Manage all traveller enquiries
           </p>
         </div>
-      ) : loading ? (
-        <div className="space-y-6 p-6">
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">Loading enquiries...</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Please wait while we fetch your data
-              </p>
-            </div>
-          </CardContent>
-        </div>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>All Enquiries ({totalItems})</CardTitle>
-          </CardHeader>
+        {/* Filters */}
+        {/* <Card> */}
+        <CardContent className="pt-2 flex gap-2 flex-wrap w-full">
+          <div className="relative w-80">
+            <Search className="absolute left-3 top-3 h-4 w-4" />
+            <Input
+              className="pl-10"
+              placeholder="Search"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          </div>
 
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Enquiry Type</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setPage(1);
+              setStatusFilter(value);
+            }}
+          >
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
 
-              <TableBody>
-                {enquiries.map((enquiry) => (
-                  <TableRow key={enquiry.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{enquiry.full_name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          <a href="tel:+enquiry.phone_number">
-                            {" "}
-                            {formatPhoneNumber(enquiry.phone_number)}
-                          </a>
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {enquiry.inquiry_type ? (
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            enquiry.inquiry_type === "GENERAL"
-                              ? "bg-blue-100 text-blue-500"
-                              : enquiry.inquiry_type === "TRIP"
-                                ? "bg-yellow-100 text-yellow-700"
-                                : enquiry.inquiry_type === "PARTNERSHIP"
-                                  ? "bg-green-100 text-green-700"
-                                  : enquiry.inquiry_type === "FEEDBACK"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {enquiry.inquiry_type
-                            .replace("_", " ")
-                            .toLowerCase()
-                            .replace(/\b\w/g, (c) => c.toUpperCase())}
-                        </span>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
+            <SelectContent>
+              <SelectItem value="all">Status</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
 
-                    <TableCell>
-                      <a href="mailto:enquiry.mail">{enquiry.email}</a>
-                    </TableCell>
+          <Select
+            value={enquiryFilter}
+            onValueChange={(value) => {
+              setPage(1);
+              setEnquiryFilter(value);
+            }}
+          >
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="Inquiry Type" />
+            </SelectTrigger>
 
-                    <TableCell>
-                      {new Date(enquiry.createdAt).toLocaleDateString()}
-                    </TableCell>
+            <SelectContent>
+              <SelectItem value="all">Enquiry Type</SelectItem>
+              <SelectItem value="GENERAL">General</SelectItem>
+              <SelectItem value="TRIP">Trip</SelectItem>
+              <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
+              <SelectItem value="SUPPORT">Support</SelectItem>
+              <SelectItem value="FEEDBACK">Feedback</SelectItem>
+            </SelectContent>
+          </Select>
 
-                    <TableCell>
-                      <StatusBadge status={enquiry.status.toLowerCase()} />
-                    </TableCell>
+          <Input
+            type={fromDate ? "date" : "text"}
+            placeholder="Start Date"
+            value={fromDate}
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!e.target.value) e.target.type = "text";
+            }}
+            onChange={(e) => {
+              setPage(1);
+              setFromDate(e.target.value);
+            }}
+            className="w-40 focus:outline-none focus:border-none placeholder:text-black"
+          />
 
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
+          <Input
+            type={toDate ? "date" : "text"}
+            placeholder="End Date"
+            value={toDate}
+            onFocus={(e) => (e.target.type = "date")}
+            onBlur={(e) => {
+              if (!e.target.value) e.target.type = "text";
+            }}
+            onChange={(e) => {
+              setPage(1);
+              setToDate(e.target.value);
+            }}
+            className="w-40 focus:outline-none focus:border-none placeholder:text-black"
+          />
+        </CardContent>
+        {/* </Card> */}
 
-                        <DropdownMenuContent>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/enquiries/${enquiry.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
+        {!loading && !error && enquiries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
+            <BiComment className="w-12 h-12 text-gray-400 mb-4" />
+            <p className="text-gray-600 font-medium">No Enquiries found</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {search && "No enquiries match your search criteria"}
+            </p>
+          </div>
+        ) : loading ? (
+          <div className="space-y-6 p-6">
+            <CardContent>
+              <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+                <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+                <p className="text-gray-600 font-medium">
+                  Loading enquiries...
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Please wait while we fetch your data
+                </p>
+              </div>
+            </CardContent>
+          </div>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>All Enquiries ({totalItems})</CardTitle>
+            </CardHeader>
 
-                          {enquiry.status.toLowerCase() !== "closed" && (
-                            <DropdownMenuItem
-                              onClick={() => handleCloseEnquiry(enquiry.id)}
-                            >
-                              <CheckCircle className="mr-2" size={15} />
-                              Mark as Closed
-                            </DropdownMenuItem>
-                          )}
-
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(enquiry.id)}
-                            className="text-red-600"
-                          >
-                            <Trash className="mr-2" size={15} />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Enquiry Type</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                </TableHeader>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-sm text-muted-foreground">
-          Showing {(page - 1) * limit + 1} to{" "}
-          {Math.min(page * limit, totalItems)} of {totalItems}
-        </span>
+                <TableBody>
+                  {enquiries.map((enquiry) => (
+                    <TableRow key={enquiry.id}>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            {enquiry.full_name}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
+                            <a href={`tel:+91${enquiry.phone_number}`}>
+                              {formatPhoneNumber(enquiry.phone_number)}
+                            </a>
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {enquiry.inquiry_type ? (
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              enquiry.inquiry_type === "GENERAL"
+                                ? "bg-blue-100 text-blue-500"
+                                : enquiry.inquiry_type === "TRIP"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : enquiry.inquiry_type === "PARTNERSHIP"
+                                    ? "bg-green-100 text-green-700"
+                                    : enquiry.inquiry_type === "FEEDBACK"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {enquiry.inquiry_type
+                              .replace("_", " ")
+                              .toLowerCase()
+                              .replace(/\b\w/g, (c) => c.toUpperCase())}
+                          </span>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
 
-        <span className="px-3 py-1 text-center text-sm">
-          Page {page} of {totalPages}
-        </span>
+                      <TableCell>
+                        <a href={`mailto:${enquiry.email}`}>{enquiry.email}</a>
+                      </TableCell>
 
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Previous
-          </Button>
+                      <TableCell>
+                        {new Date(enquiry.createdAt).toLocaleDateString()}
+                      </TableCell>
 
-          <Button
-            variant="outline"
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-          </Button>
+                      <TableCell>
+                        <StatusBadge status={enquiry.status.toLowerCase()} />
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal />
+                            </Button>
+                          </DropdownMenuTrigger>
+
+                          <DropdownMenuContent>
+                            <DropdownMenuItem asChild>
+                              <Link href={`/admin/enquiries/${enquiry.id}`}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                View Details
+                              </Link>
+                            </DropdownMenuItem>
+
+                            {enquiry.status.toLowerCase() !== "closed" && (
+                              <DropdownMenuItem
+                                onClick={() => handleCloseEnquiry(enquiry.id)}
+                              >
+                                <CheckCircle className="mr-2" size={15} />
+                                Mark as Closed
+                              </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(enquiry.id)}
+                              className="text-red-600"
+                            >
+                              <Trash className="mr-2" size={15} />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Pagination */}
+        <div className="flex justify-between items-center mt-4">
+          <span className="text-sm text-muted-foreground">
+            Showing {(page - 1) * limit + 1} to{" "}
+            {Math.min(page * limit, totalItems)} of {totalItems}
+          </span>
+
+          <span className="px-3 py-1 text-center text-sm">
+            Page {page} of {totalPages}
+          </span>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Previous
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

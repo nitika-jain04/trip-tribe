@@ -75,36 +75,34 @@ function TripsContent() {
 
   // Fetch all locations at once and map them by ID
   const fetchLocationsMap = async () => {
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=100`,
-      );
-      const data = await res.json();
-      if (!data.success) return {};
+    const cached = sessionStorage.getItem("locations_cache");
+    if (cached) return JSON.parse(cached);
 
-      const locMap = {};
-      (data.result?.locations || []).forEach((loc) => {
-        locMap[loc.id] = {
-          name: loc.name,
-          region: loc.region || "",
-        };
-      });
+    const res = await fetch(
+      `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=100`,
+    );
+    const data = await res.json();
+    if (!data.success) return {};
 
-      console.log("Locations Map:", locMap);
-      return locMap;
-    } catch (err) {
-      console.error("Failed to fetch locations", err);
-      return {};
-    }
+    const locMap = {};
+    (data.result?.locations || []).forEach((loc) => {
+      locMap[loc.id] = { name: loc.name, region: loc.region || "" };
+    });
+
+    sessionStorage.setItem("locations_cache", JSON.stringify(locMap));
+    return locMap;
   };
 
   // Memoize the fetch function to prevent recreation
   const fetchTripsAndUpdateCache = useCallback(
     async (showLoader = true) => {
       if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
 
       try {
+        if (isFetchingRef.current) return;
         isFetchingRef.current = true;
+
         if (showLoader) setLoadingTrips(true);
 
         // Fetch trips
@@ -148,9 +146,6 @@ function TripsContent() {
             region: "",
           };
 
-          console.log("source", source);
-          console.log("dest", destination);
-
           return {
             id: trip.id,
             name: trip.name,
@@ -176,7 +171,7 @@ function TripsContent() {
 
         setTrips(enrichedTrips);
         setLoadingTrips(false);
-        sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
+        // sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
       } catch (err) {
         console.error("Fetch failed", err);
         setLoadingTrips(false);
@@ -224,11 +219,11 @@ function TripsContent() {
     } catch (err) {
       console.error("Failed to fetch trip types", err);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     fetchTripsAndUpdateCache(true);
-  }, [groupBy, locationType, search]);
+  }, [fetchTripsAndUpdateCache]);
 
   useEffect(() => {
     if (tripTypesData.length === 1) {
@@ -670,7 +665,7 @@ function TripsContent() {
                         {trip.name}
                       </h4>
                       <p className="text-body-sm text-muted-foreground mb-4">
-                        {trip.provider.name}
+                        {trip.provider}
                       </p>
 
                       <div className="space-y-3 text-body-sm">

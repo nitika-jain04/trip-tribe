@@ -223,7 +223,7 @@ export default function Contact() {
       console.error("Error submitting enquiry:", error);
       toast({
         title: "Error",
-        description: err.message,
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -382,7 +382,9 @@ export default function Contact() {
                         placeholder="Your name"
                       />
                       {errors.name && (
-                        <p className="text-sm text-red-500">{errors.name}</p>
+                        <p className="text-sm text-admin-error">
+                          {errors.name}
+                        </p>
                       )}
                     </div>
                     <div className="flex flex-col gap-2">
@@ -407,7 +409,9 @@ export default function Contact() {
                         placeholder="you@email.com"
                       />
                       {errors.email && (
-                        <p className="text-sm text-red-500">{errors.email}</p>
+                        <p className="text-sm text-admin-error">
+                          {errors.email}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -446,7 +450,7 @@ export default function Contact() {
                       />
                     </div>
                     {errors.phone && (
-                      <p className="text-sm text-red-500">{errors.phone}</p>
+                      <p className="text-sm text-admin-error">{errors.phone}</p>
                     )}
                   </div>
 
@@ -550,7 +554,9 @@ export default function Contact() {
                       placeholder="How can we help?"
                     />
                     {errors.subject && (
-                      <p className="text-sm text-red-500">{errors.subject}</p>
+                      <p className="text-sm text-admin-error">
+                        {errors.subject}
+                      </p>
                     )}
                   </div>
 
@@ -576,7 +582,9 @@ export default function Contact() {
                       rows={5}
                     />
                     {errors.message && (
-                      <p className="text-sm text-red-500">{errors.message}</p>
+                      <p className="text-sm text-admin-error">
+                        {errors.message}
+                      </p>
                     )}
                   </div>
 

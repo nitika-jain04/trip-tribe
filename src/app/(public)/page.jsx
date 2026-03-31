@@ -124,7 +124,12 @@ export default function Page() {
     setLocationMap(locationMapData);
 
     // If any fetch failed, just stop and return
-    if (!locationsData || !operatorsData || !tripsData) {
+    if (
+      !locationsData ||
+      !operatorsData ||
+      !tripsData ||
+      !locationsMasterData
+    ) {
       setError("Failed to load homepage data");
       setLocations([]);
       setOperators([]);

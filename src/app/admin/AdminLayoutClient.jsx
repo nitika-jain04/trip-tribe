@@ -3,6 +3,7 @@
 import AdminSidebar from "../components/AdminSidebar";
 import { useState, useEffect } from "react";
 import { ToastProvider, ToastViewport } from "../components/ui/toast";
+import AdminGuard from "../components/AdminGuard";
 
 export default function AdminLayoutClient({ children }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -31,28 +32,30 @@ export default function AdminLayoutClient({ children }) {
   if (!isMounted) return null;
 
   return (
-    <ToastProvider>
-      <div className="flex h-screen w-full">
-        <AdminSidebar
-          collapsed={collapsed}
-          toggle={() => {
-            // optional: prevent expanding on mobile
-            if (!isMobile) {
-              setCollapsed(!collapsed);
-            }
-          }}
-        />
+    <AdminGuard>
+      <ToastProvider>
+        <div className="flex h-screen w-full">
+          <AdminSidebar
+            collapsed={collapsed}
+            toggle={() => {
+              // optional: prevent expanding on mobile
+              if (!isMobile) {
+                setCollapsed(!collapsed);
+              }
+            }}
+          />
 
-        <div
-          className={`flex-1 transition-all duration-300 ${
-            collapsed ? "ml-16" : "ml-64"
-          }`}
-        >
-          {children}
+          <div
+            className={`flex-1 transition-all duration-300 ${
+              collapsed ? "ml-16" : "ml-64"
+            }`}
+          >
+            {children}
+          </div>
         </div>
-      </div>
 
-      <ToastViewport />
-    </ToastProvider>
+        <ToastViewport />
+      </ToastProvider>
+    </AdminGuard>
   );
 }

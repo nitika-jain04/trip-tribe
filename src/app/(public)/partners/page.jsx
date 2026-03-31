@@ -234,6 +234,7 @@ export default function Partner() {
           description: message,
           variant: "destructive",
         });
+        return;
       }
 
       // Success

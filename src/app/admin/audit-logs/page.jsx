@@ -29,6 +29,7 @@ import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { useToast } from "@/app/hooks/use-toast";
+import AdminGuard from "@/app/components/AdminGuard";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -87,15 +88,6 @@ function AuditLogs() {
       params.append("page", page.toString());
       params.append("limit", limit.toString());
 
-      if (search) params.append("search", search);
-
-      if (actionFilter !== "all") {
-        params.append("action", actionFilter);
-      }
-
-      params.append("page", page.toString());
-      params.append("limit", limit.toString());
-
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/audit?${params.toString()}`,
         {
@@ -104,8 +96,6 @@ function AuditLogs() {
           },
         },
       );
-
-      // if (!res.ok) throw new Error("Failed to fetch audit logs");
 
       const data = await res.json();
       if (!res.ok) {
@@ -121,8 +111,6 @@ function AuditLogs() {
 
         setTotalPages(data.result.pagination?.pages || 1);
         setTotalItems(data.result.pagination?.total || 0);
-        setPage(data.result.pagination?.page || 1);
-        setLimit(data.result.pagination?.limit || 10);
       }
     } catch (err) {
       setError(err.message);
@@ -130,7 +118,7 @@ function AuditLogs() {
       setLoading(false);
       setInitialLoading(false);
     }
-  }, [search, actionFilter, entityType, fromDate, toDate, page, limit, router]);
+  }, [search, actionFilter, entityType, fromDate, toDate, page, limit, router]); // limit is UI-controlled state; it's safe in deps now that we no longer setLimit from the response
 
   useEffect(() => {
     fetchLogs();
@@ -230,7 +218,7 @@ function AuditLogs() {
       {/* Filters */}
 
       <CardContent className="pt-2 flex gap-2 flex-wrap w-full">
-        <div className="relative w-80">
+        <div className="relative w-full max-w-80">
           <Search className="absolute left-3 top-3 h-4 w-4" />
           <Input
             className="pl-10"
@@ -284,15 +272,6 @@ function AuditLogs() {
           </SelectContent>
         </Select>
 
-        {/* <Input
-          type="date"
-          className="w-44"
-          value={fromDate}
-          onChange={(e) => {
-            setPage(1);
-            setFromDate(e.target.value);
-          }}
-        /> */}
         <Input
           type={fromDate ? "date" : "text"}
           placeholder="Start Date"
@@ -308,16 +287,6 @@ function AuditLogs() {
           className="w-44 focus:outline-none focus:border-none placeholder:text-black"
         />
 
-        {/* <Input
-          type="date"
-          className="w-44"
-          value={toDate}
-          onChange={(e) => {
-            setPage(1);
-            setToDate(e.target.value);
-          }}
-        /> */}
-
         <Input
           type={toDate ? "date" : "text"}
           placeholder="End Date"
@@ -328,7 +297,7 @@ function AuditLogs() {
           }}
           onChange={(e) => {
             setPage(1);
-            setFromDate(e.target.value);
+            setToDate(e.target.value);
           }}
           className="w-44 focus:outline-none focus:border-none placeholder:text-black"
         />

@@ -26,6 +26,8 @@ import {
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const locationCache = new Map();
+
 function TripPage() {
   const { id } = useParams();
 
@@ -33,8 +35,6 @@ function TripPage() {
   const [tripReviews, setTripReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
-
-  const locationCache = new Map();
 
   async function fetchLocation(locationId) {
     if (!locationId) return { name: "Unknown", region: "" };
@@ -96,13 +96,13 @@ function TripPage() {
           Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
         );
 
+        setActiveImage(raw.images?.[0]);
+
         setTrip({
           id: raw.id,
           name: raw.name,
           description: raw.description || "",
-          image: setActiveImage(raw.images?.[0]),
-          // images: raw.images?.length && raw.images,
-          images: raw.images?.length && raw.images,
+          images: raw.images?.length ? raw.images : [],
           source: source.name,
           destination: destination.name,
           region: destination.region,

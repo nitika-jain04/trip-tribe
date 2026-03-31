@@ -176,106 +176,103 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <AdminGuard>
-        <div className="space-y-6 p-6">
-          <Skeleton className="h-8 w-40" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 w-full" />
-            ))}
-          </div>
-          <Skeleton className="h-75 w-full" />
+      <div className="space-y-6 p-6">
+        <Skeleton className="h-8 w-40" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 w-full" />
+          ))}
         </div>
-      </AdminGuard>
+        <Skeleton className="h-75 w-full" />
+      </div>
     );
   }
 
   return (
-    <AdminGuard>
-      <div className="space-y-6 p-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            Overview of your TripTribe platform
-          </p>
-        </div>
+    <div className="space-y-6 p-6">
+      <div>
+        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">
+          Overview of your TripTribe platform
+        </p>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Operators"
-            value={stats.operators.total}
-            subtitle={`${stats.operators.active} active • ${stats.operators.inactive} inactive • ${stats.operators.suspended} suspended • ${stats.operators.pending_approval} pending`}
-            icon={Users}
-            variant="primary"
-          />
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Operators"
+          value={stats.operators.total}
+          subtitle={`${stats.operators.active} active • ${stats.operators.inactive} inactive • ${stats.operators.suspended} suspended • ${stats.operators.pending_approval} pending`}
+          icon={Users}
+          variant="primary"
+        />
 
-          <StatCard
-            title="Total Trips"
-            value={stats.trips.total}
-            subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft, ${stats.trips.archived} archived, ${stats.trips.cancelled} cancelled`}
-            icon={MapPin}
-            variant="success"
-          />
-          <StatCard
-            title="Total Enquiries"
-            value={stats.enquiries.total}
-            subtitle={`${stats.enquiries.this_week} this week, ${stats.enquiries.this_month} this month`}
-            icon={MessageSquare}
-            variant="warning"
-          />
+        <StatCard
+          title="Total Trips"
+          value={stats.trips.total}
+          subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft, ${stats.trips.archived} archived, ${stats.trips.cancelled} cancelled`}
+          icon={MapPin}
+          variant="success"
+        />
+        <StatCard
+          title="Total Enquiries"
+          value={stats.enquiries.total}
+          subtitle={`${stats.enquiries.this_week} this week, ${stats.enquiries.this_month} this month`}
+          icon={MessageSquare}
+          variant="warning"
+        />
 
-          {/* <StatCard
+        {/* <StatCard
           title="Pending Reviews"
           value={dashboardStats.pendingReviews}
           subtitle={`${dashboardStats.approvedReviews} approved`}
           icon={Star}
           variant="accent"
         /> */}
-        </div>
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Enquiry Trends (Last 6 Months)
-                <TrendingUp className="h-5 w-5 text-primary" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={enquiryChart}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="enquiries"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ fill: "hsl(var(--primary))" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+      </div>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Enquiry Trends (Last 6 Months)
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={enquiryChart}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                />
+                <XAxis
+                  dataKey="name"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="enquiries"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(var(--primary))" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-          {/* Popular Destinations Chart */}
-          {/* <Card>
+        {/* Popular Destinations Chart */}
+        {/* <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5 text-success" />
@@ -311,11 +308,11 @@ export default function DashboardPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card> */}
-        </div>
-        {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Top 5 Destinations Table */}
-          {/* <Card>
+      </div>
+      {/* Bottom Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top 5 Destinations Table */}
+        {/* <Card>
             <CardHeader>
               <CardTitle>Top 5 Destinations</CardTitle>
             </CardHeader>
@@ -354,22 +351,21 @@ export default function DashboardPage() {
             </CardContent>
           </Card> */}
 
-          {/* Recent Activity Feed */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {(!activities || activities.length === 0) && (
-                <div className="text-sm text-muted-foreground text-center py-6">
-                  No recent activity
-                </div>
-              )}
-              <ActivityFeed activities={activities} />
-            </CardContent>
-          </Card>
-        </div>
+        {/* Recent Activity Feed */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {(!activities || activities.length === 0) && (
+              <div className="text-sm text-muted-foreground text-center py-6">
+                No recent activity
+              </div>
+            )}
+            <ActivityFeed activities={activities} />
+          </CardContent>
+        </Card>
       </div>
-    </AdminGuard>
+    </div>
   );
 }

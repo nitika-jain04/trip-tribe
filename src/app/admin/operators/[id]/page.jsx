@@ -258,7 +258,7 @@ export default function OperatorDetail() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Trips" value={operator.trip.length ?? 0} />
+        <StatCard label="Total Trips" value={operator.trip?.length ?? 0} />
         {/* <StatCard label="Trips Per Year" value={operator.trips_per_year ?? 0} /> */}
         <StatCard
           label="Member Since"
@@ -291,7 +291,7 @@ export default function OperatorDetail() {
             value={operator.contact_name || "N/A"}
           />
           <DetailItem label="Website" value={operator.website_url ?? "N/A"} />
-          <DetailItem label="Total Trips" value={operator.trip.length} />
+          <DetailItem label="Total Trips" value={operator.trip?.length ?? 0} />
           {/* <DetailItem label="Trips Per Year" value={operator.trips_per_year} /> */}
           <DetailItem
             label="Regions"

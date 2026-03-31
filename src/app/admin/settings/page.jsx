@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -34,7 +35,7 @@ function Page() {
   const { toast } = useToast();
 
   return (
-    <AdminGuard>
+    <>
       <div className="px-5 py-10 flex flex-col gap-5">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
@@ -71,7 +72,7 @@ function Page() {
 
         {activeTab === "destinations" ? <Destinations /> : <Categories />}
       </div>
-    </AdminGuard>
+    </>
   );
 }
 
@@ -323,7 +324,7 @@ function Destinations() {
       {/* Table */}
       {!loading && !error && destinations.length > 0 && (
         <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
-          <div className="grid grid-cols-[2.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
+          <div className="grid grid-cols-[2.5fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
             <div>Destination</div>
             <div>Region</div>
             <div>Type</div>
@@ -334,7 +335,7 @@ function Destinations() {
           {destinations.map((des, i) => (
             <div
               key={des.id || i}
-              className="grid grid-cols-[2.5fr_2fr_2fr_2fr_1fr] px-3 py-4 hover:bg-gray-50 transition-colors border-t border-gray-100"
+              className="grid grid-cols-[2.5fr_2fr_2fr_1fr] px-3 py-4 hover:bg-gray-50 transition-colors border-t border-gray-100"
             >
               <div className="font-medium">{des?.name || "-"}</div>
               <div className="text-gray-600">{des?.region || "-"}</div>
