@@ -22,6 +22,7 @@ import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { ActivityFeed } from "@/app/components/admin/ActivityFeed";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -56,6 +57,7 @@ export default function DashboardPage() {
   const [enquiryChart, setEnquiryChart] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
+  const { toast } = useToast();
 
   const mapActivityType = (type) => {
     switch (type) {
@@ -159,6 +161,11 @@ export default function DashboardPage() {
         setEnquiryChart(formattedChart);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
+        toast({
+          title: "Error",
+          description: "Could not load dashboard. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }

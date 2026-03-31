@@ -214,7 +214,6 @@ function Destinations() {
       // ✅ Success
       setDestinations((prev) => prev.filter((item) => item.id !== locationId));
 
-      setPage(1);
       getAllDestinations();
 
       toast({

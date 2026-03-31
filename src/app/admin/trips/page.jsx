@@ -99,7 +99,7 @@ function Page() {
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE&application_status=APPROVED`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin?application_status=APPROVED`,
         {
           method: "GET",
           headers: {
@@ -136,8 +136,10 @@ function Page() {
       if (statusFilter !== "all")
         params.set("status", statusFilter.toUpperCase());
 
+      if (operatorFilter !== "all") params.set("operator_id", operatorFilter);
+
       if (typeFilter !== "all") {
-        console.log(typeFilter);
+        // console.log(typeFilter);
         params.set("type_id", typeFilter);
       }
 
@@ -179,7 +181,11 @@ function Page() {
         });
       }
     } catch (err) {
-      console.error(err.message);
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
       setError(err.message);
       setTrips([]);
     } finally {
@@ -782,21 +788,18 @@ function Page() {
         </div>
       </div>
 
-      {showModal && (
-        <AddTripModal
-          handleModalClose={handleModalClose}
-          operators={operators}
-        />
-      )}
+      {showModal && <AddTripModal handleModalClose={handleModalClose} />}
     </AdminGuard>
   );
 }
 
-function AddTripModal({ handleModalClose, operators }) {
+function AddTripModal({ handleModalClose }) {
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
   const [showDestinationMap, setShowDestinationMap] = useState(false);
+  const [operators, setOperators] = useState([]);
+  const [loadingOperators, setLoadingOperators] = useState(false);
   const [error, setError] = useState("");
   const { tripTypes, loadingTripTypes, error: tripTypesError } = useTripTypes();
   const { toast } = useToast();
@@ -833,6 +836,38 @@ function AddTripModal({ handleModalClose, operators }) {
     exclusions: [""],
     itinerary: [{ day: 1, activities: [""] }],
   });
+
+  const fetchOperators = useCallback(async () => {
+    setLoadingOperators(true);
+    const token = Cookies.get("token");
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE&application_status=APPROVED`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setOperators(data.result.operators || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch operators:", err);
+    } finally {
+      setLoadingOperators(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOperators();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

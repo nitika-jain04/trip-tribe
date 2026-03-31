@@ -243,6 +243,11 @@ export default function Contact() {
       if (data.success) setTrips(data?.result?.trips || []);
     } catch (err) {
       console.error(err);
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     }
   };
 

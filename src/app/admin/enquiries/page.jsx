@@ -137,6 +137,11 @@ function Enquiries() {
       }
     } catch (err) {
       setError(err.message);
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
       setInitialLoading(false); // ✅ important
@@ -481,7 +486,10 @@ function Enquiries() {
                       <div className="flex flex-col">
                         <span className="font-medium">{enquiry.full_name}</span>
                         <span className="text-sm text-muted-foreground">
-                          {formatPhoneNumber(enquiry.phone_number)}
+                          <a href="tel:+enquiry.phone_number">
+                            {" "}
+                            {formatPhoneNumber(enquiry.phone_number)}
+                          </a>
                         </span>
                       </div>
                     </TableCell>
@@ -510,7 +518,9 @@ function Enquiries() {
                       )}
                     </TableCell>
 
-                    <TableCell>{enquiry.email}</TableCell>
+                    <TableCell>
+                      <a href="mailto:enquiry.mail">{enquiry.email}</a>
+                    </TableCell>
 
                     <TableCell>
                       {new Date(enquiry.createdAt).toLocaleDateString()}

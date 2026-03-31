@@ -13,6 +13,7 @@ import {
   UserX,
   Trash2,
   Plus,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/app/components/ui/button";
@@ -150,6 +151,11 @@ function OperatorsPage() {
       setTotalOperators(pagination.total || 0);
       setTotalPages(pagination.pages || 1);
     } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
       console.error("Fetch error:", err);
       setError(err.message);
       setOperators([]);
@@ -462,10 +468,14 @@ function OperatorsPage() {
                 </p>
               </div>
             ) : error ? (
-              <div className="flex flex-col items-center py-16 text-red-500">
-                <p>{error}</p>
-                <Button onClick={getOperators} className="mt-4">
-                  Retry
+              <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
+                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                <p className="text-red-600 font-medium">
+                  Failed to load operators
+                </p>
+                <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
+                <Button onClick={getOperators} variant="destructive">
+                  Try Again
                 </Button>
               </div>
             ) : operators.length === 0 ? (

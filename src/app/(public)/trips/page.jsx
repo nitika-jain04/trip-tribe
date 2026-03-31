@@ -72,54 +72,58 @@ function TripsContent() {
 
   // Track if data is already fetching
   const isFetchingRef = useRef(false);
-  const initialLoadRef = useRef(false);
+
+  // Fetch all locations at once and map them by ID
+  const fetchLocationsMap = async () => {
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=100`,
+      );
+      const data = await res.json();
+      if (!data.success) return {};
+
+      const locMap = {};
+      (data.result?.locations || []).forEach((loc) => {
+        locMap[loc.id] = {
+          name: loc.name,
+          region: loc.region || "",
+        };
+      });
+
+      console.log("Locations Map:", locMap);
+      return locMap;
+    } catch (err) {
+      console.error("Failed to fetch locations", err);
+      return {};
+    }
+  };
 
   // Memoize the fetch function to prevent recreation
   const fetchTripsAndUpdateCache = useCallback(
     async (showLoader = true) => {
-      // Prevent duplicate fetches
       if (isFetchingRef.current) return;
 
       try {
         isFetchingRef.current = true;
         if (showLoader) setLoadingTrips(true);
 
+        // Fetch trips
         let url = `${BASE_URL}/api/${API_VERSION}/trips`;
-
         const params = new URLSearchParams();
-
-        // ✅ Only apply filters if search exists
         if (search) {
           params.set("group_by", groupBy || "location");
           if (locationType) params.set("location_type", locationType);
           params.set("search", search);
         } else {
-          // ✅ Default trips list
           params.set("page", 1);
           params.set("limit", 10);
         }
-
         url += `?${params.toString()}`;
-
         const res = await fetch(url);
-
-        // if (!res.ok) throw new Error("Failed to fetch trips");
-
         const data = await res.json();
-
-        if (!res.ok) {
-          toast({
-            title: "Error",
-            description: data?.error?.message || "Failed to fetch trips",
-            variant: "destructive",
-          });
-          return;
-        }
-
         if (!data.success) return;
 
         let rawTrips = [];
-
         if (search && (groupBy || "location") === "location") {
           const groups = data.result?.groups || [];
           rawTrips = groups.flatMap((g) => g.trips || []);
@@ -127,66 +131,35 @@ function TripsContent() {
           rawTrips = data.result?.trips || [];
         }
 
-        // Extract UNIQUE IDs
-        const operatorIds = [
-          ...new Set(rawTrips.map((t) => t.operator_id).filter(Boolean)),
-        ];
-        const locationIds = [
-          ...new Set(
-            rawTrips
-              .flatMap((t) => [t.source_id, t.destination_id])
-              .filter(Boolean),
-          ),
-        ];
+        const locationsMap = await fetchLocationsMap();
 
-        // Batch fetch PARALLEL
-        const [operatorsRes, locationsRes] = await Promise.all([
-          fetch(
-            `${BASE_URL}/api/${API_VERSION}/operators?ids=${operatorIds.join(",")}`,
-          ),
-          fetch(
-            `${BASE_URL}/api/${API_VERSION}/locations?ids=${locationIds.join(",")}`,
-          ),
-        ]);
-
-        const operatorsData = await operatorsRes.json();
-        const locationsData = await locationsRes.json();
-
-        // Build lookup maps
-        const operatorMap = {};
-        (operatorsData?.result.operators || []).forEach((op) => {
-          operatorMap[op.id] = op.name;
-        });
-
-        const locationMap = {};
-        (locationsData?.result.locations || []).forEach((loc) => {
-          locationMap[loc.id] = {
-            name: loc.name,
-            region: loc.region,
-          };
-        });
-
-        // Enrich trips
         const enrichedTrips = rawTrips.map((trip) => {
           const start = new Date(trip.start_date);
           const end = new Date(trip.end_date);
           const durationDays =
             Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-          const destination = locationMap[trip.destination_id] || {
+          const destination = locationsMap[trip.destination_id] || {
             name: "Unknown",
-            region: "Unknown",
+            region: "",
           };
+          const source = locationsMap[trip.source_id] || {
+            name: "Unknown",
+            region: "",
+          };
+
+          console.log("source", source);
+          console.log("dest", destination);
 
           return {
             id: trip.id,
             name: trip.name,
             image: trip.images[0],
-            destination: destination.name,
-            region: destination.region,
-            provider: {
-              name: operatorMap[trip.operator_id] || "Unknown",
-            },
+            destination_name: destination.name,
+            destination_region: destination.region,
+            source_name: source.name,
+            source_region: source.region,
+            provider: trip.operator?.name || "Unknown",
             priceFrom: Number(trip.price),
             duration: `${durationDays} days`,
             groupSize: `${trip.total_seats} people`,
@@ -201,16 +174,9 @@ function TripsContent() {
           };
         });
 
-        // Update UI once with final data
         setTrips(enrichedTrips);
-
-        // Cache everything
-        sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
-        sessionStorage.setItem("trips_cache_timestamp", Date.now().toString());
-        sessionStorage.setItem("operator_map", JSON.stringify(operatorMap));
-        sessionStorage.setItem("location_map", JSON.stringify(locationMap));
-
         setLoadingTrips(false);
+        sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
       } catch (err) {
         console.error("Fetch failed", err);
         setLoadingTrips(false);
@@ -220,39 +186,6 @@ function TripsContent() {
     },
     [groupBy, locationType, search],
   );
-
-  // Optimized getPublishedTrips with cache validation
-  const getPublishedTrips = useCallback(async () => {
-    try {
-      const cachedTrips = sessionStorage.getItem("trips_cache");
-      const cachedTimestamp = sessionStorage.getItem("trips_cache_timestamp");
-      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache duration
-
-      const isCacheValid =
-        cachedTrips &&
-        cachedTimestamp &&
-        Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION;
-
-      if (isCacheValid) {
-        setTrips(JSON.parse(cachedTrips));
-        setLoadingTrips(false);
-
-        // ✅ Only revalidate in background if cache is old (but still valid)
-        const timeSinceCache = Date.now() - parseInt(cachedTimestamp);
-        if (timeSinceCache > CACHE_DURATION / 2) {
-          // Revalidate in background without showing loader
-          fetchTripsAndUpdateCache(false);
-        }
-        return;
-      }
-
-      // No valid cache, fetch fresh
-      await fetchTripsAndUpdateCache(true);
-    } catch (err) {
-      console.error("Failed to get trips", err);
-      setLoadingTrips(false);
-    }
-  }, [fetchTripsAndUpdateCache]);
 
   // Get trip types with caching
   const getTripTypes = useCallback(async () => {
@@ -311,8 +244,8 @@ function TripsContent() {
       result = result.filter(
         (trip) =>
           trip.name.toLowerCase().includes(query) ||
-          trip.destination.toLowerCase().includes(query) ||
-          trip.region.toLowerCase().includes(query),
+          trip.destination_name.toLowerCase().includes(query) ||
+          trip.destination_region.toLowerCase().includes(query),
       );
     }
 
@@ -591,8 +524,10 @@ function TripsContent() {
                       </Link>
                       <div className="p-6">
                         <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
-                          <MapPin className="w-4 h-4" /> {trip.destination}
-                          {trip.region !== "Unknown" && `, ${trip.region}`}
+                          <MapPin className="w-4 h-4" /> {trip.destination_name}
+                          {trip.destination_region
+                            ? `, ${trip.destination_region}`
+                            : ""}
                         </div>
                         <Link href={`/trip/${trip.id}`}>
                           <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors">
@@ -614,9 +549,9 @@ function TripsContent() {
                           </span>
                         </div>
                         <p className="text-body-sm text-muted-foreground mb-4">
-                          by
+                          by{" "}
                           <span className="text-foreground font-medium">
-                            {trip.provider.name}
+                            {trip.provider}
                           </span>
                         </p>
                         <div className="flex items-center justify-between pt-4 border-t border-border">

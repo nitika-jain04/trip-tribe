@@ -6,28 +6,53 @@ import { useEffect, useState, Suspense } from "react";
 
 import {
   MapPin,
-  Star,
   Shield,
   Calendar,
   Users,
   Clock,
   ChevronLeft,
-  Check,
-  X,
   Loader2,
   ImageIcon,
+  Check,
+  X,
 } from "lucide-react";
-
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
-import Image from "next/image";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+const locationCache = new Map();
+
+async function fetchLocation(locationId) {
+  if (!locationId) return { name: "Unknown", region: "" };
+
+  if (locationCache.has(locationId)) {
+    return locationCache.get(locationId);
+  }
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/${API_VERSION}/locations/${locationId}`,
+    );
+    const data = await res.json();
+    const locationData = {
+      name: data?.result?.name || "Unknown",
+      region: data?.result?.region || "",
+    };
+
+    // store in cache
+    locationCache.set(locationId, locationData);
+    return locationData;
+  } catch (err) {
+    console.error(`Error fetching location ${locationId}:`, err);
+    return { name: "Unknown", region: "" };
+  }
+}
 
 function TripPage() {
   const { id } = useParams();
@@ -43,39 +68,25 @@ function TripPage() {
       try {
         setLoading(true);
 
+        // Fetch trip details
         const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`);
-
         const data = await res.json();
-
         if (!data?.success) {
           setTrip(null);
           return;
         }
 
-        // ✅ FIX 1: handle both API shapes safely
         const raw = Array.isArray(data.result?.trips)
           ? data.result.trips[0]
           : data.result;
+        if (!raw) return setTrip(null);
 
-        if (!raw) {
-          setTrip(null);
-          return;
-        }
-
-        // ✅ FIX 2: fetch related data safely
-        const [operatorRes, srcRes, destRes] = await Promise.all([
-          fetch(`${BASE_URL}/api/${API_VERSION}/operators/${raw.operator_id}`),
-          fetch(`${BASE_URL}/api/${API_VERSION}/locations/${raw.source_id}`),
-          fetch(
-            `${BASE_URL}/api/${API_VERSION}/locations/${raw.destination_id}`,
-          ),
+        // ✅ Fetch source and destination with caching
+        const [source, destination] = await Promise.all([
+          fetchLocation(raw.source_id),
+          fetchLocation(raw.destination_id),
         ]);
 
-        const operator = await operatorRes.json();
-        const source = await srcRes.json();
-        const destination = await destRes.json();
-
-        // ✅ FIX 3: correct duration math
         const start = new Date(raw.start_date);
         const end = new Date(raw.end_date);
         const days = Math.max(
@@ -83,18 +94,17 @@ function TripPage() {
           Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
         );
 
-        // ✅ Map API → UI
         setTrip({
           id: raw.id,
           name: raw.name,
           description: raw.description || "",
           image: raw.images?.[0] || "/placeholder.jpg",
           images: raw.images?.length ? raw.images : ["/placeholder.jpg"],
-          source: source?.result?.name || "Unknown",
-          destination: destination?.result?.name || "Unknown",
-          region: destination?.result?.region || "",
+          source: source.name,
+          destination: destination.name,
+          region: destination.region,
           provider: {
-            name: operator?.result?.name || "Unknown",
+            name: raw.operator.name || "Unknown",
             rating: 4.8,
             reviewCount: 0,
           },
@@ -124,21 +134,18 @@ function TripPage() {
     fetchTrip();
   }, [id]);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
       </div>
     );
-  }
-
-  if (!trip) {
+  if (!trip)
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Trip not found</p>
       </div>
     );
-  }
 
   return (
     <Suspense fallback={<div className="p-8">Loading trip...</div>}>

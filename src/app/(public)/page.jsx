@@ -26,9 +26,6 @@ import { useToast } from "../hooks/use-toast";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-const locationCache = {};
-const operatorCache = {};
-
 const baskerville = Libre_Baskerville({
   weight: ["400", "700"],
   subsets: ["latin"],
@@ -92,6 +89,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [error, setError] = useState(null);
+  const [locationMap, setLocationMap] = useState({});
   const { toast } = useToast();
 
   const safeFetch = async (url) => {
@@ -114,16 +112,18 @@ export default function Page() {
     setLoading(true);
     setError(null);
 
-    // Use safeFetch for all requests
-    const locationsData = await safeFetch(
-      `${BASE_URL}/api/${API_VERSION}/trips?group_by=location`,
-    );
-    const operatorsData = await safeFetch(
-      `${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`,
-    );
-    const tripsData = await safeFetch(
-      `${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`,
-    );
+    const [locationsData, operatorsData, tripsData, locationsMasterData] =
+      await Promise.all([
+        safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`),
+        safeFetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`),
+        safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`),
+        safeFetch(
+          `${BASE_URL}/api/${API_VERSION}/locations/admin?page=1&limit=100`,
+        ),
+      ]);
+
+    const locationMapData = buildLocationMap(locationsMasterData);
+    setLocationMap(locationMapData);
 
     // If any fetch failed, just stop and return
     if (!locationsData || !operatorsData || !tripsData) {
@@ -136,20 +136,16 @@ export default function Page() {
     }
 
     // Process locations
-    const processedLocations = await processLocations(locationsData);
+    const processedLocations = processLocations(locationsData, locationMapData);
 
     // Process operators
     const processedOperators = operatorsData.success
       ? operatorsData.result?.operators || []
       : [];
 
-    processedOperators.forEach((op) => {
-      operatorCache[op.id] = op.name;
-    });
-
     // Process trips with enrichment
     const processedTrips = tripsData.success
-      ? await enrichTripsWithDetails(tripsData.result?.trips || [])
+      ? enrichTripsWithDetails(tripsData.result?.trips || [], locationMapData)
       : [];
 
     // Update state
@@ -160,64 +156,72 @@ export default function Page() {
   };
 
   // Process locations helper function
-  const processLocations = async (locationsData) => {
+  const processLocations = (locationsData, locationMap) => {
     if (!locationsData.success) return [];
 
     const groups = locationsData.result?.groups || [];
 
-    return Promise.all(
-      groups.map(async (group) => {
-        const firstTrip = group.trips?.[0];
+    return groups.map((group) => {
+      const firstTrip = group.trips?.[0];
 
-        const locationData = await getLocation(firstTrip?.destination_id);
+      const locationData = locationMap[firstTrip?.destination_id] || {};
 
-        return {
-          id: firstTrip?.destination_id || group.location_name,
-          name: group.location_name,
-          region: locationData.region,
-          type: "destination",
-          trips: group.total_trips,
-          image: firstTrip?.images?.[0] || null,
-        };
-      }),
-    );
+      return {
+        id: firstTrip?.destination_id || group.location_name,
+        name: group.location_name,
+        region: locationData.region || "Unknown",
+        type: "destination",
+        trips: group.total_trips,
+        image: firstTrip?.images?.[0] || null,
+      };
+    });
   };
 
-  const enrichTripsWithDetails = async (rawTrips) => {
+  const buildLocationMap = (data) => {
+    if (!data?.success) return {};
+
+    const locations = data.result?.locations || [];
+
+    const map = {};
+    locations.forEach((loc) => {
+      map[loc.id] = {
+        name: loc.name,
+        region: loc.region,
+      };
+    });
+
+    return map;
+  };
+
+  const enrichTripsWithDetails = (rawTrips, locationMap) => {
     if (!rawTrips.length) return [];
 
-    return Promise.all(
-      rawTrips.map(async (trip) => {
-        const [source, destination, operatorName] = await Promise.all([
-          getLocation(trip.source_id),
-          getLocation(trip.destination_id),
-          getOperator(trip.operator_id),
-        ]);
+    return rawTrips.map((trip) => {
+      const source = locationMap[trip.source_id] || {};
+      const destination = locationMap[trip.destination_id] || {};
 
-        const start = new Date(trip.start_date);
-        const end = new Date(trip.end_date);
-        const durationDays =
-          Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      const start = new Date(trip.start_date);
+      const end = new Date(trip.end_date);
+      const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-        return {
-          id: trip.id,
-          name: trip.name,
-          images: trip.images?.length ? trip.images : [],
-          destination: destination.name,
-          region: destination.region,
-          provider: operatorName,
-          price: Number(trip.price) || 0,
-          duration: `${durationDays} days`,
-          groupSize: `${trip.total_seats} people`,
-          difficulty:
-            trip.difficulty?.charAt(0) +
-              trip.difficulty?.slice(1).toLowerCase() || "Moderate",
-          rating: 4.5,
-          reviewCount: 0,
-          verified: true,
-        };
-      }),
-    );
+      return {
+        id: trip.id,
+        name: trip.name,
+        images: trip.images?.length ? trip.images : [],
+        destination: destination.name || "Unknown",
+        region: destination.region || "Unknown",
+        provider: trip.operator?.name || "Unknown",
+        price: Number(trip.price) || 0,
+        duration: `${durationDays} days`,
+        groupSize: `${trip.total_seats} people`,
+        difficulty:
+          trip.difficulty?.charAt(0) +
+            trip.difficulty?.slice(1).toLowerCase() || "Moderate",
+        rating: trip.operator?.rating || 4.5,
+        reviewCount: 0,
+        verified: true,
+      };
+    });
   };
 
   const handleSearch = (e) => {
@@ -231,53 +235,6 @@ export default function Page() {
   useEffect(() => {
     fetchHomePageData();
   }, []);
-
-  const locationPromises = {};
-
-  const getLocation = async (id) => {
-    if (!id) return { name: "Unknown", region: "Unknown" };
-
-    if (locationCache[id]) return locationCache[id];
-
-    if (locationPromises[id]) return locationPromises[id];
-
-    locationPromises[id] = fetch(
-      `${BASE_URL}/api/${API_VERSION}/locations/${id}`,
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        const value = {
-          name: data?.result?.name || "Unknown",
-          region: data?.result?.region || "Unknown",
-        };
-        locationCache[id] = value;
-        return value;
-      });
-
-    return locationPromises[id];
-  };
-
-  const operatorPromises = {};
-
-  const getOperator = async (id) => {
-    if (!id) return "Unknown";
-
-    if (operatorCache[id]) return operatorCache[id];
-
-    if (operatorPromises[id]) return operatorPromises[id];
-
-    operatorPromises[id] = fetch(
-      `${BASE_URL}/api/${API_VERSION}/operators/${id}`,
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        const value = data?.result?.name || "Unknown";
-        operatorCache[id] = value;
-        return value;
-      });
-
-    return operatorPromises[id];
-  };
 
   // Create datalist options from locations
   const locationNames = locations.map((loc) => loc.name);
