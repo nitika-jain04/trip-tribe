@@ -90,6 +90,7 @@ function Page() {
   const [typeFilter, setTypeFilter] = useState("all");
   const [difficultyFilter, setDifficultyFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [operatorFilter, setOperatorFilter] = useState("all");
   const [searchError, setSearchError] = useState("");
 
   const fetchOperators = useCallback(async () => {
@@ -191,6 +192,7 @@ function Page() {
     limit,
     sortBy,
     statusFilter,
+    operatorFilter,
     typeFilter,
     difficultyFilter,
     debouncedSearch,
@@ -442,7 +444,7 @@ function Page() {
 
         {/* Filters */}
         <CardContent className="pt-2">
-          <div className="flex flex-col sm:flex-row gap-2 min-w-150 max-w-240">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -460,6 +462,20 @@ function Page() {
                 <p className="text-sm text-admin-error mt-1">{searchError}</p>
               )}
             </div>
+
+            <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Operator" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Operators</SelectItem>
+                {operators.map((operator) => (
+                  <SelectItem key={operator.id} value={operator.id}>
+                    {operator.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-40">
