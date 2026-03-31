@@ -379,7 +379,7 @@ function OperatorsPage() {
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
               Operators
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1">
               Manage and monitor all trip operators
             </p>
           </div>
@@ -411,7 +411,7 @@ function OperatorsPage() {
             {/* Filters Right Side */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectTrigger className="w-full sm:w-35">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
