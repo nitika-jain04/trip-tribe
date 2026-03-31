@@ -588,7 +588,7 @@ function TripsContent() {
                     </h3>
 
                     <p className="text-muted-foreground mb-6 max-w-md">
-                      We couldn’t find any trips for
+                      We couldn’t find any trips for{" "}
                       <span className="font-medium text-foreground">
                         {searchQuery}
                       </span>
