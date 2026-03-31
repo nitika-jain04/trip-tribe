@@ -100,9 +100,6 @@ function TripsContent() {
       isFetchingRef.current = true;
 
       try {
-        if (isFetchingRef.current) return;
-        isFetchingRef.current = true;
-
         if (showLoader) setLoadingTrips(true);
 
         // Fetch trips
