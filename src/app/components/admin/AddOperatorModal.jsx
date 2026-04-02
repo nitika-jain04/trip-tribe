@@ -80,19 +80,13 @@ function AddOperatorModal({ handleModalClose }) {
 
       const data = await res.json();
 
-      if (!res.ok)
-        toast({
-          title: "Error",
-          description: "Failed to upload image",
-          variant: "destructive",
-        });
-
       const imageUrl = data.result?.url;
 
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "No Image URL returned from the server",
+          description:
+            data?.error?.message || "No Image URL returned from the server",
           variant: "destructive",
         });
         return;
@@ -270,7 +264,7 @@ function AddOperatorModal({ handleModalClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="bg-white w-[70vw] max-w-6xl h-[70vh] lg:h-[90vh] rounded-xl shadow-lg flex flex-col">
+      <div className="bg-white w-[80vw] md:w-[70vw] max-w-6xl h-[70vh] lg:h-[90vh] rounded-xl shadow-lg flex flex-col">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
           <h2 className="text-lg sm:text-xl font-semibold text-[#14181F]">

@@ -217,21 +217,22 @@ function AuditLogs() {
 
       {/* Filters */}
 
-      <CardContent className="pt-2 flex gap-2 flex-wrap w-full">
-        <div className="relative w-full max-w-80">
-          <Search className="absolute left-3 top-3 h-4 w-4" />
-          <Input
-            className="pl-10"
-            placeholder="Search actor / entity"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        </div>
+      <CardContent className="pt-2">
+        <div className="flex flex-row gap-2 w-full flex-wrap">
+          <div className="relative w-full flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4" />
+            <Input
+              className="pl-10"
+              placeholder="Search actor / entity"
+              value={search}
+              onChange={(e) => {
+                setPage(1);
+                setSearch(e.target.value);
+              }}
+            />
+          </div>
 
-        {/* <Select
+          {/* <Select
           value={actionFilter}
           onValueChange={(value) => {
             setPage(1);
@@ -251,56 +252,59 @@ function AuditLogs() {
           </SelectContent>
         </Select> */}
 
-        <Select
-          value={entityType}
-          onValueChange={(value) => {
-            setPage(1);
-            setEntityType(value);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Entity" />
-          </SelectTrigger>
+          <div className="grid grid-cols-2 gap-3">
+            <Select
+              value={entityType}
+              onValueChange={(value) => {
+                setPage(1);
+                setEntityType(value);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Entity" />
+              </SelectTrigger>
 
-          <SelectContent>
-            <SelectItem value="all">Entity</SelectItem>
-            <SelectItem value="trip">Trip</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-            <SelectItem value="operator">Operator</SelectItem>
-            <SelectItem value="location">Location</SelectItem>
-            <SelectItem value="enquiry">Enquiry</SelectItem>
-          </SelectContent>
-        </Select>
+              <SelectContent>
+                <SelectItem value="all">Entity</SelectItem>
+                <SelectItem value="trip">Trip</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="operator">Operator</SelectItem>
+                <SelectItem value="location">Location</SelectItem>
+                <SelectItem value="enquiry">Enquiry</SelectItem>
+              </SelectContent>
+            </Select>
 
-        <Input
-          type={fromDate ? "date" : "text"}
-          placeholder="Start Date"
-          value={fromDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setFromDate(e.target.value);
-          }}
-          className="w-44 focus:outline-none focus:border-none placeholder:text-black"
-        />
+            <Input
+              type={fromDate ? "date" : "text"}
+              placeholder="Start Date"
+              value={fromDate}
+              onFocus={(e) => (e.target.type = "date")}
+              onBlur={(e) => {
+                if (!e.target.value) e.target.type = "text";
+              }}
+              onChange={(e) => {
+                setPage(1);
+                setFromDate(e.target.value);
+              }}
+              className="w-full sm:w-44 focus:outline-none focus:border-none placeholder:text-black"
+            />
 
-        <Input
-          type={toDate ? "date" : "text"}
-          placeholder="End Date"
-          value={toDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setToDate(e.target.value);
-          }}
-          className="w-44 focus:outline-none focus:border-none placeholder:text-black"
-        />
+            <Input
+              type={toDate ? "date" : "text"}
+              placeholder="End Date"
+              value={toDate}
+              onFocus={(e) => (e.target.type = "date")}
+              onBlur={(e) => {
+                if (!e.target.value) e.target.type = "text";
+              }}
+              onChange={(e) => {
+                setPage(1);
+                setToDate(e.target.value);
+              }}
+              className="w-full sm:w-44 focus:outline-none focus:border-none placeholder:text-black"
+            />
+          </div>
+        </div>
       </CardContent>
 
       {/* Loading */}
@@ -319,78 +323,78 @@ function AuditLogs() {
           <CardContent className="px-4 sm:px-6 pt-2">
             <div className="overflow-x-auto">
               <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Entity</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Old Values</TableHead>
-                  <TableHead>New Values</TableHead>
-                  <TableHead>Actor</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {logs.length === 0 && (
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center py-10 text-muted-foreground"
-                    >
-                      No audit logs found
-                    </TableCell>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Old Values</TableHead>
+                    <TableHead>New Values</TableHead>
+                    <TableHead>Actor</TableHead>
                   </TableRow>
-                )}
+                </TableHeader>
 
-                {logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>{actionBadge(log.action)}</TableCell>
-                    {/* <TableCell>{log.action}</TableCell> */}
+                <TableBody>
+                  {logs.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-10 text-muted-foreground"
+                      >
+                        No audit logs found
+                      </TableCell>
+                    </TableRow>
+                  )}
 
-                    <TableCell>{entityBadge(log.entity_type)}</TableCell>
+                  {logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{actionBadge(log.action)}</TableCell>
+                      {/* <TableCell>{log.action}</TableCell> */}
 
-                    <TableCell>
-                      {new Date(log.createdAt).toLocaleString()}
-                    </TableCell>
+                      <TableCell>{entityBadge(log.entity_type)}</TableCell>
 
-                    <TableCell
-                      className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
-                      title={JSON.stringify(log.old_values)}
-                    >
-                      {log.old_values ? JSON.stringify(log.old_values) : "-"}
-                    </TableCell>
+                      <TableCell>
+                        {new Date(log.createdAt).toLocaleString()}
+                      </TableCell>
 
-                    <TableCell
-                      className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
-                      title={JSON.stringify(log.new_values)}
-                    >
-                      {log.new_values ? JSON.stringify(log.new_values) : "-"}
-                    </TableCell>
+                      <TableCell
+                        className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
+                        title={JSON.stringify(log.old_values)}
+                      >
+                        {log.old_values ? JSON.stringify(log.old_values) : "-"}
+                      </TableCell>
 
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{log.actor?.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {log.actor?.email}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      <TableCell
+                        className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
+                        title={JSON.stringify(log.new_values)}
+                      >
+                        {log.new_values ? JSON.stringify(log.new_values) : "-"}
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{log.actor?.name}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {log.actor?.email}
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </CardContent>
         </Card>
       )}
 
       {/* Mobile View: Cards */}
-      {(!loading && !error && logs.length > 0) && (
+      {!loading && !error && logs.length > 0 && (
         <div className="sm:hidden space-y-4 pt-2">
           <div className="px-1 pb-2">
             <h2 className="text-lg font-semibold">All Logs ({totalItems})</h2>
           </div>
-          {logs.map(log => (
+          {logs.map((log) => (
             <Card key={log.id} className="border shadow-sm p-4">
               <div className="flex justify-between items-start mb-3">
                 <div className="flex flex-col items-start gap-2">
@@ -399,25 +403,33 @@ function AuditLogs() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium">{log.actor?.name}</p>
-                  <p className="text-xs text-muted-foreground">{log.actor?.email}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {log.actor?.email}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="space-y-2 text-sm mt-3 border-t pt-3">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Date:</span>
-                  <span className="font-medium">{new Date(log.createdAt).toLocaleString()}</span>
+                  <span className="font-medium">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </span>
                 </div>
-                
+
                 <div className="pt-2">
-                  <span className="text-muted-foreground text-xs block mb-1">Old Values:</span>
+                  <span className="text-muted-foreground text-xs block mb-1">
+                    Old Values:
+                  </span>
                   <p className="text-[10px] font-mono bg-gray-50 p-2 rounded max-h-20 overflow-y-auto break-all">
                     {log.old_values ? JSON.stringify(log.old_values) : "-"}
                   </p>
                 </div>
-                
+
                 <div className="pt-1">
-                  <span className="text-muted-foreground text-xs block mb-1">New Values:</span>
+                  <span className="text-muted-foreground text-xs block mb-1">
+                    New Values:
+                  </span>
                   <p className="text-[10px] font-mono bg-gray-50 p-2 rounded max-h-20 overflow-y-auto break-all">
                     {log.new_values ? JSON.stringify(log.new_values) : "-"}
                   </p>

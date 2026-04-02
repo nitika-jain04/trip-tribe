@@ -577,7 +577,7 @@ function OperatorsPage() {
         {/* Filters */}
         {/* <Card> */}
         <CardContent className="pt-2">
-          <div className="flex flex-col lg:flex-row gap-2 lg:items-center min-w-150 max-w-200">
+          <div className="flex flex-col sm:flex-row gap-2 w-full">
             {/* Search */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -589,8 +589,13 @@ function OperatorsPage() {
               />
             </div>
 
+            {/* Search error */}
+            {searchError && (
+              <p className="text-sm text-admin-error mt-2">{searchError}</p>
+            )}
+
             {/* Filters Right Side */}
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-35">
                   <SelectValue placeholder="Status" />
@@ -625,12 +630,8 @@ function OperatorsPage() {
               </Select>
             </div>
           </div>
-
-          {/* Search error */}
-          {searchError && (
-            <p className="text-sm text-admin-error mt-2">{searchError}</p>
-          )}
         </CardContent>
+
         {/* </Card> */}
         <Card className="hidden sm:block border shadow-sm">
           <CardHeader className="px-4 sm:px-6 pb-2">

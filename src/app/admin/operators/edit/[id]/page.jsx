@@ -146,7 +146,7 @@ export default function OperatorEditPage() {
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Upload failed",
+          description: data?.error?.message || "Upload failed",
           variant: "destructive",
         });
         return;

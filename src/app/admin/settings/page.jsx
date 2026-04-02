@@ -202,6 +202,7 @@ function Destinations() {
         toast({
           title: "Authentication Token",
           description: "Authentication Token Missing!",
+          variant: "destructive",
         });
         return;
       }
@@ -612,17 +613,29 @@ function AddDestinationModal({ onClose, refresh }) {
 
   const handleSubmit = async () => {
     if (!form.name) {
-      toast({ title: "Name", description: "Enter the location name!" });
+      toast({
+        title: "Name",
+        description: "Enter the location name!",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!form.region) {
-      toast({ title: "Region", description: "Enter the region!" });
+      toast({
+        title: "Region",
+        description: "Enter the region!",
+        variant: "destructive",
+      });
       return;
     }
 
     if (!form.latitude || !form.longitude) {
-      toast({ title: "Location", description: "Pick a location first!" });
+      toast({
+        title: "Location",
+        description: "Pick a location first!",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -630,6 +643,7 @@ function AddDestinationModal({ onClose, refresh }) {
       toast({
         title: "Type",
         description: "Please select a destination type",
+        variant: "destructive",
       });
       return;
     }
@@ -706,8 +720,8 @@ function AddDestinationModal({ onClose, refresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-80.5 md:w-162.5 p-6 rounded-xl space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+      <div className="bg-white w-[80vw] md:w-[70vw] max-w-6xl h-[70vh] lg:h-[90vh] p-4 rounded-xl shadow-lg flex flex-col">
         <div className="flex justify-between items-center">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-500">
             Add Destination
@@ -885,9 +899,6 @@ function Categories() {
           },
         );
 
-        // if (!res.ok) {
-        //   throw new Error("Failed to fetch categories");
-        // }
         if (!res.ok) {
           toast({
             title: "Error",

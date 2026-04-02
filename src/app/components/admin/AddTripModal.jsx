@@ -275,6 +275,15 @@ function AddTripModal({ handleModalClose }) {
 
       const data = await res.json();
 
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: data?.error?.message || "Upload failed",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (res.ok && data.success) {
         setFormData((p) => ({
           ...p,
@@ -543,8 +552,8 @@ function AddTripModal({ handleModalClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="bg-white w-[70vw] max-w-6xl sm:h-[70vh] lg:h-[90vh] rounded-xl shadow-lg flex flex-col">
-        {/* Header */}
+      <div className="bg-white w-[80vw] md:w-[70vw] max-w-6xl h-[70vh] lg:h-[90vh] rounded-xl shadow-lg flex flex-col">
+        {/* Modal Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-xl font-semibold text-[#14181F]">
             Create New Trip

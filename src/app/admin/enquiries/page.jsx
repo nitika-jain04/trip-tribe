@@ -285,9 +285,7 @@ function Enquiries() {
         </DropdownMenuItem>
 
         {enquiry.status.toLowerCase() !== "closed" && (
-          <DropdownMenuItem
-            onClick={() => handleCloseEnquiry(enquiry.id)}
-          >
+          <DropdownMenuItem onClick={() => handleCloseEnquiry(enquiry.id)}>
             <CheckCircle className="mr-2" size={15} />
             Mark as Closed
           </DropdownMenuItem>
@@ -384,89 +382,93 @@ function Enquiries() {
         </div>
         {/* Filters */}
         {/* <Card> */}
-        <CardContent className="pt-2 flex gap-2 flex-wrap w-full">
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-3 h-4 w-4" />
-            <Input
-              className="pl-10"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => {
-                setPage(1);
-                setSearch(e.target.value);
-              }}
-            />
+        <CardContent className="pt-2">
+          <div className="flex flex-row gap-2 w-full flex-wrap">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4" />
+              <Input
+                className="pl-10"
+                placeholder="Search"
+                value={search}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearch(e.target.value);
+                }}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  setPage(1);
+                  setStatusFilter(value);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="all">Status</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select
+                value={enquiryFilter}
+                onValueChange={(value) => {
+                  setPage(1);
+                  setEnquiryFilter(value);
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Inquiry Type" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="all">Enquiry Type</SelectItem>
+                  <SelectItem value="GENERAL">General</SelectItem>
+                  <SelectItem value="TRIP">Trip</SelectItem>
+                  <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
+                  <SelectItem value="SUPPORT">Support</SelectItem>
+                  <SelectItem value="FEEDBACK">Feedback</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                type={fromDate ? "date" : "text"}
+                placeholder="Start Date"
+                value={fromDate}
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!e.target.value) e.target.type = "text";
+                }}
+                onChange={(e) => {
+                  setPage(1);
+                  setFromDate(e.target.value);
+                }}
+                className="w-full sm:w-40 focus:outline-none focus:border-none placeholder:text-black"
+              />
+
+              <Input
+                type={toDate ? "date" : "text"}
+                placeholder="End Date"
+                value={toDate}
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!e.target.value) e.target.type = "text";
+                }}
+                onChange={(e) => {
+                  setPage(1);
+                  setToDate(e.target.value);
+                }}
+                className="w-full sm:w-40 focus:outline-none focus:border-none placeholder:text-black"
+              />
+            </div>
           </div>
-
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => {
-              setPage(1);
-              setStatusFilter(value);
-            }}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-
-            <SelectContent>
-              <SelectItem value="all">Status</SelectItem>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={enquiryFilter}
-            onValueChange={(value) => {
-              setPage(1);
-              setEnquiryFilter(value);
-            }}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Inquiry Type" />
-            </SelectTrigger>
-
-            <SelectContent>
-              <SelectItem value="all">Enquiry Type</SelectItem>
-              <SelectItem value="GENERAL">General</SelectItem>
-              <SelectItem value="TRIP">Trip</SelectItem>
-              <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
-              <SelectItem value="SUPPORT">Support</SelectItem>
-              <SelectItem value="FEEDBACK">Feedback</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Input
-            type={fromDate ? "date" : "text"}
-            placeholder="Start Date"
-            value={fromDate}
-            onFocus={(e) => (e.target.type = "date")}
-            onBlur={(e) => {
-              if (!e.target.value) e.target.type = "text";
-            }}
-            onChange={(e) => {
-              setPage(1);
-              setFromDate(e.target.value);
-            }}
-            className="w-40 focus:outline-none focus:border-none placeholder:text-black"
-          />
-
-          <Input
-            type={toDate ? "date" : "text"}
-            placeholder="End Date"
-            value={toDate}
-            onFocus={(e) => (e.target.type = "date")}
-            onBlur={(e) => {
-              if (!e.target.value) e.target.type = "text";
-            }}
-            onChange={(e) => {
-              setPage(1);
-              setToDate(e.target.value);
-            }}
-            className="w-40 focus:outline-none focus:border-none placeholder:text-black"
-          />
         </CardContent>
         {/* </Card> */}
 
@@ -501,135 +503,155 @@ function Enquiries() {
             <CardContent className="px-4 sm:px-6 pt-2">
               <div className="overflow-x-auto">
                 <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Enquiry Type</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {enquiries.map((enquiry) => (
-                    <TableRow key={enquiry.id}>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">
-                            {enquiry.full_name}
-                          </span>
-                          <span className="text-sm text-muted-foreground">
-                            <a href={`tel:+91${enquiry.phone_number}`}>
-                              {formatPhoneNumber(enquiry.phone_number)}
-                            </a>
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {enquiry.inquiry_type ? (
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              enquiry.inquiry_type === "GENERAL"
-                                ? "bg-blue-100 text-blue-500"
-                                : enquiry.inquiry_type === "TRIP"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : enquiry.inquiry_type === "PARTNERSHIP"
-                                    ? "bg-green-100 text-green-700"
-                                    : enquiry.inquiry_type === "FEEDBACK"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-gray-100 text-gray-700"
-                            }`}
-                          >
-                            {enquiry.inquiry_type
-                              .replace("_", " ")
-                              .toLowerCase()
-                              .replace(/\b\w/g, (c) => c.toUpperCase())}
-                          </span>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        <a href={`mailto:${enquiry.email}`}>{enquiry.email}</a>
-                      </TableCell>
-
-                      <TableCell>
-                        {new Date(enquiry.createdAt).toLocaleDateString()}
-                      </TableCell>
-
-                      <TableCell>
-                        <StatusBadge status={enquiry.status.toLowerCase()} />
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        {renderActions(enquiry)}
-                      </TableCell>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Enquiry Type</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead />
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+
+                  <TableBody>
+                    {enquiries.map((enquiry) => (
+                      <TableRow key={enquiry.id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {enquiry.full_name}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              <a href={`tel:+91${enquiry.phone_number}`}>
+                                {formatPhoneNumber(enquiry.phone_number)}
+                              </a>
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {enquiry.inquiry_type ? (
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                enquiry.inquiry_type === "GENERAL"
+                                  ? "bg-blue-100 text-blue-500"
+                                  : enquiry.inquiry_type === "TRIP"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : enquiry.inquiry_type === "PARTNERSHIP"
+                                      ? "bg-green-100 text-green-700"
+                                      : enquiry.inquiry_type === "FEEDBACK"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {enquiry.inquiry_type
+                                .replace("_", " ")
+                                .toLowerCase()
+                                .replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+
+                        <TableCell>
+                          <a href={`mailto:${enquiry.email}`}>
+                            {enquiry.email}
+                          </a>
+                        </TableCell>
+
+                        <TableCell>
+                          {new Date(enquiry.createdAt).toLocaleDateString()}
+                        </TableCell>
+
+                        <TableCell>
+                          <StatusBadge status={enquiry.status.toLowerCase()} />
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          {renderActions(enquiry)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Mobile View: Cards */}
-        {(!loading && !error && enquiries.length > 0) && (
+        {!loading && !error && enquiries.length > 0 && (
           <div className="sm:hidden space-y-4 pt-2">
             <div className="px-1 pb-2">
-              <h2 className="text-lg font-semibold">All Enquiries ({totalItems})</h2>
+              <h2 className="text-lg font-semibold">
+                All Enquiries ({totalItems})
+              </h2>
             </div>
-            {enquiries.map(enquiry => (
+            {enquiries.map((enquiry) => (
               <Card key={enquiry.id} className="border shadow-sm p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-semibold text-lg">{enquiry.full_name}</h3>
-                    <a href={`tel:+91${enquiry.phone_number}`} className="text-sm text-muted-foreground block font-medium mt-1">{formatPhoneNumber(enquiry.phone_number)}</a>
-                    <a href={`mailto:${enquiry.email}`} className="text-sm text-primary block mt-1">{enquiry.email}</a>
+                    <h3 className="font-semibold text-lg">
+                      {enquiry.full_name}
+                    </h3>
+                    <a
+                      href={`tel:+91${enquiry.phone_number}`}
+                      className="text-sm text-muted-foreground block font-medium mt-1"
+                    >
+                      {formatPhoneNumber(enquiry.phone_number)}
+                    </a>
+                    <a
+                      href={`mailto:${enquiry.email}`}
+                      className="text-sm text-primary block mt-1"
+                    >
+                      {enquiry.email}
+                    </a>
                   </div>
                   <div>
                     <StatusBadge status={enquiry.status.toLowerCase()} />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2 text-sm mt-4 border-t pt-3">
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Type:</span>
                     <span>
                       {enquiry.inquiry_type ? (
-                          <span
-                            className={`px-2 py-1 rounded-full text-[11px] font-medium ${
-                              enquiry.inquiry_type === "GENERAL"
-                                ? "bg-blue-100 text-blue-700"
-                                : enquiry.inquiry_type === "TRIP"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : enquiry.inquiry_type === "PARTNERSHIP"
-                                    ? "bg-green-100 text-green-800"
-                                    : enquiry.inquiry_type === "FEEDBACK"
-                                      ? "bg-red-100 text-red-800"
-                                      : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {enquiry.inquiry_type
-                              .replace("_", " ")
-                              .toLowerCase()
-                              .replace(/\b\w/g, (c) => c.toUpperCase())}
-                          </span>
-                      ) : "-"}
+                        <span
+                          className={`px-2 py-1 rounded-full text-[11px] font-medium ${
+                            enquiry.inquiry_type === "GENERAL"
+                              ? "bg-blue-100 text-blue-700"
+                              : enquiry.inquiry_type === "TRIP"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : enquiry.inquiry_type === "PARTNERSHIP"
+                                  ? "bg-green-100 text-green-800"
+                                  : enquiry.inquiry_type === "FEEDBACK"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {enquiry.inquiry_type
+                            .replace("_", " ")
+                            .toLowerCase()
+                            .replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Date:</span>
-                    <span className="font-medium">{new Date(enquiry.createdAt).toLocaleDateString()}</span>
+                    <span className="font-medium">
+                      {new Date(enquiry.createdAt).toLocaleDateString()}
+                    </span>
                   </div>
                 </div>
-                
+
                 <div className="mt-4 flex gap-2 w-full justify-end">
-                   {renderActions(enquiry)}
+                  {renderActions(enquiry)}
                 </div>
               </Card>
             ))}

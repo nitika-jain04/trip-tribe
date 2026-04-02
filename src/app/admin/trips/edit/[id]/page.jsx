@@ -199,6 +199,15 @@ export default function TripEditPage() {
 
       const data = await res.json();
 
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: data?.error?.message || "Upload failed",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (res.ok && data.success) {
         setFormData((p) => ({
           ...p,
