@@ -1,6 +1,5 @@
 "use client";
 
-import AdminGuard from "@/app/components/AdminGuard";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { SlLocationPin } from "react-icons/sl";
 import { LuTag } from "react-icons/lu";
@@ -29,6 +28,14 @@ import {
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+const formatName = (value) => {
+  return value
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
 
 function Page() {
   const [activeTab, setActiveTab] = useState("destinations");
@@ -90,6 +97,44 @@ function Destinations() {
   const [region, setRegion] = useState("");
   const [regionsList, setRegionsList] = useState([]);
   const { toast } = useToast();
+  const token = Cookies.get("token");
+
+  const getAllRegions = useCallback(async () => {
+    try {
+      if (!token) return;
+
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      const locations = data?.result?.locations || [];
+
+      // ✅ extract + normalize + dedupe
+      const uniqueRegions = Array.from(
+        new Set(
+          locations
+            .map((loc) => loc.region?.trim())
+            .filter(Boolean)
+            .map((r) => formatName(r)), // normalize case
+        ),
+      );
+
+      setRegionsList(uniqueRegions.sort());
+    } catch (err) {
+      console.error("Failed to fetch regions", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    getAllRegions();
+  }, [getAllRegions]);
 
   const getAllDestinations = useCallback(async () => {
     try {
@@ -113,7 +158,7 @@ function Destinations() {
       }
 
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin?${params.toString()}`,
+        `${BASE_URL}/api/${API_VERSION}/locations/admin?sortBy=created_at&order=DESC&${params.toString()}`,
         {
           method: "GET",
           headers: {
@@ -121,6 +166,8 @@ function Destinations() {
           },
         },
       );
+
+      console.log("params", params.toString());
 
       if (!res.ok) {
         toast({
@@ -139,16 +186,6 @@ function Destinations() {
       setDestinations(locations);
       setTotalPages(pagination?.pages || 1);
       setTotalItems(pagination?.total || 0);
-
-      const uniqueRegions = [
-        ...new Set(locations.map((loc) => loc.region).filter(Boolean)),
-      ];
-
-      setRegionsList((prev) => {
-        const newRegions = locations.map((loc) => loc.region).filter(Boolean);
-
-        return [...new Set([...prev, ...newRegions])];
-      });
     } catch (err) {
       console.error(err);
       setError("Failed to load destinations");
@@ -398,6 +435,7 @@ function Destinations() {
           refresh={() => {
             setPage(1);
             getAllDestinations();
+            getAllRegions();
             setShowModal(false);
           }}
         />
@@ -449,9 +487,6 @@ function AddDestinationModal({ onClose, refresh }) {
 
         const data = await res.json().catch(() => null);
 
-        // if (!res.ok || !data?.success) {
-        //   throw new Error("Failed to fetch location types");
-        // }
         if (!res.ok || !data?.success) {
           toast({
             title: "Error",
@@ -570,6 +605,8 @@ function AddDestinationModal({ onClose, refresh }) {
 
     const payload = {
       ...form,
+      name: formatName(form.name),
+      region: formatName(form.region),
       latitude: String(form.latitude || ""),
       longitude: String(form.longitude || ""),
     };
@@ -653,31 +690,20 @@ function AddDestinationModal({ onClose, refresh }) {
           placeholder="Destination Name"
           className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, name: formatName(e.target.value) })
+          }
         />
 
         <input
           placeholder="Region"
           className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           value={form.region}
-          onChange={(e) => setForm({ ...form, region: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, region: formatName(e.target.value) })
+          }
         />
 
-        {/* <select
-          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
-          value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value })}
-          disabled={typesLoading}
-        >
-          <option value="">
-            {typesLoading ? "Loading types..." : "Select destination type"}
-          </option>
-          {locationTypes.map((type) => (
-            <option key={type} value={type}>
-              {type.replaceAll("_", " ")}
-            </option>
-          ))}
-        </select> */}
         <Select
           value={form.type}
           onValueChange={(value) =>

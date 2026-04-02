@@ -117,7 +117,7 @@ export default function Page() {
         safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`),
         safeFetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`),
         safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`),
-        safeFetch(`${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=100`),
+        safeFetch(`${BASE_URL}/api/${API_VERSION}/locations`),
       ]);
 
     const locationMapData = buildLocationMap(locationsMasterData);
@@ -172,7 +172,7 @@ export default function Page() {
       return {
         id: firstTrip?.destination_id || group.location_name,
         name: group.location_name,
-        region: locationData.region || "Unknown",
+        region: locationData?.region || "",
         type: "destination",
         trips: group.total_trips,
         image: firstTrip?.images?.[0] || null,
@@ -657,7 +657,8 @@ export default function Page() {
                   <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
                   <div className="absolute bottom-0 left-0 right-0 p-6">
                     <h3 className="font-display text-heading-sm text-background mb-1">
-                      {location.name}, {location.region}
+                      {location.name}
+                      {location.region ? `, ${location.region}` : ""}
                     </h3>
                     <p className="text-body-sm text-background/70">
                       {location.trips} trips available

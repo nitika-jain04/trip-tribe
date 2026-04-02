@@ -11,7 +11,6 @@ import {
   AlertCircle,
   MapPin,
   IndianRupee,
-  UserX,
   Trash2,
   Archive,
   CheckCircle,
@@ -127,7 +126,9 @@ function Page() {
       if (statusFilter !== "all")
         params.set("status", statusFilter.toUpperCase());
 
-      if (operatorFilter !== "all") params.set("operator_id", operatorFilter);
+      if (operatorFilter && operatorFilter !== "all") {
+        params.set("operator_id", operatorFilter);
+      }
 
       if (typeFilter !== "all") {
         // console.log(typeFilter);
@@ -140,10 +141,7 @@ function Page() {
       const searchValue = debouncedSearch?.trim();
       if (searchValue && searchValue.length < 2) {
         setSearchError("Search must be at least 2 characters");
-        return;
-      }
-
-      if (searchValue && searchValue.length >= 2) {
+      } else if (searchValue && searchValue.length >= 2) {
         params.append("search", searchValue);
       }
 
@@ -197,7 +195,7 @@ function Page() {
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, difficultyFilter, sortBy, typeFilter]);
+  }, [statusFilter, difficultyFilter, sortBy, typeFilter, operatorFilter]);
 
   useEffect(() => {
     fetchOperators();
@@ -276,6 +274,7 @@ function Page() {
           variant: "success",
         });
         setRefresh((prev) => prev + 1);
+        getAllTrips();
       } catch (err) {
         toast({
           title: "Error",
@@ -338,6 +337,68 @@ function Page() {
       }
     },
     [getAllTrips, toast],
+  );
+
+  const handleDuplicateTrip = useCallback(
+    async (trip) => {
+      const token = Cookies.get("token");
+
+      try {
+        // ✅ Prepare clean payload
+        const payload = {
+          name: `Copy of ${trip.name}`,
+          price: trip.price,
+          start_date: trip.start_date,
+          end_date: trip.end_date,
+          difficulty: trip.difficulty,
+          total_seats: trip.total_seats,
+          description: trip.description,
+          itinerary: trip.itinerary,
+          images: trip.images,
+          inclusions: trip.inclusions,
+          exclusions: trip.exclusions,
+          operator_id: trip.operator_id,
+          source_id: trip.source_id,
+          destination_id: trip.destination_id,
+          type_id: trip.type_id,
+          status: "DRAFT",
+        };
+
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          return toast({
+            title: "Error",
+            description: data.message || "Failed to duplicate trip",
+            variant: "destructive",
+          });
+        }
+
+        toast({
+          title: "Success",
+          description: "Trip duplicated successfully!",
+          variant: "success",
+        });
+
+        getAllTrips(); // refresh list
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: err.message,
+          variant: "destructive",
+        });
+      }
+    },
+    [toast, getAllTrips],
   );
 
   const difficulties = ["EASY", "MODERATE", "HARD"];
@@ -680,30 +741,49 @@ function Page() {
                                 </Link>
                               </DropdownMenuItem>
                               {trip.status === "DRAFT" && (
-                                <DropdownMenuItem
-                                  className="text-success"
-                                  onClick={() =>
-                                    handleUpdateTrip(trip.id, {
-                                      status: "PUBLISHED",
-                                    })
-                                  }
-                                >
-                                  <CheckCircle className="h-4 w-4 mr-2" />
-                                  Activate
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-success"
+                                    onClick={() =>
+                                      handleUpdateTrip(trip.id, {
+                                        status: "PUBLISHED",
+                                      })
+                                    }
+                                  >
+                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    Activate
+                                  </DropdownMenuItem>
+
+                                  <DropdownMenuItem
+                                    className="text-error"
+                                    onClick={() => handleDeleteTrip(trip.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
                               )}
                               {trip.status === "ARCHIVED" && (
-                                <DropdownMenuItem
-                                  className="text-success"
-                                  onClick={() =>
-                                    handleUpdateTrip(trip.id, {
-                                      status: "DRAFT",
-                                    })
-                                  }
-                                >
-                                  <FilePen className="h-4 w-4 mr-2" />
-                                  Draft
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuItem
+                                    className="text-success"
+                                    onClick={() =>
+                                      handleUpdateTrip(trip.id, {
+                                        status: "DRAFT",
+                                      })
+                                    }
+                                  >
+                                    <FilePen className="h-4 w-4 mr-2" />
+                                    Draft
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-error"
+                                    onClick={() => handleDeleteTrip(trip.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </>
                               )}
                               {trip.status === "PUBLISHED" && (
                                 <DropdownMenuItem
@@ -727,11 +807,14 @@ function Page() {
                                   Delete
                                 </DropdownMenuItem>
                               )}
-                              {/* <DropdownMenuItem>
-                                <Copy className="h-4 w-4 mr-2" />
+
+                              <DropdownMenuItem
+                                onClick={() => handleDuplicateTrip(trip)}
+                              >
+                                <FilePen className="h-4 w-4 mr-2" />
                                 Duplicate
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
+                              {/* <DropdownMenuItem className="text-destructive">
                                 <Archive className="h-4 w-4 mr-2" />
                                 Archive
                               </DropdownMenuItem> */}

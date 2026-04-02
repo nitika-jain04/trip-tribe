@@ -1,6 +1,5 @@
 "use client";
 
-import AdminGuard from "@/app/components/AdminGuard";
 import { useState, useEffect, useCallback } from "react";
 import Cookies from "js-cookie";
 import {
@@ -32,6 +31,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/app/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/app/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -73,6 +80,9 @@ function OperatorsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [searchError, setSearchError] = useState("");
   const [initialLoading, setInitialLoading] = useState(true);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedOperatorId, setSelectedOperatorId] = useState(null);
+  const [operatorTrips, setOperatorTrips] = useState([]);
 
   const { toast } = useToast();
 
@@ -209,6 +219,52 @@ function OperatorsPage() {
     if (!value && wasCreated) getOperators();
   };
 
+  const handleInactivateOperator = async (operatorId) => {
+    const token = Cookies.get("token");
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${operatorId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        return toast({
+          title: "Error",
+          description: "Failed to fetch operator details",
+          variant: "destructive",
+        });
+      }
+
+      const trips = data?.result?.trip || [];
+
+      // If trips exist → open dialog
+      if (trips.length > 0) {
+        setSelectedOperatorId(operatorId);
+        setOperatorTrips(trips);
+        setConfirmDialogOpen(true);
+        return;
+      }
+
+      // No trips → directly update
+      await handleUpdateOperator(operatorId, {
+        status: "INACTIVE",
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleUpdateOperator = async (operatorId, payload) => {
     const token = Cookies.get("token");
 
@@ -290,7 +346,7 @@ function OperatorsPage() {
         variant: "success",
       });
 
-      // getOperators(); // refresh list
+      getOperators(); // refresh list
       setOperators((prev) => prev.filter((op) => op.id !== operatorId));
       setTotalOperators((prev) => prev - 1);
     } catch (err) {
@@ -650,9 +706,7 @@ function OperatorsPage() {
                                     <DropdownMenuItem
                                       className="text-warning"
                                       onClick={() =>
-                                        handleUpdateOperator(op.id, {
-                                          status: "INACTIVE",
-                                        })
+                                        handleInactivateOperator(op.id)
                                       }
                                     >
                                       <UserX className="h-4 w-4 mr-2" />
@@ -676,7 +730,7 @@ function OperatorsPage() {
                                 op.status === "INACTIVE" && (
                                   <>
                                     <DropdownMenuItem
-                                      className="text-success"
+                                      className="text-warning"
                                       onClick={() =>
                                         handleUpdateOperator(op.id, {
                                           status: "ACTIVE",
@@ -784,6 +838,47 @@ function OperatorsPage() {
       {showAddModal && (
         <AddOperatorModal handleModalClose={handleAddModalClose} />
       )}
+
+      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Inactivation</DialogTitle>
+            <DialogDescription>
+              This operator has {operatorTrips.length} trip(s). Are you sure you
+              want to inactivate?
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Optional: Show trip names */}
+          <div className="max-h-40 overflow-y-auto text-sm text-muted-foreground">
+            {operatorTrips.slice(0, 5).map((trip) => (
+              <p key={trip.id}>• {trip.name}</p>
+            ))}
+            {operatorTrips.length > 5 && <p>...and more</p>}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                await handleUpdateOperator(selectedOperatorId, {
+                  status: "INACTIVE",
+                });
+                setConfirmDialogOpen(false);
+              }}
+            >
+              Yes, Inactivate
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { IoCloseSharp } from "react-icons/io5";
 import Input from "../ui/input";
 import { useToast } from "@/app/hooks/use-toast";
+import Cookies from "js-cookie";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -232,7 +233,7 @@ function AddOperatorModal({ handleModalClose }) {
       (key) => requestBody[key] === undefined && delete requestBody[key],
     );
 
-    //console.log"add op req", requestBody);
+    console.log("add op req", requestBody);
 
     try {
       const res = await fetch(
@@ -252,13 +253,13 @@ function AddOperatorModal({ handleModalClose }) {
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to add operator",
+          description: data?.error?.message || "Failed to add operator",
           variant: "destructive",
         });
         return;
       }
 
-      handleModalClose(false);
+      handleModalClose(false, true);
     } catch (err) {
       console.error("Error adding operator:", err);
       setError(err.message || "Something went wrong");

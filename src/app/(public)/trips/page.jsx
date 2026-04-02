@@ -78,9 +78,7 @@ function TripsContent() {
     const cached = sessionStorage.getItem("locations_cache");
     if (cached) return JSON.parse(cached);
 
-    const res = await fetch(
-      `${BASE_URL}/api/${API_VERSION}/locations?page=1&limit=100`,
-    );
+    const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations`);
     const data = await res.json();
     if (!data.success) return {};
 
