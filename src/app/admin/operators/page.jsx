@@ -580,6 +580,7 @@ function OperatorsPage() {
           <div className="flex flex-col lg:flex-row gap-3 w-full">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
               <Input
                 placeholder="Search operators..."
                 value={searchQuery}
@@ -882,22 +883,29 @@ function OperatorsPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-4">
-          <p className="text-sm text-muted-foreground">
-            Showing {(page - 1) * limit + 1} to{" "}
-            {Math.min(page * limit, totalOperators)} of {totalOperators}
-          </p>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t pt-4">
+          {/* 📄 Info */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+            <span>
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, totalOperators)} of {totalOperators}
+            </span>
 
-          <span className="px-3 py-1 text-center text-sm">
-            Page {page} of {totalPages}
-          </span>
+            <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
 
-          <div className="flex gap-2">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+          </div>
+
+          {/* 🔘 Buttons */}
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               disabled={page === 1}
               onClick={() => setPage(page - 1)}
+              className="flex-1 sm:flex-none"
             >
               Previous
             </Button>
@@ -907,6 +915,7 @@ function OperatorsPage() {
               size="sm"
               disabled={page === totalPages}
               onClick={() => setPage(page + 1)}
+              className="flex-1 sm:flex-none"
             >
               Next
             </Button>

@@ -921,21 +921,28 @@ function Page() {
           )}
         </div>
 
-        <div className="flex justify-between items-center mt-4">
-          <span className="text-sm text-muted-foreground">
-            Showing {(page - 1) * limit + 1} to{" "}
-            {Math.min(page * limit, totalTrips)} of {totalTrips}
-          </span>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+          {/* 📄 Info */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+            <span>
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, totalTrips)} of {totalTrips}
+            </span>
 
-          <span className="px-3 py-1 text-center text-sm">
-            Page {page} of {totalPages}
-          </span>
+            <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
 
-          <div className="flex gap-2">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+          </div>
+
+          {/* 🔘 Buttons */}
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               disabled={page === 1}
               onClick={() => setPage(page - 1)}
+              className="flex-1 sm:flex-none"
             >
               Previous
             </Button>
@@ -944,6 +951,7 @@ function Page() {
               variant="outline"
               disabled={page >= totalPages}
               onClick={() => setPage(page + 1)}
+              className="flex-1 sm:flex-none"
             >
               Next
             </Button>
