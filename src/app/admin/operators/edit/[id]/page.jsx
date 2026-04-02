@@ -127,7 +127,7 @@ export default function OperatorEditPage() {
       });
       return;
     }
-    // ✅ 5MB validation
+
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
     if (file.size > MAX_SIZE) {

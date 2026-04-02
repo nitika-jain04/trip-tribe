@@ -56,8 +56,28 @@ function AddOperatorModal({ handleModalClose }) {
   }
 
   async function handleImageUpload(e) {
+    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+
     const file = e.target.files[0];
     if (!file) return;
+
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Only JPG and PNG images are allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image must be less than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setUploadingImage(true);
     setError("");
