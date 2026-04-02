@@ -115,7 +115,7 @@ export function Navbar() {
                 className={`px-4 py-3 text-body font-medium rounded-lg transition-colors duration-200 ${
                   pathname === item.href
                     ? "text-primary bg-primary-light"
-                    : "text-white hover:text-foreground hover:bg-muted"
+                    : "text-foreground hover:text-primary hover:bg-muted"
                 }`}
               >
                 {item.name}
