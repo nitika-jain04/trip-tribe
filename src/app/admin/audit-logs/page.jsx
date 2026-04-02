@@ -205,7 +205,7 @@ function AuditLogs() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       {/* Header */}
 
       <div>
@@ -311,13 +311,14 @@ function AuditLogs() {
           <p className="text-gray-600 font-medium">Loading audit logs...</p>
         </div>
       ) : (
-        <Card>
-          <CardHeader>
+        <Card className="hidden sm:block border shadow-sm">
+          <CardHeader className="px-4 sm:px-6 pb-2">
             <CardTitle>All Logs ({totalItems})</CardTitle>
           </CardHeader>
 
-          <CardContent>
-            <Table>
+          <CardContent className="px-4 sm:px-6 pt-2">
+            <div className="overflow-x-auto">
+              <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Action</TableHead>
@@ -378,8 +379,53 @@ function AuditLogs() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Mobile View: Cards */}
+      {(!loading && !error && logs.length > 0) && (
+        <div className="sm:hidden space-y-4 pt-2">
+          <div className="px-1 pb-2">
+            <h2 className="text-lg font-semibold">All Logs ({totalItems})</h2>
+          </div>
+          {logs.map(log => (
+            <Card key={log.id} className="border shadow-sm p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex flex-col items-start gap-2">
+                  {actionBadge(log.action)}
+                  {entityBadge(log.entity_type)}
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{log.actor?.name}</p>
+                  <p className="text-xs text-muted-foreground">{log.actor?.email}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-2 text-sm mt-3 border-t pt-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date:</span>
+                  <span className="font-medium">{new Date(log.createdAt).toLocaleString()}</span>
+                </div>
+                
+                <div className="pt-2">
+                  <span className="text-muted-foreground text-xs block mb-1">Old Values:</span>
+                  <p className="text-[10px] font-mono bg-gray-50 p-2 rounded max-h-20 overflow-y-auto break-all">
+                    {log.old_values ? JSON.stringify(log.old_values) : "-"}
+                  </p>
+                </div>
+                
+                <div className="pt-1">
+                  <span className="text-muted-foreground text-xs block mb-1">New Values:</span>
+                  <p className="text-[10px] font-mono bg-gray-50 p-2 rounded max-h-20 overflow-y-auto break-all">
+                    {log.new_values ? JSON.stringify(log.new_values) : "-"}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Pagination */}

@@ -17,9 +17,8 @@ import { Button } from "./ui/button";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-export default function AdminSidebar({ collapsed, toggle }) {
+export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen, setSidebarOpen }) {
   const [userProfile, setUserProfile] = useState({ name: "", email: "" });
-  const [isSmallScreen, setIsSmallScreen] = useState(false);
   const pathname = usePathname();
   const { toast } = useToast();
   const router = useRouter();
@@ -38,17 +37,6 @@ export default function AdminSidebar({ collapsed, toggle }) {
 
     router.push("/");
   };
-
-  useEffect(() => {
-    const handleResize = () => {
-      const small = window.innerWidth < 768;
-      setIsSmallScreen(small);
-    };
-
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -79,23 +67,30 @@ export default function AdminSidebar({ collapsed, toggle }) {
     fetchUserProfile();
   }, []);
 
-  const sidebarCollapsed = isSmallScreen ? true : collapsed;
+  const sidebarCollapsed = isMobile ? false : collapsed;
 
   return (
     <aside
       className={`fixed left-0 top-0 h-full bg-linear-to-b from-slate-900 via-slate-900 to-slate-800 text-white
         shadow-2xl shadow-black/20 border-r border-slate-700/50
         transition-all duration-300 ease-in-out z-50
-        ${sidebarCollapsed ? "w-16" : "w-64"}`}
+        ${
+          isMobile
+            ? sidebarOpen
+              ? "w-64 translate-x-0"
+              : "w-64 -translate-x-full"
+            : sidebarCollapsed
+            ? "w-16 translate-x-0"
+            : "w-64 translate-x-0"
+        }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-6">
         <div className="flex items-center gap-3 overflow-hidden">
-          {/* <div className="bg-linear-to-br from-teal-400 to-teal-500 text-slate-900 p-2.5 rounded-xl shadow-lg shadow-teal-500/20 shrink-0"> */}
           <img
             src="/triptribe-logo-final.png"
             alt=""
-            className={`h-12 w-12 rounded-md ${collapsed ? "hidden" : "visible"}`}
+            className={`h-12 w-12 rounded-md ${sidebarCollapsed ? "hidden" : "visible"}`}
           />
           {/* </div> */}
 
@@ -130,19 +125,24 @@ export default function AdminSidebar({ collapsed, toggle }) {
 
       {/* Menu */}
       <nav className="flex flex-col gap-2 px-3">
+
         <SidebarLink
           href="/admin/dashboard"
-          icon={<MdOutlineDashboard size={22} />}
+          icon={<GoPeople size={22} />}
           label="Dashboard"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/dashboard"}
+          onClick={() => isMobile && setSidebarOpen(false)}
         />
+
+
         <SidebarLink
           href="/admin/operators"
           icon={<GoPeople size={22} />}
           label="Operators"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/operators"}
+          onClick={() => isMobile && setSidebarOpen(false)}
         />
         <SidebarLink
           href="/admin/trips"
@@ -150,6 +150,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
           label="Trips"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/trips"}
+          onClick={() => isMobile && setSidebarOpen(false)}
         />
         <SidebarLink
           href="/admin/enquiries"
@@ -157,6 +158,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
           label="Enquiries"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/enquiries"}
+          onClick={() => isMobile && setSidebarOpen(false)}
         />
         <SidebarLink
           href="/admin/audit-logs"
@@ -164,6 +166,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
           label="Audit Logs"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/audit-logs"}
+          onClick={() => isMobile && setSidebarOpen(false)}
         />
         <SidebarLink
           href="/admin/settings"
@@ -171,6 +174,7 @@ export default function AdminSidebar({ collapsed, toggle }) {
           label="Settings"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/settings"}
+          onClick={() => isMobile && setSidebarOpen(false)}
         />
 
         <Button
@@ -207,10 +211,11 @@ export default function AdminSidebar({ collapsed, toggle }) {
   );
 }
 
-function SidebarLink({ href, icon, label, collapsed, isActive }) {
+function SidebarLink({ href, icon, label, collapsed, isActive, onClick }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl min-h-13
       transition-colors duration-200 relative group
       ${

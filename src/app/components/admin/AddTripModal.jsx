@@ -16,6 +16,14 @@ import { Loader2 } from "lucide-react";
 import useTripTypes from "@/app/hooks/use-triptypes";
 import dynamic from "next/dynamic";
 import Cookies from "js-cookie";
+import { Calendar } from "@/app/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/app/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -38,6 +46,10 @@ function AddTripModal({ handleModalClose }) {
   const [loadingOperators, setLoadingOperators] = useState(false);
   const [error, setError] = useState("");
   const { tripTypes, loadingTripTypes, error: tripTypesError } = useTripTypes();
+  const [dateRange, setDateRange] = useState({
+    from: null,
+    to: null,
+  });
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -354,16 +366,16 @@ function AddTripModal({ handleModalClose }) {
     if (!formData.start_date || !formData.end_date) {
       toast({
         title: "Error",
-        description: "Please select both start and end date",
+        description: "Please select date range",
         variant: "destructive",
       });
       return;
     }
 
-    if (new Date(formData.end_date) <= new Date(formData.start_date)) {
+    if (dateRange?.from && dateRange?.to && dateRange.to <= dateRange.from) {
       toast({
         title: "Error",
-        description: "End date must be after start date",
+        description: "End date should be after start date",
         variant: "destructive",
       });
       return;
@@ -498,9 +510,40 @@ function AddTripModal({ handleModalClose }) {
     }
   };
 
+  const handleDateChange = (range) => {
+    if (!range) return;
+
+    // always update UI first
+    setDateRange(range);
+
+    // 🚫 do nothing if selection is incomplete
+    if (!range.from || !range.to) return;
+
+    // ✅ NOW validate (final selection only)
+    if (range.to.getTime() === range.from.getTime()) {
+      toast({
+        title: "Invalid Date",
+        description: "Start and end date cannot be the same",
+        variant: "destructive",
+      });
+
+      setDateRange({ from: null, to: null });
+      return;
+    }
+
+    if (range.to < range.from) return; // safety (ignore weird internal states)
+
+    // ✅ valid range
+    setFormData((prev) => ({
+      ...prev,
+      start_date: range.from,
+      end_date: range.to,
+    }));
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="bg-white w-[90vw] max-w-6xl h-[90vh] rounded-xl shadow-lg flex flex-col">
+      <div className="bg-white w-[70vw] max-w-6xl sm:h-[70vh] lg:h-[90vh] rounded-xl shadow-lg flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center px-6 py-4 border-b">
           <h2 className="text-xl font-semibold text-[#14181F]">
@@ -528,7 +571,7 @@ function AddTripModal({ handleModalClose }) {
             {/* Basic Info */}
             <section className="space-y-4">
               <h3 className="text-lg font-semibold">Basic Information</h3>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5">
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">
                     Trip Name *
@@ -602,6 +645,50 @@ function AddTripModal({ handleModalClose }) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/*<div>
+                  <label className="text-sm text-gray-600 mb-1 block">
+                    Trip Dates *
+                  </label>
+
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dateRange?.from ? (
+                          dateRange.to ? (
+                            <>
+                              {format(dateRange.from, "PPP")} -{" "}
+                              {format(dateRange.to, "PPP")}
+                            </>
+                          ) : (
+                            format(dateRange.from, "PPP")
+                          )
+                        ) : (
+                          "Pick a date range"
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={handleDateChange}
+                        disabled={[
+                          { before: new Date() },
+                          (date) =>
+                            dateRange?.from &&
+                            date.getTime() === dateRange.from.getTime(),
+                        ]}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div> */}
 
                 <div>
                   <label className="text-sm text-gray-600 mb-1 block">

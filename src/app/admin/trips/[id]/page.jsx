@@ -115,7 +115,7 @@ export default function TripDetail() {
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -139,7 +139,7 @@ export default function TripDetail() {
   // Enhanced Error State
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -168,7 +168,7 @@ export default function TripDetail() {
   // Not Found State
   if (!trip) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -195,15 +195,8 @@ export default function TripDetail() {
     );
   }
 
-  const statusStyle =
-    trip.status === "ACTIVE"
-      ? "bg-green-100 text-green-700"
-      : trip.status === "DRAFT"
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-red-100 text-red-700";
-
   return (
-    <div className="p-6 bg-gray-50 min-h-screen space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href="/admin/trips"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -213,13 +206,13 @@ export default function TripDetail() {
       </Link>
 
       {/* Hero Section */}
-      <div className="bg-white mt-3 rounded-lg shadow-sm border px-6 py-4 flex flex-col md:flex-row gap-6 items-start">
-        <div className="grid md:grid-cols-2 gap-0 w-full">
+      <div className="bg-white mt-3 rounded-lg shadow-sm border px-1 py-4 flex flex-col md:flex-row gap-6 items-start">
+        <div className="grid sm:grid-cols-1 lg:grid-cols-2 w-full">
           {activeImage ? (
             <img
               src={activeImage}
               alt={trip.name}
-              className="max-w-130 h-72 md:h-full object-fill bg-gray-100 rounded-l-lg"
+              className="sm:max-w-90 md:max-w-110 h-72 md:h-full object-fill bg-gray-100 rounded-lg"
               onError={(e) => {
                 e.currentTarget.src = "/vercel.svg";
               }}
@@ -230,7 +223,7 @@ export default function TripDetail() {
             </div>
           )}
 
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 sm:p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">{trip.name}</h1>
               <StatusBadge
@@ -307,7 +300,7 @@ export default function TripDetail() {
       {/* Gallery */}
       {trip.images?.length > 1 && (
         <Card className="rounded-2xl shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <h2 className="text-lg font-semibold mb-4">Gallery</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {trip.images.map((img, i) => (
@@ -333,7 +326,7 @@ export default function TripDetail() {
 
       {/* Itinerary */}
       <Card className="rounded-2xl shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-4">Itinerary</h2>
           <div className="space-y-4">
             {trip.itinerary?.length > 0 ? (
@@ -380,7 +373,7 @@ function InfoItem({ icon, label, value }) {
 function ListCard({ title, items }) {
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
         {items?.length > 0 ? (
           <ul className="space-y-2 text-sm text-muted-foreground list-disc ml-5">

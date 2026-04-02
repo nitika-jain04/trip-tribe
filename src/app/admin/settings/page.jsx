@@ -43,7 +43,7 @@ function Page() {
 
   return (
     <>
-      <div className="px-5 py-10 flex flex-col gap-5">
+      <div className="p-3 py-6 sm:p-6 sm:py-10 flex flex-col gap-5">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
           <p className="text-muted-foreground mt-1">
@@ -282,11 +282,11 @@ function Destinations() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between">
-        <p className="text-[#65758b]">
+        <p className="text-[#65758b] hidden md:visible">
           Manage travel destinations displayed on the platform
         </p>
 
-        <div className="flex gap-3 items-center">
+        <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
           <Select
             value={region || "all"}
             onValueChange={(value) => {
@@ -294,7 +294,7 @@ function Destinations() {
               setRegion(value === "all" ? "" : value);
             }}
           >
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="Select Region">
                 {region || "All Regions"}
               </SelectValue>{" "}
@@ -358,9 +358,9 @@ function Destinations() {
         </div>
       )}
 
-      {/* Table */}
+      {/* Desktop Table */}
       {!loading && !error && destinations.length > 0 && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
+        <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden mt-5">
           <div className="grid grid-cols-[2.5fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
             <div>Destination</div>
             <div>Region</div>
@@ -399,21 +399,54 @@ function Destinations() {
         </div>
       )}
 
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-sm text-muted-foreground">
-          Showing {(page - 1) * limit + 1} to{" "}
-          {Math.min(page * limit, totalItems)} of {totalItems}
-        </span>
+      {/* Mobile Card Layout */}
+      {!loading && !error && destinations.length > 0 && (
+        <div className="md:hidden space-y-4 mt-5">
+          {destinations.map((des, i) => (
+            <div
+              key={des.id || i}
+              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-bold text-lg">{des?.name || "-"}</h3>
+                  <p className="text-sm text-gray-500">{des?.region || "-"}</p>
+                </div>
+                <button
+                  onClick={() => deleteDestination(des.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                >
+                  <Trash size={18} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                  {des?.type || "-"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-        <span className="px-3 py-1 text-center text-sm">
-          Page {page} of {totalPages}
-        </span>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+          <span>
+            Showing {(page - 1) * limit + 1} to{" "}
+            {Math.min(page * limit, totalItems)} of {totalItems}
+          </span>
+          <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+        </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             disabled={page === 1}
             onClick={() => setPage(page - 1)}
+            className="flex-1 sm:flex-none"
           >
             Previous
           </Button>
@@ -422,6 +455,7 @@ function Destinations() {
             variant="outline"
             disabled={page === totalPages}
             onClick={() => setPage(page + 1)}
+            className="flex-1 sm:flex-none"
           >
             Next
           </Button>
@@ -673,7 +707,7 @@ function AddDestinationModal({ onClose, refresh }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-162.5 p-6 rounded-xl space-y-4">
+      <div className="bg-white w-80.5 md:w-162.5 p-6 rounded-xl space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-500">
             Add Destination
@@ -898,7 +932,9 @@ function Categories() {
   return (
     <>
       <div className="flex justify-between">
-        <p className="text-[#65758b]">Manage trip categories and tags</p>
+        <p className="text-[#65758b] hidden md:visible">
+          Manage trip categories and tags
+        </p>
 
         <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
@@ -918,11 +954,11 @@ function Categories() {
         </div>
       )}
 
-      {/* Categories Table */}
+      {/* Categories Desktop Table */}
       {!loading && !error && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
+        <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden mt-5">
           {/* Header Row */}
-          <div className="grid grid-cols-[1.5fr_2fr_2fr_1fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
+          <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
             <div>Category</div>
             <div>Description</div>
             <div>Trips</div>
@@ -938,7 +974,7 @@ function Categories() {
             categories.map((category, index) => (
               <div
                 key={category.id}
-                className="grid grid-cols-[1.5fr_2fr_2fr_1fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
+                className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
               >
                 {/* Category */}
                 <div>
@@ -951,7 +987,12 @@ function Categories() {
                   </span>
                 </div>
 
-                <div>{category.description}</div>
+                <div
+                  className="truncate cursor-pointer"
+                  title={category.description}
+                >
+                  {category.description}
+                </div>
 
                 {/* Trips */}
                 <div className="text-gray-600">{category.trips}</div>
@@ -990,6 +1031,56 @@ function Categories() {
               Showing {categories.length} categories
             </div>
           )}
+        </div>
+      )}
+
+      {/* Categories Mobile Card Layout */}
+      {!loading && !error && categories.length > 0 && (
+        <div className="md:hidden space-y-4 mt-5">
+          {categories.map((category) => (
+            <div
+              key={category.id}
+              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <span
+                  className={`text-sm tracking-wide px-3 py-1 rounded-full ${
+                    colorMap[category.color]
+                  }`}
+                >
+                  {category.category}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditData(category)}
+                    className="p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+                  >
+                    <Edit size={18} />
+                  </button>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                {category.description}
+              </p>
+              <div className="flex justify-between items-center text-sm border-t pt-3">
+                <div className="text-gray-500">
+                  Trips:{" "}
+                  <span className="text-gray-900 font-medium">
+                    {category.trips}
+                  </span>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs ${
+                    category.is_active
+                      ? "bg-green-100 text-green-600"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {category.is_active ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -1121,8 +1212,8 @@ function AddCategoryModal({ onClose, onAddCategory }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+      <div className="bg-white w-full max-w-lg p-6 rounded-xl space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Add Category</h2>
@@ -1244,8 +1335,8 @@ function EditCategoryModal({ data, onClose, refresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+      <div className="bg-white w-full max-w-lg p-6 rounded-xl space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Edit Category</h2>
@@ -1322,8 +1413,8 @@ export default Page;
 function DestinationSkeleton() {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden mt-5 animate-pulse">
-      {/* Header */}
-      <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4">
+      {/* Header - Desktop Only */}
+      <div className="hidden md:grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4">
         <div className="h-4 bg-gray-300 rounded w-24"></div>
         <div className="h-4 bg-gray-300 rounded w-20"></div>
         <div className="h-4 bg-gray-300 rounded w-16"></div>
@@ -1331,15 +1422,16 @@ function DestinationSkeleton() {
         <div className="h-4 bg-gray-300 rounded w-10"></div>
       </div>
 
+      {/* Grid for desktop, stack for mobile */}
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] px-3 py-4 border-t"
+          className="grid grid-cols-1 md:grid-cols-[1.5fr_2fr_2fr_2fr_1fr] gap-4 px-3 py-4 border-t"
         >
           <div className="h-4 bg-gray-200 rounded w-32"></div>
-          <div className="h-4 bg-gray-200 rounded w-28"></div>
+          <div className="h-4 bg-gray-200 rounded w-28 md:block hidden"></div>
           <div className="h-4 bg-gray-200 rounded w-20"></div>
-          <div className="h-4 bg-gray-200 rounded w-10"></div>
+          <div className="h-4 bg-gray-200 rounded w-10 md:block hidden"></div>
           <div className="flex gap-2">
             <div className="h-4 w-4 bg-gray-200 rounded"></div>
             <div className="h-4 w-4 bg-gray-200 rounded"></div>
@@ -1353,7 +1445,7 @@ function DestinationSkeleton() {
 function CategorySkeleton() {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden mt-5 animate-pulse">
-      <div className="grid grid-cols-[2.5fr_2fr_1fr] bg-gray-100 px-3 py-4">
+      <div className="hidden md:grid grid-cols-[2.5fr_2fr_1fr] bg-gray-100 px-3 py-4">
         <div className="h-4 bg-gray-300 rounded w-24"></div>
         <div className="h-4 bg-gray-300 rounded w-16"></div>
         <div className="h-4 bg-gray-300 rounded w-10"></div>
@@ -1362,7 +1454,7 @@ function CategorySkeleton() {
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="grid grid-cols-[2.5fr_2fr_1fr] px-3 py-4 border-t"
+          className="grid grid-cols-1 md:grid-cols-[2.5fr_2fr_1fr] gap-4 px-3 py-4 border-t"
         >
           <div className="h-4 bg-gray-200 rounded w-28"></div>
           <div className="h-4 bg-gray-200 rounded w-12"></div>

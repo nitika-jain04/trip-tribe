@@ -268,6 +268,42 @@ function Enquiries() {
     );
   }
 
+  const renderActions = (enquiry) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={`/admin/enquiries/${enquiry.id}`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </Link>
+        </DropdownMenuItem>
+
+        {enquiry.status.toLowerCase() !== "closed" && (
+          <DropdownMenuItem
+            onClick={() => handleCloseEnquiry(enquiry.id)}
+          >
+            <CheckCircle className="mr-2" size={15} />
+            Mark as Closed
+          </DropdownMenuItem>
+        )}
+
+        <DropdownMenuItem
+          onClick={() => handleDelete(enquiry.id)}
+          className="text-red-600"
+        >
+          <Trash className="mr-2" size={15} />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const PageSkeleton = () => (
     <div className="space-y-6 p-6">
       {/* Title Skeleton */}
@@ -339,7 +375,7 @@ function Enquiries() {
 
   return (
     <>
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         <div>
           <h1 className="text-3xl font-bold">Enquiries</h1>
           <p className="text-muted-foreground">
@@ -457,13 +493,14 @@ function Enquiries() {
             </CardContent>
           </div>
         ) : (
-          <Card>
-            <CardHeader>
+          <Card className="hidden sm:block border shadow-sm">
+            <CardHeader className="px-4 sm:px-6 pb-2">
               <CardTitle>All Enquiries ({totalItems})</CardTitle>
             </CardHeader>
 
-            <CardContent>
-              <Table>
+            <CardContent className="px-4 sm:px-6 pt-2">
+              <div className="overflow-x-auto">
+                <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
@@ -529,46 +566,74 @@ function Enquiries() {
                       </TableCell>
 
                       <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal />
-                            </Button>
-                          </DropdownMenuTrigger>
-
-                          <DropdownMenuContent>
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/enquiries/${enquiry.id}`}>
-                                <Eye className="mr-2 h-4 w-4" />
-                                View Details
-                              </Link>
-                            </DropdownMenuItem>
-
-                            {enquiry.status.toLowerCase() !== "closed" && (
-                              <DropdownMenuItem
-                                onClick={() => handleCloseEnquiry(enquiry.id)}
-                              >
-                                <CheckCircle className="mr-2" size={15} />
-                                Mark as Closed
-                              </DropdownMenuItem>
-                            )}
-
-                            <DropdownMenuItem
-                              onClick={() => handleDelete(enquiry.id)}
-                              className="text-red-600"
-                            >
-                              <Trash className="mr-2" size={15} />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {renderActions(enquiry)}
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Mobile View: Cards */}
+        {(!loading && !error && enquiries.length > 0) && (
+          <div className="sm:hidden space-y-4 pt-2">
+            <div className="px-1 pb-2">
+              <h2 className="text-lg font-semibold">All Enquiries ({totalItems})</h2>
+            </div>
+            {enquiries.map(enquiry => (
+              <Card key={enquiry.id} className="border shadow-sm p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">{enquiry.full_name}</h3>
+                    <a href={`tel:+91${enquiry.phone_number}`} className="text-sm text-muted-foreground block font-medium mt-1">{formatPhoneNumber(enquiry.phone_number)}</a>
+                    <a href={`mailto:${enquiry.email}`} className="text-sm text-primary block mt-1">{enquiry.email}</a>
+                  </div>
+                  <div>
+                    <StatusBadge status={enquiry.status.toLowerCase()} />
+                  </div>
+                </div>
+                
+                <div className="space-y-2 text-sm mt-4 border-t pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span>
+                      {enquiry.inquiry_type ? (
+                          <span
+                            className={`px-2 py-1 rounded-full text-[11px] font-medium ${
+                              enquiry.inquiry_type === "GENERAL"
+                                ? "bg-blue-100 text-blue-700"
+                                : enquiry.inquiry_type === "TRIP"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : enquiry.inquiry_type === "PARTNERSHIP"
+                                    ? "bg-green-100 text-green-800"
+                                    : enquiry.inquiry_type === "FEEDBACK"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {enquiry.inquiry_type
+                              .replace("_", " ")
+                              .toLowerCase()
+                              .replace(/\b\w/g, (c) => c.toUpperCase())}
+                          </span>
+                      ) : "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Date:</span>
+                    <span className="font-medium">{new Date(enquiry.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 flex gap-2 w-full justify-end">
+                   {renderActions(enquiry)}
+                </div>
+              </Card>
+            ))}
+          </div>
         )}
 
         {/* Pagination */}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { Save, ArrowLeft, AlertCircle, Loader2, X } from "lucide-react";
 import Cookies from "js-cookie";
 import Input from "@/app/components/ui/input";
 import { useToast } from "@/app/hooks/use-toast";
@@ -373,7 +373,7 @@ export default function OperatorEditPage() {
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-slate-100 p-8">
+      <div className="p-3 sm:p-6 bg-linear-to-br from-slate-50 via-white to-slate-100 min-h-screen">
         {" "}
         <div className="">
           <div className="flex flex-col items-center justify-center py-16">
@@ -393,7 +393,7 @@ export default function OperatorEditPage() {
   // Enhanced Error State
   if (error && !formData) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -423,7 +423,7 @@ export default function OperatorEditPage() {
   if (!formData) {
     return (
       <div className="p-6 bg-gray-50 min-h-screen">
-        <div className="bg-white rounded-lg border shadow-sm p-6">
+        <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
           <div className="text-center py-16 text-gray-500">
             <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
             <p className="font-medium">Operator not found</p>
@@ -445,7 +445,7 @@ export default function OperatorEditPage() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 min-h-screen space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href={`/admin/operators/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -453,7 +453,7 @@ export default function OperatorEditPage() {
         <ArrowLeft size={25} />
         Back to Details
       </Link>
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 tracking-tight mb-6 sm:mb-8">
           Edit Operator
         </h1>
@@ -464,351 +464,320 @@ export default function OperatorEditPage() {
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
-        <form
-          onSubmit={handleSave}
-          className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-5 sm:gap-6"
-        >
-          {/* Logo Upload with Better UX */}
-          <div className="col-span-2">
-            <label className="text-sm font-medium text-gray-700 mb-1 block">
-              Logo
+        <form onSubmit={handleSave} className="flex flex-col gap-6">
+          {/* Logo Section */}
+          <div className="bg-slate-50/80 p-2 rounded-2xl border-2 border-dashed border-slate-200 hover:border-teal-400 transition-colors">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 block">
+              Operator Logo
             </label>
-            <div className="flex flex-col sm:flex-row sm:items-start gap-5">
+            <div className="flex flex-col sm:flex-row items-center gap-8">
               {formData.logo_url && (
-                <div className="flex flex-col items-center">
-                  <img
-                    src={formData.logo_url}
-                    alt="Operator Logo"
-                    className="h-24 w-24 object-cover rounded-xl border border-slate-200 shadow-sm"
-                    onError={(e) => {
-                      e.target.src = "/vercel.svg";
-                      e.target.onerror = null;
-                    }}
-                  />
-                  <span className="text-xs text-gray-500 mt-1">
+                <div className="shrink-0 group">
+                  <div className="relative">
+                    <img
+                      src={formData.logo_url}
+                      alt="Logo Preview"
+                      className="h-32 w-32 object-cover rounded-2xl ring-4 ring-white shadow-xl transition-transform group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.src = "/vercel.svg";
+                        e.target.onerror = null;
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity" />
+                  </div>
+                  <p className="mt-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                     Current Logo
-                  </span>
+                  </p>
                 </div>
               )}
-              <div className="flex-1">
-                <div className="relative">
+              <div className="flex-1 w-full space-y-4">
+                <div className="relative group">
                   <Input
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={uploadingImage}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-1 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:bg-teal-50 file:text-teal-600 hover:file:bg-teal-100 disabled:opacity-50"
+                    className="w-full border-slate-200 bg-white ring-offset-slate-50 hover:border-teal-500 focus-visible:ring-teal-500 file:bg-teal-50 file:text-teal-700 file:border-0 file:px-4 file:py-2 file:rounded-xl file:text-xs file:font-bold hover:file:bg-teal-100 transition-all"
                   />
                   {uploadingImage && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <Loader2 className="w-5 h-5 text-teal-500 animate-spin" />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-white/80 px-2 rounded-full">
+                      <Loader2 className="w-4 h-4 text-teal-600 animate-spin" />
+                      <span className="text-[10px] font-bold text-teal-700">
+                        UPLOADING
+                      </span>
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload a new logo (JPG, PNG, SVG). Max size 5MB.
-                </p>
+                <div className="flex flex-wrap gap-4">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200">
+                    <span className="w-1.5 h-1.5 bg-teal-500 rounded-full"></span>
+                    PNG, JPG, SVG
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200">
+                    <span className="w-1.5 h-1.5 bg-teal-500 rounded-full"></span>
+                    MAX 5MB
+                  </span>
+                </div>
               </div>
             </div>
           </div>
 
-          {[
-            ["name", "Operator Name"],
-            ["contact_name", "Contact Person"],
-            ["email", "Email"],
-            ["phone_number", "Phone"],
-            ["website_url", "Website"],
-          ].map(([key, label]) => (
-            <div key={key}>
-              <label className="text-sm font-semibold text-slate-700 tracking-wide">
-                {label}
-              </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {[
+              ["name", "Operator Name"],
+              ["contact_name", "Contact Person"],
+              ["email", "Email"],
+              ["phone_number", "Phone"],
+              ["website_url", "Website"],
+            ].map(([key, label]) => (
+              <div key={key} className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  {label}
+                </label>
 
-              {key === "phone_number" ? (
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                    +91
-                  </span>
+                {key === "phone_number" ? (
+                  <div className="relative group">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium transition-colors group-focus-within:text-teal-600">
+                      +91
+                    </span>
+                    <Input
+                      name={key}
+                      placeholder="9876543210"
+                      value={formData.phone_number}
+                      onChange={(e) => {
+                        const digits = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 10);
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone_number: digits,
+                        }));
+                      }}
+                      className="pl-12 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                      required
+                    />
+                  </div>
+                ) : (
                   <Input
                     name={key}
-                    placeholder="9876543210"
-                    value={formData.phone_number}
-                    onChange={(e) => {
-                      const digits = e.target.value
-                        .replace(/\D/g, "")
-                        .slice(0, 10);
-
-                      setFormData((prev) => ({
-                        ...prev,
-                        phone_number: digits,
-                      }));
-                    }}
-                    className="pl-12 text-sm mt-1"
-                    required
+                    value={formData[key]}
+                    onChange={handleChange}
+                    className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                    placeholder={`Enter ${label.toLowerCase()}`}
                   />
-                  {/* {fieldErrors[key] && (
-                    <p className="text-admin-error text-xs mt-1">
+                )}
+                {fieldErrors[key] && (
+                  <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1">
                     {fieldErrors[key]}
-                    </p>
-                    )} */}
-                </div>
-              ) : (
-                <Input
-                  name={key}
-                  value={formData[key]}
-                  onChange={handleChange}
-                  className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                  placeholder={`Enter ${label.toLowerCase()}`}
-                />
-              )}
-              {fieldErrors[key] && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors[key]}
+                  </p>
+                )}
+              </div>
+            ))}
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Application Status
+              </label>
+              <div className="w-full text-sm bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 font-bold text-slate-600">
+                {operator?.application_status}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Status
+              </label>
+
+              <Select
+                value={formData.status}
+                onValueChange={(value) =>
+                  handleChange({ target: { name: "status", value } })
+                }
+                disabled={operator?.application_status === "PENDING"}
+              >
+                <SelectTrigger
+                  className={`w-full bg-white border-slate-200 focus:ring-teal-500/20 text-sm h-10 ${
+                    operator?.application_status === "PENDING"
+                      ? "opacity-50 cursor-not-allowed bg-slate-50"
+                      : ""
+                  }`}
+                >
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="ACTIVE">Active</SelectItem>
+                  <SelectItem value="INACTIVE">Inactive</SelectItem>
+                  <SelectItem value="SUSPENDED">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {operator?.application_status === "PENDING" && (
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Status is locked while approval is pending
                 </p>
               )}
             </div>
-          ))}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 tracking-wide">
-              Application Status
-            </label>
-            <p className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500">
-              {operator?.application_status}
-            </p>
-            {/* <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
-            >
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-              <option value="SUSPENDED">Suspended</option>
-            </select> */}
-          </div>
-          <div>
-            <label className="text-sm font-semibold text-slate-700 tracking-wide">
-              Status
-            </label>
-
-            {/* <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              disabled={operator?.application_status === "PENDING"}
-              className={`w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200
-      ${operator?.application_status === "PENDING" ? "opacity-50 cursor-not-allowed" : ""}
-    `}
-            >
-              <option value="ACTIVE">Active</option>
-              <option value="INACTIVE">Inactive</option>
-              <option value="SUSPENDED">Suspended</option>
-            </select> */}
-
-            <Select
-              value={formData.status}
-              onValueChange={(value) =>
-                handleChange({ target: { name: "status", value } })
-              }
-              disabled={operator?.application_status === "PENDING"}
-            >
-              <SelectTrigger
-                className={`w-full mt-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm
-    focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200
-    ${
-      operator?.application_status === "PENDING"
-        ? "opacity-50 cursor-not-allowed"
-        : ""
-    }`}
-              >
-                <SelectValue placeholder="Select Status" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="ACTIVE">Active</SelectItem>
-                <SelectItem value="INACTIVE">Inactive</SelectItem>
-                <SelectItem value="SUSPENDED">Suspended</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {operator?.application_status === "PENDING" && (
-              <p className="text-xs text-gray-500 mt-1">
-                Status cannot be changed while the operator approval is pending.
-              </p>
-            )}
-          </div>
-          {/* Total Trips */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 tracking-wide">
-              {" "}
-              Total Trips
-            </label>
-            <Input
-              type="number"
-              name="total_trips"
-              value={formData.total_trips}
-              onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-            />
-          </div>
-          {/* Trips Per Year */}
-          <div>
-            <label className="text-sm font-semibold text-slate-700 tracking-wide">
-              Trips Per Year
-            </label>
-            <Input
-              type="number"
-              name="trips_per_year"
-              value={formData.trips_per_year}
-              onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
-            />
-          </div>
-          {/* Regions */}
-          <div className="col-span-2">
-            <div className="col-span-2">
+            {/* Total Trips */}
+            <div>
               <label className="text-sm font-semibold text-slate-700 tracking-wide">
-                Regions
+                {" "}
+                Total Trips
               </label>
+              <Input
+                type="number"
+                name="total_trips"
+                value={formData.total_trips}
+                onChange={handleChange}
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+              />
+            </div>
+            {/* Trips Per Year */}
+            <div>
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Trips Per Year
+              </label>
+              <Input
+                type="number"
+                name="trips_per_year"
+                value={formData.trips_per_year}
+                onChange={handleChange}
+                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500"
+              />
+            </div>
+          </div>
 
-              {/* Input + Add */}
-              <div className="flex gap-2 mt-2">
+          {/* Regions */}
+          <div className="border-t border-slate-100 pt-8 mt-4">
+            <label className="text-sm font-semibold text-slate-700 tracking-wide mb-3 block">
+              Regions of Operation
+            </label>
+
+            {/* Input + Add */}
+            <div className="flex gap-3 mb-4">
+              <div className="relative flex-1 group">
                 <Input
-                  placeholder="Type region and press Enter"
+                  placeholder="Type region and press Enter..."
                   value={regionInput}
                   onChange={(e) => setRegionInput(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       e.preventDefault();
-
                       const value = regionInput.trim();
                       if (!value) return;
-
                       if (formData.regions.includes(value)) {
                         toast({
-                          title: "Duplicate",
-                          description: "Region already added",
+                          title: "Already Added",
+                          description: `${value} is already in the list.`,
                           variant: "destructive",
                         });
                         return;
                       }
-
                       setFormData((prev) => ({
                         ...prev,
                         regions: [...prev.regions, value],
                       }));
-
-                      setRegionInput(""); // ✅ clears input
+                      setRegionInput("");
                     }
                   }}
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2"
+                  className="w-full bg-white border-slate-200 focus:ring-teal-500/20 pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const value = regionInput.trim();
-
-                    if (!value) return;
-
-                    if (formData.regions.includes(value)) {
-                      toast({
-                        title: "Duplicate",
-                        description: "Region already added",
-                        variant: "destructive",
-                      });
-                      return;
-                    }
-
-                    setFormData((prev) => ({
-                      ...prev,
-                      regions: [...prev.regions, value],
-                    }));
-
-                    setRegionInput(""); // ✅ clear
-                  }}
-                  className="px-4 py-2 bg-black text-white rounded-lg text-sm"
-                >
-                  Add
-                </button>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const value = regionInput.trim();
+                  if (!value) return;
+                  if (formData.regions.includes(value)) {
+                    toast({
+                      title: "Already Added",
+                      description: `${value} is already in the list.`,
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  setFormData((prev) => ({
+                    ...prev,
+                    regions: [...prev.regions, value],
+                  }));
+                  setRegionInput("");
+                }}
+                className="px-6 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-black hover:shadow-md transition-all active:scale-95"
+              >
+                Add
+              </button>
+            </div>
 
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                {formData.regions.map((region, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 border rounded-full text-sm"
-                  >
-                    {editingIndex === index ? (
-                      <input
-                        value={editingValue}
-                        autoFocus
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        onBlur={() => {
-                          if (!editingValue.trim()) {
-                            setEditingIndex(null);
-                            return;
-                          }
-
-                          const updatedRegions = [...formData.regions];
-                          updatedRegions[index] = editingValue.trim();
-
-                          setFormData((prev) => ({
-                            ...prev,
-                            regions: updatedRegions,
-                          }));
-
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2.5">
+              {formData.regions.map((region, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-2 px-3.5 py-1.5 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-600 transition-all hover:border-teal-500 hover:shadow-sm group"
+                >
+                  {editingIndex === index ? (
+                    <input
+                      value={editingValue}
+                      autoFocus
+                      onChange={(e) => setEditingValue(e.target.value)}
+                      onBlur={() => {
+                        if (!editingValue.trim()) {
                           setEditingIndex(null);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.target.blur();
-                          }
-                        }}
-                        className="bg-transparent border-b border-gray-400 outline-none text-sm"
-                      />
-                    ) : (
-                      <span
-                        className="cursor-pointer"
-                        onClick={() => {
-                          setEditingIndex(index);
-                          setEditingValue(region);
-                        }}
-                      >
-                        {region}
-                      </span>
-                    )}
-
-                    {/* Delete */}
-                    <button
-                      type="button"
-                      onClick={() => {
+                          return;
+                        }
+                        const updatedRegions = [...formData.regions];
+                        updatedRegions[index] = editingValue.trim();
                         setFormData((prev) => ({
                           ...prev,
-                          regions: prev.regions.filter((_, i) => i !== index),
+                          regions: updatedRegions,
                         }));
+                        setEditingIndex(null);
                       }}
-                      className="text-red-500 hover:text-red-700"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.target.blur();
+                        }
+                      }}
+                      className="bg-transparent border-b-2 border-teal-500 outline-none w-24 text-slate-900"
+                    />
+                  ) : (
+                    <span
+                      className="cursor-pointer hover:text-teal-600"
+                      onClick={() => {
+                        setEditingIndex(index);
+                        setEditingValue(region);
+                      }}
                     >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-              </div>
+                      {region}
+                    </span>
+                  )}
 
+                  {/* Delete Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        regions: prev.regions.filter((_, i) => i !== index),
+                      }));
+                    }}
+                    className="text-slate-400 hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
               {formData.regions.length === 0 && (
-                <p className="text-xs text-gray-500 mt-2">
-                  No regions added yet
-                </p>
+                <div className="flex items-center gap-2 text-slate-400 py-2 italic text-sm">
+                  <span>No regions added yet</span>
+                </div>
               )}
             </div>
           </div>
           {/* Social Links */}
-          <div className="col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-6">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-6">
             <label className="text-sm font-semibold text-slate-700 tracking-wide">
               Social Links
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 gap-4 sm:gap-5">
               <Input
                 placeholder="YouTube URL"
                 value={formData.social_links.youtube || ""}
@@ -856,7 +825,7 @@ export default function OperatorEditPage() {
               />
             </div>
           </div>
-          <div className="col-span-2">
+          <div>
             <label className="text-sm font-semibold text-slate-700 tracking-wide">
               Description
             </label>

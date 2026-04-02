@@ -371,7 +371,7 @@ export default function TripEditPage() {
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -394,7 +394,7 @@ export default function TripEditPage() {
   // Enhanced Error State
   if (error && !formData) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -422,7 +422,7 @@ export default function TripEditPage() {
   // Not Found State
   if (!formData) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -444,7 +444,7 @@ export default function TripEditPage() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href={`/admin/trips/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -452,7 +452,7 @@ export default function TripEditPage() {
         <ArrowLeft size={16} /> Back to Details
       </Link>
 
-      <div className="bg-white rounded-lg border shadow-sm p-6">
+      <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
         <h1 className="text-2xl font-semibold mb-6">Edit Trip</h1>
 
         {/* Enhanced Error Display */}
@@ -465,10 +465,10 @@ export default function TripEditPage() {
 
         <form onSubmit={handleSave} className="space-y-8">
           {/* BASIC INFO */}
-          <section className="bg-white border rounded-xl shadow-sm p-6">
+          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-6">Basic Information</h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Trip Name*</label>
                 <input
@@ -613,7 +613,7 @@ export default function TripEditPage() {
           </section>
 
           {/* IMAGES */}
-          <section className="bg-white border rounded-xl shadow-sm p-6">
+          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-6">Images</h3>
 
             <div className="flex items-center gap-3">
@@ -651,7 +651,7 @@ export default function TripEditPage() {
           </section>
 
           {/* INCLUSIONS */}
-          <section className="bg-white border rounded-xl shadow-sm p-6">
+          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-6">Inclusions</h3>
 
             {formData.inclusions.map((item, i) => (
@@ -683,7 +683,7 @@ export default function TripEditPage() {
           </section>
 
           {/* EXCLUSIONS */}
-          <section className="bg-white border rounded-xl shadow-sm p-6">
+          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-6">Exclusions</h3>
 
             {formData.exclusions.map((item, i) => (
@@ -715,7 +715,7 @@ export default function TripEditPage() {
           </section>
 
           {/* ITINERARY */}
-          <section className="bg-white border rounded-xl shadow-sm p-6">
+          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
             <h3 className="text-lg font-semibold mb-6">Itinerary*</h3>
 
             {formData.itinerary.map((day, dayIndex) => (

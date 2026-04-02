@@ -269,8 +269,8 @@ function AddOperatorModal({ handleModalClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="bg-white w-full sm:w-[90vw] md:w-[80vw] lg:w-[70vw] h-[90vh] sm:h-[85vh] rounded-t-xl sm:rounded-xl shadow-lg flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+      <div className="bg-white w-[70vw] max-w-6xl h-[70vh] lg:h-[90vh] rounded-xl shadow-lg flex flex-col">
         {/* Modal Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
           <h2 className="text-lg sm:text-xl font-semibold text-[#14181F]">

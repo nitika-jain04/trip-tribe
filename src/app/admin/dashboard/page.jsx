@@ -176,7 +176,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         <Skeleton className="h-8 w-40" />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -189,7 +189,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-1">

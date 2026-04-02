@@ -77,7 +77,7 @@ export default function OperatorDetail() {
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -99,7 +99,7 @@ export default function OperatorDetail() {
 
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -125,7 +125,7 @@ export default function OperatorDetail() {
 
   if (!operator) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -150,7 +150,7 @@ export default function OperatorDetail() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
       <Link
         href="/admin/operators"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -159,19 +159,21 @@ export default function OperatorDetail() {
       </Link>
 
       {/* Header Card */}
-      <div className="bg-white mt-3 rounded-lg shadow-sm border px-6 py-4 flex flex-col md:flex-row gap-6 items-start">
-        {operator.logo_url ? (
-          <Image
-            height={200}
-            width={200}
-            src={operator.logo_url}
-            alt={operator.name}
-            className="rounded-xl object-cover border"
-            onError={(e) => (e.currentTarget.src = "/vercel.svg")}
-          />
-        ) : (
-          <FaRegUser className="text-gray-500" size={30} />
-        )}
+      <div className="bg-white sm:mt-3 rounded-lg shadow-sm border p-4 sm:px-6 sm:py-4 flex flex-col md:flex-row gap-4 sm:gap-6 items-start">
+        <div className="flex justify-center items-center w-50">
+          {operator.logo_url ? (
+            <Image
+              height={200}
+              width={200}
+              src={operator.logo_url}
+              alt={operator.name}
+              className="rounded-xl object-cover border"
+              onError={(e) => (e.currentTarget.src = "/vercel.svg")}
+            />
+          ) : (
+            <FaRegUser className="text-gray-500" size={30} />
+          )}
+        </div>
 
         <div className="flex-1 space-y-3">
           <div className="flex justify-between items-center gap-3 flex-wrap">
@@ -283,7 +285,7 @@ export default function OperatorDetail() {
       </div>
 
       {/* Details Section */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
+      <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold mb-4">Business Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
           <DetailItem

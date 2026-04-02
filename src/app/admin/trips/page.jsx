@@ -403,6 +403,102 @@ function Page() {
 
   const difficulties = ["EASY", "MODERATE", "HARD"];
 
+  const renderActions = (trip) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={`/admin/trips/${trip.id}`}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link href={`/admin/trips/edit/${trip.id}`}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit
+          </Link>
+        </DropdownMenuItem>
+        {trip.status === "DRAFT" && (
+          <>
+            <DropdownMenuItem
+              className="text-success"
+              onClick={() =>
+                handleUpdateTrip(trip.id, {
+                  status: "PUBLISHED",
+                })
+              }
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Activate
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="text-error"
+              onClick={() => handleDeleteTrip(trip.id)}
+            >
+              <Trash2 className="h-4 w-4 mr-2 text-error" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+        {trip.status === "ARCHIVED" && (
+          <>
+            <DropdownMenuItem
+              className="text-success"
+              onClick={() =>
+                handleUpdateTrip(trip.id, {
+                  status: "DRAFT",
+                })
+              }
+            >
+              <FilePen className="h-4 w-4 mr-2" />
+              Draft
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-error"
+              onClick={() => handleDeleteTrip(trip.id)}
+            >
+              <Trash2 className="h-4 w-4 mr-2 text-error" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+        {trip.status === "PUBLISHED" && (
+          <DropdownMenuItem
+            className="text-accent"
+            onClick={() =>
+              handleUpdateTrip(trip.id, {
+                status: "ARCHIVED",
+              })
+            }
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            Archive
+          </DropdownMenuItem>
+        )}
+        {trip.status === "CANCELLED" && (
+          <DropdownMenuItem
+            className="text-error"
+            onClick={() => handleDeleteTrip(trip.id)}
+          >
+            <Trash2 className="h-4 w-4 mr-2 text-error" />
+            Delete
+          </DropdownMenuItem>
+        )}
+
+        <DropdownMenuItem onClick={() => handleDuplicateTrip(trip)}>
+          <FilePen className="h-4 w-4 mr-2" />
+          Duplicate
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const PageSkeleton = () => (
     <div className="space-y-6 p-6">
       {/* Title Skeleton */}
@@ -482,7 +578,7 @@ function Page() {
 
   return (
     <>
-      <div className="space-y-6 p-6">
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -592,11 +688,11 @@ function Page() {
         </CardContent>
 
         {/* Trips Table */}
-        <Card>
-          <CardHeader>
+        <Card className="hidden sm:block border shadow-sm">
+          <CardHeader className="px-4 sm:px-6 pb-2">
             <CardTitle>All Trips ({totalTrips})</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-4 sm:px-6 pt-2">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
                 <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
@@ -630,7 +726,7 @@ function Page() {
                 )}
               </div>
             ) : (
-              <>
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -721,114 +817,102 @@ function Page() {
                           <StatusBadge status={trip.status} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/trips/${trip.id}`}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/trips/edit/${trip.id}`}>
-                                  <Pencil className="h-4 w-4 mr-2" />
-                                  Edit
-                                </Link>
-                              </DropdownMenuItem>
-                              {trip.status === "DRAFT" && (
-                                <>
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateTrip(trip.id, {
-                                        status: "PUBLISHED",
-                                      })
-                                    }
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-2" />
-                                    Activate
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuItem
-                                    className="text-error"
-                                    onClick={() => handleDeleteTrip(trip.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {trip.status === "ARCHIVED" && (
-                                <>
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateTrip(trip.id, {
-                                        status: "DRAFT",
-                                      })
-                                    }
-                                  >
-                                    <FilePen className="h-4 w-4 mr-2" />
-                                    Draft
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-error"
-                                    onClick={() => handleDeleteTrip(trip.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                    Delete
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              {trip.status === "PUBLISHED" && (
-                                <DropdownMenuItem
-                                  className="text-accent"
-                                  onClick={() =>
-                                    handleUpdateTrip(trip.id, {
-                                      status: "ARCHIVED",
-                                    })
-                                  }
-                                >
-                                  <Archive className="h-4 w-4 mr-2" />
-                                  Archive
-                                </DropdownMenuItem>
-                              )}
-                              {trip.status === "CANCELLED" && (
-                                <DropdownMenuItem
-                                  className="text-error"
-                                  onClick={() => handleDeleteTrip(trip.id)}
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                  Delete
-                                </DropdownMenuItem>
-                              )}
-
-                              <DropdownMenuItem
-                                onClick={() => handleDuplicateTrip(trip)}
-                              >
-                                <FilePen className="h-4 w-4 mr-2" />
-                                Duplicate
-                              </DropdownMenuItem>
-                              {/* <DropdownMenuItem className="text-destructive">
-                                <Archive className="h-4 w-4 mr-2" />
-                                Archive
-                              </DropdownMenuItem> */}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {renderActions(trip)}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Mobile View: Cards */}
+        <div className="sm:hidden space-y-4 pt-2">
+          <div className="px-1 pb-2">
+            <h2 className="text-lg font-semibold">All Trips ({totalTrips})</h2>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="animate-spin text-teal-500 w-8 h-8" />
+            </div>
+          ) : trips.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No trips found
+            </p>
+          ) : (
+            trips.map((trip) => (
+              <Card key={trip.id} className="border shadow-sm p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex gap-3 w-full">
+                    <div className="relative h-16 w-20 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center">
+                      {trip.images && trip.images[0] ? (
+                        <img
+                          src={trip.images[0]}
+                          alt={trip.name}
+                          loading="lazy"
+                          className="object-cover h-full w-full"
+                        />
+                      ) : (
+                        <MapPin className="h-6 w-6 text-gray-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold line-clamp-2 text-[15px]">
+                        {trip.name || "N/A"}
+                      </h3>
+                      <p className="text-sm text-muted-foreground line-clamp-1">
+                        {getOperatorName(trip.operator_id)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm mt-3 border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Price:</span>
+                    <span className="font-medium flex items-center gap-1">
+                      <IndianRupee className="h-3 w-3" />
+                      {trip.price?.toLocaleString("en-IN") || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Dates:</span>
+                    <span>
+                      {trip.start_date
+                        ? new Date(trip.start_date).toLocaleDateString()
+                        : "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">
+                      Diff / Status:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`font-medium ${trip.difficulty === "EASY" ? "text-green-600" : trip.difficulty === "MODERATE" ? "text-orange-600" : trip.difficulty === "HARD" ? "text-red-600" : "text-gray-500"}`}
+                      >
+                        {trip.difficulty || "N/A"}
+                      </span>
+                      <StatusBadge status={trip.status} />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2 w-full items-center">
+                  <Link href={`/admin/trips/${trip.id}`} className="flex-1">
+                    <Button variant="outline" className="w-full text-sm h-9">
+                      <Eye className="h-4 w-4 mr-2" /> View
+                    </Button>
+                  </Link>
+                  {renderActions(trip)}
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
 
         <div className="flex justify-between items-center mt-4">
           <span className="text-sm text-muted-foreground">
