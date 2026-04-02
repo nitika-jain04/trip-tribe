@@ -114,9 +114,19 @@ export default function OperatorEditPage() {
   };
 
   const handleImageUpload = async (e) => {
+    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Only JPG and PNG images are allowed",
+        variant: "destructive",
+      });
+      return;
+    }
     // ✅ 5MB validation
     const MAX_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
@@ -142,9 +152,6 @@ export default function OperatorEditPage() {
 
       const data = await res.json();
 
-      // if (!res.ok || !data.success) {
-      //    throw new Error(data.message || "Upload failed");
-      // }
       if (!res.ok) {
         toast({
           title: "Error",
@@ -328,52 +335,6 @@ export default function OperatorEditPage() {
     }
   };
 
-  const handleDelete = async () => {
-    const confirmDelete = window.confirm("Delete this operator permanently?");
-    if (!confirmDelete) return;
-
-    setSaving(true);
-    setDeleteConfirm(true);
-
-    const token = Cookies.get("token");
-
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
-        {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      const data = await res.json();
-
-      // if (!res.ok || !data.success)
-      //   throw new Error(data.message || "Delete failed");
-      if (!res.ok || !data.success) {
-        toast({
-          title: "Error",
-          description: "Delete failed",
-          variant: "destructive",
-        });
-        setSaving(false);
-        setDeleteConfirm(false);
-        return;
-      }
-
-      toast({
-        title: "Operator",
-        description: "Operator deleted successfully!",
-        variant: "success",
-      });
-      router.push("/admin/operators");
-    } catch (err) {
-      setError(err.message);
-      setSaving(false);
-      setDeleteConfirm(false);
-    }
-  };
-
   // Enhanced Loading State
   if (loading) {
     return (
@@ -466,7 +427,7 @@ export default function OperatorEditPage() {
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-            <p className="text-red-600 text-sm">{error}</p>
+            <p className="text-admin-error text-sm">{error}</p>
           </div>
         )}
         <form onSubmit={handleSave} className="flex flex-col gap-6">

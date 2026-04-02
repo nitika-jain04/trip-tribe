@@ -167,7 +167,7 @@ function Destinations() {
         },
       );
 
-      console.log("params", params.toString());
+      // console.log("params", params.toString());
 
       if (!res.ok) {
         toast({
@@ -876,6 +876,25 @@ function Categories() {
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState("created_at");
+  const [order, setOrder] = useState("DESC");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const [isActive, setIsActive] = useState(true);
+
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [search]);
 
   // Simulate API fetch with loading state
   useEffect(() => {
@@ -891,8 +910,17 @@ function Categories() {
           return;
         }
 
+        const params = new URLSearchParams();
+        params.append("page", String(page));
+        params.append("limit", String(limit));
+
+        if (sortBy) params.append("sortBy", sortBy);
+        if (order) params.append("order", order);
+        if (isActive) params.append("is_active", isActive);
+        if (debouncedSearch) params.append("search", debouncedSearch);
+
         const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/trip-types/admin`,
+          `${BASE_URL}/api/${API_VERSION}/trip-types/admin?${params.toString()}`,
           {
             method: "GET",
             headers: {
@@ -901,17 +929,20 @@ function Categories() {
           },
         );
 
+        const data = await res.json();
+
+        // console.log("categories", data);
+
         if (!res.ok) {
           toast({
             title: "Error",
-            description: "Failed to fetch categories",
+            description: data?.error?.message || "Failed to fetch categories",
             variant: "destructive",
           });
         }
 
-        const data = await res.json();
-
         const tripTypes = data?.result?.trip_types ?? [];
+        const pagination = data?.result?.pagination;
 
         const formatted = tripTypes.map((item, index) => ({
           id: item.id,
@@ -923,6 +954,8 @@ function Categories() {
         }));
 
         setCategories(formatted);
+        setTotalPages(pagination?.pages || 1);
+        setTotalItems(pagination?.total || 0);
       } catch (err) {
         console.error(err);
         setError("Failed to load categories");
@@ -932,7 +965,11 @@ function Categories() {
     };
 
     fetchCategories();
-  }, []);
+  }, [page, limit, debouncedSearch, sortBy, order, isActive]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, sortBy, order, isActive]);
 
   const colorMap = {
     green: "bg-green-100 text-green-600",
@@ -953,6 +990,53 @@ function Categories() {
           <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3 mt-3">
+        {/* 🔍 Search */}
+        <div className="relative w-full sm:w-64">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            placeholder="Search category..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+        </div>
+
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_at">Created</SelectItem>
+            <SelectItem value="updated_at">Updated</SelectItem>
+            <SelectItem value="name">Name</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={order} onValueChange={setOrder}>
+          <SelectTrigger className="w-full sm:w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ASC">Ascending</SelectItem>
+            <SelectItem value="DESC">Descending</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={isActive} onValueChange={setIsActive}>
+          <SelectTrigger className="w-full sm:w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Active</SelectItem>
+            <SelectItem value="false">Archived</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Loading State */}
@@ -984,7 +1068,7 @@ function Categories() {
               No categories found
             </div>
           ) : (
-            categories.map((category, index) => (
+            categories.map((category) => (
               <div
                 key={category.id}
                 className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
@@ -1097,12 +1181,49 @@ function Categories() {
         </div>
       )}
 
+      {/* Pagination */}
+      {!loading && !error && categories.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+            <span>
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, totalItems)} of {totalItems}
+            </span>
+            <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
+            <span>
+              Page {page} of {totalPages}
+            </span>
+          </div>
+
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+              className="flex-1 sm:flex-none"
+            >
+              Previous
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+              className="flex-1 sm:flex-none"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Add Category Modal - To be implemented */}
       {showModal && (
         <AddCategoryModal
           onClose={() => setShowModal(false)}
-          onAddCategory={(newCategory) => {
-            setCategories((prev) => [...prev, newCategory]);
+          refresh={() => {
+            setPage(1);
+            setShowModal(false);
           }}
         />
       )}
@@ -1132,7 +1253,7 @@ function Categories() {
   );
 }
 
-function AddCategoryModal({ onClose, onAddCategory }) {
+function AddCategoryModal({ onClose, refresh }) {
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -1182,28 +1303,13 @@ function AddCategoryModal({ onClose, onAddCategory }) {
       if (!res.ok || !data?.success) {
         toast({
           title: "Error",
-          description:
-            data?.error?.message ||
-            data?.message ||
-            "Failed to create category",
+          description: data?.error?.message || "Failed to create category",
           variant: "destructive",
         });
         return;
       }
 
-      // ✅ Create formatted category (same shape as table)
-      const newCategory = {
-        id: data.result.id,
-        category: data.result.name,
-        description: data.result.description,
-        is_active: data.result.is_active,
-        trips: 0, // new category → no trips
-        color: ["green", "pink", "blue", "teal", "yellow"][
-          Math.floor(Math.random() * 5)
-        ],
-      };
-
-      onAddCategory(newCategory);
+      refresh();
 
       toast({
         title: "Success",

@@ -194,7 +194,6 @@ function TripsContent() {
       }
 
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
-      // if (!res.ok) throw new Error("Failed to fetch trip types");
 
       const data = await res.json();
       if (!res.ok) {
