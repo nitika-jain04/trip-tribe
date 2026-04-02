@@ -1,5 +1,8 @@
+"use client";
+
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const footerLinks = {
   explore: [
@@ -22,6 +25,15 @@ const footerLinks = {
 };
 
 export function Footer() {
+  const pathname = usePathname();
+
+  const handleNavClick = (e, href) => {
+    if (pathname === href) {
+      e.preventDefault(); // stop navigation
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <footer className="bg-foreground text-background">
       {/* CTA Section */}
@@ -99,6 +111,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    onClick={(e) => handleNavClick(e, link.href)}
                     className="text-body-sm text-background/60 hover:text-primary transition-colors"
                   >
                     {link.name}
@@ -118,6 +131,8 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    // onClick={`(e) => handleNavClick(e, ${link.href})`}
+                    onClick={(e) => handleNavClick(e, link.href)}
                     className="text-body-sm text-background/60 hover:text-primary transition-colors"
                   >
                     {link.name}
@@ -137,6 +152,7 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    onClick={(e) => handleNavClick(e, link.href)}
                     className="text-body-sm text-background/60 hover:text-primary transition-colors"
                   >
                     {link.name}
