@@ -52,6 +52,7 @@ export default function OperatorEditPage() {
   const [editingIndex, setEditingIndex] = useState(null);
   const [editingValue, setEditingValue] = useState("");
   const [regionInput, setRegionInput] = useState("");
+  const [isModified, setIsModified] = useState(false);
 
   // Fetch operator
   useEffect(() => {
@@ -282,6 +283,7 @@ export default function OperatorEditPage() {
         variant: "success",
       });
       setSaving(false);
+      setIsModified(Object.keys(requestBody).length === 0);
       return;
     }
 
@@ -869,7 +871,7 @@ export default function OperatorEditPage() {
               </Link>
               <button
                 type="submit"
-                disabled={saving || uploadingImage}
+                disabled={!isModified || saving || uploadingImage}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {saving ? (

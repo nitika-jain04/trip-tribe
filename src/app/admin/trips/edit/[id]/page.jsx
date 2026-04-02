@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2, Plus, X } from "lucide-react";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { FaTrash } from "react-icons/fa";
@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import Input from "@/app/components/ui/input";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -24,6 +25,7 @@ export default function TripEditPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
+  const [isModified, setIsModified] = useState(false);
   const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
@@ -336,6 +338,7 @@ export default function TripEditPage() {
         description: "No Changes Detected",
       });
       setSaving(false);
+      setIsModified(Object.keys(requestBody).length === 0);
       return;
     }
 
@@ -458,11 +461,14 @@ export default function TripEditPage() {
         href={`/admin/trips/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
       >
-        <ArrowLeft size={16} /> Back to Details
+        <ArrowLeft size={25} />
+        Back to Details
       </Link>
 
-      <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
-        <h1 className="text-2xl font-semibold mb-6">Edit Trip</h1>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 tracking-tight mb-6 sm:mb-8">
+          Edit Trip
+        </h1>
 
         {/* Enhanced Error Display */}
         {error && (
@@ -474,32 +480,39 @@ export default function TripEditPage() {
 
         <form onSubmit={handleSave} className="space-y-8">
           {/* BASIC INFO */}
-          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
-            <h3 className="text-lg font-semibold mb-6">Basic Information</h3>
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Basic Information
+            </h3>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Trip Name*</label>
-                <input
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Trip Name*
+                </label>
+                <Input
                   value={formData.name}
                   required
                   onChange={(e) =>
                     handleChange("name", e.target.value.replace(/^\s+/, ""))
                   }
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-black"
+                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
                 />
                 {errors.name && (
                   <p className="text-xs text-admin-error mt-1">{errors.name}</p>
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Price*</label>
-                <input
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Price*
+                </label>
+                <Input
+                  type="number"
                   value={formData.price}
                   required
                   onChange={(e) => handleChange("price", e.target.value)}
-                  className="mt-1 w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-black"
+                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
                 />
                 {errors.price && (
                   <p className="text-xs text-admin-error mt-1">
@@ -508,14 +521,16 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div className="">
-                <label className="text-sm font-medium">Start Date*</label>
-                <input
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Start Date*
+                </label>
+                <Input
                   type="date"
                   value={formData.start_date}
                   required
                   onChange={(e) => handleChange("start_date", e.target.value)}
-                  className="mt-1 ml-5 border rounded-lg px-3 py-2"
+                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
                 />
                 {errors.start_date && (
                   <p className="text-xs text-admin-error mt-1">
@@ -524,14 +539,16 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium">End Date*</label>
-                <input
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  End Date*
+                </label>
+                <Input
                   type="date"
                   required
                   value={formData.end_date}
                   onChange={(e) => handleChange("end_date", e.target.value)}
-                  className="mt-1 ml-5 border rounded-lg px-3 py-2"
+                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
                 />
                 {errors.end_date && (
                   <p className="text-xs text-admin-error mt-1">
@@ -540,12 +557,15 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Total Seats*</label>
-                <input
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Total Seats*
+                </label>
+                <Input
+                  type="number"
                   value={formData.total_seats}
                   onChange={(e) => handleChange("total_seats", e.target.value)}
-                  className="mt-1 w-full border rounded-lg px-3 py-2"
+                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
                 />
                 {errors.total_seats && (
                   <p className="text-xs text-admin-error mt-1">
@@ -554,13 +574,15 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Difficulty*</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Difficulty*
+                </label>
                 <Select
                   value={formData.difficulty || ""}
                   onValueChange={(value) => handleChange("difficulty", value)}
                 >
-                  <SelectTrigger className="mt-1 w-full border rounded-lg px-3 py-2">
+                  <SelectTrigger className="w-full text-sm bg-white border-slate-200 h-10 focus:ring-teal-500/20">
                     <SelectValue placeholder="Select Difficulty" />
                   </SelectTrigger>
 
@@ -578,13 +600,15 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Trip Type*</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Trip Type*
+                </label>
                 <Select
                   value={formData.type_id?.toString() || ""}
                   onValueChange={(value) => handleChange("type_id", value)}
                 >
-                  <SelectTrigger className="mt-1 w-full border rounded-lg px-3 py-2">
+                  <SelectTrigger className="w-full text-sm bg-white border-slate-200 h-10 focus:ring-teal-500/20">
                     <SelectValue placeholder="Select Trip Type" />
                   </SelectTrigger>
 
@@ -605,13 +629,15 @@ export default function TripEditPage() {
               </div>
             </div>
 
-            <div className="mt-4">
-              <label className="text-sm font-medium">Description</label>
+            <div className="mt-4 space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Description
+              </label>
               <textarea
                 value={formData.description}
                 onChange={(e) => handleChange("description", e.target.value)}
                 rows={4}
-                className="mt-1 w-full border rounded-lg px-3 py-2"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500/20 bg-white"
               />
               {errors.description && (
                 <p className="text-xs text-admin-error mt-1">
@@ -622,210 +648,264 @@ export default function TripEditPage() {
           </section>
 
           {/* IMAGES */}
-          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
-            <h3 className="text-lg font-semibold mb-6">Images</h3>
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Images
+            </h3>
 
-            <div className="flex items-center gap-3">
-              <input
-                type="file"
-                onChange={handleImageUpload}
-                disabled={uploadingImage}
-              />
+            <div className="space-y-4">
+              <div className="relative group">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="w-full border-slate-200 bg-white hover:border-teal-500 file:bg-teal-50 file:text-teal-700 file:border-0 file:px-4 file:py-2 file:rounded-xl file:text-xs file:font-bold hover:file:bg-teal-100 transition-all cursor-pointer"
+                />
+                {uploadingImage && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-white/80 px-2 rounded-full">
+                    <Loader2 className="w-4 h-4 text-teal-600 animate-spin" />
+                    <span className="text-[10px] font-bold text-teal-700">
+                      UPLOADING
+                    </span>
+                  </div>
+                )}
+              </div>
 
-              {uploadingImage && (
-                <span className="text-sm text-gray-500 flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Uploading...
-                </span>
-              )}
-            </div>
-
-            <div className="flex gap-3 mt-4 flex-wrap">
-              {formData.images.map((img, i) => (
-                <div key={i} className="relative">
-                  <img
-                    src={img}
-                    className="w-24 h-24 object-cover rounded-lg"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteImage(i)}
-                    className="absolute top-1 right-1 bg-black text-white text-xs px-2 py-0.5 rounded"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
+              <div className="flex flex-wrap gap-4 mt-6">
+                {formData.images.map((img, i) => (
+                  <div key={i} className="relative group/img">
+                    <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-slate-200 shadow-sm transition-transform group-hover/img:scale-105">
+                      <img
+                        src={img}
+                        alt={`Trip ${i + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/img:opacity-100 transition-opacity" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(i)}
+                      className="absolute -top-2 -right-2 bg-slate-900 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover/img:opacity-100 transition-all hover:bg-red-500"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {formData.images.length === 0 && (
+                  <div className="h-24 w-full flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-400 text-sm">
+                    No images uploaded yet
+                  </div>
+                )}
+              </div>
             </div>
           </section>
 
           {/* INCLUSIONS */}
-          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
-            <h3 className="text-lg font-semibold mb-6">Inclusions</h3>
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Inclusions
+            </h3>
 
-            {formData.inclusions.map((item, i) => (
-              <div key={i} className="flex gap-2 mb-3">
-                <input
-                  value={item}
-                  onChange={(e) =>
-                    handleArrayChange("inclusions", i, e.target.value)
-                  }
-                  className="flex-1 border rounded-lg px-3 py-2"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeItem("inclusions", i)}
-                  className="px-3 py-2 bg-red-50 text-red-500 rounded-lg"
-                >
-                  <FaTrash size={14} />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={() => addItem("inclusions")}
-              className="mt-2 text-sm font-medium text-black"
-            >
-              + Add Inclusion
-            </button>
-          </section>
-
-          {/* EXCLUSIONS */}
-          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
-            <h3 className="text-lg font-semibold mb-6">Exclusions</h3>
-
-            {formData.exclusions.map((item, i) => (
-              <div key={i} className="flex gap-2 mb-3">
-                <input
-                  value={item}
-                  onChange={(e) =>
-                    handleArrayChange("exclusions", i, e.target.value)
-                  }
-                  className="flex-1 border rounded-lg px-3 py-2"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeItem("exclusions", i)}
-                  className="px-3 py-2 bg-red-50 text-red-500 rounded-lg"
-                >
-                  <FaTrash size={14} />
-                </button>
-              </div>
-            ))}
-
-            <button
-              type="button"
-              onClick={() => addItem("exclusions")}
-              className="mt-2 text-sm font-medium text-black"
-            >
-              + Add Exclusion
-            </button>
-          </section>
-
-          {/* ITINERARY */}
-          <section className="bg-white border rounded-xl shadow-sm p-4 sm:p-6">
-            <h3 className="text-lg font-semibold mb-6">Itinerary*</h3>
-
-            {formData.itinerary.map((day, dayIndex) => (
-              <div key={dayIndex} className="border rounded-lg p-4 mb-4">
-                <div className="flex justify-between mb-3">
-                  <h4 className="font-medium">Day {day.day}</h4>
-
+            <div className="space-y-4">
+              {formData.inclusions.map((item, i) => (
+                <div key={i} className="flex gap-3 group">
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleArrayChange("inclusions", i, e.target.value)
+                    }
+                    className="flex-1 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                    placeholder="e.g., Accommodation"
+                  />
                   <button
                     type="button"
-                    onClick={() => {
-                      const updated = formData.itinerary.filter(
-                        (_, i) => i !== dayIndex,
-                      );
-                      const reIndexed = updated.map((d, i) => ({
-                        ...d,
-                        day: i + 1,
-                      }));
-                      setFormData((prev) => ({
-                        ...prev,
-                        itinerary: reIndexed,
-                      }));
-                    }}
-                    className="text-red-500 text-sm"
+                    onClick={() => removeItem("inclusions", i)}
+                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    title="Remove inclusion"
                   >
                     <FaTrash size={14} />
                   </button>
                 </div>
+              ))}
 
-                {day.activities.map((act, i) => (
-                  <div key={i} className="flex gap-2 mb-2">
-                    <input
-                      value={act}
-                      required
-                      onChange={(e) =>
-                        handleItineraryChange(dayIndex, i, e.target.value)
-                      }
-                      className="flex-1 border rounded-lg px-3 py-2"
-                      placeholder="Activity"
-                    />
+              <button
+                type="button"
+                onClick={() => addItem("inclusions")}
+                className="inline-flex items-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all active:scale-95 mt-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Inclusion
+              </button>
+            </div>
+          </section>
+
+          {/* EXCLUSIONS */}
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Exclusions
+            </h3>
+
+            <div className="space-y-4">
+              {formData.exclusions.map((item, i) => (
+                <div key={i} className="flex gap-3 group">
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleArrayChange("exclusions", i, e.target.value)
+                    }
+                    className="flex-1 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                    placeholder="e.g., Personal Expenses"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem("exclusions", i)}
+                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    title="Remove exclusion"
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => addItem("exclusions")}
+                className="inline-flex items-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all active:scale-95 mt-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Exclusion
+              </button>
+            </div>
+          </section>
+
+          {/* ITINERARY */}
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <h3 className="text-lg font-bold text-slate-800">Itinerary</h3>
+              <button
+                type="button"
+                onClick={addDay}
+                className="inline-flex items-center justify-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Add Day
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {formData.itinerary.map((day, dayIndex) => (
+                <div
+                  key={dayIndex}
+                  className="bg-slate-50/50 border border-slate-200 rounded-2xl p-4 sm:p-6 relative"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-slate-900 text-white text-xs font-bold px-2 py-1 rounded-md">
+                        DAY {day.day}
+                      </div>
+                      <h4 className="font-bold text-slate-800">
+                        Plan for Day {day.day}
+                      </h4>
+                    </div>
 
                     <button
                       type="button"
                       onClick={() => {
-                        const updated = [...formData.itinerary];
-                        updated[dayIndex].activities = updated[
-                          dayIndex
-                        ].activities.filter((_, index) => index !== i);
-
-                        // prevent empty activities array
-                        if (updated[dayIndex].activities.length === 0) {
-                          updated[dayIndex].activities = [""];
-                        }
-
+                        const updated = formData.itinerary.filter(
+                          (_, i) => i !== dayIndex,
+                        );
+                        const reIndexed = updated.map((d, i) => ({
+                          ...d,
+                          day: i + 1,
+                        }));
                         setFormData((prev) => ({
                           ...prev,
-                          itinerary: updated,
+                          itinerary: reIndexed,
                         }));
                       }}
-                      className="px-3 py-2 text-admin-error rounded-lg"
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      title="Remove day"
                     >
-                      <FaTrash size={10} />
+                      <FaTrash size={14} />
                     </button>
                   </div>
-                ))}
 
-                <button
-                  type="button"
-                  onClick={() => addActivity(dayIndex)}
-                  className="text-sm text-black"
-                >
-                  + Add Activity
-                </button>
-              </div>
-            ))}
+                  <div className="space-y-3">
+                    {day.activities.map((act, i) => (
+                      <div key={i} className="flex gap-3 group">
+                        <Input
+                          value={act}
+                          required
+                          onChange={(e) =>
+                            handleItineraryChange(dayIndex, i, e.target.value)
+                          }
+                          className="flex-1 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                          placeholder={`Activity ${i + 1}`}
+                        />
 
-            <button
-              type="button"
-              onClick={addDay}
-              className="text-sm font-medium text-black"
-            >
-              + Add Day
-            </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...formData.itinerary];
+                            updated[dayIndex].activities = updated[
+                              dayIndex
+                            ].activities.filter((_, index) => index !== i);
+
+                            if (updated[dayIndex].activities.length === 0) {
+                              updated[dayIndex].activities = [""];
+                            }
+
+                            setFormData((prev) => ({
+                              ...prev,
+                              itinerary: updated,
+                            }));
+                          }}
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        >
+                          <FaTrash size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => addActivity(dayIndex)}
+                    className="mt-4 text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors uppercase tracking-wider"
+                  >
+                    + Add activity to day {day.day}
+                  </button>
+                </div>
+              ))}
+
+              {formData.itinerary.length === 0 && (
+                <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-slate-400 italic">
+                  No itinerary days added yet
+                </div>
+              )}
+            </div>
           </section>
 
           {/* SUBMIT */}
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-slate-200">
             <button
               type="button"
               onClick={() => router.back()}
-              className="px-5 py-2 border rounded-lg"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              disabled={saving || uploadingImage}
-              className="px-6 py-2 bg-black text-white rounded-lg flex items-center gap-2"
+              disabled={!isModified || saving || uploadingImage}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-              {saving ? "Saving..." : "Save Changes"}
+              {(saving || uploadingImage) && (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              )}
+              {saving ? "SAVING..." : "SAVE CHANGES"}
             </button>
           </div>
         </form>

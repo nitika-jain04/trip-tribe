@@ -739,13 +739,23 @@ function Page() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-75">Trip</TableHead>
-                      <TableHead>Operator</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Dates</TableHead>
-                      <TableHead>Difficulty</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="min-w-[200px] whitespace-nowrap">
+                        Trip
+                      </TableHead>
+                      <TableHead className="min-w-[180px] whitespace-nowrap">
+                        Operator
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">Price</TableHead>
+                      <TableHead className="whitespace-nowrap">Dates</TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Difficulty
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
+                        Status
+                      </TableHead>
+                      <TableHead className="text-right whitespace-nowrap">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -765,9 +775,9 @@ function Page() {
                                 <MapPin className="h-4 w-4 text-gray-400" />
                               </div>
                             )}
-                            <div>
+                            <div className="min-w-0 flex-1">
                               <p
-                                className="font-medium line-clamp-1"
+                                className="font-medium truncate"
                                 title={trip.name}
                               >
                                 {trip.name || "N/A"}
@@ -775,15 +785,15 @@ function Page() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
+                        <TableCell className="text-muted-foreground min-w-0">
                           <p
-                            className="line-clamp-1"
+                            className="truncate"
                             title={getOperatorName(trip.operator_id)}
                           >
                             {getOperatorName(trip.operator_id)}
                           </p>
                         </TableCell>
-                        <TableCell className="font-medium">
+                        <TableCell className="font-medium whitespace-nowrap">
                           <div className="flex items-center gap-1">
                             <IndianRupee className="h-3 w-3" />
                             {trip.price?.toLocaleString("en-IN") || "N/A"}
