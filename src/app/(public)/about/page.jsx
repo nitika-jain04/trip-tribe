@@ -43,13 +43,13 @@ const values = [
 const team = [
   {
     name: "Depane Rao",
-    role: "Co-founder & CEO",
+    role: "Co-Founder & CEO",
     image: "/about_ceo.jpg",
     bio: "Adventure enthusiast with a background in technology, passionate about making travel accessible to everyone.",
   },
   {
     name: "Akash Kashyap",
-    role: "CFO",
+    role: "Co-Founder & CFO",
     image: "/about_cfo.jpg",
     bio: "Consultant with 6 years of experience and a travel veteran, building TripTribe to help travelers discover and confidently choose authentic, community-led group experiences.",
   },
@@ -94,7 +94,7 @@ export default function About() {
               About TripTribe
             </div>
 
-            <h1 className="font-display text-display-lg md:text-display-xl text-foreground mb-6 leading-16">
+            <h1 className="font-display text-display-lg md:text-display-xl text-foreground mb-6 leading-20">
               Making Community Travel{" "}
               <span className="text-gradient">Discoverable</span>
             </h1>
