@@ -383,11 +383,12 @@ function Enquiries() {
         {/* Filters */}
         {/* <Card> */}
         <CardContent className="pt-2">
-          <div className="flex flex-row gap-2 w-full flex-wrap">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4" />
+          <div className="flex flex-col lg:flex-row gap-3 w-full">
+            {/* 🔍 Search */}
+            <div className="relative w-full lg:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                className="pl-10"
+                className="pl-10 w-full"
                 placeholder="Search"
                 value={search}
                 onChange={(e) => {
@@ -397,7 +398,13 @@ function Enquiries() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* 🎛 Filters */}
+            <div
+              className="
+        grid grid-cols-2 gap-3 w-full
+        lg:flex lg:flex-row lg:items-center lg:w-auto
+      "
+            >
               <Select
                 value={statusFilter}
                 onValueChange={(value) => {
@@ -405,10 +412,9 @@ function Enquiries() {
                   setStatusFilter(value);
                 }}
               >
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full lg:w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
-
                 <SelectContent>
                   <SelectItem value="all">Status</SelectItem>
                   <SelectItem value="new">New</SelectItem>
@@ -424,10 +430,9 @@ function Enquiries() {
                   setEnquiryFilter(value);
                 }}
               >
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger className="w-full lg:w-44">
                   <SelectValue placeholder="Inquiry Type" />
                 </SelectTrigger>
-
                 <SelectContent>
                   <SelectItem value="all">Enquiry Type</SelectItem>
                   <SelectItem value="GENERAL">General</SelectItem>
@@ -450,7 +455,7 @@ function Enquiries() {
                   setPage(1);
                   setFromDate(e.target.value);
                 }}
-                className="w-full sm:w-40 focus:outline-none focus:border-none placeholder:text-black"
+                className="w-full lg:w-40"
               />
 
               <Input
@@ -465,7 +470,7 @@ function Enquiries() {
                   setPage(1);
                   setToDate(e.target.value);
                 }}
-                className="w-full sm:w-40 focus:outline-none focus:border-none placeholder:text-black"
+                className="w-full lg:w-40"
               />
             </div>
           </div>

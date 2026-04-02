@@ -577,9 +577,8 @@ function OperatorsPage() {
         {/* Filters */}
         {/* <Card> */}
         <CardContent className="pt-2">
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
-            {/* Search */}
-            <div className="relative flex-1">
+          <div className="flex flex-col lg:flex-row gap-3 w-full">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search operators..."
@@ -589,15 +588,15 @@ function OperatorsPage() {
               />
             </div>
 
-            {/* Search error */}
-            {searchError && (
-              <p className="text-sm text-admin-error mt-2">{searchError}</p>
-            )}
-
-            {/* Filters Right Side */}
-            <div className="grid grid-cols-2 gap-3">
+            {/* Filters */}
+            <div
+              className="
+              grid grid-cols-2 gap-3
+              lg:flex lg:flex-row lg:items-center
+            "
+            >
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-35">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -609,7 +608,7 @@ function OperatorsPage() {
               </Select>
 
               <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-full sm:w-37.5">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
                 <SelectContent>
@@ -620,7 +619,7 @@ function OperatorsPage() {
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-37.5">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
@@ -629,6 +628,11 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Search error */}
+            {searchError && (
+              <p className="text-sm text-admin-error">{searchError}</p>
+            )}
           </div>
         </CardContent>
 

@@ -595,28 +595,34 @@ function Page() {
 
         {/* Filters */}
         <CardContent className="pt-2">
-          <div className="flex flex-col sm:flex-row gap-2 w-full">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search trips..."
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  className="pl-10"
-                />
-              </div>
+          <div className="flex flex-col lg:flex-row gap-3 w-full">
+            {/* 🔍 Search */}
+            <div className="relative w-full lg:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search trips..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-10 w-full"
+              />
+
               {searchError && (
                 <p className="text-sm text-admin-error mt-1">{searchError}</p>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* 🎛 Filters */}
+            <div
+              className="
+        grid grid-cols-2 gap-3 w-full
+        lg:flex lg:flex-row lg:items-center lg:w-auto
+      "
+            >
               <Select value={operatorFilter} onValueChange={setOperatorFilter}>
-                <SelectTrigger className="w-full sm:w-48">
+                <SelectTrigger className="w-full lg:w-44">
                   <SelectValue placeholder="Operator" />
                 </SelectTrigger>
                 <SelectContent>
@@ -630,7 +636,7 @@ function Page() {
               </Select>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full lg:w-36">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -643,7 +649,7 @@ function Page() {
               </Select>
 
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full lg:w-36">
                   <SelectValue placeholder="Trip Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -660,7 +666,7 @@ function Page() {
                 value={difficultyFilter}
                 onValueChange={setDifficultyFilter}
               >
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full lg:w-36">
                   <SelectValue placeholder="Difficulty" />
                 </SelectTrigger>
                 <SelectContent>
@@ -674,11 +680,10 @@ function Page() {
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full lg:w-36">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
-                  {/* <SelectItem value="all">All</SelectItem> */}
                   <SelectItem value="name">Name</SelectItem>
                   <SelectItem value="created_at">Create Date</SelectItem>
                   <SelectItem value="price">Price</SelectItem>

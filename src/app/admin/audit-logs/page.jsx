@@ -218,11 +218,12 @@ function AuditLogs() {
       {/* Filters */}
 
       <CardContent className="pt-2">
-        <div className="flex flex-row gap-2 w-full flex-wrap">
-          <div className="relative w-full flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4" />
+        <div className="flex flex-col lg:flex-row gap-3 w-full">
+          {/* 🔍 Search */}
+          <div className="relative w-full lg:flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              className="pl-10"
+              className="pl-10 w-full"
               placeholder="Search actor / entity"
               value={search}
               onChange={(e) => {
@@ -232,27 +233,13 @@ function AuditLogs() {
             />
           </div>
 
-          {/* <Select
-          value={actionFilter}
-          onValueChange={(value) => {
-            setPage(1);
-            setActionFilter(value);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Action" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">Action</SelectItem>
-            <SelectItem value="CREATE">Create</SelectItem>
-            <SelectItem value="UPDATE">Update</SelectItem>
-            <SelectItem value="LOCATION_DELETE">Delete</SelectItem>
-            <SelectItem value="USER_LOGIN">Login</SelectItem>
-          </SelectContent>
-        </Select> */}
-
-          <div className="grid grid-cols-2 gap-3">
+          {/* 🎛 Filters */}
+          <div
+            className="
+        grid grid-cols-2 gap-3 w-full
+        lg:flex lg:flex-row lg:items-center lg:w-auto
+      "
+          >
             <Select
               value={entityType}
               onValueChange={(value) => {
@@ -260,7 +247,7 @@ function AuditLogs() {
                 setEntityType(value);
               }}
             >
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-full lg:w-40">
                 <SelectValue placeholder="Entity" />
               </SelectTrigger>
 
@@ -286,7 +273,7 @@ function AuditLogs() {
                 setPage(1);
                 setFromDate(e.target.value);
               }}
-              className="w-full sm:w-44 focus:outline-none focus:border-none placeholder:text-black"
+              className="w-full lg:w-40"
             />
 
             <Input
@@ -301,7 +288,7 @@ function AuditLogs() {
                 setPage(1);
                 setToDate(e.target.value);
               }}
-              className="w-full sm:w-44 focus:outline-none focus:border-none placeholder:text-black"
+              className="w-full lg:w-40"
             />
           </div>
         </div>

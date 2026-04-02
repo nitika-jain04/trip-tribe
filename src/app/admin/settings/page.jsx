@@ -287,38 +287,40 @@ function Destinations() {
           Manage travel destinations displayed on the platform
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
-          <Select
-            value={region || "all"}
-            onValueChange={(value) => {
-              setPage(1);
-              setRegion(value === "all" ? "" : value);
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Select Region">
-                {region || "All Regions"}
-              </SelectValue>{" "}
-            </SelectTrigger>
+        <div className="w-full flex justify-end">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Select
+              value={region || "all"}
+              onValueChange={(value) => {
+                setPage(1);
+                setRegion(value === "all" ? "" : value);
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Select Region">
+                  {region || "All Regions"}
+                </SelectValue>
+              </SelectTrigger>
 
-            <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
 
-              {regionsList.map((reg) => (
-                <SelectItem key={reg} value={reg}>
-                  {reg}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+                {regionsList.map((reg) => (
+                  <SelectItem key={reg} value={reg}>
+                    {reg}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Button
-            onClick={() => setShowModal(true)}
-            className="w-full sm:w-auto"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Destination
-          </Button>
+            <Button
+              onClick={() => setShowModal(true)}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Destination
+            </Button>
+          </div>
         </div>
       </div>
 
