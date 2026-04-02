@@ -508,14 +508,14 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div>
+              <div className="">
                 <label className="text-sm font-medium">Start Date*</label>
                 <input
                   type="date"
                   value={formData.start_date}
                   required
                   onChange={(e) => handleChange("start_date", e.target.value)}
-                  className="mt-1 w-full border rounded-lg px-3 py-2"
+                  className="mt-1 ml-5 border rounded-lg px-3 py-2"
                 />
                 {errors.start_date && (
                   <p className="text-xs text-admin-error mt-1">
@@ -531,7 +531,7 @@ export default function TripEditPage() {
                   required
                   value={formData.end_date}
                   onChange={(e) => handleChange("end_date", e.target.value)}
-                  className="mt-1 w-full border rounded-lg px-3 py-2"
+                  className="mt-1 ml-5 border rounded-lg px-3 py-2"
                 />
                 {errors.end_date && (
                   <p className="text-xs text-admin-error mt-1">
