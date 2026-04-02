@@ -578,15 +578,22 @@ function OperatorsPage() {
         {/* <Card> */}
         <CardContent className="pt-2">
           <div className="flex flex-col lg:flex-row gap-3 w-full">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="w-full lg:flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 
-              <Input
-                placeholder="Search operators..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
+                <Input
+                  placeholder="Search operators..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full"
+                />
+              </div>
+
+              {/* Search error */}
+              {searchError && (
+                <p className="text-sm text-admin-error mt-1">{searchError}</p>
+              )}
             </div>
 
             {/* Filters */}
@@ -629,11 +636,6 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Search error */}
-            {searchError && (
-              <p className="text-sm text-admin-error">{searchError}</p>
-            )}
           </div>
         </CardContent>
 

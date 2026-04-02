@@ -597,17 +597,19 @@ function Page() {
         <CardContent className="pt-2">
           <div className="flex flex-col lg:flex-row gap-3 w-full">
             {/* 🔍 Search */}
-            <div className="relative w-full lg:flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search trips..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-                className="pl-10 w-full"
-              />
+            <div className="w-full lg:flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search trips..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-10 w-full"
+                />
+              </div>
 
               {searchError && (
                 <p className="text-sm text-admin-error mt-1">{searchError}</p>
@@ -796,9 +798,6 @@ function Page() {
                                     trip.start_date,
                                   ).toLocaleDateString()}
                                 </p>
-                                {/* <p className="text-muted-foreground whitespace-nowrap">
-                                  {new Date(trip.end_date).toLocaleDateString()}
-                                </p> */}
                               </>
                             ) : (
                               "N/A"
