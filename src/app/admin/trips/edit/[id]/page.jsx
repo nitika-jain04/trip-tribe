@@ -135,6 +135,7 @@ export default function TripEditPage() {
   // Basic field change
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setIsModified(true);
   };
 
   // Array input handler (comma separated)
@@ -142,6 +143,7 @@ export default function TripEditPage() {
     const updated = [...formData[field]];
     updated[index] = value;
     setFormData((prev) => ({ ...prev, [field]: updated }));
+    setIsModified(true);
   };
 
   // Itinerary update
@@ -150,23 +152,27 @@ export default function TripEditPage() {
       ...prev,
       [field]: [...prev[field], ""],
     }));
+    setIsModified(true);
   };
 
   const removeItem = (field, index) => {
     const updated = formData[field].filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, [field]: updated }));
+    setIsModified(true);
   };
 
   const handleItineraryChange = (dayIndex, activityIndex, value) => {
     const updated = [...formData.itinerary];
     updated[dayIndex].activities[activityIndex] = value;
     setFormData((prev) => ({ ...prev, itinerary: updated }));
+    setIsModified(true);
   };
 
   const addActivity = (dayIndex) => {
     const updated = [...formData.itinerary];
     updated[dayIndex].activities.push("");
     setFormData((prev) => ({ ...prev, itinerary: updated }));
+    setIsModified(true);
   };
 
   const addDay = () => {
@@ -177,6 +183,7 @@ export default function TripEditPage() {
         { day: prev.itinerary.length + 1, activities: [""] },
       ],
     }));
+    setIsModified(true);
   };
 
   const handleImageUpload = async (e) => {
@@ -215,6 +222,7 @@ export default function TripEditPage() {
           ...p,
           images: [...p.images, data.result.url],
         }));
+        setIsModified(true);
 
         toast({
           title: "Uploaded",
@@ -241,6 +249,7 @@ export default function TripEditPage() {
       ...prev,
       images: prev.images.filter((_, i) => i !== index),
     }));
+    setIsModified(true);
   };
 
   const validateForm = () => {
@@ -338,7 +347,7 @@ export default function TripEditPage() {
         description: "No Changes Detected",
       });
       setSaving(false);
-      setIsModified(Object.keys(requestBody).length === 0);
+      setIsModified(false);
       return;
     }
 
@@ -900,7 +909,7 @@ export default function TripEditPage() {
             <button
               type="submit"
               disabled={!isModified || saving || uploadingImage}
-              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {(saving || uploadingImage) && (
                 <Loader2 className="w-4 h-4 animate-spin" />

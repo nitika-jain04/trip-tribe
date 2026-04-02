@@ -65,6 +65,7 @@ function Page() {
   const [totalPages, setTotalPages] = useState(1);
   const [limit, setLimit] = useState(10);
   const [sortBy, setSortBy] = useState("created_at");
+  const [order, setorder] = useState("DESC");
   const [showModal, setShowModal] = useState(false);
   const [operators, setOperators] = useState([]);
   const [loadingOperators, setLoadingOperators] = useState(false);
@@ -121,6 +122,7 @@ function Page() {
         page,
         limit,
         sortBy,
+        order,
       });
 
       if (statusFilter !== "all")
@@ -185,6 +187,7 @@ function Page() {
     page,
     limit,
     sortBy,
+    order,
     statusFilter,
     operatorFilter,
     typeFilter,
@@ -195,7 +198,14 @@ function Page() {
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, difficultyFilter, sortBy, typeFilter, operatorFilter]);
+  }, [
+    statusFilter,
+    difficultyFilter,
+    sortBy,
+    order,
+    typeFilter,
+    operatorFilter,
+  ]);
 
   useEffect(() => {
     fetchOperators();
@@ -690,6 +700,16 @@ function Page() {
                   <SelectItem value="created_at">Create Date</SelectItem>
                   <SelectItem value="price">Price</SelectItem>
                   <SelectItem value="start_date">Start Date</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={order} onValueChange={setorder}>
+                <SelectTrigger className="w-full lg:w-36">
+                  <SelectValue placeholder="Sort Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ASC">Ascending</SelectItem>
+                  <SelectItem value="DESC">Descending</SelectItem>
                 </SelectContent>
               </Select>
             </div>

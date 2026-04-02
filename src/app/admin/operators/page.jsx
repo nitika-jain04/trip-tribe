@@ -74,7 +74,7 @@ function OperatorsPage() {
   const [limit, setLimit] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortBy, setSortBy] = useState("created_at");
-  const [sortOrder, setSortOrder] = useState("ASC");
+  const [sortOrder, setSortOrder] = useState("DESC");
   const [searchQuery, setSearchQuery] = useState("");
   const [sourceFilter, setSourceFilter] = useState("all");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -577,23 +577,16 @@ function OperatorsPage() {
         {/* Filters */}
         {/* <Card> */}
         <CardContent className="pt-2">
-          <div className="flex flex-col lg:flex-row lg:items-start gap-3 w-full">
-            <div className="w-full lg:flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col lg:flex-row gap-3 w-full">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 
-                <Input
-                  placeholder="Search operators..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full"
-                />
-              </div>
-
-              {/* Search error */}
-              {searchError && (
-                <p className="text-sm text-admin-error mt-1">{searchError}</p>
-              )}
+              <Input
+                placeholder="Search operators..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 w-full"
+              />
             </div>
 
             {/* Filters */}
@@ -635,7 +628,22 @@ function OperatorsPage() {
                   <SelectItem value="created_at">Create Date</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger className="w-full lg:w-40">
+                  <SelectValue placeholder="Sort Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ASC">Ascending</SelectItem>
+                  <SelectItem value="DESC">Descending</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            {/* Search error */}
+            {searchError && (
+              <p className="text-sm text-admin-error">{searchError}</p>
+            )}
           </div>
         </CardContent>
 

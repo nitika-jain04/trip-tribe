@@ -110,6 +110,7 @@ export default function OperatorEditPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setIsModified(true);
   };
 
   const handleImageUpload = async (e) => {
@@ -158,6 +159,7 @@ export default function OperatorEditPage() {
         ...prev,
         logo_url: data.result.url,
       }));
+      setIsModified(true);
     } catch (err) {
       setError(err.message || "Image upload failed");
     } finally {
@@ -283,7 +285,7 @@ export default function OperatorEditPage() {
         variant: "success",
       });
       setSaving(false);
-      setIsModified(Object.keys(requestBody).length === 0);
+      setIsModified(false);
       return;
     }
 
@@ -395,7 +397,7 @@ export default function OperatorEditPage() {
   // Enhanced Error State
   if (error && !formData) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -444,10 +446,11 @@ export default function OperatorEditPage() {
         [platform]: value,
       },
     }));
+    setIsModified(true);
   };
 
   return (
-    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 space-y-4 sm:space-y-6">
       <Link
         href={`/admin/operators/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -554,6 +557,7 @@ export default function OperatorEditPage() {
                           ...prev,
                           phone_number: digits,
                         }));
+                        setIsModified(true);
                       }}
                       className="pl-12 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
                       required
@@ -677,6 +681,7 @@ export default function OperatorEditPage() {
                         ...prev,
                         regions: [...prev.regions, value],
                       }));
+                      setIsModified(true);
                       setRegionInput("");
                     }
                   }}
@@ -700,6 +705,7 @@ export default function OperatorEditPage() {
                     ...prev,
                     regions: [...prev.regions, value],
                   }));
+                  setIsModified(true);
                   setRegionInput("");
                 }}
                 className="px-6 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-black hover:shadow-md transition-all active:scale-95"
@@ -731,6 +737,7 @@ export default function OperatorEditPage() {
                           ...prev,
                           regions: updatedRegions,
                         }));
+                        setIsModified(true);
                         setEditingIndex(null);
                       }}
                       onKeyDown={(e) => {
@@ -760,6 +767,7 @@ export default function OperatorEditPage() {
                         ...prev,
                         regions: prev.regions.filter((_, i) => i !== index),
                       }));
+                      setIsModified(true);
                     }}
                     className="text-slate-400 hover:text-red-500 transition-colors"
                   >
@@ -865,14 +873,14 @@ export default function OperatorEditPage() {
             <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <Link
                 href={`/admin/operators/${id}`}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-center text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
               >
                 Cancel
               </Link>
               <button
                 type="submit"
                 disabled={!isModified || saving || uploadingImage}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {saving ? (
                   <>
