@@ -17,7 +17,13 @@ import { Button } from "./ui/button";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen, setSidebarOpen }) {
+export default function AdminSidebar({
+  collapsed,
+  toggle,
+  isMobile,
+  sidebarOpen,
+  setSidebarOpen,
+}) {
   const [userProfile, setUserProfile] = useState({ name: "", email: "" });
   const pathname = usePathname();
   const { toast } = useToast();
@@ -80,8 +86,8 @@ export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen,
               ? "w-64 translate-x-0"
               : "w-64 -translate-x-full"
             : sidebarCollapsed
-            ? "w-16 translate-x-0"
-            : "w-64 translate-x-0"
+              ? "w-16 translate-x-0"
+              : "w-64 translate-x-0"
         }`}
     >
       {/* Header */}
@@ -125,7 +131,6 @@ export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen,
 
       {/* Menu */}
       <nav className="flex flex-col gap-2 px-3">
-
         <SidebarLink
           href="/admin/dashboard"
           icon={<GoPeople size={22} />}
@@ -135,13 +140,12 @@ export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen,
           onClick={() => isMobile && setSidebarOpen(false)}
         />
 
-
         <SidebarLink
           href="/admin/operators"
           icon={<GoPeople size={22} />}
           label="Operators"
           collapsed={sidebarCollapsed}
-          isActive={pathname === "/admin/operators"}
+          isActive={pathname.includes("/admin/operators")}
           onClick={() => isMobile && setSidebarOpen(false)}
         />
         <SidebarLink
@@ -149,7 +153,7 @@ export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen,
           icon={<GrLocation size={22} />}
           label="Trips"
           collapsed={sidebarCollapsed}
-          isActive={pathname === "/admin/trips"}
+          isActive={pathname.includes("/admin/trips")}
           onClick={() => isMobile && setSidebarOpen(false)}
         />
         <SidebarLink
@@ -157,7 +161,7 @@ export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen,
           icon={<BiComment size={22} />}
           label="Enquiries"
           collapsed={sidebarCollapsed}
-          isActive={pathname === "/admin/enquiries"}
+          isActive={pathname.includes("/admin/enquiries")}
           onClick={() => isMobile && setSidebarOpen(false)}
         />
         <SidebarLink
@@ -173,7 +177,7 @@ export default function AdminSidebar({ collapsed, toggle, isMobile, sidebarOpen,
           icon={<IoSettingsOutline size={22} />}
           label="Settings"
           collapsed={sidebarCollapsed}
-          isActive={pathname === "/admin/settings"}
+          isActive={pathname.includes("/admin/settings")}
           onClick={() => isMobile && setSidebarOpen(false)}
         />
 

@@ -595,7 +595,7 @@ function Page() {
 
         {/* Filters */}
         <CardContent className="pt-2">
-          <div className="flex flex-col lg:flex-row gap-3 w-full">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-3 w-full">
             {/* 🔍 Search */}
             <div className="w-full lg:flex-1">
               <div className="relative">
