@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Libre_Baskerville } from "next/font/google";
 import { useToast } from "../hooks/use-toast";
+import useLocations from "../hooks/use-locations";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -89,7 +90,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [error, setError] = useState(null);
-  const [locationMap, setLocationMap] = useState({});
+  const { locationMap } = useLocations();
   const { toast } = useToast();
 
   const safeFetch = async (url) => {
@@ -112,24 +113,14 @@ export default function Page() {
     setLoading(true);
     setError(null);
 
-    const [locationsData, operatorsData, tripsData, locationsMasterData] =
-      await Promise.all([
-        safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`),
-        safeFetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`),
-        safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`),
-        safeFetch(`${BASE_URL}/api/${API_VERSION}/locations`),
-      ]);
-
-    const locationMapData = buildLocationMap(locationsMasterData);
-    setLocationMap(locationMapData);
+    const [locationsData, operatorsData, tripsData] = await Promise.all([
+      safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`),
+      safeFetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`),
+      safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`),
+    ]);
 
     // If any fetch failed, just stop and return
-    if (
-      !locationsData ||
-      !operatorsData ||
-      !tripsData ||
-      !locationsMasterData
-    ) {
+    if (!locationsData || !operatorsData || !tripsData) {
       setError("Failed to load homepage data");
       setLocations([]);
       setOperators([]);
@@ -139,7 +130,7 @@ export default function Page() {
     }
 
     // Process locations
-    const processedLocations = processLocations(locationsData, locationMapData);
+    const processedLocations = processLocations(locationsData, locationMap);
 
     // Process operators
     const processedOperators = operatorsData.success
@@ -148,7 +139,7 @@ export default function Page() {
 
     // Process trips with enrichment
     const processedTrips = tripsData.success
-      ? enrichTripsWithDetails(tripsData.result?.trips || [], locationMapData)
+      ? enrichTripsWithDetails(tripsData.result?.trips || [], locationMap)
       : [];
 
     // Update state
@@ -178,22 +169,6 @@ export default function Page() {
         image: firstTrip?.images?.[0] || null,
       };
     });
-  };
-
-  const buildLocationMap = (data) => {
-    if (!data?.success) return {};
-
-    const locations = data.result?.locations || [];
-
-    const map = {};
-    locations.forEach((loc) => {
-      map[loc.id] = {
-        name: loc.name,
-        region: loc.region,
-      };
-    });
-
-    return map;
   };
 
   const enrichTripsWithDetails = (rawTrips, locationMap) => {
@@ -515,7 +490,7 @@ export default function Page() {
                       <img
                         src={trip.images[0]}
                         alt={trip.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
                         onError={() => setImgError(true)}
                       />
                     ) : (

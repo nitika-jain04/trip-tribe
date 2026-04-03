@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import useLocations from "@/app/hooks/use-locations";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -98,6 +99,7 @@ function Destinations() {
   const [regionsList, setRegionsList] = useState([]);
   const { toast } = useToast();
   const token = Cookies.get("token");
+  const { refreshLocations } = useLocations();
 
   const getAllRegions = useCallback(async () => {
     try {
@@ -260,6 +262,8 @@ function Destinations() {
         description: "Destination deleted successfully",
         variant: "success",
       });
+
+      refreshLocations();
     } catch (error) {
       console.error(error);
 
@@ -484,6 +488,7 @@ function Destinations() {
 //////////////////// MODAL ////////////////////
 function AddDestinationModal({ onClose, refresh }) {
   const { toast } = useToast();
+  const { refreshLocations } = useLocations();
 
   const MapPicker = dynamic(() => import("@/app/components/MapPicker"), {
     ssr: false,
@@ -705,6 +710,8 @@ function AddDestinationModal({ onClose, refresh }) {
         description: "Destination created successfully",
         variant: "success",
       });
+
+      refreshLocations();
 
       refresh();
       onClose();

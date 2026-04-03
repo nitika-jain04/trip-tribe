@@ -22,55 +22,34 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/app/components/ui/tabs";
+import useLocations from "@/app/hooks/use-locations";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-const locationCache = new Map();
-
 function TripPage() {
   const { id } = useParams();
+  const { locationMap } = useLocations();
 
   const [trip, setTrip] = useState(null);
   const [tripReviews, setTripReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
 
-  async function fetchLocation(locationId) {
-    if (!locationId) return { name: "Unknown", region: "" };
-
-    if (locationCache.has(locationId)) {
-      return locationCache.get(locationId);
-    }
-
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/${locationId}`,
-      );
-      const data = await res.json();
-      const locationData = {
-        name: data?.result?.name || "Unknown",
-        region: data?.result?.region || "",
-      };
-
-      // store in cache
-      locationCache.set(locationId, locationData);
-      return locationData;
-    } catch (err) {
-      console.error(`Error fetching location ${locationId}:`, err);
-      return { name: "Unknown", region: "" };
-    }
-  }
-
   useEffect(() => {
     if (!id) return;
+
+    // ✅ Initialize AbortController to manage this specific request
+    const controller = new AbortController();
 
     async function fetchTrip() {
       try {
         setLoading(true);
 
         // Fetch trip details
-        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`);
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`, {
+          signal: controller.signal, // ✅ Attach signal to fetch
+        });
         const data = await res.json();
 
         if (!data?.success) {
@@ -82,12 +61,6 @@ function TripPage() {
           ? data.result.trips[0]
           : data.result;
         if (!raw) return setTrip(null);
-
-        // ✅ Fetch source and destination with caching
-        const [source, destination] = await Promise.all([
-          fetchLocation(raw.source_id),
-          fetchLocation(raw.destination_id),
-        ]);
 
         const start = new Date(raw.start_date);
         const end = new Date(raw.end_date);
@@ -103,9 +76,8 @@ function TripPage() {
           name: raw.name,
           description: raw.description || "",
           images: raw.images?.length ? raw.images : [],
-          source: source.name,
-          destination: destination.name,
-          region: destination.region,
+          source_id: raw.source_id,
+          destination_id: raw.destination_id,
           provider: {
             name: raw.operator.name || "Unknown",
             rating: 4.8,
@@ -127,14 +99,23 @@ function TripPage() {
 
         setTripReviews([]);
       } catch (err) {
+        // ✅ Silently handle aborted requests
+        if (err.name === "AbortError") return;
+
         console.error("Trip fetch error:", err);
         setTrip(null);
       } finally {
-        setLoading(false);
+        // ✅ Only update loading if this request wasn't replaced
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchTrip();
+
+    // ✅ Cleanup function: Abort the fetch if the component unmounts or id changes
+    return () => controller.abort();
   }, [id]);
 
   if (loading)
@@ -223,7 +204,7 @@ function TripPage() {
 
               <div className="flex items-center gap-2 text-body text-muted-foreground mb-4">
                 <MapPin className="w-5 h-5" />
-                {trip.destination}, {trip.region}
+                {locationMap[trip.destination_id]?.name || "Loading..."}, {locationMap[trip.destination_id]?.region || ""}
               </div>
 
               {/* <div className="flex items-center gap-4 mb-6">
@@ -406,15 +387,15 @@ function TripPage() {
                     <dl className="space-y-3 text-body-sm">
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Source</dt>
-                        <dd className="font-medium">{trip.source}</dd>
+                        <dd className="font-medium">{locationMap[trip.source_id]?.name || "-"}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Destination</dt>
-                        <dd className="font-medium">{trip.destination}</dd>
+                        <dd className="font-medium">{locationMap[trip.destination_id]?.name || "-"}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Region</dt>
-                        <dd className="font-medium">{trip.region}</dd>
+                        <dd className="font-medium">{locationMap[trip.destination_id]?.region || "-"}</dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Duration</dt>
