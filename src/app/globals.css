@@ -218,6 +218,8 @@
 
   html,
   body {
+    margin: 0;
+    padding: 0;
     overscroll-behavior: none;
   }
 
@@ -502,12 +504,12 @@
   font-size: var(--text-display-2xl);
 } */
 
-#root {
+/* #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
-}
+} */
 
 .logo {
   height: 6em;

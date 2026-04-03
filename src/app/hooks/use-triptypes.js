@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+// 🧊 Module-level cache to persist across component mounts
+let cachedTripTypes = null;
+
 const useTripTypes = () => {
-  const [tripTypes, setTripTypes] = useState([]);
+  const [tripTypes, setTripTypes] = useState(cachedTripTypes || []);
   const [loadingTripTypes, setLoadingTripTypes] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // ✋ Skip if already cached
+    if (cachedTripTypes) return;
+
     const fetchTripTypes = async () => {
       const token = Cookies.get("token");
       setLoadingTripTypes(true);
@@ -30,7 +36,9 @@ const useTripTypes = () => {
           throw new Error(data?.error?.message || "Failed to fetch trip types");
         }
 
-        setTripTypes(data.result.trip_types || []);
+        const result = data.result.trip_types || [];
+        cachedTripTypes = result; // 🧊 Update cache
+        setTripTypes(result);
       } catch (err) {
         console.error("Failed to fetch trip types:", err);
         setError(err.message);
@@ -39,7 +47,7 @@ const useTripTypes = () => {
       }
     };
 
-    fetchTripTypes(); // ✅ CALL IT
+    fetchTripTypes();
   }, []);
 
   return {
@@ -50,3 +58,4 @@ const useTripTypes = () => {
 };
 
 export default useTripTypes;
+

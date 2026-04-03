@@ -283,8 +283,13 @@ function Page() {
           description: "Trip updated successfully!",
           variant: "success",
         });
-        setRefresh((prev) => prev + 1);
-        getAllTrips();
+
+        // ✅ Local state update instead of refetch
+        setTrips((prev) =>
+          prev.map((trip) =>
+            trip.id === tripId ? { ...trip, ...payload } : trip,
+          ),
+        );
       } catch (err) {
         toast({
           title: "Error",
@@ -333,10 +338,12 @@ function Page() {
           variant: "success",
         });
 
+        // ✅ Local state update instead of refetch
         if (trips.length === 1 && page > 1) {
           setPage((prev) => prev - 1);
         } else {
-          getAllTrips();
+          setTrips((prev) => prev.filter((trip) => trip.id !== tripId));
+          setTotalTrips((prev) => Math.max(0, prev - 1));
         }
       } catch (err) {
         toast({
@@ -346,7 +353,7 @@ function Page() {
         });
       }
     },
-    [getAllTrips, toast],
+    [trips.length, page, toast],
   );
 
   const handleDuplicateTrip = useCallback(
@@ -399,7 +406,14 @@ function Page() {
           variant: "success",
         });
 
-        getAllTrips(); // refresh list
+        // ✅ Local state update: Add new trip to the top
+        const newTrip = data.result.trip || data.result;
+        if (newTrip && typeof newTrip === "object") {
+          setTrips((prev) => [newTrip, ...prev].slice(0, limit));
+          setTotalTrips((prev) => prev + 1);
+        } else {
+          getAllTrips(); // Fallback if data format is unexpected
+        }
       } catch (err) {
         toast({
           title: "Error",
@@ -408,7 +422,7 @@ function Page() {
         });
       }
     },
-    [toast, getAllTrips],
+    [toast, limit, getAllTrips],
   );
 
   const difficulties = ["EASY", "MODERATE", "HARD"];
@@ -617,7 +631,7 @@ function Page() {
                     setSearch(e.target.value);
                     setPage(1);
                   }}
-                  className="pl-10 w-full"
+                  className="pl-10 w-full lg:w-70"
                 />
               </div>
 
@@ -630,11 +644,11 @@ function Page() {
             <div
               className="
         grid grid-cols-2 gap-3 w-full
-        lg:flex lg:flex-row lg:items-center lg:w-auto
+        lg:flex lg:flex-wrap lg:items-center lg:w-auto
       "
             >
               <Select value={operatorFilter} onValueChange={setOperatorFilter}>
-                <SelectTrigger className="w-full lg:w-44">
+                <SelectTrigger className="w-full lg:w-36">
                   <SelectValue placeholder="Operator" />
                 </SelectTrigger>
                 <SelectContent>
@@ -648,7 +662,7 @@ function Page() {
               </Select>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full lg:w-36">
+                <SelectTrigger className="w-full lg:w-30">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -661,7 +675,7 @@ function Page() {
               </Select>
 
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full lg:w-36">
+                <SelectTrigger className="w-full lg:w-30">
                   <SelectValue placeholder="Trip Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -692,7 +706,7 @@ function Page() {
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full lg:w-36">
+                <SelectTrigger className="w-full lg:w-30">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
@@ -704,7 +718,7 @@ function Page() {
               </Select>
 
               <Select value={order} onValueChange={setorder}>
-                <SelectTrigger className="w-full lg:w-36">
+                <SelectTrigger className="w-full lg:w-30">
                   <SelectValue placeholder="Sort Order" />
                 </SelectTrigger>
                 <SelectContent>
@@ -759,10 +773,10 @@ function Page() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[200px] whitespace-nowrap">
+                      <TableHead className="min-w-50 whitespace-nowrap">
                         Trip
                       </TableHead>
-                      <TableHead className="min-w-[180px] whitespace-nowrap">
+                      <TableHead className="min-w-45 whitespace-nowrap">
                         Operator
                       </TableHead>
                       <TableHead className="whitespace-nowrap">Price</TableHead>
@@ -797,7 +811,7 @@ function Page() {
                             )}
                             <div className="min-w-0 flex-1">
                               <p
-                                className="font-medium truncate"
+                                className="font-medium truncate cursor-pointer"
                                 title={trip.name}
                               >
                                 {trip.name || "N/A"}

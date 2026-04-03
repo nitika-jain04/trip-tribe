@@ -510,7 +510,9 @@ function Enquiries() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
+                      <TableHead className="min-w-40 whitespace-nowrap">
+                        Name
+                      </TableHead>
                       <TableHead>Enquiry Type</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Date</TableHead>
@@ -561,7 +563,11 @@ function Enquiries() {
                         </TableCell>
 
                         <TableCell>
-                          <a href={`mailto:${enquiry.email}`}>
+                          <a
+                            href={`mailto:${enquiry.email}`}
+                            className="truncate cursor-pointer"
+                            title={enquiry.email}
+                          >
                             {enquiry.email}
                           </a>
                         </TableCell>

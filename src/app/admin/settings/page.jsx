@@ -884,7 +884,7 @@ function Categories() {
   const [sortBy, setSortBy] = useState("created_at");
   const [order, setOrder] = useState("DESC");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
-  const [isActive, setIsActive] = useState(true);
+  const [isActive, setIsActive] = useState("true");
 
   const { toast } = useToast();
 

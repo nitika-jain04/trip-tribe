@@ -640,7 +640,7 @@ export default function Page() {
                     <img
                       src={location.image}
                       alt={location.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                         e.currentTarget.nextSibling.style.display = "flex";

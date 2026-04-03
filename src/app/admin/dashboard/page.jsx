@@ -17,7 +17,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import AdminGuard from "@/app/components/AdminGuard";
 import { useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { Skeleton } from "@/app/components/ui/skeleton";
@@ -57,6 +56,8 @@ export default function DashboardPage() {
   const [enquiryChart, setEnquiryChart] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
+  const [tripChart, setTripChart] = useState([]);
+  const [topDestinations, setTopDestinations] = useState([]);
   const { toast } = useToast();
 
   const mapActivityType = (type) => {
@@ -158,7 +159,16 @@ export default function DashboardPage() {
           }),
         );
 
+        const formattedTripsChart = result.charts.trip_listings.data.map(
+          (item) => ({
+            name: item.month,
+            trips: item.count,
+          }),
+        );
+
         setEnquiryChart(formattedChart);
+        setTripChart(formattedTripsChart);
+        setTopDestinations(result.top_destinations || []);
       } catch (err) {
         console.error("Dashboard fetch error:", err);
         toast({
@@ -203,21 +213,40 @@ export default function DashboardPage() {
           title="Total Operators"
           value={stats.operators.total}
           subtitle={`${stats.operators.active} active • ${stats.operators.inactive} inactive • ${stats.operators.suspended} suspended • ${stats.operators.pending_approval} pending`}
+          change={stats.operators.change_percent}
           icon={Users}
           variant="primary"
         />
 
+        {/* <StatCard
+          title="Total Operators"
+          value={stats.operators.total}
+          subtitle={`${stats.operators.active} active • ${stats.operators.inactive} inactive • ${stats.operators.suspended} suspended • ${stats.operators.pending_approval} pending`}
+          icon={Users}
+          variant="primary"
+        /> */}
+
         <StatCard
           title="Total Trips"
           value={stats.trips.total}
-          subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft, ${stats.trips.archived} archived, ${stats.trips.cancelled} cancelled`}
+          subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft`}
+          change={stats.trips.change_percent}
           icon={MapPin}
           variant="success"
         />
+        {/* <StatCard
+          title="Total Enquiries"
+          value={stats.enquiries.total}
+          subtitle={`${stats.enquiries.this_week} this week, ${stats.enquiries.this_month} this month`}
+          icon={MessageSquare}
+          variant="warning"
+        /> */}
+
         <StatCard
           title="Total Enquiries"
           value={stats.enquiries.total}
           subtitle={`${stats.enquiries.this_week} this week, ${stats.enquiries.this_month} this month`}
+          change={stats.enquiries.change_percent}
           icon={MessageSquare}
           variant="warning"
         />
@@ -271,85 +300,93 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Trip Listings (Last 6 Months)
+              <TrendingUp className="h-5 w-5 text-primary" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={tripChart}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                />
+                <XAxis
+                  dataKey="name"
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="trips"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={{ fill: "hsl(var(--primary))" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
         {/* Popular Destinations Chart */}
-        {/* <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-success" />
-                Popular Destinations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={destinationChartData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border))"
-                  />
-                  <XAxis
-                    dataKey="name"
-                    stroke="hsl(var(--muted-foreground))"
-                    fontSize={12}
-                  />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                    }}
-                  />
-                  <Bar
-                    dataKey="views"
-                    fill="hsl(var(--success))"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card> */}
       </div>
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Destinations Table */}
-        {/* <Card>
-            <CardHeader>
-              <CardTitle>Top 5 Destinations</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Destination</TableHead>
-                    <TableHead>Region</TableHead>
-                    <TableHead className="text-right">Trips</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {destinations.slice(0, 5).map((dest) => (
-                    <TableRow key={dest.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={dest.imageUrl}
-                            alt={dest.name}
-                            className="h-8 w-8 rounded object-cover"
-                          />
-                          {dest.name}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Destinations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topDestinations.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-6">
+                No destination data
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {topDestinations.map((dest, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between border-b pb-2 last:border-none"
+                  >
+                    <div>
+                      <p className="font-medium">{dest.name}</p>
+                      <p className="text-sm text-muted-foreground">
                         {dest.region}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {dest.tripCount}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card> */}
+                      </p>
+                    </div>
+
+                    <div className="text-right">
+                      <p className="font-semibold">
+                        {dest.enquiries} enquiries
+                      </p>
+                      <p
+                        className={`text-sm ${
+                          dest.change_percent >= 0
+                            ? "text-green-500"
+                            : "text-red-500"
+                        }`}
+                      >
+                        {dest.change_percent}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Recent Activity Feed */}
         <Card>

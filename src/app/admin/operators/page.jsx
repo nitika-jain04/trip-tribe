@@ -338,9 +338,13 @@ function OperatorsPage() {
         variant: "success",
       });
 
-      getOperators(); // refresh list
-      setOperators((prev) => prev.filter((op) => op.id !== operatorId));
-      setTotalOperators((prev) => prev - 1);
+      // ✅ Local state update instead of refetch
+      if (operators.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        setOperators((prev) => prev.filter((op) => op.id !== operatorId));
+        setTotalOperators((prev) => Math.max(0, prev - 1));
+      }
     } catch (err) {
       toast({
         title: "Error",
