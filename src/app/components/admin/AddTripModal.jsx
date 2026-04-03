@@ -16,14 +16,6 @@ import { Loader2 } from "lucide-react";
 import useTripTypes from "@/app/hooks/use-triptypes";
 import dynamic from "next/dynamic";
 import Cookies from "js-cookie";
-import { Calendar } from "@/app/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/app/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -45,11 +37,7 @@ function AddTripModal({ handleModalClose }) {
   const [operators, setOperators] = useState([]);
   const [loadingOperators, setLoadingOperators] = useState(false);
   const [error, setError] = useState("");
-  const { tripTypes, loadingTripTypes, error: tripTypesError } = useTripTypes();
-  const [dateRange, setDateRange] = useState({
-    from: null,
-    to: null,
-  });
+  const { tripTypes, loadingTripTypes } = useTripTypes();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -93,7 +81,6 @@ function AddTripModal({ handleModalClose }) {
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE&application_status=APPROVED`,
         {
-          method: "GET",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -102,7 +89,6 @@ function AddTripModal({ handleModalClose }) {
       );
 
       const data = await res.json();
-
       if (res.ok && data.success) {
         setOperators(data.result.operators || []);
       }
@@ -119,36 +105,19 @@ function AddTripModal({ handleModalClose }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name.startsWith("source.") || name.startsWith("destination.")) {
       const [location, field] = name.split(".");
       setFormData((p) => ({
         ...p,
-        [location]: {
-          ...p[location],
-          [field]: value,
-        },
+        [location]: { ...p[location], [field]: value },
       }));
     } else {
       setFormData((p) => ({ ...p, [name]: value }));
     }
   };
 
-  const scrollToFirstError = () => {
-    setTimeout(() => {
-      const firstError = document.querySelector(".text-admin-error");
-      if (firstError) {
-        firstError.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-    }, 100);
-  };
-
   const handleLocationSelect = async (type, locationData) => {
     const token = Cookies.get("token");
-
     const payload = {
       name: locationData.name || locationData.address || "Unknown",
       region: locationData.region || "",
@@ -158,160 +127,61 @@ function AddTripModal({ handleModalClose }) {
     };
 
     try {
-      // Try creating location
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations/admin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify(payload),
+      });
 
       const data = await res.json();
 
-      // ✅ SUCCESS CASE
       if (res.ok && data.success) {
-        setFormData((prev) => ({
-          ...prev,
-          [type]: data.result,
-        }));
-      }
-      // ❗ DUPLICATE CASE
-      else if (data?.error?.message?.includes("already exists")) {
-        // 🔁 Fetch existing location
+        setFormData((prev) => ({ ...prev, [type]: data.result }));
+      } else if (data?.error?.message?.includes("already exists")) {
         const searchRes = await fetch(
           `${BASE_URL}/api/${API_VERSION}/locations/admin?search=${encodeURIComponent(payload.name)}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
+          { headers: { Authorization: `Bearer ${token}` } },
         );
-
         const searchData = await searchRes.json();
-
-        if (searchRes.ok && searchData.success) {
-          const existingLocation = searchData.result.locations?.find(
-            (loc) => loc.name.toLowerCase() === payload.name.toLowerCase(),
-          );
-
-          if (existingLocation) {
-            setFormData((prev) => ({
-              ...prev,
-              [type]: existingLocation,
-            }));
-          } else {
-            // throw new Error("Location exists but not found in search");
-            toast({
-              title: "Error",
-              description: "Location exists but not found in search",
-              variant: "destructive",
-            });
-          }
-        } else {
-          // throw new Error("Failed to fetch existing location");
-          toast({
-            title: "Error",
-            description: "Failed to fetch existing location",
-            variant: "destructive",
-          });
+        const existing = searchData.result.locations?.find(
+          (loc) => loc.name.toLowerCase() === payload.name.toLowerCase(),
+        );
+        if (existing) {
+          setFormData((prev) => ({ ...prev, [type]: existing }));
         }
       }
-      // ❌ OTHER ERRORS
-      else {
-        toast({
-          title: "Error",
-          description: "Failed to create location",
-          variant: "destructive",
-        });
-        return;
-        // throw new Error(data.message || "Failed to create location");
-      }
 
-      // Close map
-      if (type === "source") {
-        setShowSourceMap(false);
-      } else {
-        setShowDestinationMap(false);
-      }
+      if (type === "source") setShowSourceMap(false);
+      else setShowDestinationMap(false);
     } catch (err) {
-      console.error("Location handling failed:", err);
-      setError(err.message);
+      console.error("Location error:", err);
     }
   };
 
   const handleImageUpload = async (e) => {
-    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
-
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Error",
-        description: "Only JPG and PNG images are allowed",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "Image must be less than 2MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const token = Cookies.get("token");
     setUploadingImage(true);
-    setError("");
-
-    const formDataObj = new FormData();
-    formDataObj.append("image", file);
+    const token = Cookies.get("token");
+    const fd = new FormData();
+    fd.append("image", file);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formDataObj,
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data?.error?.message || "Upload failed",
-          variant: "destructive",
-        });
-        return;
-      }
-
       if (res.ok && data.success) {
-        setFormData((p) => ({
-          ...p,
-          images: [...p.images, data.result.url],
-        }));
-      } else {
-        // throw new Error(data.message || "Failed to upload image");
-        toast({
-          title: "Error",
-          description: "Failed to upload image",
-          variant: "destructive",
-        });
-        return;
+        setFormData((p) => ({ ...p, images: [...p.images, data.result.url] }));
       }
     } catch (err) {
-      console.error("Upload failed:", err);
-      setError(err.message || "Failed to upload image");
+      console.error("Upload error:", err);
     } finally {
       setUploadingImage(false);
     }
@@ -335,8 +205,10 @@ function AddTripModal({ handleModalClose }) {
 
   const removeListItem = (key, index) => {
     if (formData[key].length === 1) return;
-    const arr = formData[key].filter((_, i) => i !== index);
-    setFormData((p) => ({ ...p, [key]: arr }));
+    setFormData((p) => ({
+      ...p,
+      [key]: formData[key].filter((_, i) => i !== index),
+    }));
   };
 
   const addDay = () =>
@@ -348,151 +220,44 @@ function AddTripModal({ handleModalClose }) {
       ],
     }));
 
-  const removeDay = (dayIndex) => {
+  const removeDay = (index) => {
     if (formData.itinerary.length === 1) return;
-    const updatedItinerary = formData.itinerary.filter(
-      (_, i) => i !== dayIndex,
-    );
-    updatedItinerary.forEach((day, index) => {
-      day.day = index + 1;
-    });
-    setFormData((p) => ({ ...p, itinerary: updatedItinerary }));
+    const filtered = formData.itinerary.filter((_, i) => i !== index);
+    const updated = filtered.map((d, i) => ({ ...d, day: i + 1 }));
+    setFormData((p) => ({ ...p, itinerary: updated }));
   };
 
-  const addActivity = (dayIndex) => {
+  const addActivity = (dIdx) => {
     const it = [...formData.itinerary];
-    it[dayIndex].activities.push("");
+    it[dIdx].activities.push("");
     setFormData((p) => ({ ...p, itinerary: it }));
   };
 
-  const removeActivity = (dayIndex, activityIndex) => {
-    if (formData.itinerary[dayIndex].activities.length === 1) return;
+  const removeActivity = (dIdx, aIdx) => {
+    if (formData.itinerary[dIdx].activities.length === 1) return;
     const it = [...formData.itinerary];
-    it[dayIndex].activities = it[dayIndex].activities.filter(
-      (_, i) => i !== activityIndex,
-    );
+    it[dIdx].activities = it[dIdx].activities.filter((_, i) => i !== aIdx);
     setFormData((p) => ({ ...p, itinerary: it }));
   };
 
-  const handleActivity = (d, a, value) => {
+  const handleActivity = (dIdx, aIdx, val) => {
     const it = [...formData.itinerary];
-    it[d].activities[a] = value;
+    it[dIdx].activities[aIdx] = val;
     setFormData((p) => ({ ...p, itinerary: it }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!formData.start_date || !formData.end_date) {
-      toast({
-        title: "Error",
-        description: "Please select date range",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (dateRange?.from && dateRange?.to && dateRange.to <= dateRange.from) {
-      toast({
-        title: "Error",
-        description: "End date should be after start date",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.source.id) {
-      toast({
-        title: "Error",
-        description: "Please select source location from map",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.destination.id) {
-      toast({
-        title: "Error",
-        description: "Please select destination location from map",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.operator_id) {
-      toast({
-        title: "Error",
-        description: "Please select operator",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.name.trim()) {
-      toast({
-        title: "Error",
-        description: "Trip name required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (formData.images.length === 0) {
-      toast({
-        title: "Error",
-        description: "Please upload at least one image",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.difficulty) {
-      toast({
-        title: "Error",
-        description: "Please select difficulty",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.type_id) {
-      toast({
-        title: "Error",
-        description: "Please select trip type",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const token = Cookies.get("token");
     setLoading(true);
-    setError("");
 
     const payload = {
-      name: formData.name,
-      description: formData.description,
+      ...formData,
       price: Number(formData.price),
-      start_date: formData.start_date,
-      end_date: formData.end_date,
-      difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
-      operator_id: formData.operator_id,
-      type_id: formData.type_id,
       source_id: formData.source.id,
       destination_id: formData.destination.id,
-      status: formData.status,
-      images: formData.images.filter(Boolean),
-      inclusions: formData.inclusions.filter((item) => item.trim() !== ""),
-      exclusions: formData.exclusions.filter((item) => item.trim() !== ""),
-      itinerary: formData.itinerary
-        .map((day) => ({
-          day: day.day,
-          activities: day.activities.filter((act) => act.trim() !== ""),
-        }))
-        .filter((day) => day.activities.length > 0),
     };
-
-    //console.log("trip body", payload);
 
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
@@ -504,704 +269,281 @@ function AddTripModal({ handleModalClose }) {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        toast({
-          title: "Error",
-          description: data?.error?.message,
-          variant: "destructive",
-        });
-        return;
+      if (res.ok) {
+        toast({ title: "Success", description: "Trip created!", variant: "success" });
+        handleModalClose(false);
       }
-
-      toast({
-        title: "Trip",
-        description: "Trip created successfully!",
-        variant: "success",
-      });
-      handleModalClose(false);
     } catch (err) {
-      console.error("Create failed:", err);
-      setError(err.message);
-      scrollToFirstError();
+      console.error(err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleDateChange = (range) => {
-    if (!range) return;
-
-    // always update UI first
-    setDateRange(range);
-
-    // 🚫 do nothing if selection is incomplete
-    if (!range.from || !range.to) return;
-
-    // ✅ NOW validate (final selection only)
-    if (range.to.getTime() === range.from.getTime()) {
-      toast({
-        title: "Invalid Date",
-        description: "Start and end date cannot be the same",
-        variant: "destructive",
-      });
-
-      setDateRange({ from: null, to: null });
-      return;
-    }
-
-    if (range.to < range.from) return; // safety (ignore weird internal states)
-
-    // ✅ valid range
-    setFormData((prev) => ({
-      ...prev,
-      start_date: range.from,
-      end_date: range.to,
-    }));
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
       <div className="bg-white w-[80vw] md:w-[70vw] max-w-6xl h-[70vh] lg:h-[90vh] rounded-xl shadow-lg flex flex-col">
         {/* Modal Header */}
-        <div className="flex justify-between items-center px-6 py-4 border-b">
-          <h2 className="text-xl font-semibold text-[#14181F]">
+        <div className="flex justify-between items-center px-4 sm:px-6 py-3 sm:py-4 border-b">
+          <h2 className="text-lg sm:text-xl font-semibold text-[#14181F]">
             Create New Trip
           </h2>
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => handleModalClose(false)}
-            disabled={loading || uploadingImage}
+            className="text-gray-500 hover:text-black text-xl p-1"
           >
-            <IoCloseSharp size={20} />
-          </Button>
+            <IoCloseSharp size={24} />
+          </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-admin-error text-sm">{error}</p>
+        {/* Modal Body */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-4 sm:py-6">
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+          >
+            {/* Sections */}
+            <div className="col-span-1 md:col-span-2">
+              <h3 className="text-lg font-semibold text-gray-800">Basic Information</h3>
             </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Basic Info */}
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">Basic Information</h3>
-              <div className="grid grid-cols-1 gap-5">
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    Trip Name *
-                  </label>
-                  <Input
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    required
-                    placeholder="Himalayan Base Camp Trek"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    Price (₹) *
-                  </label>
-                  <Input
-                    name="price"
-                    type="number"
-                    value={formData.price}
-                    onChange={handleChange}
-                    required
-                    min="0"
-                    placeholder="45000"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    Total Seats *
-                  </label>
-                  <Input
-                    name="total_seats"
-                    type="number"
-                    value={formData.total_seats}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    placeholder="15"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    Difficulty *
-                  </label>
-                  {/* <select
-                    name="difficulty"
-                    value={formData.difficulty}
-                    onChange={handleChange}
-                    required
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]"
-                  >
-                    <option value="">Select Difficulty</option>
-                    <option value="EASY">Easy</option>
-                    <option value="MODERATE">Moderate</option>
-                    <option value="HARD">Hard</option>
-                  </select> */}
-                  <Select
-                    value={formData.difficulty}
-                    onValueChange={(value) =>
-                      handleChange({ target: { name: "difficulty", value } })
-                    }
-                  >
-                    <SelectTrigger className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]">
-                      <SelectValue placeholder="Select Difficulty" />
-                    </SelectTrigger>
+            <div className="col-span-1 md:col-span-2">
+              <label className="text-sm text-gray-600 mb-1 block">Trip Name *</label>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                placeholder="E.g., Himalayan Base Camp"
+              />
+            </div>
 
-                    <SelectContent>
-                      <SelectItem value="EASY">Easy</SelectItem>
-                      <SelectItem value="MODERATE">Moderate</SelectItem>
-                      <SelectItem value="HARD">Hard</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">Price (₹) *</label>
+              <Input
+                name="price"
+                type="number"
+                value={formData.price}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-                {/*<div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    Trip Dates *
-                  </label>
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">Total Seats *</label>
+              <Input
+                name="total_seats"
+                type="number"
+                value={formData.total_seats}
+                onChange={handleChange}
+                required
+              />
+            </div>
 
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dateRange?.from ? (
-                          dateRange.to ? (
-                            <>
-                              {format(dateRange.from, "PPP")} -{" "}
-                              {format(dateRange.to, "PPP")}
-                            </>
-                          ) : (
-                            format(dateRange.from, "PPP")
-                          )
-                        ) : (
-                          "Pick a date range"
-                        )}
-                      </Button>
-                    </PopoverTrigger>
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">Difficulty *</label>
+              <Select value={formData.difficulty} onValueChange={(v) => handleChange({target:{name:'difficulty', value:v}})}>
+                <SelectTrigger><SelectValue placeholder="Difficulty" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="EASY">Easy</SelectItem>
+                  <SelectItem value="MODERATE">Moderate</SelectItem>
+                  <SelectItem value="HARD">Hard</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={handleDateChange}
-                        disabled={[
-                          { before: new Date() },
-                          (date) =>
-                            dateRange?.from &&
-                            date.getTime() === dateRange.from.getTime(),
-                        ]}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div> */}
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">Trip Type *</label>
+              <Select value={formData.type_id} onValueChange={(v) => setFormData(p=>({...p, type_id:v}))}>
+                <SelectTrigger><SelectValue placeholder="Trip Type" /></SelectTrigger>
+                <SelectContent>
+                  {tripTypes.map(t => <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    Start Date *
-                  </label>
-                  <Input
-                    name="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">Start Date *</label>
+              <Input name="start_date" type="date" value={formData.start_date} onChange={handleChange} required />
+            </div>
 
-                <div>
-                  <label className="text-sm text-gray-600 mb-1 block">
-                    End Date *
-                  </label>
-                  <Input
-                    name="end_date"
-                    type="date"
-                    value={formData.end_date}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
-              </div>
-            </section>
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">End Date *</label>
+              <Input name="end_date" type="date" value={formData.end_date} onChange={handleChange} required />
+            </div>
 
-            {/* Operator */}
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">Operator</h3>
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">
-                  Operator *
-                </label>
+            <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
+              <h3 className="text-lg font-semibold text-gray-800">Operator & Locations</h3>
+            </div>
 
-                <Select
-                  value={formData.operator_id?.toString() || ""}
-                  onValueChange={(value) =>
-                    handleChange({ target: { name: "operator_id", value } })
-                  }
-                >
-                  <SelectTrigger className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]">
-                    <SelectValue placeholder="Select Operator" />
-                  </SelectTrigger>
+            <div className="col-span-1 md:col-span-2">
+              <label className="text-sm text-gray-600 mb-1 block">Operator *</label>
+              <Select value={formData.operator_id} onValueChange={(v) => handleChange({target:{name:'operator_id', value:v}})}>
+                <SelectTrigger><SelectValue placeholder="Select Operator" /></SelectTrigger>
+                <SelectContent>
+                  {operators.map(o => <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-                  <SelectContent>
-                    {operators.map((o) => (
-                      <SelectItem key={o.id} value={o.id.toString()}>
-                        {o.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-600 mb-1 block">
-                  Trip Type *
-                </label>
-                <Select
-                  value={formData.type_id?.toString() || ""}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      type_id: value,
-                    }))
-                  }
-                  disabled={loadingTripTypes}
-                >
-                  <SelectTrigger className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#4ED0C3]">
-                    <SelectValue
-                      placeholder={
-                        loadingTripTypes ? "Loading..." : "Select Trip Type"
-                      }
-                    />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {loadingTripTypes ? (
-                      <SelectItem value="loading" disabled>
-                        Loading...
-                      </SelectItem>
-                    ) : (
-                      tripTypes.map((type) => (
-                        <SelectItem key={type.id} value={type.id.toString()}>
-                          {type.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </section>
-
-            {/* Source Location */}
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">Source Location *</h3>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      {formData.source.name ? (
-                        <div className="space-y-1">
-                          <p className="text-sm">
-                            <span className="font-medium">Name:</span>{" "}
-                            {formData.source.name}
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium">Region:</span>{" "}
-                            {formData.source.region || "N/A"}
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium">Coordinates:</span>{" "}
-                            {formData.source.latitude},{" "}
-                            {formData.source.longitude}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No location selected
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowSourceMap(true)}
-                    >
-                      <FaMapMarkedAlt className="h-4 w-4 mr-2" />
-                      {formData.source.name
-                        ? "Change Location"
-                        : "Select from Map"}
-                    </Button>
-                  </div>
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">Source Location *</label>
+              <Card className="border shadow-none">
+                <CardContent className="p-3 flex justify-between items-center">
+                  <span className="text-sm truncate mr-2">{formData.source.name || "None selected"}</span>
+                  <Button type="button" variant="outline" size="sm" onClick={()=>setShowSourceMap(true)}>Map</Button>
                 </CardContent>
               </Card>
-            </section>
+            </div>
 
-            {/* Destination Location */}
-            <section className="space-y-4">
-              <h3 className="text-lg font-semibold">Destination Location *</h3>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      {formData.destination.name ? (
-                        <div className="space-y-1">
-                          <p className="text-sm">
-                            <span className="font-medium">Name:</span>{" "}
-                            {formData.destination.name}
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium">Region:</span>{" "}
-                            {formData.destination.region || "N/A"}
-                          </p>
-                          <p className="text-sm">
-                            <span className="font-medium">Coordinates:</span>{" "}
-                            {formData.destination.latitude},{" "}
-                            {formData.destination.longitude}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">
-                          No location selected
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowDestinationMap(true)}
-                    >
-                      <FaMapMarkedAlt className="h-4 w-4 mr-2" />
-                      {formData.destination.name
-                        ? "Change Location"
-                        : "Select from Map"}
-                    </Button>
-                  </div>
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">Destination Location *</label>
+              <Card className="border shadow-none">
+                <CardContent className="p-3 flex justify-between items-center">
+                  <span className="text-sm truncate mr-2">{formData.destination.name || "None selected"}</span>
+                  <Button type="button" variant="outline" size="sm" onClick={()=>setShowDestinationMap(true)}>Map</Button>
                 </CardContent>
               </Card>
-            </section>
+            </div>
 
-            {/* Map Modals */}
-            {showSourceMap && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-                <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-lg flex flex-col">
-                  <div className="flex justify-between items-center px-6 py-4 border-b">
-                    <h3 className="text-lg font-semibold">
-                      Select Source Location
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowSourceMap(false)}
-                    >
-                      <IoCloseSharp size={20} />
-                    </Button>
-                  </div>
-                  <div className="flex-1 p-4">
-                    <MapPicker
-                      onLocationSelect={(location) =>
-                        handleLocationSelect("source", location)
-                      }
-                      initialCenter={[20.5937, 78.9629]}
-                      initialZoom={5}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Content & Details */}
+            <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
+              <h3 className="text-lg font-semibold text-gray-800">Experience Details</h3>
+            </div>
 
-            {showDestinationMap && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60]">
-                <div className="bg-white w-[90vw] max-w-4xl h-[80vh] rounded-lg flex flex-col">
-                  <div className="flex justify-between items-center px-6 py-4 border-b">
-                    <h3 className="text-lg font-semibold">
-                      Select Destination Location
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setShowDestinationMap(false)}
-                    >
-                      <IoCloseSharp size={20} />
-                    </Button>
-                  </div>
-                  <div className="flex-1 p-4">
-                    <MapPicker
-                      onLocationSelect={(location) =>
-                        handleLocationSelect("destination", location)
-                      }
-                      initialCenter={[20.5937, 78.9629]}
-                      initialZoom={5}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Description */}
-            <section className="space-y-2">
-              <h3 className="text-lg font-semibold">Description</h3>
+            <div className="col-span-1 md:col-span-2">
+              <label className="text-sm text-gray-600 mb-1 block">Description *</label>
               <textarea
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 rows={4}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
                 required
-                className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-[#4ED0C3]"
-                placeholder="10-day trek to Everest Base Camp..."
               />
-            </section>
+            </div>
 
-            {/* Images */}
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Images *</h3>
-                <div>
-                  <Input
-                    type="file"
-                    id="imageUpload"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="hidden"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() =>
-                      document.getElementById("imageUpload")?.click()
-                    }
-                    disabled={uploadingImage}
-                  >
-                    {uploadingImage ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <FaPlus className="h-4 w-4 mr-2" />
-                        Upload Image
-                      </>
-                    )}
-                  </Button>
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm text-gray-600 font-medium">Images *</label>
+                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("imgUpload").click()}>
+                  <FaPlus className="mr-2 h-3 w-3" /> Upload
+                </Button>
+                <input type="file" id="imgUpload" className="hidden" onChange={handleImageUpload} accept="image/*" />
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                {formData.images.map((url, i) => (
+                  <div key={i} className="relative aspect-square">
+                    <img src={url} className="w-full h-full object-cover rounded-lg border" alt="trip" />
+                    <button type="button" onClick={() => removeImage(i)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1"><IoCloseSharp size={10} /></button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="col-span-1">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-sm text-gray-600 font-medium">Inclusions *</label>
+                <button type="button" onClick={()=>addListItem("inclusions")} className="text-xs text-teal-600">+ Add</button>
+              </div>
+              {formData.inclusions.map((item, i) => (
+                <div key={i} className="flex gap-2 mb-2">
+                  <Input value={item} onChange={(e)=>handleListChange("inclusions", i, e.target.value)} />
+                  <button type="button" onClick={()=>removeListItem("inclusions", i)} className="text-red-400"><FaTrash size={12}/></button>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-4">
-                {formData.images.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={url}
-                      alt={`Trip ${index + 1}`}
-                      className="w-full h-20 object-cover rounded-lg border"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={() => removeImage(index)}
-                    >
-                      <FaTrash size={10} />
-                    </Button>
-                  </div>
-                ))}
-                {formData.images.length === 0 && (
-                  <div className="col-span-6 text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                    No images uploaded yet
-                  </div>
-                )}
-              </div>
-            </section>
-
-            {/* Inclusions */}
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Inclusions *</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addListItem("inclusions")}
-                >
-                  <FaPlus className="h-4 w-4 mr-2" />
-                  Add
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.inclusions.map((item, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={item}
-                      required
-                      onChange={(e) =>
-                        handleListChange("inclusions", index, e.target.value)
-                      }
-                      placeholder={`Inclusion ${index + 1}`}
-                    />
-                    {formData.inclusions.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => removeListItem("inclusions", index)}
-                      >
-                        <FaTrash size={14} />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Exclusions */}
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Exclusions *</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => addListItem("exclusions")}
-                >
-                  <FaPlus className="h-4 w-4 mr-2" />
-                  Add
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.exclusions.map((item, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={item}
-                      required
-                      onChange={(e) =>
-                        handleListChange("exclusions", index, e.target.value)
-                      }
-                      placeholder={`Exclusion ${index + 1}`}
-                    />
-                    {formData.exclusions.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => removeListItem("exclusions", index)}
-                      >
-                        <FaTrash size={14} />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Itinerary */}
-            <section className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Itinerary</h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addDay}
-                >
-                  <FaPlus className="h-4 w-4 mr-2" />
-                  Add Day
-                </Button>
-              </div>
-
-              {formData.itinerary.map((day, dayIndex) => (
-                <Card key={dayIndex}>
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <h4 className="font-medium">Day {day.day}</h4>
-                      {formData.itinerary.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeDay(dayIndex)}
-                        >
-                          <FaTrash size={14} className="mr-2" />
-                          Remove Day
-                        </Button>
-                      )}
-                    </div>
-
-                    {day.activities.map((activity, actIndex) => (
-                      <div key={actIndex} className="flex gap-2">
-                        <Input
-                          value={activity}
-                          required
-                          onChange={(e) =>
-                            handleActivity(dayIndex, actIndex, e.target.value)
-                          }
-                          placeholder={`Activity ${actIndex + 1}`}
-                        />
-                        {day.activities.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => removeActivity(dayIndex, actIndex)}
-                          >
-                            <FaTrash size={14} />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => addActivity(dayIndex)}
-                    >
-                      <FaPlus className="h-4 w-4 mr-2" />
-                      Add Activity
-                    </Button>
-                  </CardContent>
-                </Card>
               ))}
-            </section>
+            </div>
 
-            {/* Footer */}
-            <div className="flex justify-end gap-3 pt-6 border-t">
+            <div className="col-span-1">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-sm text-gray-600 font-medium">Exclusions *</label>
+                <button type="button" onClick={()=>addListItem("exclusions")} className="text-xs text-teal-600">+ Add</button>
+              </div>
+              {formData.exclusions.map((item, i) => (
+                <div key={i} className="flex gap-2 mb-2">
+                  <Input value={item} onChange={(e)=>handleListChange("exclusions", i, e.target.value)} />
+                  <button type="button" onClick={()=>removeListItem("exclusions", i)} className="text-red-400"><FaTrash size={12}/></button>
+                </div>
+              ))}
+            </div>
+
+            <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-semibold text-gray-800">Itinerary</h3>
+                <Button type="button" variant="outline" size="sm" onClick={addDay}><FaPlus className="mr-2 h-3 w-3" /> New Day</Button>
+              </div>
+              <div className="space-y-4">
+                {formData.itinerary.map((day, dIdx) => (
+                  <Card key={dIdx} className="bg-gray-50/50">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-semibold text-sm">Day {day.day}</span>
+                        <button type="button" onClick={()=>removeDay(dIdx)} className="text-red-500 text-xs"><FaTrash size={10} className="inline mr-1" /> Delete Day</button>
+                      </div>
+                      <div className="space-y-2 border-l-2 border-teal-500 pl-3">
+                        {day.activities.map((act, aIdx) => (
+                          <div key={aIdx} className="flex gap-2">
+                            <Input value={act} onChange={(e)=>handleActivity(dIdx, aIdx, e.target.value)} className="bg-white" />
+                            <button type="button" onClick={()=>removeActivity(dIdx, aIdx)} className="text-gray-400"><FaTrash size={10}/></button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={()=>addActivity(dIdx)} className="text-xs text-teal-600 hover:underline">+ Add Activity</button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="col-span-1 md:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 mt-4 border-t">
               <button
                 type="button"
                 onClick={() => handleModalClose(false)}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                disabled={loading || uploadingImage}
+                className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading || uploadingImage}
-                className="px-6 py-2 bg-[#4ED0C3] text-white rounded-lg text-sm font-medium hover:bg-[#3db8ab] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto px-8 py-2 bg-[#4ED0C3] text-white rounded-lg text-sm font-semibold hover:bg-[#3db8ab] shadow-sm"
               >
-                {loading
-                  ? "Creating..."
-                  : uploadingImage
-                    ? "Uploading..."
-                    : "Create Trip"}
+                {loading ? "Creating..." : "Create Trip"}
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      {/* Map Popups outside main layout flow */}
+      {showSourceMap && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
+             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+               <span className="font-semibold text-gray-800">Select Source Location</span>
+               <button onClick={()=>setShowSourceMap(false)}><IoCloseSharp size={24} className="text-gray-500" /></button>
+             </div>
+             <div className="flex-1 min-h-0 bg-white">
+                <MapPicker onLocationSelect={(loc) => handleLocationSelect("source", loc)} initialCenter={[20.5937, 78.9629]} initialZoom={5} />
+             </div>
+          </div>
+        </div>
+      )}
+
+      {showDestinationMap && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
+             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+               <span className="font-semibold text-gray-800">Select Destination Location</span>
+               <button onClick={()=>setShowDestinationMap(false)}><IoCloseSharp size={24} className="text-gray-500" /></button>
+             </div>
+             <div className="flex-1 min-h-0 bg-white">
+                <MapPicker onLocationSelect={(loc) => handleLocationSelect("destination", loc)} initialCenter={[20.5937, 78.9629]} initialZoom={5} />
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -368,8 +368,25 @@ export default function EnquiryDetail() {
               disabled={loading}
             />
           </div>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
+          <Button
+            onClick={handleSave}
+            disabled={
+              saving ||
+              (status === (enquiry.status?.toLowerCase() || "new") &&
+                adminNotes === (enquiry.admin_notes || ""))
+            }
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Changes
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
