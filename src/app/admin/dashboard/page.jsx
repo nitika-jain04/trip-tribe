@@ -218,29 +218,14 @@ export default function DashboardPage() {
           variant="primary"
         />
 
-        {/* <StatCard
-          title="Total Operators"
-          value={stats.operators.total}
-          subtitle={`${stats.operators.active} active • ${stats.operators.inactive} inactive • ${stats.operators.suspended} suspended • ${stats.operators.pending_approval} pending`}
-          icon={Users}
-          variant="primary"
-        /> */}
-
         <StatCard
           title="Total Trips"
           value={stats.trips.total}
-          subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft`}
+          subtitle={`${stats.trips.live} live, ${stats.trips.draft} draft, ${stats.trips.archived} archived, ${stats.trips.cancelled} cancelled`}
           change={stats.trips.change_percent}
           icon={MapPin}
           variant="success"
         />
-        {/* <StatCard
-          title="Total Enquiries"
-          value={stats.enquiries.total}
-          subtitle={`${stats.enquiries.this_week} this week, ${stats.enquiries.this_month} this month`}
-          icon={MessageSquare}
-          variant="warning"
-        /> */}
 
         <StatCard
           title="Total Enquiries"

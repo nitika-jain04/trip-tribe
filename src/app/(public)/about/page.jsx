@@ -116,25 +116,25 @@ export default function About() {
                 The Problem We Solve
               </p>
               <h2 className="font-display text-display text-foreground mb-6">
-                Community Travel Was Fragmented
+                Community Travel Is Fragmented
               </h2>
               <div className="space-y-4 text-body-lg text-muted-foreground">
                 <p>
-                  Finding great community trips in India was frustrating. Dozens
+                  Finding great community trips in India is frustrating. Dozens
                   of providers, scattered across Instagram pages, WhatsApp
                   groups, and random websites. No way to compare prices, read
-                  verified reviews, or know who to trust.
+                  verified reviews, or know whom to trust.
                 </p>
                 <p>
                   We built TripTribe to solve this. One platform where you can
-                  discover trips from 50+ verified providers, compare them
+                  discover trips from verified providers, compare them
                   side-by-side, and book with confidence.
                 </p>
                 <p>
                   <strong className="text-foreground">
-                    TripTribe doesn&apos;t run trips.
+                    TripTribe doesn&apos;t run trips,
                   </strong>{" "}
-                  We aggregate them from trusted community organizers, giving
+                  we aggregate them from trusted community organizers, giving
                   you the power to choose what&apos;s best for you.
                 </p>
               </div>
@@ -147,7 +147,7 @@ export default function About() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="absolute -bottom-6 -left-6 glass rounded-2xl p-6 shadow-premium-md max-w-xs">
+              {/* <div className="absolute -bottom-6 -left-6 glass rounded-2xl p-6 shadow-premium-md max-w-xs">
                 <div className="flex items-center gap-3 mb-2">
                   <GitCompare className="w-6 h-6 text-primary" />
                   <span className="font-semibold text-foreground">
@@ -157,7 +157,7 @@ export default function About() {
                 <p className="text-body-sm text-muted-foreground">
                   See prices, reviews, and inclusions side-by-side.
                 </p>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>

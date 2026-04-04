@@ -14,6 +14,7 @@ import {
   Clock,
   CheckCircle2,
   HelpCircle,
+  ArrowRight,
 } from "lucide-react";
 import {
   Select,
@@ -294,6 +295,18 @@ export default function Contact() {
               Have questions about trips, partnerships, or anything else? Our
               team is here to help.
             </p>
+
+            <Button
+              className="btn-primary text-body px-8 py-6 mt-3"
+              onClick={() =>
+                document
+                  .getElementById("apply")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              Contact Us
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
           </div>
         </div>
       </section>
@@ -327,7 +340,7 @@ export default function Contact() {
       </section>
 
       {/* Contact Form & FAQ */}
-      <section className="section bg-muted/30">
+      <section className="section bg-muted/30" id="apply">
         <div className="container-premium">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
             {/* Contact Form */}
@@ -336,7 +349,7 @@ export default function Contact() {
                 Send Us a Message
               </h2>
               <p className="text-body text-muted-foreground mb-8">
-                Fill out the form below and we&apos;ll respond within 24 hours.
+                Fill out the form below and we&apos;ll respond shortly.
               </p>
 
               {isSubmitted ? (

@@ -116,7 +116,7 @@ export default function Page() {
     const [locationsData, operatorsData, tripsData] = await Promise.all([
       safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`),
       safeFetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`),
-      safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=10`),
+      safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=9`),
     ]);
 
     // If any fetch failed, just stop and return
@@ -333,7 +333,7 @@ export default function Page() {
                 <p
                   className={`text-display text-primary ${baskerville.className}`}
                 >
-                  {stat.value}
+                  {operators?.length}
                 </p>
                 <p className="text-body-sm text-muted-foreground">
                   {stat.label}
@@ -479,7 +479,7 @@ export default function Page() {
           {/* Trips Grid */}
           {!isLoading && !hasError && trips.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trips.slice(0, 10).map((trip) => (
+              {trips.slice(0, 9).map((trip) => (
                 <Link
                   key={trip.id}
                   href={`/trip/${trip.id}`}
@@ -605,7 +605,7 @@ export default function Page() {
           {/* Destinations Grid */}
           {!isLoading && !hasError && locations.length > 0 && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {locations.slice(0, 10).map((location) => (
+              {locations.slice(0, 9).map((location) => (
                 <Link
                   key={location.name}
                   href={`/trips?group_by=location&location_type=destination&search=${location.name}`}
@@ -683,7 +683,16 @@ export default function Page() {
                   key={provider.id}
                   className="flex items-center gap-3 px-6 py-3 rounded-full bg-muted/50"
                 >
-                  <Shield className="w-5 h-5 text-success" />
+                  {/* <Shield className="w-5 h-5 text-success" /> */}
+                  {provider?.logo_url ? (
+                    <img
+                      src={provider.logo_url}
+                      alt="Logo"
+                      className="h-16 w-16 object-cover rounded-full"
+                    />
+                  ) : (
+                    <Shield className="w-5 h-5 text-success" />
+                  )}
                   <span className="font-medium text-foreground">
                     {provider.name}
                   </span>

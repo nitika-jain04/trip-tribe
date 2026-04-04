@@ -127,14 +127,17 @@ function AddTripModal({ handleModalClose }) {
     };
 
     try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations/admin`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       const data = await res.json();
 
@@ -270,7 +273,11 @@ function AddTripModal({ handleModalClose }) {
       });
 
       if (res.ok) {
-        toast({ title: "Success", description: "Trip created!", variant: "success" });
+        toast({
+          title: "Success",
+          description: "Trip created!",
+          variant: "success",
+        });
         handleModalClose(false);
       }
     } catch (err) {
@@ -304,11 +311,15 @@ function AddTripModal({ handleModalClose }) {
           >
             {/* Sections */}
             <div className="col-span-1 md:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-800">Basic Information</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Basic Information
+              </h3>
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="text-sm text-gray-600 mb-1 block">Trip Name *</label>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Trip Name *
+              </label>
               <Input
                 name="name"
                 value={formData.name}
@@ -319,7 +330,9 @@ function AddTripModal({ handleModalClose }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">Price (₹) *</label>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Price (₹) *
+              </label>
               <Input
                 name="price"
                 type="number"
@@ -330,7 +343,9 @@ function AddTripModal({ handleModalClose }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">Total Seats *</label>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Total Seats *
+              </label>
               <Input
                 name="total_seats"
                 type="number"
@@ -341,9 +356,18 @@ function AddTripModal({ handleModalClose }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">Difficulty *</label>
-              <Select value={formData.difficulty} onValueChange={(v) => handleChange({target:{name:'difficulty', value:v}})}>
-                <SelectTrigger><SelectValue placeholder="Difficulty" /></SelectTrigger>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Difficulty *
+              </label>
+              <Select
+                value={formData.difficulty}
+                onValueChange={(v) =>
+                  handleChange({ target: { name: "difficulty", value: v } })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Difficulty" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="EASY">Easy</SelectItem>
                   <SelectItem value="MODERATE">Moderate</SelectItem>
@@ -353,66 +377,136 @@ function AddTripModal({ handleModalClose }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">Trip Type *</label>
-              <Select value={formData.type_id} onValueChange={(v) => setFormData(p=>({...p, type_id:v}))}>
-                <SelectTrigger><SelectValue placeholder="Trip Type" /></SelectTrigger>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Trip Type *
+              </label>
+              <Select
+                value={formData.type_id}
+                onValueChange={(v) =>
+                  setFormData((p) => ({ ...p, type_id: v }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Trip Type" />
+                </SelectTrigger>
                 <SelectContent>
-                  {tripTypes.map(t => <SelectItem key={t.id} value={t.id.toString()}>{t.name}</SelectItem>)}
+                  {tripTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id.toString()}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">Start Date *</label>
-              <Input name="start_date" type="date" value={formData.start_date} onChange={handleChange} required />
+              <label className="text-sm text-gray-600 mb-1 block">
+                Start Date *
+              </label>
+              <Input
+                name="start_date"
+                type="date"
+                value={formData.start_date}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">End Date *</label>
-              <Input name="end_date" type="date" value={formData.end_date} onChange={handleChange} required />
+              <label className="text-sm text-gray-600 mb-1 block">
+                End Date *
+              </label>
+              <Input
+                name="end_date"
+                type="date"
+                value={formData.end_date}
+                onChange={handleChange}
+                required
+              />
             </div>
 
             <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
-              <h3 className="text-lg font-semibold text-gray-800">Operator & Locations</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Operator & Locations
+              </h3>
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="text-sm text-gray-600 mb-1 block">Operator *</label>
-              <Select value={formData.operator_id} onValueChange={(v) => handleChange({target:{name:'operator_id', value:v}})}>
-                <SelectTrigger><SelectValue placeholder="Select Operator" /></SelectTrigger>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Operator *
+              </label>
+              <Select
+                value={formData.operator_id}
+                onValueChange={(v) =>
+                  handleChange({ target: { name: "operator_id", value: v } })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Operator" />
+                </SelectTrigger>
                 <SelectContent>
-                  {operators.map(o => <SelectItem key={o.id} value={o.id.toString()}>{o.name}</SelectItem>)}
+                  {operators.map((o) => (
+                    <SelectItem key={o.id} value={o.id.toString()}>
+                      {o.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">Source Location *</label>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Source Location *
+              </label>
               <Card className="border shadow-none">
                 <CardContent className="p-3 flex justify-between items-center">
-                  <span className="text-sm truncate mr-2">{formData.source.name || "None selected"}</span>
-                  <Button type="button" variant="outline" size="sm" onClick={()=>setShowSourceMap(true)}>Map</Button>
+                  <span className="text-sm truncate mr-2">
+                    {formData.source.name || "None selected"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSourceMap(true)}
+                  >
+                    Map
+                  </Button>
                 </CardContent>
               </Card>
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">Destination Location *</label>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Destination Location *
+              </label>
               <Card className="border shadow-none">
                 <CardContent className="p-3 flex justify-between items-center">
-                  <span className="text-sm truncate mr-2">{formData.destination.name || "None selected"}</span>
-                  <Button type="button" variant="outline" size="sm" onClick={()=>setShowDestinationMap(true)}>Map</Button>
+                  <span className="text-sm truncate mr-2">
+                    {formData.destination.name || "None selected"}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowDestinationMap(true)}
+                  >
+                    Map
+                  </Button>
                 </CardContent>
               </Card>
             </div>
 
             {/* Content & Details */}
             <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
-              <h3 className="text-lg font-semibold text-gray-800">Experience Details</h3>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Experience Details
+              </h3>
             </div>
 
             <div className="col-span-1 md:col-span-2">
-              <label className="text-sm text-gray-600 mb-1 block">Description *</label>
+              <label className="text-sm text-gray-600 mb-1 block">
+                Description *
+              </label>
               <textarea
                 name="description"
                 value={formData.description}
@@ -425,17 +519,40 @@ function AddTripModal({ handleModalClose }) {
 
             <div className="col-span-1 md:col-span-2">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm text-gray-600 font-medium">Images *</label>
-                <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("imgUpload").click()}>
+                <label className="text-sm text-gray-600 font-medium">
+                  Images *
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById("imgUpload").click()}
+                >
                   <FaPlus className="mr-2 h-3 w-3" /> Upload
                 </Button>
-                <input type="file" id="imgUpload" className="hidden" onChange={handleImageUpload} accept="image/*" />
+                <input
+                  type="file"
+                  id="imgUpload"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                />
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                 {formData.images.map((url, i) => (
                   <div key={i} className="relative aspect-square">
-                    <img src={url} className="w-full h-full object-cover rounded-lg border" alt="trip" />
-                    <button type="button" onClick={() => removeImage(i)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1"><IoCloseSharp size={10} /></button>
+                    <img
+                      src={url}
+                      className="w-full h-full object-cover rounded-lg border"
+                      alt="trip"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1"
+                    >
+                      <IoCloseSharp size={10} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -443,51 +560,125 @@ function AddTripModal({ handleModalClose }) {
 
             <div className="col-span-1">
               <div className="flex justify-between items-center mb-1">
-                <label className="text-sm text-gray-600 font-medium">Inclusions *</label>
-                <button type="button" onClick={()=>addListItem("inclusions")} className="text-xs text-teal-600">+ Add</button>
+                <label className="text-sm text-gray-600 font-medium">
+                  Inclusions *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => addListItem("inclusions")}
+                  className="text-xs text-teal-600"
+                >
+                  + Add
+                </button>
               </div>
               {formData.inclusions.map((item, i) => (
                 <div key={i} className="flex gap-2 mb-2">
-                  <Input value={item} onChange={(e)=>handleListChange("inclusions", i, e.target.value)} />
-                  <button type="button" onClick={()=>removeListItem("inclusions", i)} className="text-red-400"><FaTrash size={12}/></button>
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleListChange("inclusions", i, e.target.value)
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeListItem("inclusions", i)}
+                    className="text-red-400"
+                  >
+                    <FaTrash size={12} />
+                  </button>
                 </div>
               ))}
             </div>
 
             <div className="col-span-1">
               <div className="flex justify-between items-center mb-1">
-                <label className="text-sm text-gray-600 font-medium">Exclusions *</label>
-                <button type="button" onClick={()=>addListItem("exclusions")} className="text-xs text-teal-600">+ Add</button>
+                <label className="text-sm text-gray-600 font-medium">
+                  Exclusions
+                </label>
+                <button
+                  type="button"
+                  onClick={() => addListItem("exclusions")}
+                  className="text-xs text-teal-600"
+                >
+                  + Add
+                </button>
               </div>
               {formData.exclusions.map((item, i) => (
                 <div key={i} className="flex gap-2 mb-2">
-                  <Input value={item} onChange={(e)=>handleListChange("exclusions", i, e.target.value)} />
-                  <button type="button" onClick={()=>removeListItem("exclusions", i)} className="text-red-400"><FaTrash size={12}/></button>
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleListChange("exclusions", i, e.target.value)
+                    }
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeListItem("exclusions", i)}
+                    className="text-red-400"
+                  >
+                    <FaTrash size={12} />
+                  </button>
                 </div>
               ))}
             </div>
 
             <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-semibold text-gray-800">Itinerary</h3>
-                <Button type="button" variant="outline" size="sm" onClick={addDay}><FaPlus className="mr-2 h-3 w-3" /> New Day</Button>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Itinerary
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addDay}
+                >
+                  <FaPlus className="mr-2 h-3 w-3" /> New Day
+                </Button>
               </div>
               <div className="space-y-4">
                 {formData.itinerary.map((day, dIdx) => (
                   <Card key={dIdx} className="bg-gray-50/50">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex justify-between items-center">
-                        <span className="font-semibold text-sm">Day {day.day}</span>
-                        <button type="button" onClick={()=>removeDay(dIdx)} className="text-red-500 text-xs"><FaTrash size={10} className="inline mr-1" /> Delete Day</button>
+                        <span className="font-semibold text-sm">
+                          Day {day.day}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeDay(dIdx)}
+                          className="text-red-500 text-xs"
+                        >
+                          <FaTrash size={10} className="inline mr-1" /> Delete
+                          Day
+                        </button>
                       </div>
                       <div className="space-y-2 border-l-2 border-teal-500 pl-3">
                         {day.activities.map((act, aIdx) => (
                           <div key={aIdx} className="flex gap-2">
-                            <Input value={act} onChange={(e)=>handleActivity(dIdx, aIdx, e.target.value)} className="bg-white" />
-                            <button type="button" onClick={()=>removeActivity(dIdx, aIdx)} className="text-gray-400"><FaTrash size={10}/></button>
+                            <Input
+                              value={act}
+                              onChange={(e) =>
+                                handleActivity(dIdx, aIdx, e.target.value)
+                              }
+                              className="bg-white"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeActivity(dIdx, aIdx)}
+                              className="text-gray-400"
+                            >
+                              <FaTrash size={10} />
+                            </button>
                           </div>
                         ))}
-                        <button type="button" onClick={()=>addActivity(dIdx)} className="text-xs text-teal-600 hover:underline">+ Add Activity</button>
+                        <button
+                          type="button"
+                          onClick={() => addActivity(dIdx)}
+                          className="text-xs text-teal-600 hover:underline"
+                        >
+                          + Add Activity
+                        </button>
                       </div>
                     </CardContent>
                   </Card>
@@ -520,13 +711,21 @@ function AddTripModal({ handleModalClose }) {
       {showSourceMap && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
-             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-               <span className="font-semibold text-gray-800">Select Source Location</span>
-               <button onClick={()=>setShowSourceMap(false)}><IoCloseSharp size={24} className="text-gray-500" /></button>
-             </div>
-             <div className="flex-1 min-h-0 bg-white">
-                <MapPicker onLocationSelect={(loc) => handleLocationSelect("source", loc)} initialCenter={[20.5937, 78.9629]} initialZoom={5} />
-             </div>
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+              <span className="font-semibold text-gray-800">
+                Select Source Location
+              </span>
+              <button onClick={() => setShowSourceMap(false)}>
+                <IoCloseSharp size={24} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-white">
+              <MapPicker
+                onLocationSelect={(loc) => handleLocationSelect("source", loc)}
+                initialCenter={[20.5937, 78.9629]}
+                initialZoom={5}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -534,13 +733,23 @@ function AddTripModal({ handleModalClose }) {
       {showDestinationMap && (
         <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
-             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
-               <span className="font-semibold text-gray-800">Select Destination Location</span>
-               <button onClick={()=>setShowDestinationMap(false)}><IoCloseSharp size={24} className="text-gray-500" /></button>
-             </div>
-             <div className="flex-1 min-h-0 bg-white">
-                <MapPicker onLocationSelect={(loc) => handleLocationSelect("destination", loc)} initialCenter={[20.5937, 78.9629]} initialZoom={5} />
-             </div>
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+              <span className="font-semibold text-gray-800">
+                Select Destination Location
+              </span>
+              <button onClick={() => setShowDestinationMap(false)}>
+                <IoCloseSharp size={24} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-white">
+              <MapPicker
+                onLocationSelect={(loc) =>
+                  handleLocationSelect("destination", loc)
+                }
+                initialCenter={[20.5937, 78.9629]}
+                initialZoom={5}
+              />
+            </div>
           </div>
         </div>
       )}
