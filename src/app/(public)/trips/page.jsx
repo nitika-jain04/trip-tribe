@@ -64,6 +64,8 @@ function TripsContent() {
   const [sortBy, setSortBy] = useState("recommended");
   const [compareList, setCompareList] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [showInterstitial, setShowInterstitial] = useState(false);
+  const [interstitialChoiceMade, setInterstitialChoiceMade] = useState(false);
   const [trips, setTrips] = useState([]);
   const [loadingTrips, setLoadingTrips] = useState(true);
   const [tripTypesData, setTripTypesData] = useState(["All Types"]);
@@ -267,13 +269,22 @@ function TripsContent() {
   }, [trips, searchQuery, selectedType, selectedDifficulty, sortBy]);
 
   const toggleCompare = useCallback((tripId) => {
-    setCompareList((prev) =>
-      prev.includes(tripId)
-        ? prev.filter((id) => id !== tripId)
-        : prev.length < 3
+    setCompareList((prev) => {
+      const isAdding = !prev.includes(tripId);
+      if (isAdding && prev.length < 3) {
+        if (prev.length + 1 === 3) {
+          setShowCompare(true);
+        } else {
+          setInterstitialChoiceMade(false);
+          setShowInterstitial(true);
+        }
+      }
+      return isAdding
+        ? prev.length < 3
           ? [...prev, tripId]
-          : prev,
-    );
+          : prev
+        : prev.filter((id) => id !== tripId);
+    });
   }, []);
 
   const compareTrips = useMemo(
@@ -629,7 +640,13 @@ function TripsContent() {
         </div>
       </section>
 
-      <Dialog open={showCompare} onOpenChange={setShowCompare}>
+      <Dialog
+        open={showCompare}
+        onOpenChange={(open) => {
+          setShowCompare(open);
+          if (!open) setCompareList([]);
+        }}
+      >
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-display text-heading-lg">
@@ -652,7 +669,7 @@ function TripsContent() {
                     <img
                       src={trip.image}
                       alt={trip.name}
-                      className="w-full h-32 object-cover"
+                      className="w-full h-60 object-fill"
                     />
                     <div className="p-4">
                       <h4 className="font-medium text-foreground mb-1">
@@ -662,7 +679,7 @@ function TripsContent() {
                         {trip.provider}
                       </p>
 
-                      <div className="space-y-3 text-body-sm">
+                      <div className="space-y-1 text-body-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Price</span>
                           <span className="font-semibold text-primary">
@@ -721,6 +738,55 @@ function TripsContent() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={showInterstitial}
+        onOpenChange={(open) => {
+          setShowInterstitial(open);
+          if (!open && !interstitialChoiceMade) {
+            setCompareList([]);
+          }
+        }}
+      >
+        <DialogContent className="max-w-sm p-0 overflow-hidden rounded-2xl">
+          <DialogHeader className="p-0">
+            <div className="bg-primary/5 p-6 border-b border-primary/10">
+              <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 text-primary">
+                <GitCompare className="w-6 h-6" />
+              </div>
+              <DialogTitle className="font-display text-heading-md text-foreground">
+                Add to Comparison
+              </DialogTitle>
+              <p className="text-body-sm text-muted-foreground mt-2">
+                You can compare up to 3 trips side-by-side to find your perfect
+                adventure.
+              </p>
+            </div>
+          </DialogHeader>
+          <div className="p-6 space-y-3">
+            <Button
+              className="w-full btn-primary h-12 text-md"
+              onClick={() => {
+                setInterstitialChoiceMade(true);
+                setShowInterstitial(false);
+                setShowCompare(true);
+              }}
+            >
+              Proceed with Comparison ({compareList.length})
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full h-12 text-md border-border"
+              onClick={() => {
+                setInterstitialChoiceMade(true);
+                setShowInterstitial(false);
+              }}
+            >
+              Select more trips
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

@@ -184,13 +184,28 @@ function AddTripModal({ handleModalClose }) {
         headers: { Authorization: `Bearer ${token}` },
         body: fd,
       });
+
       const data = await res.json();
+
       if (res.ok && data.success) {
         setFormData((p) => ({ ...p, images: [...p.images, data.result.url] }));
         setFieldErrors((p) => ({ ...p, images: "" }));
+      } else {
+        toast({
+          title: "Upload Failed",
+          description:
+            data?.message || data?.error?.message || "Image upload failed.",
+          variant: "destructive",
+        });
       }
     } catch (err) {
       console.error("Upload error:", err);
+
+      toast({
+        title: "Upload Failed",
+        description: err.message || "Network error while uploading image.",
+        variant: "destructive",
+      });
     } finally {
       setUploadingImage(false);
     }
@@ -272,7 +287,10 @@ function AddTripModal({ handleModalClose }) {
       errors.name = "Trip name must be at least 3 characters.";
     }
 
-    if (!formData.description?.trim() || formData.description.trim().length < 10) {
+    if (
+      !formData.description?.trim() ||
+      formData.description.trim().length < 10
+    ) {
       errors.description = "Description must be at least 10 characters.";
     }
 
@@ -326,8 +344,12 @@ function AddTripModal({ handleModalClose }) {
       errors.inclusions = "At least one inclusion is required.";
     }
 
-    const hasIncompleteItinerary = formData.itinerary.some(
-      (day) => day.activities.every((a) => !a.trim())
+    if (!formData.exclusions || formData.exclusions.every((i) => !i.trim())) {
+      errors.exclusions = "At least one exclusion is required.";
+    }
+
+    const hasIncompleteItinerary = formData.itinerary.some((day) =>
+      day.activities.every((a) => !a.trim()),
     );
     if (hasIncompleteItinerary) {
       errors.itinerary = "Please complete all itinerary days.";
@@ -365,19 +387,30 @@ function AddTripModal({ handleModalClose }) {
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+      console.log("req", data);
+
+      if (res.ok && data.success) {
         toast({
           title: "Success",
           description: "Trip created!",
           variant: "success",
         });
         handleModalClose(false);
+      } else {
+        toast({
+          title: "Error",
+          description:
+            data?.message || data?.error?.message || "Failed to create trip.",
+          variant: "destructive",
+        });
       }
     } catch (err) {
       console.error(err);
+
       toast({
         title: "Error",
-        description: "Failed to create trip.",
+        description: err.message || "Network error while creating trip.",
         variant: "destructive",
       });
     } finally {
@@ -422,11 +455,13 @@ function AddTripModal({ handleModalClose }) {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                required
+                // required
                 placeholder="E.g., Himalayan Base Camp"
               />
               {fieldErrors.name && (
-                <p className="text-admin-error text-xs mt-1">{fieldErrors.name}</p>
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.name}
+                </p>
               )}
             </div>
 
@@ -439,10 +474,12 @@ function AddTripModal({ handleModalClose }) {
                 type="number"
                 value={formData.price}
                 onChange={handleChange}
-                required
+                // required
               />
               {fieldErrors.price && (
-                <p className="text-admin-error text-xs mt-1">{fieldErrors.price}</p>
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.price}
+                </p>
               )}
             </div>
 
@@ -455,7 +492,7 @@ function AddTripModal({ handleModalClose }) {
                 type="number"
                 value={formData.total_seats}
                 onChange={handleChange}
-                required
+                // required
               />
               {fieldErrors.total_seats && (
                 <p className="text-admin-error text-xs mt-1">
@@ -527,7 +564,7 @@ function AddTripModal({ handleModalClose }) {
                 type="date"
                 value={formData.start_date}
                 onChange={handleChange}
-                required
+                // required
               />
               {fieldErrors.start_date && (
                 <p className="text-admin-error text-xs mt-1">
@@ -545,7 +582,7 @@ function AddTripModal({ handleModalClose }) {
                 type="date"
                 value={formData.end_date}
                 onChange={handleChange}
-                required
+                // required
               />
               {fieldErrors.end_date && (
                 <p className="text-admin-error text-xs mt-1">
@@ -608,7 +645,9 @@ function AddTripModal({ handleModalClose }) {
                 </CardContent>
               </Card>
               {fieldErrors.source && (
-                <p className="text-admin-error text-xs mt-1">{fieldErrors.source}</p>
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.source}
+                </p>
               )}
             </div>
 
@@ -655,7 +694,7 @@ function AddTripModal({ handleModalClose }) {
                 onChange={handleChange}
                 rows={4}
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                required
+                // required
               />
               {fieldErrors.description && (
                 <p className="text-admin-error text-xs mt-1">
@@ -704,7 +743,9 @@ function AddTripModal({ handleModalClose }) {
                 ))}
               </div>
               {fieldErrors.images && (
-                <p className="text-admin-error text-xs mt-1">{fieldErrors.images}</p>
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.images}
+                </p>
               )}
             </div>
 
@@ -775,6 +816,11 @@ function AddTripModal({ handleModalClose }) {
                   </button>
                 </div>
               ))}
+              {fieldErrors.exclusions && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.exclusions}
+                </p>
+              )}
             </div>
 
             <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
