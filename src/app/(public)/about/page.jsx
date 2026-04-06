@@ -10,11 +10,7 @@ import {
   Target,
   Shield,
   Search,
-  GitCompare,
 } from "lucide-react";
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 const values = [
   {
@@ -68,7 +64,7 @@ const milestones = [
   {
     year: "2026",
     title: "First 10 Partners",
-    description: "Onboarded our first 10 verified community trip providers.",
+    description: "Onboarded 10 verified community trip providers.",
   },
   // {
   //   year: "2023",

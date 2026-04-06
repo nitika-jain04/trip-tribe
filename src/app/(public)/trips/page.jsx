@@ -180,46 +180,123 @@ function TripsContent() {
   );
 
   // Get trip types with caching
-  const getTripTypes = useCallback(async () => {
-    try {
-      const cachedTypes = sessionStorage.getItem("trip_types_cache");
-      const cachedTimestamp = sessionStorage.getItem("trip_types_timestamp");
-      const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache for types
+  // const getTripTypes = useCallback(async () => {
+  //   try {
+  //     const cachedTypes = sessionStorage.getItem("trip_types_cache");
+  //     const cachedTimestamp = sessionStorage.getItem("trip_types_timestamp");
+  //     const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache for types
 
-      if (
-        cachedTypes &&
-        cachedTimestamp &&
-        Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION
-      ) {
-        setTripTypesData(JSON.parse(cachedTypes));
-        return;
+  //     if (
+  //       cachedTypes &&
+  //       cachedTimestamp &&
+  //       Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION
+  //     ) {
+  //       setTripTypesData(JSON.parse(cachedTypes));
+  //       return;
+  //     }
+
+  //     const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+
+  //     const data = await res.json();
+  //     if (!res.ok) {
+  //       toast({
+  //         title: "Error",
+  //         description: data?.error?.message || "Failed to fetch trip types",
+  //         variant: "destructive",
+  //       });
+  //       return;
+  //     }
+  //     const types = data?.result?.trip_types || [];
+  //     const formatted = ["All Types", ...types.map((t) => t.name)];
+
+  //     setTripTypesData(formatted);
+  //     sessionStorage.setItem("trip_types_cache", JSON.stringify(formatted));
+  //     sessionStorage.setItem("trip_types_timestamp", Date.now().toString());
+  //   } catch (err) {
+  //     console.error("Failed to fetch trip types", err);
+  //   }
+  // }, [toast]);
+
+  const getTripTypes = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        const cachedTypes = sessionStorage.getItem("trip_types_cache");
+        const cachedTimestamp = sessionStorage.getItem("trip_types_timestamp");
+        const CACHE_DURATION = 30 * 60 * 1000;
+
+        // ✅ Use cache if valid AND not forcing refresh
+        if (
+          !forceRefresh &&
+          cachedTypes &&
+          cachedTimestamp &&
+          Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION
+        ) {
+          setTripTypesData(JSON.parse(cachedTypes));
+          return;
+        }
+
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          toast({
+            title: "Error",
+            description: data?.error?.message || "Failed to fetch trip types",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const types = data?.result?.trip_types || [];
+        const formatted = ["All Types", ...types.map((t) => t.name)];
+
+        setTripTypesData(formatted);
+
+        // ✅ Update cache
+        sessionStorage.setItem("trip_types_cache", JSON.stringify(formatted));
+        sessionStorage.setItem("trip_types_timestamp", Date.now().toString());
+      } catch (err) {
+        console.error("Failed to fetch trip types", err);
       }
+    },
+    [toast],
+  );
 
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+  const lastFetchRef = useRef(0);
 
-      const data = await res.json();
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data?.error?.message || "Failed to fetch trip types",
-          variant: "destructive",
-        });
-        return;
+  useEffect(() => {
+    const handleFocus = () => {
+      const now = Date.now();
+
+      // only refresh if last fetch was > 2 minutes ago
+      if (now - lastFetchRef.current > 2 * 60 * 1000) {
+        getTripTypes(true);
+        lastFetchRef.current = now;
       }
-      const types = data?.result?.trip_types || [];
-      const formatted = ["All Types", ...types.map((t) => t.name)];
+    };
 
-      setTripTypesData(formatted);
-      sessionStorage.setItem("trip_types_cache", JSON.stringify(formatted));
-      sessionStorage.setItem("trip_types_timestamp", Date.now().toString());
-    } catch (err) {
-      console.error("Failed to fetch trip types", err);
-    }
-  }, [toast]);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [getTripTypes]);
 
   useEffect(() => {
     fetchTripsAndUpdateCache(true);
   }, [fetchTripsAndUpdateCache]);
+
+  useEffect(() => {
+    const handleFocus = () => {
+      getTripTypes(true); // ✅ force refresh when user returns
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [getTripTypes]);
 
   useEffect(() => {
     if (tripTypesData.length === 1) {

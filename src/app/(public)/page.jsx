@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -85,8 +85,8 @@ export default function Page() {
   const [searchDestination, setSearchDestination] = useState("");
   const [searchDates, setSearchDates] = useState("");
   const [operators, setOperators] = useState([]);
-  const [trips, setTrips] = useState([]);
-  const [locations, setLocations] = useState([]);
+  const [rawTrips, setRawTrips] = useState([]);
+  const [rawLocationsGroups, setRawLocationsGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [error, setError] = useState(null);
@@ -122,38 +122,29 @@ export default function Page() {
     // If any fetch failed, just stop and return
     if (!locationsData || !operatorsData || !tripsData) {
       setError("Failed to load homepage data");
-      setLocations([]);
+      setRawLocationsGroups([]);
       setOperators([]);
-      setTrips([]);
+      setRawTrips([]);
       setLoading(false);
       return;
     }
 
-    // Process locations
-    const processedLocations = processLocations(locationsData, locationMap);
-
-    // Process operators
+    // Process operators (since it doesn't depend on locationMap for initial display)
     const processedOperators = operatorsData.success
       ? operatorsData.result?.operators || []
       : [];
 
-    // Process trips with enrichment
-    const processedTrips = tripsData.success
-      ? enrichTripsWithDetails(tripsData.result?.trips || [], locationMap)
-      : [];
-
-    // Update state
-    setLocations(processedLocations);
+    // Update state with raw data
+    setRawLocationsGroups(
+      locationsData.success ? locationsData.result?.groups || [] : [],
+    );
     setOperators(processedOperators);
-    setTrips(processedTrips);
+    setRawTrips(tripsData.success ? tripsData.result?.trips || [] : []);
     setLoading(false);
   };
 
-  // Process locations helper function
-  const processLocations = (locationsData, locationMap) => {
-    if (!locationsData.success) return [];
-
-    const groups = locationsData.result?.groups || [];
+  const processLocations = (groups, locationMap) => {
+    if (!groups || !groups.length) return [];
 
     return groups.map((group) => {
       const firstTrip = group.trips?.[0];
@@ -201,6 +192,15 @@ export default function Page() {
       };
     });
   };
+
+  // Memoized processed data
+  const locations = useMemo(() => {
+    return processLocations(rawLocationsGroups, locationMap);
+  }, [rawLocationsGroups, locationMap]);
+
+  const trips = useMemo(() => {
+    return enrichTripsWithDetails(rawTrips, locationMap);
+  }, [rawTrips, locationMap]);
 
   const handleSearch = (e) => {
     e.preventDefault();
