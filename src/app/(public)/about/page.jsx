@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { fetchOperatorsCount } from "@/app/hooks/use-operators-count";
 import { Button } from "@/app/components/ui/button";
 import {
   ArrowRight,
@@ -11,7 +12,9 @@ import {
   Search,
   GitCompare,
 } from "lucide-react";
-import Image from "next/image";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 const values = [
   {
@@ -80,7 +83,9 @@ const milestones = [
   // },
 ];
 
-export default function About() {
+export default async function About() {
+  const operatorCount = await fetchOperatorsCount();
+
   return (
     <>
       {/* Hero Section */}
@@ -142,7 +147,7 @@ export default function About() {
             <div className="relative">
               <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-premium-lg">
                 <img
-                  src="https://images.unsplash.com/photo-1522199710521-72d69614c702?w=800&q=80"
+                  src="/about-community.png"
                   alt="Group travel"
                   className="w-full h-full object-cover"
                 />
@@ -253,10 +258,15 @@ export default function About() {
                   </div>
                   <div className="pb-8">
                     <h3 className="font-display text-heading-sm text-background mb-2">
-                      {milestone.title}
+                      {milestone.title === "First 10 Partners"
+                        ? `${operatorCount}+ Partners`
+                        : milestone.title}
                     </h3>
                     <p className="text-body text-background/70">
-                      {milestone.description}
+                      {milestone.description ===
+                      "Onboarded our first 10 verified community trip providers."
+                        ? `Onboarded our first ${operatorCount} verified community trip providers.`
+                        : milestone.description}
                     </p>
                   </div>
                 </div>
