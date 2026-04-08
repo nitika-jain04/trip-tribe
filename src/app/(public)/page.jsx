@@ -20,6 +20,7 @@ import {
   AlertCircle,
   ImageIcon,
   ChevronDown,
+  Compass,
 } from "lucide-react";
 import { Libre_Baskerville } from "next/font/google";
 import { useToast } from "../hooks/use-toast";
@@ -91,6 +92,7 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
   const [error, setError] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { locationMap } = useLocations();
   const { toast } = useToast();
 
@@ -203,6 +205,13 @@ export default function Page() {
     return enrichTripsWithDetails(rawTrips, locationMap);
   }, [rawTrips, locationMap]);
 
+  const filteredLocations = useMemo(() => {
+    if (!searchDestination) return locations;
+    return locations.filter((loc) =>
+      loc.name.toLowerCase().includes(searchDestination.toLowerCase()),
+    );
+  }, [locations, searchDestination]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
@@ -268,14 +277,75 @@ export default function Page() {
                       placeholder="Where do you want to go?"
                       value={searchDestination}
                       onChange={(e) => setSearchDestination(e.target.value)}
+                      onFocus={() => setShowSuggestions(true)}
+                      onBlur={() => {
+                        // Small delay to allow clicking suggestions before hiding
+                        setTimeout(() => setShowSuggestions(false), 200);
+                      }}
                       className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
-                      list="destinations-list"
                     />
-                    <datalist id="destinations-list">
-                      {locationNames.map((name) => (
-                        <option key={name} value={name} />
-                      ))}
-                    </datalist>
+
+                    {/* Custom Suggestions Dropdown */}
+                    {showSuggestions && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                        {/* "Take me anywhere" Option */}
+                        <button
+                          type="button"
+                          onClick={() => router.push("/trips")}
+                          className="w-full flex items-center gap-4 px-4 py-4 hover:bg-primary/5 transition-colors border-b border-border group"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:shadow-glow transition-all">
+                            <Compass className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+                          </div>
+                          <div className="text-left">
+                            <p className="font-semibold text-foreground">
+                              Take me anywhere
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Explore all curated group trips
+                            </p>
+                          </div>
+                        </button>
+
+                        {/* Location Suggestions */}
+                        <div className="max-h-64 overflow-y-auto">
+                          {filteredLocations.length > 0 ? (
+                            filteredLocations.map((loc) => (
+                              <button
+                                key={loc.id}
+                                type="button"
+                                onClick={() => {
+                                  setSearchDestination(loc.name);
+                                  setShowSuggestions(false);
+                                  // Optionally auto-submit or just focus next input
+                                }}
+                                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-muted transition-colors text-left"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-foreground">
+                                    {loc.name}
+                                  </p>
+                                  {loc.region && (
+                                    <p className="text-xs text-muted-foreground line-clamp-1">
+                                      {loc.region}
+                                    </p>
+                                  )}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-4 py-8 text-center">
+                              <p className="text-sm text-muted-foreground">
+                                No destinations found
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 relative">
                     <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -329,7 +399,7 @@ export default function Page() {
           className="absolute bottom-10 left-1/2 -translate-x-1/2 text-background/60 hover:text-background transition-all duration-300 animate-bounce group cursor-pointer"
           aria-label="Scroll to content"
         >
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2" id="next-section">
             <span className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               Discover More
             </span>
@@ -339,7 +409,7 @@ export default function Page() {
       </section>
 
       {/* Stats Section */}
-      <section id="next-section" className="py-12 bg-white">
+      <section className="py-12 bg-white">
         <div className="container-premium">
           <div className="grid grid-cols-2 justify-center items-center md:px-40">
             {stats.map((stat) => (
