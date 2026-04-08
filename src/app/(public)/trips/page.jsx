@@ -179,44 +179,6 @@ function TripsContent() {
     [groupBy, locationType, search],
   );
 
-  // Get trip types with caching
-  // const getTripTypes = useCallback(async () => {
-  //   try {
-  //     const cachedTypes = sessionStorage.getItem("trip_types_cache");
-  //     const cachedTimestamp = sessionStorage.getItem("trip_types_timestamp");
-  //     const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes cache for types
-
-  //     if (
-  //       cachedTypes &&
-  //       cachedTimestamp &&
-  //       Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION
-  //     ) {
-  //       setTripTypesData(JSON.parse(cachedTypes));
-  //       return;
-  //     }
-
-  //     const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
-
-  //     const data = await res.json();
-  //     if (!res.ok) {
-  //       toast({
-  //         title: "Error",
-  //         description: data?.error?.message || "Failed to fetch trip types",
-  //         variant: "destructive",
-  //       });
-  //       return;
-  //     }
-  //     const types = data?.result?.trip_types || [];
-  //     const formatted = ["All Types", ...types.map((t) => t.name)];
-
-  //     setTripTypesData(formatted);
-  //     sessionStorage.setItem("trip_types_cache", JSON.stringify(formatted));
-  //     sessionStorage.setItem("trip_types_timestamp", Date.now().toString());
-  //   } catch (err) {
-  //     console.error("Failed to fetch trip types", err);
-  //   }
-  // }, [toast]);
-
   const getTripTypes = useCallback(
     async (forceRefresh = false) => {
       try {
@@ -533,7 +495,7 @@ function TripsContent() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {compareList.length > 0 && (
+                  {compareList.length > 1 && (
                     <Button
                       onClick={() => setShowCompare(true)}
                       className="btn-secondary"
@@ -834,7 +796,7 @@ function TripsContent() {
                 <GitCompare className="w-6 h-6" />
               </div>
               <DialogTitle className="font-display text-heading-md text-foreground">
-                Add to Comparison
+                Trip Comparison
               </DialogTitle>
               <p className="text-body-sm text-muted-foreground mt-2">
                 You can compare up to 3 trips side-by-side to find your perfect
@@ -842,27 +804,54 @@ function TripsContent() {
               </p>
             </div>
           </DialogHeader>
-          <div className="p-6 space-y-3">
-            <Button
-              className="w-full btn-primary h-12 text-md"
-              onClick={() => {
-                setInterstitialChoiceMade(true);
-                setShowInterstitial(false);
-                setShowCompare(true);
-              }}
-            >
-              Proceed with Comparison ({compareList.length})
-            </Button>
-            <Button
-              variant="outline"
-              className="w-full h-12 text-md border-border"
-              onClick={() => {
-                setInterstitialChoiceMade(true);
-                setShowInterstitial(false);
-              }}
-            >
-              Select more trips
-            </Button>
+          <div className="p-2 space-y-3">
+            {compareList.length === 1 ? (
+              <>
+                <Button
+                  className="w-full btn-primary h-12 text-md"
+                  onClick={() => {
+                    setInterstitialChoiceMade(true);
+                    setShowInterstitial(false);
+                  }}
+                >
+                  Proceed
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 text-md border-border"
+                  onClick={() => {
+                    setCompareList([]);
+                    setInterstitialChoiceMade(true);
+                    setShowInterstitial(false);
+                  }}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  className="w-full btn-primary h-12 text-md"
+                  onClick={() => {
+                    setInterstitialChoiceMade(true);
+                    setShowInterstitial(false);
+                    setShowCompare(true);
+                  }}
+                >
+                  Compare
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 text-md border-border"
+                  onClick={() => {
+                    setInterstitialChoiceMade(true);
+                    setShowInterstitial(false);
+                  }}
+                >
+                  Select more trips
+                </Button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

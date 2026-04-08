@@ -19,6 +19,7 @@ import {
   Loader2,
   AlertCircle,
   ImageIcon,
+  ChevronDown,
 } from "lucide-react";
 import { Libre_Baskerville } from "next/font/google";
 import { useToast } from "../hooks/use-toast";
@@ -318,11 +319,27 @@ export default function Page() {
           </div>
         </div>
 
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce"></div>
+        <button
+          onClick={() => {
+            const nextSection = document.getElementById("next-section");
+            if (nextSection) {
+              nextSection.scrollIntoView({ behavior: "smooth" });
+            }
+          }}
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-background/60 hover:text-background transition-all duration-300 animate-bounce group cursor-pointer"
+          aria-label="Scroll to content"
+        >
+          <div className="flex flex-col items-center gap-2">
+            <span className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              Discover More
+            </span>
+            <ChevronDown className="w-8 h-8 stroke-[1.5]" />
+          </div>
+        </button>
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-hite">
+      <section id="next-section" className="py-12 bg-white">
         <div className="container-premium">
           <div className="grid grid-cols-2 justify-center items-center md:px-40">
             {stats.map((stat) => (
