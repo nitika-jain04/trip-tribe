@@ -1,5 +1,6 @@
+"use client";
+
 import Link from "next/link";
-import { fetchOperatorsCount } from "@/app/hooks/use-operators-count";
 import { Button } from "@/app/components/ui/button";
 import {
   ArrowRight,
@@ -11,6 +12,10 @@ import {
   Shield,
   Search,
 } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 const values = [
   {
@@ -54,33 +59,52 @@ const team = [
   },
 ];
 
-const milestones = [
-  {
-    year: "2025",
-    title: "Founded",
-    description:
-      "TripTribe was born to solve the fragmented community travel discovery problem.",
-  },
-  {
-    year: "2026",
-    title: "First 10 Partners",
-    description: "Onboarded 10 verified community trip providers.",
-  },
-  // {
-  //   year: "2023",
-  //   title: "10,000 Users",
-  //   description:
-  //     "Crossed the milestone of 10,000 travelers using our platform.",
-  // },
-  // {
-  //   year: "2024",
-  //   title: "Comparison Launch",
-  //   description: "Launched our side-by-side trip comparison feature.",
-  // },
-];
+export default function About() {
+  const [operatorCount, setOperatorCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-export default async function About() {
-  const operatorCount = await fetchOperatorsCount();
+  const milestones = [
+    {
+      year: "2025",
+      title: "Founded",
+      description:
+        "TripTribe was born to solve the fragmented community travel discovery problem.",
+    },
+    {
+      year: "2026",
+      title: operatorCount
+        ? `First ${operatorCount} Partners`
+        : "Growing Partner Network",
+      description: operatorCount
+        ? `Onboarded our first ${operatorCount} verified community trip providers.`
+        : "Onboarding verified community trip providers across India.",
+    },
+  ];
+
+  useEffect(() => {
+    const fetchOperators = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/operators`);
+
+        const data = await res.json();
+
+        if (data.success) {
+          setOperatorCount(data?.result?.pagination?.total);
+        } else {
+          throw new Error(data.error.message || "Failed to fetch operators");
+        }
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOperators();
+  }, []);
 
   return (
     <>
@@ -141,11 +165,11 @@ export default async function About() {
               </div>
             </div>
             <div className="relative">
-              <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-premium-lg">
+              <div className="aspect-4/4 rounded-3xl overflow-hidden shadow-premium-lg">
                 <img
                   src="/about-community.png"
                   alt="Group travel"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-fill"
                 />
               </div>
               {/* <div className="absolute -bottom-6 -left-6 glass rounded-2xl p-6 shadow-premium-md max-w-xs">
@@ -254,15 +278,10 @@ export default async function About() {
                   </div>
                   <div className="pb-8">
                     <h3 className="font-display text-heading-sm text-background mb-2">
-                      {milestone.title === "First 10 Partners"
-                        ? `${operatorCount}+ Partners`
-                        : milestone.title}
+                      {milestone.title}
                     </h3>
                     <p className="text-body text-background/70">
-                      {milestone.description ===
-                      "Onboarded our first 10 verified community trip providers."
-                        ? `Onboarded our first ${operatorCount} verified community trip providers.`
-                        : milestone.description}
+                      {milestone.description}
                     </p>
                   </div>
                 </div>
