@@ -140,6 +140,14 @@ function AddOperatorModal({ handleModalClose }) {
         "Contact person cannot start with a special character.";
     }
 
+    if (!formData.regions || formData.regions.length == 0) {
+      errors.regions = "Enter the operating regions.";
+    }
+
+    if (!formData.description || formData.description.trim().length < 2) {
+      errors.description = "The description must be atleast 25 characters.";
+    }
+
     // Email validation
     if (!formData.email.trim()) {
       errors.email = "Email is required";
@@ -352,7 +360,7 @@ function AddOperatorModal({ handleModalClose }) {
               <Input
                 type="text"
                 name="name"
-                required
+                // required
                 value={formData.name}
                 onChange={handleChange}
                 className="w-full mt-1"
@@ -373,7 +381,7 @@ function AddOperatorModal({ handleModalClose }) {
               <Input
                 type="text"
                 name="contact_name"
-                required
+                // required
                 value={formData.contact_name}
                 onChange={handleChange}
                 className="w-full mt-1"
@@ -392,7 +400,7 @@ function AddOperatorModal({ handleModalClose }) {
               <Input
                 type="email"
                 name="email"
-                required
+                // required
                 value={formData.email}
                 onChange={(e) => {
                   setFormData((prev) => ({
@@ -433,7 +441,7 @@ function AddOperatorModal({ handleModalClose }) {
                     }));
                   }}
                   className="pl-12 text-sm mt-1 w-full"
-                  required
+                  // required
                 />
               </div>
               {fieldErrors.phone_number && (
@@ -449,12 +457,17 @@ function AddOperatorModal({ handleModalClose }) {
               <Input
                 type="text"
                 name="regions"
-                required
+                // required
                 value={formData.regions}
                 onChange={handleChange}
                 className="w-full mt-1"
                 placeholder="North India, Himalayas"
               />
+              {fieldErrors.regions && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.regions}
+                </p>
+              )}
             </div>
 
             {/* Total Trips */}
@@ -640,13 +653,19 @@ function AddOperatorModal({ handleModalClose }) {
               <label className="text-sm text-gray-600">Description *</label>
               <textarea
                 name="description"
-                required
+                // required
                 value={formData.description}
                 onChange={handleChange}
                 rows="4"
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
                 placeholder="Describe the operator's services, specialties, and experience..."
               ></textarea>
+
+              {fieldErrors.description && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.description}
+                </p>
+              )}
             </div>
 
             {/* Modal Footer */}
