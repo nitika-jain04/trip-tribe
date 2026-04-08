@@ -135,6 +135,8 @@ export default function TripEditPage() {
   // Basic field change
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -143,6 +145,8 @@ export default function TripEditPage() {
     const updated = [...formData[field]];
     updated[index] = value;
     setFormData((prev) => ({ ...prev, [field]: updated }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -165,6 +169,7 @@ export default function TripEditPage() {
     const updated = [...formData.itinerary];
     updated[dayIndex].activities[activityIndex] = value;
     setFormData((prev) => ({ ...prev, itinerary: updated }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -285,6 +290,10 @@ export default function TripEditPage() {
 
     if (!formData.price || Number(formData.price) <= 0) {
       newErrors.price = "Valid price is required";
+    }
+
+    if (!formData.images || formData.images.length == 0) {
+      newErrors.images = "Atleast one image is required";
     }
 
     if (!formData.total_seats || Number(formData.total_seats) <= 0) {
@@ -728,6 +737,9 @@ export default function TripEditPage() {
                 )}
               </div>
             </div>
+            {errors.images && (
+              <p className="text-xs text-admin-error mt-1">{errors.images}</p>
+            )}
           </section>
 
           {/* INCLUSIONS */}

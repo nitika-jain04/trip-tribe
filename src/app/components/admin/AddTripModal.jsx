@@ -113,9 +113,11 @@ function AddTripModal({ handleModalClose }) {
         [location]: { ...p[location], [field]: value },
       }));
       setFieldErrors((p) => ({ ...p, [location]: "" }));
+      if (error) setError("");
     } else {
       setFormData((p) => ({ ...p, [name]: value }));
       setFieldErrors((p) => ({ ...p, [name]: "" }));
+      if (error) setError("");
     }
   };
 
@@ -222,6 +224,8 @@ function AddTripModal({ handleModalClose }) {
     const arr = [...formData[key]];
     arr[index] = value;
     setFormData((p) => ({ ...p, [key]: arr }));
+    setFieldErrors((p) => ({ ...p, [key]: "" }));
+    if (error) setError("");
   };
 
   const addListItem = (key) =>
@@ -269,6 +273,7 @@ function AddTripModal({ handleModalClose }) {
     it[dIdx].activities[aIdx] = val;
     setFormData((p) => ({ ...p, itinerary: it }));
     setFieldErrors((p) => ({ ...p, itinerary: "" }));
+    if (error) setError("");
   };
 
   const scrollToFirstError = () => {
@@ -340,13 +345,13 @@ function AddTripModal({ handleModalClose }) {
       errors.images = "At least one trip image is required.";
     }
 
-    if (!formData.inclusions || formData.inclusions.every((i) => !i.trim())) {
-      errors.inclusions = "At least one inclusion is required.";
-    }
+    // if (!formData.inclusions || formData.inclusions.every((i) => !i.trim())) {
+    //   errors.inclusions = "At least one inclusion is required.";
+    // }
 
-    if (!formData.exclusions || formData.exclusions.every((i) => !i.trim())) {
-      errors.exclusions = "At least one exclusion is required.";
-    }
+    // if (!formData.exclusions || formData.exclusions.every((i) => !i.trim())) {
+    //   errors.exclusions = "At least one exclusion is required.";
+    // }
 
     const hasIncompleteItinerary = formData.itinerary.some((day) =>
       day.activities.every((a) => !a.trim()),
@@ -533,9 +538,11 @@ function AddTripModal({ handleModalClose }) {
               </label>
               <Select
                 value={formData.type_id}
-                onValueChange={(v) =>
-                  setFormData((p) => ({ ...p, type_id: v }))
-                }
+                onValueChange={(v) => {
+                  setFormData((p) => ({ ...p, type_id: v }));
+                  setFieldErrors((p) => ({ ...p, type_id: "" }));
+                  if (error) setError("");
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Trip Type" />

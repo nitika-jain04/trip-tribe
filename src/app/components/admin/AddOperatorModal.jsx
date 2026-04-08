@@ -53,6 +53,7 @@ function AddOperatorModal({ handleModalClose }) {
     }
 
     setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    if (error) setError("");
   }
 
   async function handleImageUpload(e) {
@@ -235,12 +236,14 @@ function AddOperatorModal({ handleModalClose }) {
       // status: formData.status,
 
       total_trips:
-        formData.total_trips !== "" ? Number(formData.total_trips) : undefined,
+        formData.total_trips !== "" && formData.total_trips !== null
+          ? Number(formData.total_trips)
+          : 0,
 
       trips_per_year:
-        formData.trips_per_year !== ""
+        formData.trips_per_year !== "" && formData.trips_per_year !== null
           ? Number(formData.trips_per_year)
-          : undefined,
+          : 0,
 
       social_links: {
         instagram: formData.social_links.instagram || undefined,
@@ -407,6 +410,8 @@ function AddOperatorModal({ handleModalClose }) {
                     ...prev,
                     email: e.target.value.toLowerCase(),
                   }));
+                  setFieldErrors((prev) => ({ ...prev, email: "" }));
+                  if (error) setError("");
                 }}
                 className="w-full mt-1"
                 placeholder="hello@wanders.com"
@@ -439,6 +444,8 @@ function AddOperatorModal({ handleModalClose }) {
                       ...prev,
                       phone_number: digits,
                     }));
+                    setFieldErrors((prev) => ({ ...prev, phone_number: "" }));
+                    if (error) setError("");
                   }}
                   className="pl-12 text-sm mt-1 w-full"
                   // required
