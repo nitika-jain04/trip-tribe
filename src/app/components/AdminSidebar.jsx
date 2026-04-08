@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, LogOut, Logs } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  LayoutDashboard,
+  LogOut,
+  Logs,
+} from "lucide-react";
 import { MdOutlineDashboard } from "react-icons/md";
 import { GoPeople } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
@@ -133,7 +139,7 @@ export default function AdminSidebar({
       <nav className="flex flex-col gap-2 px-3">
         <SidebarLink
           href="/admin/dashboard"
-          icon={<GoPeople size={22} />}
+          icon={<LayoutDashboard size={22} />}
           label="Dashboard"
           collapsed={sidebarCollapsed}
           isActive={pathname === "/admin/dashboard"}
