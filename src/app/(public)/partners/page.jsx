@@ -413,8 +413,8 @@ export default function Partner() {
                 Partner Application
               </h2>
               <p className="text-body text-muted-foreground">
-                Fill out the form below and our team will get back to you within
-                48 hours.
+                Fill out the form below and our team will get back to you
+                shortly.
               </p>
             </div>
 
@@ -428,8 +428,7 @@ export default function Partner() {
                 </h3>
                 <p className="text-body text-muted-foreground mb-6">
                   Thank you for your interest in partnering with TripTribe. Our
-                  team will review your application and reach out within 48
-                  hours.
+                  team will review your application and reach out soon.
                 </p>
                 <Button
                   onClick={() => setIsSubmitted(false)}

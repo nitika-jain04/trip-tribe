@@ -681,7 +681,7 @@ export default function Page() {
               {operators.slice(0, 10).map((provider) => (
                 <div
                   key={provider.id}
-                  className="flex items-center gap-3 px-6 py-3 rounded-full bg-muted/50"
+                  className="flex items-center gap-3 px-6 py-3 rounded-full bg-muted/50 hover:bg-gray-100"
                 >
                   {/* <Shield className="w-5 h-5 text-success" /> */}
                   {provider?.logo_url ? (
