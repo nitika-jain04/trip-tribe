@@ -23,6 +23,7 @@ import {
   TabsTrigger,
 } from "@/app/components/ui/tabs";
 import useLocations from "@/app/hooks/use-locations";
+import { Button } from "@/app/components/ui/button";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -35,6 +36,46 @@ function TripPage() {
   const [tripReviews, setTripReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    phone: "",
+    remark: "",
+  });
+
+  const handleSubmit = () => {
+    if (!formData.name || !formData.phone) {
+      alert("Please fill required fields");
+      return;
+    }
+
+    const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
+
+    const message = `
+      Hi, I'm ${formData.name} 👋
+
+      I’m interested in the trip:
+
+      🏔️ Trip: ${trip.name}
+      📅 Start Date: ${startDate}
+
+      📞 My Phone: ${formData.phone}
+
+      ${formData.remark ? `📝 Remark: ${formData.remark}` : ""}
+
+      Please share more details. Thank you!
+      `;
+
+    const whatsappNumber = "91XXXXXXXXXX";
+
+    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      message,
+    )}`;
+
+    window.open(url, "_blank");
+
+    setShowForm(false);
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -204,7 +245,8 @@ function TripPage() {
 
               <div className="flex items-center gap-2 text-body text-muted-foreground mb-4">
                 <MapPin className="w-5 h-5" />
-                {locationMap[trip.destination_id]?.name || "Loading..."}, {locationMap[trip.destination_id]?.region || ""}
+                {locationMap[trip.destination_id]?.name || "Loading..."},{" "}
+                {locationMap[trip.destination_id]?.region || ""}
               </div>
 
               {/* <div className="flex items-center gap-4 mb-6">
@@ -311,6 +353,12 @@ function TripPage() {
                 <p className="text-body-sm text-muted-foreground text-center mt-3">
                   Free cancellation up to 7 days before
                 </p> */}
+                {/* <Button
+                  className="btn-primary w-full text-body py-6"
+                  onClick={() => setShowForm(true)}
+                >
+                  Book Now
+                </Button> */}
               </div>
             </div>
           </div>
@@ -387,15 +435,21 @@ function TripPage() {
                     <dl className="space-y-3 text-body-sm">
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Source</dt>
-                        <dd className="font-medium">{locationMap[trip.source_id]?.name || "-"}</dd>
+                        <dd className="font-medium">
+                          {locationMap[trip.source_id]?.name || "-"}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Destination</dt>
-                        <dd className="font-medium">{locationMap[trip.destination_id]?.name || "-"}</dd>
+                        <dd className="font-medium">
+                          {locationMap[trip.destination_id]?.name || "-"}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Region</dt>
-                        <dd className="font-medium">{locationMap[trip.destination_id]?.region || "-"}</dd>
+                        <dd className="font-medium">
+                          {locationMap[trip.destination_id]?.region || "-"}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Duration</dt>
@@ -609,6 +663,55 @@ function TripPage() {
           </Tabs>
         </div>
       </section>
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md relative">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowForm(false)}
+              className="absolute top-3 right-3"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-lg font-semibold mb-4">Enter your details</h3>
+
+            <input
+              type="text"
+              placeholder="Name"
+              className="w-full border rounded-md p-2 mb-3"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+            />
+
+            <input
+              type="tel"
+              placeholder="Phone Number"
+              className="w-full border rounded-md p-2 mb-3"
+              value={formData.phone}
+              onChange={(e) =>
+                setFormData({ ...formData, phone: e.target.value })
+              }
+            />
+
+            <textarea
+              placeholder="Remarks (optional)"
+              className="w-full border rounded-md p-2 mb-4"
+              value={formData.remark}
+              onChange={(e) =>
+                setFormData({ ...formData, remark: e.target.value })
+              }
+            />
+
+            <Button onClick={handleSubmit} className="w-full">
+              Continue to WhatsApp
+            </Button>
+          </div>
+        </div>
+      )}
     </Suspense>
   );
 }

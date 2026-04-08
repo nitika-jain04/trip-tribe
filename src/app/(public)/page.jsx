@@ -268,9 +268,9 @@ export default function Page() {
               onSubmit={handleSearch}
               className="max-w-3xl mx-auto animate-fade-up delay-150"
             >
-              <div className="bg-background/95 backdrop-blur-lg rounded-2xl p-3 shadow-2xl">
+              <div className="bg-background/95 backdrop-blur-lg rounded-2xl p-3 shadow-2xl relative z-[1000]">
                 <div className="flex flex-col md:flex-row gap-1">
-                  <div className="flex-1 relative">
+                  <div className="flex-1 relative z-[999]">
                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       type="text"
@@ -279,69 +279,76 @@ export default function Page() {
                       onChange={(e) => setSearchDestination(e.target.value)}
                       onFocus={() => setShowSuggestions(true)}
                       onBlur={() => {
-                        // Small delay to allow clicking suggestions before hiding
                         setTimeout(() => setShowSuggestions(false), 200);
                       }}
                       className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
-
                     {/* Custom Suggestions Dropdown */}
-                    {showSuggestions && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {showSuggestions && locations.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 border border-border rounded-xl shadow-2xl overflow-hidden z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
                         {/* "Take me anywhere" Option */}
                         <button
                           type="button"
                           onClick={() => router.push("/trips")}
-                          className="w-full flex items-center gap-4 px-4 py-4 hover:bg-primary/5 transition-colors border-b border-border group"
+                          // className="w-full flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-primary/10 transition-all border-b border-border group"
+                          className="w-full flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/60 transition-all text-left group"
                         >
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:shadow-glow transition-all">
-                            <Compass className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+                          {/* <div
+                            className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center 
+group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
+                          >
+                            <Compass className="w-4 h-4 text-primary group-hover:text-primary-foreground transition-colors" />
+                          </div> */}
+                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
+                            <Compass className="text-primary" size={15} />
                           </div>
                           <div className="text-left">
-                            <p className="font-semibold text-foreground">
+                            <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">
                               Take me anywhere
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            {/* <p className="text-xs text-muted-foreground">
                               Explore all curated group trips
-                            </p>
+                            </p> */}
                           </div>
                         </button>
-
                         {/* Location Suggestions */}
-                        <div className="max-h-64 overflow-y-auto">
-                          {filteredLocations.length > 0 ? (
-                            filteredLocations.map((loc) => (
-                              <button
-                                key={loc.id}
-                                type="button"
-                                onClick={() => {
-                                  setSearchDestination(loc.name);
-                                  setShowSuggestions(false);
-                                  // Optionally auto-submit or just focus next input
-                                }}
-                                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-muted transition-colors text-left"
-                              >
-                                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                                  <MapPin className="w-4 h-4 text-muted-foreground" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-medium text-foreground">
-                                    {loc.name}
-                                  </p>
-                                  {loc.region && (
-                                    <p className="text-xs text-muted-foreground line-clamp-1">
-                                      {loc.region}
+                        <div className="relative">
+                          <div className="max-h-33 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50">
+                            {filteredLocations.length > 0 ? (
+                              filteredLocations.map((loc) => (
+                                <button
+                                  key={loc.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSearchDestination(loc.name);
+                                    setShowSuggestions(false);
+                                  }}
+                                  className="w-full flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/60 transition-all text-left group"
+                                >
+                                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
+                                    <MapPin
+                                      className="text-primary"
+                                      size={15}
+                                    />
+                                  </div>
+                                  <div>
+                                    <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">
+                                      {loc.name}
                                     </p>
-                                  )}
-                                </div>
-                              </button>
-                            ))
-                          ) : (
-                            <div className="px-4 py-8 text-center">
-                              <p className="text-sm text-muted-foreground">
-                                No destinations found
-                              </p>
-                            </div>
+                                  </div>
+                                </button>
+                              ))
+                            ) : (
+                              <div className="px-4 py-8 text-center">
+                                <p className="text-sm text-muted-foreground">
+                                  No destinations found
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          {/* Scroll fade indicator */}
+                          {filteredLocations.length > 4 && (
+                            <div className="absolute bottom-0 left-0 right-0 h-8 bg-linear-to-t from-background to-transparent pointer-events-none rounded-b-xl" />
                           )}
                         </div>
                       </div>
@@ -372,7 +379,9 @@ export default function Page() {
               </div>
             </form>
 
-            <div className="flex flex-wrap items-center gap-5 md:gap-6 justify-center mt-8 animate-fade-up delay-200">
+            <div
+              className={`flex flex-wrap items-center gap-5 md:gap-6 justify-center mt-8 animate-fade-up delay-200 transition-opacity duration-200 relative -z-10 ${showSuggestions ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+            >
               <div className="flex items-center gap-2 text-body-sm text-background/80">
                 <CheckCircle2 className="w-5 h-5 text-success" /> Verified
                 Providers

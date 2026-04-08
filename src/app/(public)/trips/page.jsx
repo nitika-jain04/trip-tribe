@@ -686,19 +686,20 @@ function TripsContent() {
           if (!open) setCompareList([]);
         }}
       >
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl w-[calc(90%-2rem)] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
-            <DialogTitle className="font-display text-heading-lg">
+            <DialogTitle className="font-display text-heading-md sm:text-heading-lg">
               Compare Trips
             </DialogTitle>
           </DialogHeader>
           {compareTrips.length > 0 && (
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <div
-                className="grid gap-4"
-                style={{
-                  gridTemplateColumns: `repeat(${compareTrips.length}, 1fr)`,
-                }}
+                className={`grid grid-cols-1 gap-4 ${
+                  compareTrips.length === 3
+                    ? "sm:grid-cols-2 md:grid-cols-3"
+                    : "sm:grid-cols-2"
+                }`}
               >
                 {compareTrips.map((trip) => (
                   <div
@@ -708,17 +709,17 @@ function TripsContent() {
                     <img
                       src={trip.image}
                       alt={trip.name}
-                      className="w-full h-60 object-fill"
+                      className="w-full h-40 sm:h-48 md:h-60 object-cover"
                     />
-                    <div className="p-4">
-                      <h4 className="font-medium text-foreground mb-1">
+                    <div className="p-3 sm:p-4">
+                      <h4 className="font-medium text-foreground mb-1 text-sm sm:text-base">
                         {trip.name}
                       </h4>
-                      <p className="text-body-sm text-muted-foreground mb-4">
+                      <p className="text-body-sm text-muted-foreground mb-3 sm:mb-4">
                         {trip.provider}
                       </p>
 
-                      <div className="space-y-1 text-body-sm">
+                      <div className="space-y-1.5 text-body-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Price</span>
                           <span className="font-semibold text-primary">
@@ -737,13 +738,6 @@ function TripsContent() {
                           </span>
                           <span>{trip.groupSize}</span>
                         </div>
-                        {/* <div className="flex justify-between">
-                          <span className="text-muted-foreground">Rating</span>
-                          <span className="flex items-center gap-1">
-                            <Star className="w-4 h-4 fill-accent text-accent" />
-                            {trip.rating}
-                          </span>
-                        </div> */}
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
                             Difficulty
@@ -752,7 +746,7 @@ function TripsContent() {
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-4 border-t border-border">
+                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
                         <p className="text-body-sm font-medium mb-2">
                           Inclusions:
                         </p>
@@ -766,7 +760,10 @@ function TripsContent() {
                         </ul>
                       </div>
 
-                      <Link href={`/trip/${trip.id}`} className="block mt-4">
+                      <Link
+                        href={`/trip/${trip.id}`}
+                        className="block mt-3 sm:mt-4"
+                      >
                         <Button className="btn-primary w-full">
                           View Trip
                         </Button>
@@ -789,7 +786,7 @@ function TripsContent() {
           }
         }}
       >
-        <DialogContent className="max-w-sm p-0 overflow-hidden rounded-2xl">
+        <DialogContent className="max-w-sm w-[calc(90%-2rem)] p-0 overflow-hidden rounded-2xl">
           <DialogHeader className="p-0">
             <div className="bg-primary/5 p-6 border-b border-primary/10">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 text-primary">
