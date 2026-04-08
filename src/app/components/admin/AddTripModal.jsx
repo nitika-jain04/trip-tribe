@@ -345,19 +345,19 @@ function AddTripModal({ handleModalClose }) {
       errors.images = "At least one trip image is required.";
     }
 
-    // if (!formData.inclusions || formData.inclusions.every((i) => !i.trim())) {
-    //   errors.inclusions = "At least one inclusion is required.";
-    // }
+    if (!formData.inclusions || formData.inclusions.some((i) => !i.trim())) {
+      errors.inclusions = "Please fill all inclusion fields or remove empty ones.";
+    }
 
-    // if (!formData.exclusions || formData.exclusions.every((i) => !i.trim())) {
-    //   errors.exclusions = "At least one exclusion is required.";
-    // }
+    if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
+      errors.exclusions = "Please fill all exclusion fields or remove empty ones.";
+    }
 
-    const hasIncompleteItinerary = formData.itinerary.some((day) =>
-      day.activities.every((a) => !a.trim()),
+    const hasIncompleteItinerary = formData.itinerary.some(
+      (day) => !day.activities || day.activities.some((a) => !a.trim())
     );
     if (hasIncompleteItinerary) {
-      errors.itinerary = "Please complete all itinerary days.";
+      errors.itinerary = "Please complete all itinerary days or remove empty activities.";
     }
 
     setFieldErrors(errors);

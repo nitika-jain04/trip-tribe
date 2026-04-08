@@ -8,7 +8,6 @@ import {
   LogOut,
   Logs,
 } from "lucide-react";
-import { MdOutlineDashboard } from "react-icons/md";
 import { GoPeople } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
 import { GrLocation } from "react-icons/gr";

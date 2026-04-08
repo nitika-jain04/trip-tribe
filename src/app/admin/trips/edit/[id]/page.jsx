@@ -328,6 +328,21 @@ export default function TripEditPage() {
       newErrors.description = "Description is required";
     }
 
+    if (!formData.inclusions || formData.inclusions.some((i) => !i.trim())) {
+      newErrors.inclusions = "Please fill all inclusion fields or remove empty ones.";
+    }
+
+    if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
+      newErrors.exclusions = "Please fill all exclusion fields or remove empty ones.";
+    }
+
+    const hasIncompleteItinerary = formData.itinerary.some(
+      (day) => !day.activities || day.activities.some((a) => !a.trim())
+    );
+    if (hasIncompleteItinerary) {
+      newErrors.itinerary = "Please complete all itinerary days or remove empty activities.";
+    }
+
     setErrors(newErrors);
     return newErrors;
   };
@@ -779,6 +794,11 @@ export default function TripEditPage() {
                 Add Inclusion
               </button>
             </div>
+            {errors.inclusions && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.inclusions}
+              </p>
+            )}
           </section>
 
           {/* EXCLUSIONS */}
@@ -818,6 +838,11 @@ export default function TripEditPage() {
                 Add Exclusion
               </button>
             </div>
+            {errors.exclusions && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.exclusions}
+              </p>
+            )}
           </section>
 
           {/* ITINERARY */}
@@ -926,6 +951,11 @@ export default function TripEditPage() {
                 </div>
               )}
             </div>
+            {errors.itinerary && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.itinerary}
+              </p>
+            )}
           </section>
 
           {/* SUBMIT */}
