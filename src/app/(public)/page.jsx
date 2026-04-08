@@ -34,10 +34,7 @@ const baskerville = Libre_Baskerville({
   subsets: ["latin"],
 });
 
-const stats = [
-  { value: "20+", label: "Curated Trips" },
-  { value: "10+", label: "Verified Providers" },
-];
+
 
 const features = [
   {
@@ -87,7 +84,9 @@ export default function Page() {
   const [searchDestination, setSearchDestination] = useState("");
   const [searchDates, setSearchDates] = useState("");
   const [operators, setOperators] = useState([]);
+  const [totalOperators, setTotalOperators] = useState(0);
   const [rawTrips, setRawTrips] = useState([]);
+  const [totalTrips, setTotalTrips] = useState(0);
   const [rawLocationsGroups, setRawLocationsGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
@@ -127,7 +126,9 @@ export default function Page() {
       setError("Failed to load homepage data");
       setRawLocationsGroups([]);
       setOperators([]);
+      setTotalOperators(0);
       setRawTrips([]);
+      setTotalTrips(0);
       setLoading(false);
       return;
     }
@@ -142,7 +143,10 @@ export default function Page() {
       locationsData.success ? locationsData.result?.groups || [] : [],
     );
     setOperators(processedOperators);
-    setRawTrips(tripsData.success ? tripsData.result?.trips || [] : []);
+    setTotalOperators(operatorsData.success ? operatorsData.result?.pagination?.total || processedOperators.length : 0);
+    const loadedTrips = tripsData.success ? tripsData.result?.trips || [] : [];
+    setRawTrips(loadedTrips);
+    setTotalTrips(tripsData.success ? tripsData.result?.pagination?.total || loadedTrips.length : 0);
     setLoading(false);
   };
 
@@ -421,21 +425,22 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
       <section className="py-12 bg-white">
         <div className="container-premium">
           <div className="grid grid-cols-2 justify-center items-center md:px-40">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="flex flex-col items-center justify-center text-center"
-              >
-                <p
-                  className={`text-display text-primary ${baskerville.className}`}
-                >
-                  {operators?.length}
-                </p>
-                <p className="text-body-sm text-muted-foreground">
-                  {stat.label}
-                </p>
-              </div>
-            ))}
+            <div className="flex flex-col items-center justify-center text-center">
+              <p className={`text-display text-primary ${baskerville.className}`}>
+                {totalTrips}+
+              </p>
+              <p className="text-body-sm text-muted-foreground">
+                Curated Trips
+              </p>
+            </div>
+            <div className="flex flex-col items-center justify-center text-center">
+              <p className={`text-display text-primary ${baskerville.className}`}>
+                {totalOperators}+
+              </p>
+              <p className="text-body-sm text-muted-foreground">
+                Verified Providers
+              </p>
+            </div>
           </div>
         </div>
       </section>
