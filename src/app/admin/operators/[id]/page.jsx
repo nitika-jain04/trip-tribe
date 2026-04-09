@@ -160,7 +160,7 @@ export default function OperatorDetail() {
 
       {/* Header Card */}
       <div className="bg-white sm:mt-3 rounded-lg shadow-sm border p-4 sm:px-6 sm:py-4 flex flex-col md:flex-row gap-4 sm:gap-6 items-start">
-        <div className="flex justify-center items-center w-50">
+        <div className="flex justify-center items-center w-full">
           {operator.logo_url ? (
             <Image
               height={200}

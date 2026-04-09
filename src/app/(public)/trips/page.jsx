@@ -44,6 +44,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/app/components/ui/dialog";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/app/components/ui/pagination";
 import { useToast } from "@/app/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
@@ -71,6 +80,15 @@ function TripsContent() {
   const [tripTypesData, setTripTypesData] = useState(["All Types"]);
   const { toast } = useToast();
   const router = useRouter();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
+  const prevSearchRef = useRef(search);
+
+  if (prevSearchRef.current !== search) {
+    setCurrentPage(1);
+    prevSearchRef.current = search;
+  }
 
   // Track if data is already fetching
   const isFetchingRef = useRef(false);
@@ -109,14 +127,20 @@ function TripsContent() {
           params.set("group_by", groupBy || "location");
           if (locationType) params.set("location_type", locationType);
           params.set("search", search);
-        } else {
-          params.set("page", 1);
-          params.set("limit", 10);
         }
+        params.set("page", currentPage);
+        params.set("limit", 10);
+        
         url += `?${params.toString()}`;
         const res = await fetch(url);
         const data = await res.json();
         if (!data.success) return;
+
+        if (data.result?.pagination) {
+          setPagination(data.result.pagination);
+        } else {
+          setPagination({ page: 1, limit: 10, total: 0, pages: 1 });
+        }
 
         let rawTrips = [];
         if (search && (groupBy || "location") === "location") {
@@ -176,7 +200,7 @@ function TripsContent() {
         isFetchingRef.current = false;
       }
     },
-    [groupBy, locationType, search],
+    [groupBy, locationType, search, currentPage],
   );
 
   const getTripTypes = useCallback(
@@ -523,7 +547,7 @@ function TripsContent() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mt-5">
+              <div className="grid md:grid-cols-2 gap-6 mt-5 mb-8">
                 {!loadingTrips && filteredTrips.length > 0 ? (
                   filteredTrips.map((trip) => (
                     <div
@@ -666,6 +690,80 @@ function TripsContent() {
                   </div>
                 ) : null}
               </div>
+
+              {!loadingTrips && pagination.pages > 1 && filteredTrips.length > 0 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage > 1) {
+                            setCurrentPage(currentPage - 1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                        }}
+                        className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                    
+                    {[...Array(pagination.pages)].map((_, i) => {
+                      const page = i + 1;
+                      
+                      // Show logic: first, last, current, adjacent
+                      const showLeftEllipsis = page === 2 && currentPage > 3;
+                      const showRightEllipsis = page === pagination.pages - 1 && currentPage < pagination.pages - 2;
+                      
+                      if (showLeftEllipsis || showRightEllipsis) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        );
+                      }
+                      
+                      if (
+                        page === 1 || 
+                        page === pagination.pages || 
+                        Math.abs(currentPage - page) <= 1
+                      ) {
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink 
+                              href="#"
+                              isActive={page === currentPage}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setCurrentPage(page);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      }
+                      
+                      return null;
+                    })}
+
+                    <PaginationItem>
+                      <PaginationNext 
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (currentPage < pagination.pages) {
+                            setCurrentPage(currentPage + 1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }
+                        }}
+                        className={currentPage >= pagination.pages ? "pointer-events-none opacity-50" : ""}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
 
               {loadingTrips && (
                 <div className="grid md:grid-cols-2 gap-6">
