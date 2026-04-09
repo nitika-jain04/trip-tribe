@@ -34,8 +34,6 @@ const baskerville = Libre_Baskerville({
   subsets: ["latin"],
 });
 
-
-
 const features = [
   {
     icon: Search,
@@ -143,10 +141,18 @@ export default function Page() {
       locationsData.success ? locationsData.result?.groups || [] : [],
     );
     setOperators(processedOperators);
-    setTotalOperators(operatorsData.success ? operatorsData.result?.pagination?.total || processedOperators.length : 0);
+    setTotalOperators(
+      operatorsData.success
+        ? operatorsData.result?.pagination?.total || processedOperators.length
+        : 0,
+    );
     const loadedTrips = tripsData.success ? tripsData.result?.trips || [] : [];
     setRawTrips(loadedTrips);
-    setTotalTrips(tripsData.success ? tripsData.result?.pagination?.total || loadedTrips.length : 0);
+    setTotalTrips(
+      tripsData.success
+        ? tripsData.result?.pagination?.total || loadedTrips.length
+        : 0,
+    );
     setLoading(false);
   };
 
@@ -426,7 +432,9 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
         <div className="container-premium">
           <div className="grid grid-cols-2 justify-center items-center md:px-40">
             <div className="flex flex-col items-center justify-center text-center">
-              <p className={`text-display text-primary ${baskerville.className}`}>
+              <p
+                className={`text-display text-primary ${baskerville.className}`}
+              >
                 {totalTrips}+
               </p>
               <p className="text-body-sm text-muted-foreground">
@@ -434,7 +442,9 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
               </p>
             </div>
             <div className="flex flex-col items-center justify-center text-center">
-              <p className={`text-display text-primary ${baskerville.className}`}>
+              <p
+                className={`text-display text-primary ${baskerville.className}`}
+              >
                 {totalOperators}+
               </p>
               <p className="text-body-sm text-muted-foreground">
@@ -779,10 +789,10 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
           {/* Providers Grid */}
           {!isLoading && !hasError && operators.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-5 md:gap-8">
-              {operators.slice(0, 10).map((provider) => (
+              {operators.slice(0, 9).map((provider) => (
                 <div
                   key={provider.id}
-                  className="flex items-center gap-3 px-6 py-3 rounded-full bg-muted/50 hover:bg-gray-100"
+                  className="flex items-center gap-3 px-5 py-1 rounded-full bg-muted/50 hover:bg-gray-100"
                 >
                   {/* <Shield className="w-5 h-5 text-success" /> */}
                   {provider?.logo_url ? (
