@@ -95,14 +95,14 @@ function TripPage() {
       // ✅ 2. Prepare WhatsApp message
       const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
 
-      const message = `Hello, I wanted to confirm the availability for the following trip:
+      const message = `Hi, I wanted to confirm the availability for the following trip:
 
 *Trip Details*
 • *Trip:* ${trip.name}
 • *Operator:* ${trip.provider.name}
 • *Start Date:* ${startDate}
 
-*View Trip:*
+*View details for ${trip.name}:*
 ${currentUrl}`;
 
       const whatsappNumber = "917007755306"; // with country code
@@ -111,8 +111,8 @@ ${currentUrl}`;
         message,
       )}`;
 
-      // ✅ 3. Open WhatsApp
-      window.open(url, "_blank");
+      // ✅ 3. Redirect to WhatsApp (more reliable on mobile than window.open)
+      window.location.href = url;
 
       setShowForm(false);
     } catch (error) {
