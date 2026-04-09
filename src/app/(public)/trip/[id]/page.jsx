@@ -44,7 +44,7 @@ function TripPage() {
     name: "",
     phone_number: "",
     message: "",
-    email: "nitikaaajain.04@gmail.com", // hardcoded
+    email: "",
     subject: "Book Trip",
   });
 
@@ -81,14 +81,14 @@ function TripPage() {
         },
         body: JSON.stringify({
           full_name: formData.name,
-          email: "nitikaaajain.04@gmail.com", // hardcoded
+          email: "trip.provider.email",
           phone_number: formData.phone_number.startsWith("+91")
             ? formData.phone_number
             : `+91${formData.phone_number}`,
           inquiry_type: "TRIP",
           trip_id: trip.id,
           subject: "Book Trip",
-          message: formData.remark || `User is interested in ${trip.name}`,
+          message: formData?.remark || `User is interested in ${trip.name}`,
         }),
       });
 
@@ -714,7 +714,7 @@ ${currentUrl}`;
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md relative">
+          <div className="bg-white rounded-xl p-5 max-w-[80vw] relative">
             {/* Close Button */}
             <button
               onClick={() => setShowForm(false)}
@@ -723,27 +723,18 @@ ${currentUrl}`;
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-semibold mb-4">Enter your details</h3>
+            <h3 className="text-lg font-semibold mb-3">Enter your details</h3>
 
             <Input
               type="text"
               placeholder="Name"
-              className="w-full border rounded-md p-2 mb-3 text-base"
+              className="w-full border rounded-md p-2 mb-1.5 text-base"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
             />
 
-            {/* <Input
-              type="tel"
-              placeholder="Phone Number"
-              className="w-full border rounded-md p-2 mb-3"
-              value={formData.phone_number}
-              onChange={(e) =>
-                setFormData({ ...formData, phone_number: e.target.value })
-              }
-            /> */}
             <div className="relative">
               <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
                 +91
@@ -751,38 +742,43 @@ ${currentUrl}`;
               <Input
                 type="tel"
                 id="phone"
-                className="w-full border rounded-md p-2 mb-3 pl-10"
+                className="w-full border rounded-md p-2 mb-1.5 pl-10"
                 value={formData.phone_number}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                   setFormData({ ...formData, phone_number: digits });
                 }}
-                // onChange={(e) =>
-                //   setFormData({ ...formData, phone_number: e.target.value })
-                // }
-                placeholder="98765 43210"
-                // className={`pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
-                // required
+                placeholder="9876543210"
               />
             </div>
+
+            {/* <Input
+              type="email"
+              value={formData.email}
+              placeholder="Email"
+              className="w-full border rounded-md p-2 mb-1.5 text-base"
+              onChange={(e) =>
+                setFormData({ ...formData, email: e.target.value })
+              }
+            /> */}
 
             <Input
               type="text"
               value={trip.provider.name}
               disabled
-              className="w-full border rounded-md p-2 mb-3 cursor-not-allowed"
+              className="w-full border rounded-md p-1 mb-1.5 cursor-not-allowed"
             />
 
             <Input
               type="text"
               value={trip.name}
               disabled
-              className="w-full border rounded-md p-2 mb-3 cursor-not-allowed"
+              className="w-full border rounded-md p-1 mb-1.5 cursor-not-allowed"
             />
 
             <textarea
               placeholder="Remarks (optional)"
-              className="w-full border rounded-md p-2 mb-4"
+              className="w-full border rounded-md p-2 mb-1.5"
               value={formData.remark}
               onChange={(e) =>
                 setFormData({ ...formData, remark: e.target.value })
@@ -790,7 +786,7 @@ ${currentUrl}`;
             />
 
             <Button onClick={handleSubmit} className="w-full">
-              Continue to WhatsApp
+              Continue
             </Button>
           </div>
         </div>

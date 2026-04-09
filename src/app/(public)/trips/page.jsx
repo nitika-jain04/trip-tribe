@@ -82,7 +82,12 @@ function TripsContent() {
   const router = useRouter();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 1 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 1,
+  });
   const prevSearchRef = useRef(search);
 
   if (prevSearchRef.current !== search) {
@@ -130,7 +135,7 @@ function TripsContent() {
         }
         params.set("page", currentPage);
         params.set("limit", 10);
-        
+
         url += `?${params.toString()}`;
         const res = await fetch(url);
         const data = await res.json();
@@ -272,13 +277,26 @@ function TripsContent() {
     fetchTripsAndUpdateCache(true);
   }, [fetchTripsAndUpdateCache]);
 
-
-
   useEffect(() => {
     if (tripTypesData.length === 1) {
       getTripTypes();
     }
   }, []);
+
+  useEffect(() => {
+    const isFilterApplied =
+      selectedType !== "All Types" || selectedDifficulty !== "All";
+
+    const targetId = isFilterApplied ? "filters" : "trips";
+    const el = document.getElementById(targetId);
+
+    if (el) {
+      const yOffset = -80; // adjust based on header height
+      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  }, [selectedType, selectedDifficulty]);
 
   const filteredTrips = useMemo(() => {
     let result = [...trips];
@@ -412,7 +430,10 @@ function TripsContent() {
 
   return (
     <>
-      <section className="relative pt-28 pb-12 bg-linear-to-br from-primary-light via-background to-background">
+      <section
+        className="relative pt-28 pb-12 bg-linear-to-br from-primary-light via-background to-background"
+        id="trips"
+      >
         <div className="container-premium">
           <div className="max-w-3xl mx-auto text-center mb-8">
             <h1 className="font-display text-display text-foreground mb-4">
@@ -453,7 +474,7 @@ function TripsContent() {
         </div>
       )}
 
-      <section className="section bg-background">
+      <section className="section bg-background" id="filters">
         <div className="container-premium">
           <div className="flex gap-8">
             <div className="hidden lg:block w-64 shrink-0">
@@ -681,79 +702,94 @@ function TripsContent() {
                 ) : null}
               </div>
 
-              {!loadingTrips && pagination.pages > 1 && filteredTrips.length > 0 && (
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage > 1) {
-                            setCurrentPage(currentPage - 1);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+              {!loadingTrips &&
+                pagination.pages > 1 &&
+                filteredTrips.length > 0 && (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage > 1) {
+                              setCurrentPage(currentPage - 1);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }
+                          }}
+                          className={
+                            currentPage <= 1
+                              ? "pointer-events-none opacity-50"
+                              : ""
                           }
-                        }}
-                        className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                    
-                    {[...Array(pagination.pages)].map((_, i) => {
-                      const page = i + 1;
-                      
-                      // Show logic: first, last, current, adjacent
-                      const showLeftEllipsis = page === 2 && currentPage > 3;
-                      const showRightEllipsis = page === pagination.pages - 1 && currentPage < pagination.pages - 2;
-                      
-                      if (showLeftEllipsis || showRightEllipsis) {
-                        return (
-                          <PaginationItem key={page}>
-                            <PaginationEllipsis />
-                          </PaginationItem>
-                        );
-                      }
-                      
-                      if (
-                        page === 1 || 
-                        page === pagination.pages || 
-                        Math.abs(currentPage - page) <= 1
-                      ) {
-                        return (
-                          <PaginationItem key={page}>
-                            <PaginationLink 
-                              href="#"
-                              isActive={page === currentPage}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setCurrentPage(page);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                              }}
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      }
-                      
-                      return null;
-                    })}
+                        />
+                      </PaginationItem>
 
-                    <PaginationItem>
-                      <PaginationNext 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage < pagination.pages) {
-                            setCurrentPage(currentPage + 1);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                      {[...Array(pagination.pages)].map((_, i) => {
+                        const page = i + 1;
+
+                        // Show logic: first, last, current, adjacent
+                        const showLeftEllipsis = page === 2 && currentPage > 3;
+                        const showRightEllipsis =
+                          page === pagination.pages - 1 &&
+                          currentPage < pagination.pages - 2;
+
+                        if (showLeftEllipsis || showRightEllipsis) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+
+                        if (
+                          page === 1 ||
+                          page === pagination.pages ||
+                          Math.abs(currentPage - page) <= 1
+                        ) {
+                          return (
+                            <PaginationItem key={page}>
+                              <PaginationLink
+                                href="#"
+                                isActive={page === currentPage}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setCurrentPage(page);
+                                  window.scrollTo({
+                                    top: 0,
+                                    behavior: "smooth",
+                                  });
+                                }}
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        }
+
+                        return null;
+                      })}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            if (currentPage < pagination.pages) {
+                              setCurrentPage(currentPage + 1);
+                              window.scrollTo({ top: 0, behavior: "smooth" });
+                            }
+                          }}
+                          className={
+                            currentPage >= pagination.pages
+                              ? "pointer-events-none opacity-50"
+                              : ""
                           }
-                        }}
-                        className={currentPage >= pagination.pages ? "pointer-events-none opacity-50" : ""}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              )}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
 
               {loadingTrips && (
                 <div className="grid md:grid-cols-2 gap-6">
