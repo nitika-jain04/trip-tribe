@@ -181,10 +181,12 @@ function Enquiries() {
         },
       );
 
+      const data = await res.json();
+
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to delete enquiry",
+          description: data?.error?.message || "Failed to delete enquiry",
           variant: "destructive",
         });
         return;
@@ -230,10 +232,13 @@ function Enquiries() {
       // if (!res.ok) {
       //   throw new Error("Failed to close enquiry");
       // }
+
+      const data = await res.json();
+
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to close enquiry",
+          description: data?.error?.message || "Failed to close enquiry",
           variant: "destructive",
         });
         return;

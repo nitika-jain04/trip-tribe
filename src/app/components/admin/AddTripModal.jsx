@@ -195,8 +195,7 @@ function AddTripModal({ handleModalClose }) {
       } else {
         toast({
           title: "Upload Failed",
-          description:
-            data?.message || data?.error?.message || "Image upload failed.",
+          description: data?.error?.message || "Image upload failed.",
           variant: "destructive",
         });
       }
@@ -346,18 +345,21 @@ function AddTripModal({ handleModalClose }) {
     }
 
     if (!formData.inclusions || formData.inclusions.some((i) => !i.trim())) {
-      errors.inclusions = "Please fill all inclusion fields or remove empty ones.";
+      errors.inclusions =
+        "Please fill all inclusion fields or remove empty ones.";
     }
 
     if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
-      errors.exclusions = "Please fill all exclusion fields or remove empty ones.";
+      errors.exclusions =
+        "Please fill all exclusion fields or remove empty ones.";
     }
 
     const hasIncompleteItinerary = formData.itinerary.some(
-      (day) => !day.activities || day.activities.some((a) => !a.trim())
+      (day) => !day.activities || day.activities.some((a) => !a.trim()),
     );
     if (hasIncompleteItinerary) {
-      errors.itinerary = "Please complete all itinerary days or remove empty activities.";
+      errors.itinerary =
+        "Please complete all itinerary days or remove empty activities.";
     }
 
     setFieldErrors(errors);
@@ -405,8 +407,7 @@ function AddTripModal({ handleModalClose }) {
       } else {
         toast({
           title: "Error",
-          description:
-            data?.message || data?.error?.message || "Failed to create trip.",
+          description: data?.error?.message || "Failed to create trip.",
           variant: "destructive",
         });
       }

@@ -272,7 +272,7 @@ function Page() {
         if (!res.ok || !data.success) {
           toast({
             title: "Error",
-            description: data.message || "Failed to update trip",
+            description: data?.error?.message || "Failed to update trip",
             variant: "destructive",
           });
           return;
@@ -395,7 +395,7 @@ function Page() {
         if (!res.ok || !data.success) {
           return toast({
             title: "Error",
-            description: data.message || "Failed to duplicate trip",
+            description: data?.error?.message || "Failed to duplicate trip",
             variant: "destructive",
           });
         }

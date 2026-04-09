@@ -867,7 +867,7 @@ export default function OperatorEditPage() {
             <div className="col-span-full flex flex-col sm:flex-row gap-4 pt-4 border-t">
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <Link
-                  href={`/admin/operators/${id}`}
+                  href={`/admin/operators`}
                   className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-center text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
                 >
                   Cancel

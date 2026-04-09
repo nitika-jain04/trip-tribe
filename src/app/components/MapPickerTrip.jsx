@@ -147,6 +147,8 @@ export default function MapPicker({
         // if (!response.ok) {
         //   throw new Error("Search failed");
         // }
+        const data = await response.json();
+
         if (!response.ok) {
           toast({
             title: "Error",
@@ -155,7 +157,6 @@ export default function MapPicker({
           });
         }
 
-        const data = await response.json();
         setSearchResults(data);
 
         if (data.length === 0) {

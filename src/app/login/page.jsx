@@ -42,7 +42,7 @@ export default function TestLogin() {
       if (!res.ok || !data?.success) {
         toast({
           title: "Error",
-          description: data?.message || "Incorrect email / password",
+          description: data?.error?.message || "Incorrect email / password",
           variant: "destructive",
         });
 

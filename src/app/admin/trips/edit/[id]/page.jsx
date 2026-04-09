@@ -257,7 +257,7 @@ export default function TripEditPage() {
       } else {
         toast({
           title: "Error",
-          description: data.message || "Failed to upload image",
+          description: data?.error?.message || "Failed to upload image",
           variant: "destructive",
         });
       }
@@ -329,18 +329,21 @@ export default function TripEditPage() {
     }
 
     if (!formData.inclusions || formData.inclusions.some((i) => !i.trim())) {
-      newErrors.inclusions = "Please fill all inclusion fields or remove empty ones.";
+      newErrors.inclusions =
+        "Please fill all inclusion fields or remove empty ones.";
     }
 
     if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
-      newErrors.exclusions = "Please fill all exclusion fields or remove empty ones.";
+      newErrors.exclusions =
+        "Please fill all exclusion fields or remove empty ones.";
     }
 
     const hasIncompleteItinerary = formData.itinerary.some(
-      (day) => !day.activities || day.activities.some((a) => !a.trim())
+      (day) => !day.activities || day.activities.some((a) => !a.trim()),
     );
     if (hasIncompleteItinerary) {
-      newErrors.itinerary = "Please complete all itinerary days or remove empty activities.";
+      newErrors.itinerary =
+        "Please complete all itinerary days or remove empty activities.";
     }
 
     setErrors(newErrors);
@@ -392,6 +395,8 @@ export default function TripEditPage() {
       });
       setSaving(false);
       setIsModified(false);
+      router.push(`/admin/trips/${id}`);
+      ``;
       return;
     }
 
@@ -415,7 +420,7 @@ export default function TripEditPage() {
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to update",
+          description: data?.error?.message || "Failed to update",
           variant: "destructive",
         });
       }

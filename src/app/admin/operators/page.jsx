@@ -227,7 +227,8 @@ function OperatorsPage() {
       if (!res.ok || !data.success) {
         return toast({
           title: "Error",
-          description: "Failed to fetch operator details",
+          description:
+            data?.error?.message || "Failed to fetch operator details",
           variant: "destructive",
         });
       }
