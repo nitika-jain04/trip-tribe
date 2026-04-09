@@ -254,8 +254,8 @@ function TripsContent() {
     const handleFocus = () => {
       const now = Date.now();
 
-      // only refresh if last fetch was > 2 minutes ago
-      if (now - lastFetchRef.current > 2 * 60 * 1000) {
+      // refresh immediately, with a minor 5-second cooldown just to prevent glitchy focus loops
+      if (now - lastFetchRef.current > 5 * 1000) {
         getTripTypes(true);
         lastFetchRef.current = now;
       }
@@ -272,17 +272,7 @@ function TripsContent() {
     fetchTripsAndUpdateCache(true);
   }, [fetchTripsAndUpdateCache]);
 
-  useEffect(() => {
-    const handleFocus = () => {
-      getTripTypes(true); // ✅ force refresh when user returns
-    };
 
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [getTripTypes]);
 
   useEffect(() => {
     if (tripTypesData.length === 1) {

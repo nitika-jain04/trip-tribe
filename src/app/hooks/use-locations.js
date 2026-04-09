@@ -8,6 +8,8 @@ let cachedLocations = null;
 let cachedLocationMap = null;
 let listeners = new Set();
 
+let fetchPromise = null;
+
 /**
  * Hook to share and cache destination data across the entire application.
  * Reduces API calls by reusing location data between Home Page and Trip Details.
@@ -34,41 +36,70 @@ const useLocations = () => {
   }, [updateState]);
 
   const fetchLocations = useCallback(async (force = false) => {
+    // ✋ Skip if already cached
     if (!force && cachedLocations) {
       updateState(cachedLocations, cachedLocationMap);
       return;
     }
 
-    setLoading(true);
-    try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations`);
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data?.error?.message || "Failed to fetch locations");
+    // 🤝 If a fetch is already in progress, wait for it
+    if (!force && fetchPromise) {
+      setLoading(true);
+      try {
+        await fetchPromise;
+        // After resolving, cache will definitely be populated
+        if (cachedLocations) {
+          updateState(cachedLocations, cachedLocationMap);
+        }
+      } catch (err) {
+        setError(err.message);
+        setLoading(false);
       }
+      return;
+    }
 
-      const rawLocations = data.result?.locations || [];
-      const newMap = {};
-      rawLocations.forEach((loc) => {
-        newMap[loc.id] = {
-          name: loc.name,
-          region: loc.region,
-        };
-      });
+    setLoading(true);
 
-      // 🧊 Update module-level cache
-      cachedLocations = rawLocations;
-      cachedLocationMap = newMap;
+    fetchPromise = (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations`);
+        const data = await res.json();
 
-      // 📣 Notify all listening hook instances
-      listeners.forEach((listener) => listener(rawLocations, newMap));
-      
-      updateState(rawLocations, newMap);
+        if (!res.ok || !data.success) {
+          throw new Error(data?.error?.message || "Failed to fetch locations");
+        }
+
+        const rawLocations = data.result?.locations || [];
+        const newMap = {};
+        rawLocations.forEach((loc) => {
+          newMap[loc.id] = {
+            name: loc.name,
+            region: loc.region,
+          };
+        });
+
+        // 🧊 Update module-level cache
+        cachedLocations = rawLocations;
+        cachedLocationMap = newMap;
+
+        // 📣 Notify all listening hook instances
+        listeners.forEach((listener) => listener(rawLocations, newMap));
+        
+        updateState(rawLocations, newMap);
+      } catch (err) {
+        console.error("Failed to fetch locations:", err);
+        setError(err.message);
+        setLoading(false);
+        throw err; // rethrow so listeners waiting catch it
+      } finally {
+        fetchPromise = null;
+      }
+    })();
+
+    try {
+      await fetchPromise;
     } catch (err) {
-      console.error("Failed to fetch locations:", err);
-      setError(err.message);
-      setLoading(false);
+      // Handled above
     }
   }, [updateState]);
 
