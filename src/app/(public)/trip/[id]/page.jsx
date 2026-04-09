@@ -24,6 +24,8 @@ import {
 } from "@/app/components/ui/tabs";
 import useLocations from "@/app/hooks/use-locations";
 import { Button } from "@/app/components/ui/button";
+import Input from "@/app/components/ui/input";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -31,6 +33,7 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 function TripPage() {
   const { id } = useParams();
   const { locationMap } = useLocations();
+  const { toast } = useToast();
 
   const [trip, setTrip] = useState(null);
   const [tripReviews, setTripReviews] = useState([]);
@@ -39,42 +42,87 @@ function TripPage() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    phone: "",
-    remark: "",
+    phone_number: "",
+    message: "",
+    email: "nitikaaajain.04@gmail.com", // hardcoded
+    subject: "Book Trip",
   });
 
-  const handleSubmit = () => {
-    if (!formData.name || !formData.phone) {
-      alert("Please fill required fields");
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.phone_number) {
+      toast({
+        title: "Form",
+        description: "Please fill required fields",
+        variant: "destructive",
+      });
       return;
     }
 
-    const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
+    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
 
-    const message = `
-      Hi, I'm ${formData.name} 👋
+    if (!phoneRegex.test(formData.phone_number.trim())) {
+      // newErrors.phone = "Enter valid phone number";
+      toast({
+        title: "Phone Number",
+        description: "Enter valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      I’m interested in the trip:
+    const currentUrl = window.location.href;
 
-      🏔️ Trip: ${trip.name}
-      📅 Start Date: ${startDate}
+    try {
+      // ✅ 1. Call Enquiry API
+      await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: formData.name,
+          email: "nitikaaajain.04@gmail.com", // hardcoded
+          phone_number: formData.phone_number.startsWith("+91")
+            ? formData.phone_number
+            : `+91${formData.phone_number}`,
+          inquiry_type: "TRIP",
+          trip_id: trip.id,
+          subject: "Book Trip",
+          message: formData.remark || `User is interested in ${trip.name}`,
+        }),
+      });
 
-      📞 My Phone: ${formData.phone}
+      // ✅ 2. Prepare WhatsApp message
+      const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
 
-      ${formData.remark ? `📝 Remark: ${formData.remark}` : ""}
+      const message = `Hello, I wanted to confirm the availability for the following trip:
 
-      Please share more details. Thank you!
-      `;
+*Trip Details*
+• *Trip:* ${trip.name}
+• *Operator:* ${trip.provider.name}
+• *Start Date:* ${startDate}
 
-    const whatsappNumber = "91XXXXXXXXXX";
+*View Trip:*
+${currentUrl}`;
 
-    const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-      message,
-    )}`;
+      const whatsappNumber = "917007755306"; // with country code
 
-    window.open(url, "_blank");
+      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+        message,
+      )}`;
 
-    setShowForm(false);
+      // ✅ 3. Open WhatsApp
+      window.open(url, "_blank");
+
+      setShowForm(false);
+    } catch (error) {
+      console.error("Enquiry error:", error);
+      toast({
+        title: "Form",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   useEffect(() => {
@@ -353,12 +401,12 @@ function TripPage() {
                 <p className="text-body-sm text-muted-foreground text-center mt-3">
                   Free cancellation up to 7 days before
                 </p> */}
-                {/* <Button
+                <Button
                   className="btn-primary w-full text-body py-6"
                   onClick={() => setShowForm(true)}
                 >
                   Book Now
-                </Button> */}
+                </Button>
               </div>
             </div>
           </div>
@@ -677,24 +725,59 @@ function TripPage() {
 
             <h3 className="text-lg font-semibold mb-4">Enter your details</h3>
 
-            <input
+            <Input
               type="text"
               placeholder="Name"
-              className="w-full border rounded-md p-2 mb-3"
+              className="w-full border rounded-md p-2 mb-3 text-base"
               value={formData.name}
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
             />
 
-            <input
+            {/* <Input
               type="tel"
               placeholder="Phone Number"
               className="w-full border rounded-md p-2 mb-3"
-              value={formData.phone}
+              value={formData.phone_number}
               onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
+                setFormData({ ...formData, phone_number: e.target.value })
               }
+            /> */}
+            <div className="relative">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                +91
+              </span>
+              <Input
+                type="tel"
+                id="phone"
+                className="w-full border rounded-md p-2 mb-3 pl-10"
+                value={formData.phone_number}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                  setFormData({ ...formData, phone_number: digits });
+                }}
+                // onChange={(e) =>
+                //   setFormData({ ...formData, phone_number: e.target.value })
+                // }
+                placeholder="98765 43210"
+                // className={`pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
+                // required
+              />
+            </div>
+
+            <Input
+              type="text"
+              value={trip.provider.name}
+              disabled
+              className="w-full border rounded-md p-2 mb-3 cursor-not-allowed"
+            />
+
+            <Input
+              type="text"
+              value={trip.name}
+              disabled
+              className="w-full border rounded-md p-2 mb-3 cursor-not-allowed"
             />
 
             <textarea
