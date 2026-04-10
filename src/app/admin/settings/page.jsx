@@ -253,9 +253,12 @@ function Destinations() {
       }
 
       // ✅ Success
-      setDestinations((prev) => prev.filter((item) => item.id !== locationId));
-
-      getAllDestinations();
+      if (destinations.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        setDestinations((prev) => prev.filter((item) => item.id !== locationId));
+        setTotalItems((prev) => Math.max(0, prev - 1));
+      }
 
       toast({
         title: "Success",

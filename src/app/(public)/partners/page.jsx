@@ -94,7 +94,7 @@ const stats = [
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-const slowScrollTo = (targetId, duration = 900) => {
+const slowScrollTo = (targetId, duration = 1800) => {
   const target = document.getElementById(targetId);
   if (!target) return;
   const targetY = target.getBoundingClientRect().top + window.scrollY;

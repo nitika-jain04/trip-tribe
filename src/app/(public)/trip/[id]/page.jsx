@@ -713,81 +713,88 @@ ${currentUrl}`;
       </section>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl p-5 max-w-[80vw] relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
             {/* Close Button */}
             <button
               onClick={() => setShowForm(false)}
-              className="absolute top-3 right-3"
+              className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <h3 className="text-lg font-semibold mb-3">Enter your details</h3>
-
-            <Input
-              type="text"
-              placeholder="Name"
-              className="w-full border rounded-md p-2 mb-1.5 text-base"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-            />
-
-            <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                +91
-              </span>
-              <Input
-                type="tel"
-                id="phone"
-                className="w-full border rounded-md p-2 mb-1.5 pl-10"
-                value={formData.phone_number}
-                onChange={(e) => {
-                  const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
-                  setFormData({ ...formData, phone_number: digits });
-                }}
-                placeholder="9876543210"
-              />
+            {/* Header */}
+            <div className="px-5 pt-5 pb-2">
+              <h3 className="font-display text-xl font-semibold text-foreground">
+                Booking Request
+              </h3>
             </div>
 
-            {/* <Input
-              type="email"
-              value={formData.email}
-              placeholder="Email"
-              className="w-full border rounded-md p-2 mb-1.5 text-base"
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-            /> */}
+            {/* Content */}
+            <div className="px-5 pb-5 overflow-y-auto space-y-3">
+              <Input
+                type="text"
+                placeholder="Full Name"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
 
-            <Input
-              type="text"
-              value={trip.provider.name}
-              disabled
-              className="w-full border rounded-md p-1 mb-1.5 cursor-not-allowed"
-            />
+              <div className="relative flex items-center">
+                <span className="absolute left-3 text-muted-foreground text-sm font-medium border-r border-border pr-2 z-10 select-none">
+                  +91
+                </span>
+                <Input
+                  type="tel"
+                  id="phone"
+                  className="w-full pl-14 pr-3 h-10 rounded-lg border border-input bg-background py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 font-medium tracking-wide transition-shadow"
+                  value={formData.phone_number}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setFormData({ ...formData, phone_number: digits });
+                  }}
+                  placeholder="98765 43210"
+                />
+              </div>
 
-            <Input
-              type="text"
-              value={trip.name}
-              disabled
-              className="w-full border rounded-md p-1 mb-1.5 cursor-not-allowed"
-            />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  type="text"
+                  value={trip.provider.name}
+                  disabled
+                  className="w-full h-9 rounded-lg border border-input bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
+                />
+                <Input
+                  type="text"
+                  value={trip.name}
+                  disabled
+                  className="w-full h-9 rounded-lg border border-input bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
+                />
+              </div>
 
-            <textarea
-              placeholder="Remarks (optional)"
-              className="w-full border rounded-md p-2 mb-1.5"
-              value={formData.remark}
-              onChange={(e) =>
-                setFormData({ ...formData, remark: e.target.value })
-              }
-            />
+              <textarea
+                placeholder="Any special requests? (Optional)"
+                className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
+                value={formData.remark}
+                onChange={(e) =>
+                  setFormData({ ...formData, remark: e.target.value })
+                }
+              />
 
-            <Button onClick={handleSubmit} className="w-full">
-              Continue
-            </Button>
+              <Button 
+                onClick={handleSubmit} 
+                className="w-full btn-primary h-11 mt-1 text-sm font-semibold shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
+              >
+                Send Request
+              </Button>
+              
+              {/* <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1 mt-2">
+                <Shield className="w-3 h-3" />
+                Secure form
+              </p> */}
+            </div>
           </div>
         </div>
       )}

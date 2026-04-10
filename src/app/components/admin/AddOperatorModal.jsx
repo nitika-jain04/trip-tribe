@@ -258,7 +258,7 @@ function AddOperatorModal({ handleModalClose }) {
       (key) => requestBody[key] === undefined && delete requestBody[key],
     );
 
-    console.log("add op req", requestBody);
+    // console.log("add op req", requestBody);
 
     try {
       const res = await fetch(

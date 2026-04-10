@@ -129,7 +129,7 @@ function OperatorsPage() {
 
       const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
 
-      console.log("search url", url);
+      // console.log("search url", url);
 
       // //console.log"Final URL:", url);
 
@@ -944,7 +944,11 @@ function OperatorsPage() {
         <AddOperatorModal handleModalClose={handleAddModalClose} />
       )}
 
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+      <Dialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        className="bg-yellow-200"
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Confirm Inactivation</DialogTitle>

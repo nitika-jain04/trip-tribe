@@ -395,7 +395,7 @@ function AddTripModal({ handleModalClose }) {
       });
 
       const data = await res.json();
-      console.log("req", data);
+      // console.log("req", data);
 
       if (res.ok && data.success) {
         toast({

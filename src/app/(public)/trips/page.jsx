@@ -75,6 +75,7 @@ function TripsContent() {
   const [showCompare, setShowCompare] = useState(false);
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [interstitialChoiceMade, setInterstitialChoiceMade] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [trips, setTrips] = useState([]);
   const [loadingTrips, setLoadingTrips] = useState(true);
   const [tripTypesData, setTripTypesData] = useState(["All Types"]);
@@ -135,6 +136,13 @@ function TripsContent() {
         }
         params.set("page", currentPage);
         params.set("limit", 10);
+
+        if (selectedType !== "All Types") {
+          params.set("type", selectedType.toLowerCase());
+        }
+        if (selectedDifficulty !== "All") {
+          params.set("difficulty", selectedDifficulty.toUpperCase());
+        }
 
         url += `?${params.toString()}`;
         const res = await fetch(url);
@@ -205,7 +213,7 @@ function TripsContent() {
         isFetchingRef.current = false;
       }
     },
-    [groupBy, locationType, search, currentPage],
+    [groupBy, locationType, search, currentPage, selectedType, selectedDifficulty],
   );
 
   const getTripTypes = useCallback(
@@ -377,7 +385,10 @@ function TripsContent() {
           {tripTypesData.map((type) => (
             <button
               key={type}
-              onClick={() => setSelectedType(type)}
+              onClick={() => {
+                setSelectedType(type);
+                setTimeout(() => setIsSheetOpen(false), 500);
+              }}
               className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
                 selectedType === type
                   ? "bg-primary text-primary-foreground"
@@ -396,7 +407,10 @@ function TripsContent() {
           {["All", "Easy", "Moderate", "Hard"].map((diff) => (
             <button
               key={diff}
-              onClick={() => setSelectedDifficulty(diff)}
+              onClick={() => {
+                setSelectedDifficulty(diff);
+                setTimeout(() => setIsSheetOpen(false), 500);
+              }}
               className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
                 selectedDifficulty === diff
                   ? "bg-primary text-primary-foreground"
@@ -478,7 +492,7 @@ function TripsContent() {
         <div className="container-premium">
           <div className="flex gap-8">
             <div className="hidden lg:block w-64 shrink-0">
-              <div className="sticky top-24 card-premium p-6">
+              <div className="sticky top-24 card-premium p-6 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
                 <h3 className="font-display text-heading-sm text-foreground mb-6">
                   Filters
                 </h3>
@@ -489,7 +503,7 @@ function TripsContent() {
             <div className="flex-1">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <Sheet>
+                  <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                     <SheetTrigger asChild>
                       <Button variant="outline" className="lg:hidden">
                         <SlidersHorizontal className="w-4 h-4 mr-2" />
