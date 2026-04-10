@@ -949,7 +949,7 @@ function OperatorsPage() {
         onOpenChange={setConfirmDialogOpen}
         className="bg-yellow-200"
       >
-        <DialogContent>
+        <DialogContent className="">
           <DialogHeader>
             <DialogTitle>Confirm Inactivation</DialogTitle>
             <DialogDescription>

@@ -143,7 +143,7 @@ export default function About() {
               <h2 className="font-display text-display text-foreground mb-6">
                 Community Travel Is Fragmented
               </h2>
-              <div className="space-y-4 text-body-lg text-muted-foreground">
+              <div className="space-y-3 text-body-md text-muted-foreground">
                 <p>
                   Finding great community trips in India is frustrating. Dozens
                   of providers, scattered across Instagram pages, WhatsApp

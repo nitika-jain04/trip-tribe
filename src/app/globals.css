@@ -184,6 +184,7 @@
   /* Custom font sizes for your design system */
   --text-body-sm: var(--text-sm);
   --text-body: var(--text-base);
+  --text-body-md: var(--text-lg);
   --text-body-lg: var(--text-xl);
   --text-heading-sm: var(--text-xl);
   --text-heading-2xl: var(--text-7xl);
@@ -477,8 +478,12 @@
   font-size: var(--text-body);
 }
 
-.text-body-lg {
+.text-body-md {
   font-size: var(--text-body-lg);
+}
+
+.text-body-md {
+  font-size: var(--text-body-md);
 }
 
 .text-heading-sm {

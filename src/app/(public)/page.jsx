@@ -365,17 +365,35 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
                     )}
                   </div>
                   <div className="flex-1 relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
                     <Input
                       type={searchDates ? "date" : "text"}
                       placeholder="When? (optional)"
                       value={searchDates}
-                      onFocus={(e) => (e.target.type = "date")}
+                      onPointerDown={(e) => {
+                        if (!searchDates && e.target.type !== "date") {
+                          e.target.type = "date";
+                        }
+                      }}
+                      onFocus={(e) => {
+                        if (!searchDates && e.target.type !== "date") {
+                          e.target.type = "date";
+                        }
+                      }}
+                      onClick={(e) => {
+                        if (e.target.type === "date" && typeof e.target.showPicker === "function") {
+                          try {
+                            e.target.showPicker();
+                          } catch (err) {
+                            // ignore
+                          }
+                        }
+                      }}
                       onBlur={(e) => {
                         if (!e.target.value) e.target.type = "text";
                       }}
                       onChange={(e) => setSearchDates(e.target.value)}
-                      className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
+                      className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground w-full"
                     />
                   </div>
                   <Button
