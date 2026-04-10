@@ -381,7 +381,10 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
                         }
                       }}
                       onClick={(e) => {
-                        if (e.target.type === "date" && typeof e.target.showPicker === "function") {
+                        if (
+                          e.target.type === "date" &&
+                          typeof e.target.showPicker === "function"
+                        ) {
                           try {
                             e.target.showPicker();
                           } catch (err) {
@@ -398,7 +401,7 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
                   </div>
                   <Button
                     type="submit"
-                    className="btn-primary h-14 px-8 text-body"
+                    className="btn-primary h-12 px-4 text-body"
                   >
                     <Search className="w-5 h-5 mr-2" />
                     Search

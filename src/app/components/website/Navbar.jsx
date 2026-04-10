@@ -28,14 +28,18 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const isHeaderSolid = isScrolled || isMobileMenuOpen;
+  const isTransparentAndHome = pathname === "/" && !isHeaderSolid;
+
   return (
-    <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? "bg-background/95 backdrop-blur-lg border-b border-border shadow-sm"
-          : "bg-transparent"
-      }`}
-    >
+    <>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isHeaderSolid
+            ? "bg-background/95 backdrop-blur-xs border-b border-border shadow-sm"
+            : "bg-transparent"
+        }`}
+      >
       <nav className="container-premium">
         <div className="flex items-center justify-between h-18">
           {/* Logo */}
@@ -46,7 +50,7 @@ export function Navbar() {
               className="h-12 w-12 rounded-lg transition-transform duration-300 group-hover:scale-105"
             />
             <span
-              className={`font-display text-xl font-semibold transition-colors ${pathname === "/" && !isScrolled ? "text-white" : "text-foreground"}`}
+              className={`font-display text-xl font-semibold transition-colors ${isTransparentAndHome ? "text-white" : "text-foreground"}`}
             >
               TripTribe
             </span>
@@ -61,7 +65,7 @@ export function Navbar() {
                 className={`px-4 py-2 text-body-sm font-medium rounded-full transition-colors duration-200 ${
                   pathname === item.href
                     ? "text-primary bg-primary-light"
-                    : pathname === "/" && !isScrolled
+                    : isTransparentAndHome
                       ? "text-white hover:text-white/80"
                       : "text-foreground hover:text-primary hover:bg-muted"
                 }`}
@@ -81,7 +85,7 @@ export function Navbar() {
           {/* Mobile Menu Button */}
           <button
             className={`md:hidden p-2 rounded-lg transition-colors text-foreground hover:bg-primary ${
-              isScrolled
+              isHeaderSolid
                 ? "text-foreground hover:bg-muted"
                 : "text-background hover:bg-background/10"
             }`}
@@ -90,11 +94,11 @@ export function Navbar() {
           >
             {isMobileMenuOpen ? (
               <X
-                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" && !isScrolled ? "text-white" : "text-foreground hover:text-white"}`}
+                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${isTransparentAndHome ? "text-white" : "text-foreground hover:text-white"}`}
               />
             ) : (
               <Menu
-                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${pathname === "/" && !isScrolled ? "text-white" : "text-foreground hover:text-white"}`}
+                className={`w-6 h-6 transition-colors duration-75 ease-in-out ${isTransparentAndHome ? "text-white" : "text-foreground hover:text-white"}`}
               />
             )}
           </button>
@@ -102,7 +106,7 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         <div
-          className={`md:hidden overflow-hidden transition-all duration-300 ${
+          className={`md:hidden backdrop-blur-xs overflow-hidden transition-all duration-300 ${
             isMobileMenuOpen ? "max-h-96 pb-6" : "max-h-0"
           }`}
         >
@@ -132,6 +136,16 @@ export function Navbar() {
           </div>
         </div>
       </nav>
-    </header>
+      </header>
+
+      {/* Mobile Menu Backdrop */}
+      <div
+        className={`fixed inset-0 z-40 backdrop-blur-xs transition-opacity duration-300 md:hidden ${
+          isMobileMenuOpen ? "opacity-80 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+    </>
   );
 }
