@@ -37,7 +37,9 @@ export function Footer() {
   return (
     <footer className="bg-foreground text-background">
       {/* CTA Section */}
-      <div className="container-premium">
+      <div
+        className={`container-premium ${pathname === "/" || pathname === "/about" || pathname === "/trips" ? "hidden" : ""}`}
+      >
         <div className="py-16 md:py-20 border-b border-background/10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="text-center lg:text-left">
