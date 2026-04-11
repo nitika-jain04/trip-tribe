@@ -13,6 +13,11 @@ import { Card, CardContent } from "../ui/card";
 import { FaMapMarkedAlt, FaPlus, FaTrash } from "react-icons/fa";
 import { useToast } from "@/app/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { Calendar as CalendarIcon } from "lucide-react";
 import useTripTypes from "@/app/hooks/use-triptypes";
 import dynamic from "next/dynamic";
 import Cookies from "js-cookie";
@@ -567,13 +572,20 @@ function AddTripModal({ handleModalClose }) {
               <label className="text-sm text-gray-600 mb-1 block">
                 Start Date *
               </label>
-              <Input
-                name="start_date"
-                type="date"
-                value={formData.start_date}
-                onChange={handleChange}
-                // required
-              />
+              <div className="relative">
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                <DatePicker
+                  selected={formData.start_date ? new Date(formData.start_date) : null}
+                  onChange={(date) => handleChange({ target: { name: "start_date", value: date ? format(date, "yyyy-MM-dd") : "" } })}
+                  minDate={new Date()}
+                  placeholderText="Pick a date"
+                  dateFormat="MMM d, yyyy"
+                  wrapperClassName="w-full"
+                  customInput={
+                    <Input className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
+                  }
+                />
+              </div>
               {fieldErrors.start_date && (
                 <p className="text-admin-error text-xs mt-1">
                   {fieldErrors.start_date}
@@ -585,13 +597,20 @@ function AddTripModal({ handleModalClose }) {
               <label className="text-sm text-gray-600 mb-1 block">
                 End Date *
               </label>
-              <Input
-                name="end_date"
-                type="date"
-                value={formData.end_date}
-                onChange={handleChange}
-                // required
-              />
+              <div className="relative">
+                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                <DatePicker
+                  selected={formData.end_date ? new Date(formData.end_date) : null}
+                  onChange={(date) => handleChange({ target: { name: "end_date", value: date ? format(date, "yyyy-MM-dd") : "" } })}
+                  minDate={formData.start_date ? new Date(Math.max(new Date(), new Date(formData.start_date))) : new Date()}
+                  placeholderText="Pick a date"
+                  dateFormat="MMM d, yyyy"
+                  wrapperClassName="w-full"
+                  customInput={
+                    <Input className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
+                  }
+                />
+              </div>
               {fieldErrors.end_date && (
                 <p className="text-admin-error text-xs mt-1">
                   {fieldErrors.end_date}

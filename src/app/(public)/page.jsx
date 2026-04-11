@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 import {
   ArrowRight,
@@ -300,15 +304,8 @@ export default function Page() {
                         <button
                           type="button"
                           onClick={() => router.push("/trips")}
-                          // className="w-full flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-primary/10 transition-all border-b border-border group"
                           className="w-full flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/60 transition-all text-left group"
                         >
-                          {/* <div
-                            className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center 
-group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
-                          >
-                            <Compass className="w-4 h-4 text-primary group-hover:text-primary-foreground transition-colors" />
-                          </div> */}
                           <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
                             <Compass className="text-primary" size={15} />
                           </div>
@@ -316,9 +313,6 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
                             <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">
                               Take me anywhere
                             </p>
-                            {/* <p className="text-xs text-muted-foreground">
-                              Explore all curated group trips
-                            </p> */}
                           </div>
                         </button>
                         {/* Location Suggestions */}
@@ -365,38 +359,19 @@ group-hover:bg-primary group-hover:scale-105 transition-all duration-200"
                     )}
                   </div>
                   <div className="flex-1 relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-                    <Input
-                      type={searchDates ? "date" : "text"}
-                      placeholder="When? (optional)"
-                      value={searchDates}
-                      onPointerDown={(e) => {
-                        if (!searchDates && e.target.type !== "date") {
-                          e.target.type = "date";
-                        }
-                      }}
-                      onFocus={(e) => {
-                        if (!searchDates && e.target.type !== "date") {
-                          e.target.type = "date";
-                        }
-                      }}
-                      onClick={(e) => {
-                        if (
-                          e.target.type === "date" &&
-                          typeof e.target.showPicker === "function"
-                        ) {
-                          try {
-                            e.target.showPicker();
-                          } catch (err) {
-                            // ignore
-                          }
-                        }
-                      }}
-                      onBlur={(e) => {
-                        if (!e.target.value) e.target.type = "text";
-                      }}
-                      onChange={(e) => setSearchDates(e.target.value)}
-                      className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground w-full"
+                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                    <DatePicker
+                      selected={searchDates ? new Date(searchDates) : null}
+                      onChange={(date) =>
+                        setSearchDates(date ? format(date, "yyyy-MM-dd") : "")
+                      }
+                      minDate={new Date()}
+                      placeholderText="When? (optional)"
+                      dateFormat="MMM d, yyyy"
+                      wrapperClassName="w-full"
+                      customInput={
+                        <Input className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground w-full" />
+                      }
                     />
                   </div>
                   <Button
