@@ -728,7 +728,15 @@ function TripsContent() {
                             e.preventDefault();
                             if (currentPage > 1) {
                               setCurrentPage(currentPage - 1);
-                              window.scrollTo({ top: 0, behavior: "smooth" });
+                              const el = document.getElementById("trips");
+                              if (el) {
+                                const yOffset = -80;
+                                const y =
+                                  el.getBoundingClientRect().top +
+                                  window.pageYOffset +
+                                  yOffset;
+                                window.scrollTo({ top: y, behavior: "smooth" });
+                              }
                             }
                           }}
                           className={
@@ -769,10 +777,18 @@ function TripsContent() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   setCurrentPage(page);
-                                  window.scrollTo({
-                                    top: 0,
-                                    behavior: "smooth",
-                                  });
+                                  const el = document.getElementById("trips");
+                                  if (el) {
+                                    const yOffset = -80;
+                                    const y =
+                                      el.getBoundingClientRect().top +
+                                      window.pageYOffset +
+                                      yOffset;
+                                    window.scrollTo({
+                                      top: y,
+                                      behavior: "smooth",
+                                    });
+                                  }
                                 }}
                               >
                                 {page}
@@ -791,7 +807,15 @@ function TripsContent() {
                             e.preventDefault();
                             if (currentPage < pagination.pages) {
                               setCurrentPage(currentPage + 1);
-                              window.scrollTo({ top: 0, behavior: "smooth" });
+                              const el = document.getElementById("trips");
+                              if (el) {
+                                const yOffset = -80;
+                                const y =
+                                  el.getBoundingClientRect().top +
+                                  window.pageYOffset +
+                                  yOffset;
+                                window.scrollTo({ top: y, behavior: "smooth" });
+                              }
                             }
                           }}
                           className={

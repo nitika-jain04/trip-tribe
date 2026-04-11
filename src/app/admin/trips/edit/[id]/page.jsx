@@ -598,7 +598,7 @@ export default function TripEditPage() {
                     dateFormat="MMM d, yyyy"
                     wrapperClassName="w-full"
                     customInput={
-                      <Input className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
+                      <Input readOnly className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
                     }
                   />
                 </div>
@@ -623,7 +623,7 @@ export default function TripEditPage() {
                     dateFormat="MMM d, yyyy"
                     wrapperClassName="w-full"
                     customInput={
-                      <Input className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
+                      <Input readOnly className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
                     }
                   />
                 </div>
