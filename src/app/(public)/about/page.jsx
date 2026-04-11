@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/app/components/ui/button";
 import {
@@ -9,9 +11,12 @@ import {
   Target,
   Shield,
   Search,
-  GitCompare,
 } from "lucide-react";
-import Image from "next/image";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
+const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 const values = [
   {
@@ -55,32 +60,61 @@ const team = [
   },
 ];
 
-const milestones = [
-  {
-    year: "2025",
-    title: "Founded",
-    description:
-      "TripTribe was born to solve the fragmented community travel discovery problem.",
-  },
-  {
-    year: "2026",
-    title: "First 10 Partners",
-    description: "Onboarded our first 10 verified community trip providers.",
-  },
-  // {
-  //   year: "2023",
-  //   title: "10,000 Users",
-  //   description:
-  //     "Crossed the milestone of 10,000 travelers using our platform.",
-  // },
-  // {
-  //   year: "2024",
-  //   title: "Comparison Launch",
-  //   description: "Launched our side-by-side trip comparison feature.",
-  // },
-];
-
 export default function About() {
+  const [operatorCount, setOperatorCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+
+  const handleNavClick = (e, href) => {
+    if (pathname === href) {
+      e.preventDefault(); // stop navigation
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const milestones = [
+    {
+      year: "2025",
+      title: "Founded",
+      description:
+        "TripTribe was born to solve the fragmented community travel discovery problem.",
+    },
+    {
+      year: "2026",
+      title: operatorCount
+        ? `First ${operatorCount} Partners`
+        : "Growing Partner Network",
+      description: operatorCount
+        ? `Onboarded our first ${operatorCount} verified community trip providers.`
+        : "Onboarding verified community trip providers across India.",
+    },
+  ];
+
+  useEffect(() => {
+    const fetchOperators = async () => {
+      try {
+        setLoading(true);
+
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/operators`);
+
+        const data = await res.json();
+
+        if (data.success) {
+          setOperatorCount(data?.result?.pagination?.total);
+        } else {
+          throw new Error(data.error.message || "Failed to fetch operators");
+        }
+      } catch (err) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOperators();
+  }, []);
+
   return (
     <>
       {/* Hero Section */}
@@ -118,7 +152,7 @@ export default function About() {
               <h2 className="font-display text-display text-foreground mb-6">
                 Community Travel Is Fragmented
               </h2>
-              <div className="space-y-4 text-body-lg text-muted-foreground">
+              <div className="space-y-3 text-body-md text-muted-foreground">
                 <p>
                   Finding great community trips in India is frustrating. Dozens
                   of providers, scattered across Instagram pages, WhatsApp
@@ -140,11 +174,11 @@ export default function About() {
               </div>
             </div>
             <div className="relative">
-              <div className="aspect-4/3 rounded-3xl overflow-hidden shadow-premium-lg">
+              <div className="aspect-4/4 rounded-3xl overflow-hidden shadow-premium-lg">
                 <img
-                  src="https://images.unsplash.com/photo-1522199710521-72d69614c702?w=800&q=80"
+                  src="/about-community.png"
                   alt="Group travel"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-fill"
                 />
               </div>
               {/* <div className="absolute -bottom-6 -left-6 glass rounded-2xl p-6 shadow-premium-md max-w-xs">
@@ -325,7 +359,10 @@ export default function About() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/trips">
-                <Button className="btn-primary text-body px-8 py-6">
+                <Button
+                  className="btn-primary text-body px-8 py-6"
+                  onClick={(e) => handleNavClick(e, "/trips")}
+                >
                   Explore Trips
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>

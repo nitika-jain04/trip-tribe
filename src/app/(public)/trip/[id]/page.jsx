@@ -23,6 +23,9 @@ import {
   TabsTrigger,
 } from "@/app/components/ui/tabs";
 import useLocations from "@/app/hooks/use-locations";
+import { Button } from "@/app/components/ui/button";
+import Input from "@/app/components/ui/input";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -30,11 +33,97 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 function TripPage() {
   const { id } = useParams();
   const { locationMap } = useLocations();
+  const { toast } = useToast();
 
   const [trip, setTrip] = useState(null);
   const [tripReviews, setTripReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    phone_number: "",
+    message: "",
+    email: "",
+    subject: "Book Trip",
+  });
+
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.phone_number) {
+      toast({
+        title: "Form",
+        description: "Please fill required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
+
+    if (!phoneRegex.test(formData.phone_number.trim())) {
+      // newErrors.phone = "Enter valid phone number";
+      toast({
+        title: "Phone Number",
+        description: "Enter valid phone number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const currentUrl = window.location.href;
+
+    try {
+      // ✅ 1. Call Enquiry API
+      await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: formData.name,
+          email: "trip.provider.email",
+          phone_number: formData.phone_number.startsWith("+91")
+            ? formData.phone_number
+            : `+91${formData.phone_number}`,
+          inquiry_type: "TRIP",
+          trip_id: trip.id,
+          subject: "Book Trip",
+          message: formData?.remark || `User is interested in ${trip.name}`,
+        }),
+      });
+
+      // ✅ 2. Prepare WhatsApp message
+      const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
+
+      const message = `Hi, I wanted to confirm the availability for the following trip:
+
+*Trip Details*
+• *Trip:* ${trip.name}
+• *Operator:* ${trip.provider.name}
+• *Start Date:* ${startDate}
+
+*View details for ${trip.name}:*
+${currentUrl}`;
+
+      const whatsappNumber = "917007755306"; // with country code
+
+      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+        message,
+      )}`;
+
+      // ✅ 3. Redirect to WhatsApp (more reliable on mobile than window.open)
+      window.location.href = url;
+
+      setShowForm(false);
+    } catch (error) {
+      console.error("Enquiry error:", error);
+      toast({
+        title: "Form",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -204,7 +293,8 @@ function TripPage() {
 
               <div className="flex items-center gap-2 text-body text-muted-foreground mb-4">
                 <MapPin className="w-5 h-5" />
-                {locationMap[trip.destination_id]?.name || "Loading..."}, {locationMap[trip.destination_id]?.region || ""}
+                {locationMap[trip.destination_id]?.name || "Loading..."},{" "}
+                {locationMap[trip.destination_id]?.region || ""}
               </div>
 
               {/* <div className="flex items-center gap-4 mb-6">
@@ -311,6 +401,12 @@ function TripPage() {
                 <p className="text-body-sm text-muted-foreground text-center mt-3">
                   Free cancellation up to 7 days before
                 </p> */}
+                <Button
+                  className="btn-primary w-full text-body py-6"
+                  onClick={() => setShowForm(true)}
+                >
+                  Book Now
+                </Button>
               </div>
             </div>
           </div>
@@ -387,15 +483,21 @@ function TripPage() {
                     <dl className="space-y-3 text-body-sm">
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Source</dt>
-                        <dd className="font-medium">{locationMap[trip.source_id]?.name || "-"}</dd>
+                        <dd className="font-medium">
+                          {locationMap[trip.source_id]?.name || "-"}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Destination</dt>
-                        <dd className="font-medium">{locationMap[trip.destination_id]?.name || "-"}</dd>
+                        <dd className="font-medium">
+                          {locationMap[trip.destination_id]?.name || "-"}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Region</dt>
-                        <dd className="font-medium">{locationMap[trip.destination_id]?.region || "-"}</dd>
+                        <dd className="font-medium">
+                          {locationMap[trip.destination_id]?.region || "-"}
+                        </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Duration</dt>
@@ -609,6 +711,93 @@ function TripPage() {
           </Tabs>
         </div>
       </section>
+
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowForm(false)}
+              className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Header */}
+            <div className="px-5 pt-5 pb-2">
+              <h3 className="font-display text-xl font-semibold text-foreground">
+                Booking Request
+              </h3>
+            </div>
+
+            {/* Content */}
+            <div className="px-5 pb-5 overflow-y-auto space-y-3">
+              <Input
+                type="text"
+                placeholder="Full Name"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+              />
+
+              <div className="relative flex items-center">
+                <span className="absolute left-3 text-muted-foreground text-sm font-medium border-r border-border pr-2 z-10 select-none">
+                  +91
+                </span>
+                <Input
+                  type="tel"
+                  id="phone"
+                  className="w-full pl-14 pr-3 h-10 rounded-lg border border-input bg-background py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 font-medium tracking-wide transition-shadow"
+                  value={formData.phone_number}
+                  onChange={(e) => {
+                    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    setFormData({ ...formData, phone_number: digits });
+                  }}
+                  placeholder="98765 43210"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  type="text"
+                  value={trip.provider.name}
+                  disabled
+                  className="w-full h-9 rounded-lg border border-input bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
+                />
+                <Input
+                  type="text"
+                  value={trip.name}
+                  disabled
+                  className="w-full h-9 rounded-lg border border-input bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
+                />
+              </div>
+
+              <textarea
+                placeholder="Any special requests? (Optional)"
+                className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
+                value={formData.remark}
+                onChange={(e) =>
+                  setFormData({ ...formData, remark: e.target.value })
+                }
+              />
+
+              <Button 
+                onClick={handleSubmit} 
+                className="w-full btn-primary h-11 mt-1 text-sm font-semibold shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
+              >
+                Send Request
+              </Button>
+              
+              {/* <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1 mt-2">
+                <Shield className="w-3 h-3" />
+                Secure form
+              </p> */}
+            </div>
+          </div>
+        </div>
+      )}
     </Suspense>
   );
 }

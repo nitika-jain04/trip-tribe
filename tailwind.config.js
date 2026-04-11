@@ -103,6 +103,7 @@ module.exports = {
         "body-sm": "var(--text-body-sm)",
         body: "var(--text-body)",
         "body-lg": "var(--text-body-lg)",
+        "body-md": "var(--text-body-md)",
         "heading-sm": "var(--text-heading-sm)",
         heading: "var(--text-heading)",
         "heading-lg": "var(--text-heading-lg)",

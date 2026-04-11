@@ -272,7 +272,7 @@ function Page() {
         if (!res.ok || !data.success) {
           toast({
             title: "Error",
-            description: data.message || "Failed to update trip",
+            description: data?.error?.message || "Failed to update trip",
             variant: "destructive",
           });
           return;
@@ -395,7 +395,7 @@ function Page() {
         if (!res.ok || !data.success) {
           return toast({
             title: "Error",
-            description: data.message || "Failed to duplicate trip",
+            description: data?.error?.message || "Failed to duplicate trip",
             variant: "destructive",
           });
         }
@@ -546,11 +546,12 @@ function Page() {
 
         <CardContent className="space-y-4">
           {/* Table header */}
-          <div className="grid grid-cols-7 gap-4 border-b pb-2">
+          <div className="grid grid-cols-8 gap-4 border-b pb-2">
             <Skeleton className="h-4 w-24" />
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-16" />
             <Skeleton className="h-4 w-20" />
             <Skeleton className="h-4 w-16" />
             <Skeleton className="h-4 w-16 ml-auto" />
@@ -558,7 +559,7 @@ function Page() {
 
           {/* Table rows */}
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="grid grid-cols-7 gap-4 items-center py-2">
+            <div key={i} className="grid grid-cols-8 gap-4 items-center py-2">
               <div className="flex items-center gap-3 col-span-2">
                 <Skeleton className="h-12 w-16 rounded" />
                 <div className="space-y-2 flex-1">
@@ -782,6 +783,9 @@ function Page() {
                       <TableHead className="whitespace-nowrap">Price</TableHead>
                       <TableHead className="whitespace-nowrap">Dates</TableHead>
                       <TableHead className="whitespace-nowrap">
+                        Duration
+                      </TableHead>
+                      <TableHead className="whitespace-nowrap">
                         Difficulty
                       </TableHead>
                       <TableHead className="whitespace-nowrap">
@@ -835,7 +839,7 @@ function Page() {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {trip.start_date && trip.end_date ? (
+                            {/* {trip.start_date && trip.end_date ? (
                               <>
                                 <p className="whitespace-nowrap">
                                   {new Date(
@@ -845,8 +849,20 @@ function Page() {
                               </>
                             ) : (
                               "N/A"
-                            )}
+                            )} */}
+                            {trip.start_date && trip.end_date
+                              ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
+                              : "N/A"}
                           </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          {trip.start_date && trip.end_date
+                            ? `${Math.ceil(
+                                (new Date(trip.end_date) -
+                                  new Date(trip.start_date)) /
+                                  (1000 * 60 * 60 * 24),
+                              )} days`
+                            : "N/A"}
                         </TableCell>
                         <TableCell>
                           <span
@@ -930,9 +946,14 @@ function Page() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Dates:</span>
+                    {/* <span>
+                      {trip.start_date && trip.end_date
+                        ? `${new Date(trip.start_date).toLocaleDateString()} - ${new Date(trip.end_date).toLocaleDateString()}`
+                        : "N/A"}
+                    </span> */}
                     <span>
-                      {trip.start_date
-                        ? new Date(trip.start_date).toLocaleDateString()
+                      {trip.start_date && trip.end_date
+                        ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
                         : "N/A"}
                     </span>
                   </div>

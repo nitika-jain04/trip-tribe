@@ -71,7 +71,6 @@ export default function EnquiryDetail() {
         const fetchedEnquiry =
           data?.result?.data?.find((e) => e.id === id) || data?.result || null;
 
-        // if (!fetchedEnquiry) throw new Error("Enquiry not found");
         if (!fetchedEnquiry) {
           toast({
             title: "Error",

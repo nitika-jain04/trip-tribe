@@ -184,6 +184,7 @@
   /* Custom font sizes for your design system */
   --text-body-sm: var(--text-sm);
   --text-body: var(--text-base);
+  --text-body-md: var(--text-lg);
   --text-body-lg: var(--text-xl);
   --text-heading-sm: var(--text-xl);
   --text-heading-2xl: var(--text-7xl);
@@ -213,7 +214,6 @@
   }
 
   html {
-    scroll-behavior: smooth;
   }
 
   html,
@@ -372,6 +372,15 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+
+  /* Scrollbar hide */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
 }
 
 /* ===================== */
@@ -468,8 +477,12 @@
   font-size: var(--text-body);
 }
 
-.text-body-lg {
+.text-body-md {
   font-size: var(--text-body-lg);
+}
+
+.text-body-md {
+  font-size: var(--text-body-md);
 }
 
 .text-heading-sm {
@@ -545,4 +558,8 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.react-datepicker-popper {
+  z-index: 9999 !important;
 }

@@ -121,10 +121,6 @@ function OperatorsPage() {
 
       const searchValue = debouncedSearch?.trim();
 
-      if (searchValue && searchValue.length >= 2) {
-        params.append("search", searchValue);
-      }
-
       if (searchValue && searchValue.length < 2) {
         setSearchError("Search must be at least 2 characters");
       } else if (searchValue && searchValue.length >= 2) {
@@ -132,6 +128,8 @@ function OperatorsPage() {
       }
 
       const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
+
+      // console.log("search url", url);
 
       // //console.log"Final URL:", url);
 
@@ -147,7 +145,7 @@ function OperatorsPage() {
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to fetch operators",
+          description: data?.error?.message || "Failed to fetch operators",
           variant: "destructive",
         });
         return;
@@ -229,7 +227,8 @@ function OperatorsPage() {
       if (!res.ok || !data.success) {
         return toast({
           title: "Error",
-          description: "Failed to fetch operator details",
+          description:
+            data?.error?.message || "Failed to fetch operator details",
           variant: "destructive",
         });
       }
@@ -581,16 +580,25 @@ function OperatorsPage() {
         {/* Filters */}
         {/* <Card> */}
         <CardContent className="pt-2">
-          <div className="flex flex-col lg:flex-row gap-3 w-full">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="flex flex-col lg:flex-row lg:items-start gap-3 w-full">
+            <div className="w-full lg:flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
 
-              <Input
-                placeholder="Search operators..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
+                <Input
+                  placeholder="Search operators..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-10 w-full lg:max-w-110"
+                />
+              </div>
+              {/* Search error */}
+              {searchError && (
+                <p className="text-sm text-admin-error mt-1">{searchError}</p>
+              )}
             </div>
 
             {/* Filters */}
@@ -643,11 +651,6 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Search error */}
-            {searchError && (
-              <p className="text-sm text-admin-error">{searchError}</p>
-            )}
           </div>
         </CardContent>
 
@@ -941,8 +944,12 @@ function OperatorsPage() {
         <AddOperatorModal handleModalClose={handleAddModalClose} />
       )}
 
-      <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
-        <DialogContent>
+      <Dialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        className="bg-yellow-200"
+      >
+        <DialogContent className="">
           <DialogHeader>
             <DialogTitle>Confirm Inactivation</DialogTitle>
             <DialogDescription>

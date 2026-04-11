@@ -7,6 +7,11 @@ import { ArrowLeft, AlertCircle, Loader2, Plus, X } from "lucide-react";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { FaTrash } from "react-icons/fa";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { Calendar as CalendarIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -135,6 +140,8 @@ export default function TripEditPage() {
   // Basic field change
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -143,6 +150,8 @@ export default function TripEditPage() {
     const updated = [...formData[field]];
     updated[index] = value;
     setFormData((prev) => ({ ...prev, [field]: updated }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -165,6 +174,7 @@ export default function TripEditPage() {
     const updated = [...formData.itinerary];
     updated[dayIndex].activities[activityIndex] = value;
     setFormData((prev) => ({ ...prev, itinerary: updated }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -252,7 +262,7 @@ export default function TripEditPage() {
       } else {
         toast({
           title: "Error",
-          description: data.message || "Failed to upload image",
+          description: data?.error?.message || "Failed to upload image",
           variant: "destructive",
         });
       }
@@ -287,6 +297,10 @@ export default function TripEditPage() {
       newErrors.price = "Valid price is required";
     }
 
+    if (!formData.images || formData.images.length == 0) {
+      newErrors.images = "Atleast one image is required";
+    }
+
     if (!formData.total_seats || Number(formData.total_seats) <= 0) {
       newErrors.total_seats = "Total seats must be greater than 0";
     }
@@ -317,6 +331,24 @@ export default function TripEditPage() {
 
     if (!formData.description?.trim()) {
       newErrors.description = "Description is required";
+    }
+
+    if (!formData.inclusions || formData.inclusions.some((i) => !i.trim())) {
+      newErrors.inclusions =
+        "Please fill all inclusion fields or remove empty ones.";
+    }
+
+    if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
+      newErrors.exclusions =
+        "Please fill all exclusion fields or remove empty ones.";
+    }
+
+    const hasIncompleteItinerary = formData.itinerary.some(
+      (day) => !day.activities || day.activities.some((a) => !a.trim()),
+    );
+    if (hasIncompleteItinerary) {
+      newErrors.itinerary =
+        "Please complete all itinerary days or remove empty activities.";
     }
 
     setErrors(newErrors);
@@ -368,6 +400,8 @@ export default function TripEditPage() {
       });
       setSaving(false);
       setIsModified(false);
+      router.push(`/admin/trips/${id}`);
+      ``;
       return;
     }
 
@@ -391,7 +425,7 @@ export default function TripEditPage() {
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to update",
+          description: data?.error?.message || "Failed to update",
           variant: "destructive",
         });
       }
@@ -554,13 +588,24 @@ export default function TripEditPage() {
                 <label className="text-sm font-semibold text-slate-700 tracking-wide">
                   Start Date*
                 </label>
-                <Input
-                  type="date"
-                  value={formData.start_date}
-                  required
-                  onChange={(e) => handleChange("start_date", e.target.value)}
-                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
-                />
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                  <DatePicker
+                    selected={formData.start_date ? new Date(formData.start_date) : null}
+                    onChange={(date) => handleChange("start_date", date ? format(date, "yyyy-MM-dd") : "")}
+                    minDate={new Date()}
+                    placeholderText="Pick a date"
+                    dateFormat="MMM d, yyyy"
+                    wrapperClassName="w-full"
+                    customInput={
+                      <Input
+                        readOnly
+                        inputMode="none"
+                        className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                      />
+                    }
+                  />
+                </div>
                 {errors.start_date && (
                   <p className="text-xs text-admin-error mt-1">
                     {errors.start_date}
@@ -572,13 +617,24 @@ export default function TripEditPage() {
                 <label className="text-sm font-semibold text-slate-700 tracking-wide">
                   End Date*
                 </label>
-                <Input
-                  type="date"
-                  required
-                  value={formData.end_date}
-                  onChange={(e) => handleChange("end_date", e.target.value)}
-                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
-                />
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                  <DatePicker
+                    selected={formData.end_date ? new Date(formData.end_date) : null}
+                    onChange={(date) => handleChange("end_date", date ? format(date, "yyyy-MM-dd") : "")}
+                    minDate={formData.start_date ? new Date(Math.max(new Date(), new Date(formData.start_date))) : new Date()}
+                    placeholderText="Pick a date"
+                    dateFormat="MMM d, yyyy"
+                    wrapperClassName="w-full"
+                    customInput={
+                      <Input
+                        readOnly
+                        inputMode="none"
+                        className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                      />
+                    }
+                  />
+                </div>
                 {errors.end_date && (
                   <p className="text-xs text-admin-error mt-1">
                     {errors.end_date}
@@ -728,6 +784,9 @@ export default function TripEditPage() {
                 )}
               </div>
             </div>
+            {errors.images && (
+              <p className="text-xs text-admin-error mt-1">{errors.images}</p>
+            )}
           </section>
 
           {/* INCLUSIONS */}
@@ -767,6 +826,11 @@ export default function TripEditPage() {
                 Add Inclusion
               </button>
             </div>
+            {errors.inclusions && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.inclusions}
+              </p>
+            )}
           </section>
 
           {/* EXCLUSIONS */}
@@ -806,6 +870,11 @@ export default function TripEditPage() {
                 Add Exclusion
               </button>
             </div>
+            {errors.exclusions && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.exclusions}
+              </p>
+            )}
           </section>
 
           {/* ITINERARY */}
@@ -914,6 +983,11 @@ export default function TripEditPage() {
                 </div>
               )}
             </div>
+            {errors.itinerary && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.itinerary}
+              </p>
+            )}
           </section>
 
           {/* SUBMIT */}

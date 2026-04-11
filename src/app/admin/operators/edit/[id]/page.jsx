@@ -80,8 +80,8 @@ export default function OperatorEditPage() {
             logo_url: data.result.logo_url || "",
             status: data.result.status || "",
 
-            total_trips: data.result.total_trips,
-            trips_per_year: data.result.trips_per_year,
+            total_trips: data.result.total_trips || null,
+            trips_per_year: data.result.trips_per_year || null,
             regions: data.result.regions || [],
             trip: data.result.trip || [],
             social_links: data.result.social_links || {},
@@ -110,6 +110,8 @@ export default function OperatorEditPage() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -196,6 +198,22 @@ export default function OperatorEditPage() {
       errors.name = "Operator name must be at least 2 characters.";
     }
 
+    if (!formData.description || formData.description.trim().length < 2) {
+      errors.description = "Description must be at least 25 characters.";
+    }
+
+    if (!formData.regions || formData.regions.length == 0) {
+      errors.regions = "Add atleast 1 operating region.";
+    }
+
+    if (!formData.name || formData.name.trim().length < 2) {
+      errors.name = "Operator name must be at least 2 characters.";
+    }
+
+    if (!formData.logo_url) {
+      errors.logo_url = "Add Image.";
+    }
+
     if (!formData.contact_name || formData.contact_name.trim().length < 2) {
       errors.contact_name = "Contact person must be at least 2 characters.";
     } else if (!startsWithValidChar.test(formData.contact_name.trim())) {
@@ -222,13 +240,13 @@ export default function OperatorEditPage() {
       errors.website_url = "Invalid website URL.";
     }
 
-    if (formData.total_trips && formData.total_trips < 0) {
-      errors.total_trips = "Total trips must be a positive number.";
-    }
+    // if (formData.total_trips && formData.total_trips < 0) {
+    //   errors.total_trips = "Total trips must be a positive number.";
+    // }
 
-    if (formData.trips_per_year && formData.trips_per_year < 0) {
-      errors.trips_per_year = "Trips per year must be a positive number.";
-    }
+    // if (formData.trips_per_year && formData.trips_per_year < 0) {
+    //   errors.trips_per_year = "Trips per year must be a positive number.";
+    // }
 
     // Social links validation
     Object.entries(formData.social_links).forEach(([platform, url]) => {
@@ -280,6 +298,18 @@ export default function OperatorEditPage() {
         ) {
           requestBody.social_links = formData.social_links;
         }
+      } else if (key === "total_trips" || key === "trips_per_year") {
+        const newVal =
+          formData[key] === "" || formData[key] === null
+            ? 0
+            : Number(formData[key]);
+        const oldVal =
+          operator[key] === null || operator[key] === undefined
+            ? 0
+            : Number(operator[key]);
+        if (newVal !== oldVal) {
+          requestBody[key] = newVal;
+        }
       } else if ((formData[key] ?? "") !== (operator[key] ?? "")) {
         requestBody[key] = formData[key];
       }
@@ -291,6 +321,7 @@ export default function OperatorEditPage() {
         description: "No changes detected!",
         variant: "success",
       });
+      router.push(`/admin/operators/${id}`);
       setSaving(false);
       setIsModified(false);
       return;
@@ -314,7 +345,7 @@ export default function OperatorEditPage() {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: data.message || "Update failed",
+          description: data?.error?.message || "Update failed",
           variant: "destructive",
         });
         setSaving(false);
@@ -407,6 +438,8 @@ export default function OperatorEditPage() {
         [platform]: value,
       },
     }));
+    setFieldErrors((prev) => ({ ...prev, [platform]: "" }));
+    if (error) setError("");
     setIsModified(true);
   };
 
@@ -455,6 +488,11 @@ export default function OperatorEditPage() {
                     <p className="mt-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                       Current Logo
                     </p>
+                    {fieldErrors.logo_url && (
+                      <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1">
+                        {fieldErrors.logo_url}
+                      </p>
+                    )}
                   </div>
                 )}
                 <div className="flex-1 w-full space-y-4">
@@ -519,6 +557,11 @@ export default function OperatorEditPage() {
                             ...prev,
                             phone_number: digits,
                           }));
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            phone_number: "",
+                          }));
+                          if (error) setError("");
                           setIsModified(true);
                         }}
                         className="pl-12 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
@@ -650,6 +693,7 @@ export default function OperatorEditPage() {
                     className="w-full bg-white border-slate-200 focus:ring-teal-500/20 pr-10"
                   />
                 </div>
+
                 <button
                   type="button"
                   onClick={() => {
@@ -742,6 +786,11 @@ export default function OperatorEditPage() {
                     <span>No regions added yet</span>
                   </div>
                 )}
+                {fieldErrors.regions && (
+                  <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1">
+                    {fieldErrors.regions}
+                  </p>
+                )}
               </div>
             </div>
             {/* Social Links */}
@@ -809,11 +858,16 @@ export default function OperatorEditPage() {
                 className="w-full mt-2 leading-normal bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
                 placeholder="Describe the operator's services, specialties, and experience..."
               />
+              {fieldErrors.description && (
+                <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1">
+                  {fieldErrors.description}
+                </p>
+              )}
             </div>
             <div className="col-span-full flex flex-col sm:flex-row gap-4 pt-4 border-t">
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <Link
-                  href={`/admin/operators/${id}`}
+                  href={`/admin/operators`}
                   className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-center text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
                 >
                   Cancel

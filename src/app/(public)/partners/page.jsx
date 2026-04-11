@@ -94,6 +94,29 @@ const stats = [
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const slowScrollTo = (targetId, duration = 1800) => {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const targetY = target.getBoundingClientRect().top + window.scrollY;
+  const startY = window.scrollY;
+  const diff = targetY - startY;
+  let startTime = null;
+  // Disable CSS smooth-scroll to prevent browser double-animating our scrollTo calls
+  document.documentElement.style.scrollBehavior = "auto";
+  const step = (timestamp) => {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    window.scrollTo(0, startY + diff * progress);
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      document.documentElement.style.scrollBehavior = "";
+    }
+  };
+  requestAnimationFrame(step);
+};
+
 export default function Partner() {
   const [formData, setFormData] = useState({
     companyName: "",
@@ -303,11 +326,7 @@ export default function Partner() {
 
             <Button
               className="btn-primary text-body px-8 py-6"
-              onClick={() =>
-                document
-                  .getElementById("apply")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
+              onClick={() => slowScrollTo("apply")}
             >
               Apply to Join
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -413,8 +432,8 @@ export default function Partner() {
                 Partner Application
               </h2>
               <p className="text-body text-muted-foreground">
-                Fill out the form below and our team will get back to you within
-                48 hours.
+                Fill out the form below and our team will get back to you
+                shortly.
               </p>
             </div>
 
@@ -428,8 +447,7 @@ export default function Partner() {
                 </h3>
                 <p className="text-body text-muted-foreground mb-6">
                   Thank you for your interest in partnering with TripTribe. Our
-                  team will review your application and reach out within 48
-                  hours.
+                  team will review your application and reach out soon.
                 </p>
                 <Button
                   onClick={() => setIsSubmitted(false)}
