@@ -300,11 +300,20 @@ function TripsContent() {
 
     if (el) {
       const yOffset = -80; // adjust based on header height
-      const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
 
       window.scrollTo({ top: y, behavior: "smooth" });
     }
   }, [selectedType, selectedDifficulty]);
+
+  useEffect(() => {
+    const el = document.getElementById("trips");
+    if (el) {
+      const yOffset = -80;
+      const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+  }, [currentPage]);
 
   const filteredTrips = useMemo(() => {
     let result = [...trips];
@@ -728,15 +737,6 @@ function TripsContent() {
                             e.preventDefault();
                             if (currentPage > 1) {
                               setCurrentPage(currentPage - 1);
-                              const el = document.getElementById("trips");
-                              if (el) {
-                                const yOffset = -80;
-                                const y =
-                                  el.getBoundingClientRect().top +
-                                  window.pageYOffset +
-                                  yOffset;
-                                window.scrollTo({ top: y, behavior: "smooth" });
-                              }
                             }
                           }}
                           className={
@@ -777,18 +777,6 @@ function TripsContent() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   setCurrentPage(page);
-                                  const el = document.getElementById("trips");
-                                  if (el) {
-                                    const yOffset = -80;
-                                    const y =
-                                      el.getBoundingClientRect().top +
-                                      window.pageYOffset +
-                                      yOffset;
-                                    window.scrollTo({
-                                      top: y,
-                                      behavior: "smooth",
-                                    });
-                                  }
                                 }}
                               >
                                 {page}
@@ -807,15 +795,6 @@ function TripsContent() {
                             e.preventDefault();
                             if (currentPage < pagination.pages) {
                               setCurrentPage(currentPage + 1);
-                              const el = document.getElementById("trips");
-                              if (el) {
-                                const yOffset = -80;
-                                const y =
-                                  el.getBoundingClientRect().top +
-                                  window.pageYOffset +
-                                  yOffset;
-                                window.scrollTo({ top: y, behavior: "smooth" });
-                              }
                             }
                           }}
                           className={

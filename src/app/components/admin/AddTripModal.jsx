@@ -582,7 +582,11 @@ function AddTripModal({ handleModalClose }) {
                   dateFormat="MMM d, yyyy"
                   wrapperClassName="w-full"
                   customInput={
-                    <Input readOnly className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
+                    <Input
+                      readOnly
+                      inputMode="none"
+                      className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                    />
                   }
                 />
               </div>
@@ -607,7 +611,11 @@ function AddTripModal({ handleModalClose }) {
                   dateFormat="MMM d, yyyy"
                   wrapperClassName="w-full"
                   customInput={
-                    <Input readOnly className="pl-9 w-full text-sm bg-white border-slate-200 h-10" />
+                    <Input
+                      readOnly
+                      inputMode="none"
+                      className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                    />
                   }
                 />
               </div>

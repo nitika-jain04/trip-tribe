@@ -370,7 +370,11 @@ export default function Page() {
                       dateFormat="MMM d, yyyy"
                       wrapperClassName="w-full"
                       customInput={
-                        <Input readOnly className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground w-full" />
+                        <Input
+                          readOnly
+                          inputMode="none"
+                          className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground w-full"
+                        />
                       }
                     />
                   </div>
