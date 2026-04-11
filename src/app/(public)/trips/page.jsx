@@ -213,7 +213,14 @@ function TripsContent() {
         isFetchingRef.current = false;
       }
     },
-    [groupBy, locationType, search, currentPage, selectedType, selectedDifficulty],
+    [
+      groupBy,
+      locationType,
+      search,
+      currentPage,
+      selectedType,
+      selectedDifficulty,
+    ],
   );
 
   const getTripTypes = useCallback(
@@ -307,12 +314,16 @@ function TripsContent() {
   }, [selectedType, selectedDifficulty]);
 
   useEffect(() => {
-    const el = document.getElementById("trips");
-    if (el) {
-      const yOffset = -80;
-      const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
+    const timeoutId = setTimeout(() => {
+      const el = document.getElementById("trips");
+      if (el) {
+        const yOffset = -80;
+        const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
   }, [currentPage]);
 
   const filteredTrips = useMemo(() => {

@@ -13,6 +13,7 @@ import {
   Search,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -62,6 +63,14 @@ const team = [
 export default function About() {
   const [operatorCount, setOperatorCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const pathname = usePathname();
+
+  const handleNavClick = (e, href) => {
+    if (pathname === href) {
+      e.preventDefault(); // stop navigation
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const milestones = [
     {
@@ -350,7 +359,10 @@ export default function About() {
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link href="/trips">
-                <Button className="btn-primary text-body px-8 py-6">
+                <Button
+                  className="btn-primary text-body px-8 py-6"
+                  onClick={(e) => handleNavClick(e, "/trips")}
+                >
                   Explore Trips
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
