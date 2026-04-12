@@ -591,8 +591,15 @@ export default function TripEditPage() {
                 <div className="relative">
                   <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
                   <DatePicker
-                    selected={formData.start_date ? new Date(formData.start_date) : null}
-                    onChange={(date) => handleChange("start_date", date ? format(date, "yyyy-MM-dd") : "")}
+                    selected={
+                      formData.start_date ? new Date(formData.start_date) : null
+                    }
+                    onChange={(date) =>
+                      handleChange(
+                        "start_date",
+                        date ? format(date, "yyyy-MM-dd") : "",
+                      )
+                    }
                     minDate={new Date()}
                     placeholderText="Pick a date"
                     dateFormat="MMM d, yyyy"
@@ -620,9 +627,22 @@ export default function TripEditPage() {
                 <div className="relative">
                   <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
                   <DatePicker
-                    selected={formData.end_date ? new Date(formData.end_date) : null}
-                    onChange={(date) => handleChange("end_date", date ? format(date, "yyyy-MM-dd") : "")}
-                    minDate={formData.start_date ? new Date(Math.max(new Date(), new Date(formData.start_date))) : new Date()}
+                    selected={
+                      formData.end_date ? new Date(formData.end_date) : null
+                    }
+                    onChange={(date) =>
+                      handleChange(
+                        "end_date",
+                        date ? format(date, "yyyy-MM-dd") : "",
+                      )
+                    }
+                    minDate={
+                      formData.start_date
+                        ? new Date(
+                            Math.max(new Date(), new Date(formData.start_date)),
+                          )
+                        : new Date()
+                    }
                     placeholderText="Pick a date"
                     dateFormat="MMM d, yyyy"
                     wrapperClassName="w-full"
