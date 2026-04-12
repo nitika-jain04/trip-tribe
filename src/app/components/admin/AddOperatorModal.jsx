@@ -57,7 +57,13 @@ function AddOperatorModal({ handleModalClose }) {
   }
 
   async function handleImageUpload(e) {
-    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+    const validTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      // "image/heif",
+      // "image/heic",
+    ];
 
     const file = e.target.files[0];
     if (!file) return;

@@ -177,10 +177,37 @@ function AddTripModal({ handleModalClose }) {
   };
 
   const handleImageUpload = async (e) => {
+    const validTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      // "image/heif",
+      // "image/heic",
+    ];
+
     const file = e.target.files[0];
     if (!file) return;
 
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Only JPG and PNG images are allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image must be less than 2MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setUploadingImage(true);
+
     const token = Cookies.get("token");
     const fd = new FormData();
     fd.append("image", file);
@@ -575,8 +602,17 @@ function AddTripModal({ handleModalClose }) {
               <div className="relative">
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
                 <DatePicker
-                  selected={formData.start_date ? new Date(formData.start_date) : null}
-                  onChange={(date) => handleChange({ target: { name: "start_date", value: date ? format(date, "yyyy-MM-dd") : "" } })}
+                  selected={
+                    formData.start_date ? new Date(formData.start_date) : null
+                  }
+                  onChange={(date) =>
+                    handleChange({
+                      target: {
+                        name: "start_date",
+                        value: date ? format(date, "yyyy-MM-dd") : "",
+                      },
+                    })
+                  }
                   minDate={new Date()}
                   placeholderText="Pick a date"
                   dateFormat="MMM d, yyyy"
@@ -604,9 +640,24 @@ function AddTripModal({ handleModalClose }) {
               <div className="relative">
                 <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
                 <DatePicker
-                  selected={formData.end_date ? new Date(formData.end_date) : null}
-                  onChange={(date) => handleChange({ target: { name: "end_date", value: date ? format(date, "yyyy-MM-dd") : "" } })}
-                  minDate={formData.start_date ? new Date(Math.max(new Date(), new Date(formData.start_date))) : new Date()}
+                  selected={
+                    formData.end_date ? new Date(formData.end_date) : null
+                  }
+                  onChange={(date) =>
+                    handleChange({
+                      target: {
+                        name: "end_date",
+                        value: date ? format(date, "yyyy-MM-dd") : "",
+                      },
+                    })
+                  }
+                  minDate={
+                    formData.start_date
+                      ? new Date(
+                          Math.max(new Date(), new Date(formData.start_date)),
+                        )
+                      : new Date()
+                  }
                   placeholderText="Pick a date"
                   dateFormat="MMM d, yyyy"
                   wrapperClassName="w-full"
