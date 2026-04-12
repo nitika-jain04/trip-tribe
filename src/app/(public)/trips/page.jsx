@@ -298,7 +298,14 @@ function TripsContent() {
     }
   }, []);
 
+  const isFirstLoad = useRef(true);
+
   useEffect(() => {
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return; // ⛔ skip on first load
+    }
+
     const isFilterApplied =
       selectedType !== "All Types" || selectedDifficulty !== "All";
 
@@ -306,24 +313,56 @@ function TripsContent() {
     const el = document.getElementById(targetId);
 
     if (el) {
-      const yOffset = -80; // adjust based on header height
+      const yOffset = -80;
+      const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
+
+      window.scrollTo({ top: y, behavior: "smooth" }); // ✅ smooth only for user action
+    }
+  }, [selectedType, selectedDifficulty]);
+
+  // useEffect(() => {
+  //   const isFilterApplied =
+  //     selectedType !== "All Types" || selectedDifficulty !== "All";
+
+  //   const targetId = isFilterApplied ? "filters" : "trips";
+  //   const el = document.getElementById(targetId);
+
+  //   if (el) {
+  //     const yOffset = -80; // adjust based on header height
+  //     const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
+
+  //     window.scrollTo({ top: y, behavior: "smooth" });
+  //   }
+  // }, [selectedType, selectedDifficulty]);
+
+  // useEffect(() => {
+  //   const timeoutId = setTimeout(() => {
+  //     const el = document.getElementById("trips");
+  //     if (el) {
+  //       const yOffset = -80;
+  //       const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
+  //       window.scrollTo({ top: y, behavior: "smooth" });
+  //     }
+  //   }, 100);
+
+  //   return () => clearTimeout(timeoutId);
+  // }, [currentPage]);
+
+  const isFirstPageLoad = useRef(true);
+
+  useEffect(() => {
+    if (isFirstPageLoad.current) {
+      isFirstPageLoad.current = false;
+      return;
+    }
+
+    const el = document.getElementById("trips");
+    if (el) {
+      const yOffset = -80;
       const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
 
       window.scrollTo({ top: y, behavior: "smooth" });
     }
-  }, [selectedType, selectedDifficulty]);
-
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const el = document.getElementById("trips");
-      if (el) {
-        const yOffset = -80;
-        const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
-        window.scrollTo({ top: y, behavior: "smooth" });
-      }
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
   }, [currentPage]);
 
   const filteredTrips = useMemo(() => {
