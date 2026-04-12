@@ -263,8 +263,8 @@ export default function Page() {
         <div className="container-premium relative z-10 text-center">
           <div className="max-w-4xl mx-auto">
             <h1 className="font-display text-display-sm md:text-display-xl lg:text-heading-2xl md:leading-20 lg:leading-24 text-background mb-6 mt-10 animate-fade-up">
-              Find your tribe.
-              <span className="block">Travel together.</span>
+              Find your tribe,
+              <span className="block">travel together.</span>
             </h1>
             <p className="text-base md:text-lg lg:text-xl text-background/90 max-w-2xl mx-auto mb-10 animate-fade-up delay-100">
               Explore curated group trips.
