@@ -42,6 +42,13 @@ export function Navbar() {
   const isHeaderSolid = isScrolled || isMobileMenuOpen;
   const isTransparentAndHome = pathname === "/" && !isHeaderSolid;
 
+  const handleNavClick = (e, href) => {
+    if (pathname === href) {
+      e.preventDefault(); // stop navigation
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <>
       <header
@@ -54,7 +61,11 @@ export function Navbar() {
         <nav className="container-premium">
           <div className="flex items-center justify-between h-18">
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-2 group">
+            <Link
+              href="/"
+              className="flex items-center gap-2 group"
+              onClick={(e) => handleNavClick(e, "/")}
+            >
               <img
                 src="/triptribe-logo-final.png"
                 alt="TripTribe"
