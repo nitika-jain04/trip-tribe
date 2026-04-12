@@ -49,10 +49,20 @@ function TripPage() {
   });
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.phone_number) {
+    if (!formData.name || !formData.phone_number || !formData.email) {
       toast({
         title: "Form",
         description: "Please fill required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      // newErrors.email = "Enter a valid email address";
+      toast({
+        title: "Form",
+        description: "Enter a valid email address",
         variant: "destructive",
       });
       return;
@@ -72,25 +82,27 @@ function TripPage() {
 
     const currentUrl = window.location.href;
 
+    const payload = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        full_name: formData.name,
+        email: formData.email,
+        phone_number: formData.phone_number,
+        inquiry_type: "TRIP",
+        trip_id: trip.id,
+        subject: "Book Trip",
+        message: formData?.remark || `User is interested in ${trip.name}`,
+      }),
+    };
+
     try {
       // ✅ 1. Call Enquiry API
-      await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          full_name: formData.name,
-          email: "trip.provider.email",
-          phone_number: formData.phone_number.startsWith("+91")
-            ? formData.phone_number
-            : `+91${formData.phone_number}`,
-          inquiry_type: "TRIP",
-          trip_id: trip.id,
-          subject: "Book Trip",
-          message: formData?.remark || `User is interested in ${trip.name}`,
-        }),
-      });
+      await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, payload);
+
+      console.log("payload", payload);
 
       // ✅ 2. Prepare WhatsApp message
       const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
@@ -102,14 +114,32 @@ function TripPage() {
 • *Operator:* ${trip.provider.name}
 • *Start Date:* ${startDate}
 
+*User Details*
+• *Name:* ${formData.name}
+• *Phone:* +91 ${formData.phone_number}
+
 *View details for ${trip.name}:*
 ${currentUrl}`;
 
-      const whatsappNumber = "917007755306"; // with country code
+      const rawNumber = trip.provider.phone_number || "";
+      const whatsappNumber = rawNumber.replace(/\D/g, ""); // Keep only digits
+
+      if (!whatsappNumber) {
+        toast({
+          title: "Contact Info Missing",
+          description:
+            "We couldn't find a contact number for this provider. Please try again later or contact support.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
         message,
       )}`;
+
+      console.log("wanumber", whatsappNumber);
+      console.log("whatsapp url", url);
 
       // ✅ 3. Redirect to WhatsApp (more reliable on mobile than window.open)
       window.location.href = url;
@@ -169,6 +199,9 @@ ${currentUrl}`;
           destination_id: raw.destination_id,
           provider: {
             name: raw.operator.name || "Unknown",
+            phone_number:
+              raw.operator?.phone_number || raw.operator_phone || raw.phone,
+            email: raw.operator?.email || raw.operator_email || raw.email,
             rating: 4.8,
             reviewCount: 0,
           },
@@ -731,7 +764,7 @@ ${currentUrl}`;
             </div>
 
             {/* Content */}
-            <div className="px-5 pb-5 overflow-y-auto space-y-3">
+            <div className="px-5 py-3 overflow-y-auto space-y-3">
               <Input
                 type="text"
                 placeholder="Full Name"
@@ -752,12 +785,24 @@ ${currentUrl}`;
                   className="w-full pl-14 pr-3 h-10 rounded-lg border border-input bg-background py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 font-medium tracking-wide transition-shadow"
                   value={formData.phone_number}
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
+                    const digits = e.target.value
+                      .replace(/\D/g, "")
+                      .slice(0, 10);
                     setFormData({ ...formData, phone_number: digits });
                   }}
                   placeholder="98765 43210"
                 />
               </div>
+
+              <Input
+                type="email"
+                placeholder="Email id"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+              />
 
               <div className="grid grid-cols-2 gap-3">
                 <Input
@@ -783,13 +828,13 @@ ${currentUrl}`;
                 }
               />
 
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 className="w-full btn-primary h-11 mt-1 text-sm font-semibold shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
               >
                 Send Request
               </Button>
-              
+
               {/* <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1 mt-2">
                 <Shield className="w-3 h-3" />
                 Secure form
