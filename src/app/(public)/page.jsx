@@ -540,7 +540,7 @@ export default function Page() {
                 Popular Group Trips
               </h2>
             </div>
-            <Link href="/trips">
+            <Link href="/trips" className="scroll-smooth" scroll={false}>
               <Button className="btn-secondary">
                 View All Trips
                 <ChevronRight className="w-5 h-5 ml-1" />
@@ -662,9 +662,9 @@ export default function Page() {
                 Explore Incredible India
               </h2>
             </div>
-            <Link href="/trips">
+            <Link href="/trips" className="scroll-smooth">
               <Button className="btn-secondary">
-                All Destinations
+                View All Destinations
                 <ChevronRight className="w-5 h-5 ml-1" />
               </Button>
             </Link>
