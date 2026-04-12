@@ -102,7 +102,7 @@ function TripPage() {
       // ✅ 1. Call Enquiry API
       await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, payload);
 
-      console.log("payload", payload);
+      // console.log("payload", payload);
 
       // ✅ 2. Prepare WhatsApp message
       const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
@@ -113,10 +113,6 @@ function TripPage() {
 • *Trip:* ${trip.name}
 • *Operator:* ${trip.provider.name}
 • *Start Date:* ${startDate}
-
-*User Details*
-• *Name:* ${formData.name}
-• *Phone:* +91 ${formData.phone_number}
 
 *View details for ${trip.name}:*
 ${currentUrl}`;
@@ -134,17 +130,20 @@ ${currentUrl}`;
         return;
       }
 
-      const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+      const url = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(
         message,
       )}`;
 
-      console.log("wanumber", whatsappNumber);
-      console.log("whatsapp url", url);
-
-      // ✅ 3. Redirect to WhatsApp (more reliable on mobile than window.open)
-      window.location.href = url;
+      // ✅ 3. Redirect to WhatsApp in a new tab
+      window.open(url, "_blank");
 
       setShowForm(false);
+
+      setFormData({
+        name: "",
+        phone_number: "",
+        email: "",
+      });
     } catch (error) {
       console.error("Enquiry error:", error);
       toast({
