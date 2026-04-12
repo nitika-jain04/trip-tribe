@@ -168,6 +168,7 @@ ${currentUrl}`;
         const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`, {
           signal: controller.signal, // ✅ Attach signal to fetch
         });
+
         const data = await res.json();
 
         if (!data?.success) {
@@ -277,7 +278,7 @@ ${currentUrl}`;
 
                 <div
                   className={`w-full h-full items-center justify-center bg-gray-100 ${
-                    trip.image ? "hidden" : "flex"
+                    trip.images[0] ? "hidden" : "flex"
                   }`}
                 >
                   <ImageIcon className="w-12 h-12 text-gray-400" />
@@ -821,7 +822,7 @@ ${currentUrl}`;
               <textarea
                 placeholder="Any special requests? (Optional)"
                 className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
-                value={formData.remark}
+                value={formData.message}
                 onChange={(e) =>
                   setFormData({ ...formData, remark: e.target.value })
                 }

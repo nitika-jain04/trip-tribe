@@ -106,7 +106,7 @@ export function Navbar() {
 
             {/* Mobile Menu Button */}
             <button
-              className={`md:hidden p-2 rounded-lg transition-colors text-foreground hover:bg-primary ${
+              className={`md:hidden p-2 rounded-lg transition-colors text-foreground ${
                 isHeaderSolid
                   ? "text-foreground hover:bg-muted"
                   : "text-background hover:bg-background/10"
