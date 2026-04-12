@@ -512,10 +512,6 @@ function TripsContent() {
             <h1 className="font-display text-display text-foreground mb-4">
               Explore Community Trips
             </h1>
-            <p className="text-body-lg text-muted-foreground">
-              {filteredTrips.length > 0 &&
-                `${filteredTrips.length} ${filteredTrips.length === 1 ? "trip" : "trips"} from verified providers`}
-            </p>
           </div>
 
           <div className="max-w-2xl mx-auto">
