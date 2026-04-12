@@ -250,7 +250,7 @@ export default function Page() {
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -299,7 +299,7 @@ export default function Page() {
                     />
                     {/* Custom Suggestions Dropdown */}
                     {showSuggestions && locations.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 border border-border rounded-xl shadow-2xl overflow-hidden z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 border border-border rounded-xl shadow-2xl overflow-y-auto max-h-[300px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
                         {/* "Take me anywhere" Option */}
                         <button
                           type="button"
