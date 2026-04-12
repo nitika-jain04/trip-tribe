@@ -174,7 +174,7 @@ export default function About() {
               </div>
             </div>
             <div className="relative">
-              <div className="aspect-4/4 rounded-3xl overflow-hidden shadow-premium-lg">
+              <div className="sm:aspect-4/4 rounded-3xl overflow-hidden shadow-premium-lg">
                 <img
                   src="/about-community.png"
                   alt="Group travel"
