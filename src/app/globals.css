@@ -221,6 +221,7 @@
   body {
     margin: 0;
     padding: 0;
+    overscroll-behavior: none;
   }
 
   body {
@@ -228,7 +229,6 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    -webkit-overflow-scrolling: touch;
   }
 
   h1,
