@@ -103,7 +103,10 @@ function TripsContent() {
   useEffect(() => {
     // Set loading immediately when starting to type a valid search (>= 2 chars)
     // to avoid showing stale results while waiting for the debounce/API.
-    if (searchQuery.trim().length >= 2 && searchQuery !== debouncedSearchQuery) {
+    if (
+      searchQuery.trim().length >= 2 &&
+      searchQuery !== debouncedSearchQuery
+    ) {
       setLoadingTrips(true);
     }
 
@@ -443,6 +446,7 @@ function TripsContent() {
 
   const handleClearSearch = () => {
     setSearchQuery("");
+    setDebouncedSearchQuery("");
     setCurrentPage(1);
 
     const params = new URLSearchParams(searchParams.toString());
