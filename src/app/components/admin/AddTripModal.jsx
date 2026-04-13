@@ -10,17 +10,16 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Card, CardContent } from "../ui/card";
-import { FaMapMarkedAlt, FaPlus, FaTrash } from "react-icons/fa";
 import { useToast } from "@/app/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar as CalendarIcon } from "lucide-react";
 import useTripTypes from "@/app/hooks/use-triptypes";
 import dynamic from "next/dynamic";
 import Cookies from "js-cookie";
+import { FaPlus, FaTrash } from "react-icons/fa";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -197,10 +196,10 @@ function AddTripModal({ handleModalClose }) {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "Error",
-        description: "Image must be less than 2MB",
+        description: "Image must be less than 5MB",
         variant: "destructive",
       });
       return;
@@ -381,10 +380,10 @@ function AddTripModal({ handleModalClose }) {
         "Please fill all inclusion fields or remove empty ones.";
     }
 
-    if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
-      errors.exclusions =
-        "Please fill all exclusion fields or remove empty ones.";
-    }
+    // if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
+    //   errors.exclusions =
+    //     "Please fill all exclusion fields or remove empty ones.";
+    // }
 
     const hasIncompleteItinerary = formData.itinerary.some(
       (day) => !day.activities || day.activities.some((a) => !a.trim()),
@@ -400,6 +399,7 @@ function AddTripModal({ handleModalClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!validateForm()) {
       scrollToFirstError();
       return;
@@ -408,12 +408,36 @@ function AddTripModal({ handleModalClose }) {
     const token = Cookies.get("token");
     setLoading(true);
 
+    const cleanedInclusions = formData.inclusions.map((item) => item.trim());
+
+    const cleanedExclusions = formData.exclusions
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const cleanedItinerary = formData.itinerary.map((day) => ({
+      ...day,
+      activities: day.activities.map((activity) => activity.trim()),
+    }));
+
     const payload = {
-      ...formData,
+      name: formData.name.trim(),
+      description: formData.description.trim(),
       price: Number(formData.price),
+      start_date: formData.start_date,
+      end_date: formData.end_date,
+      difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
+      type_id: formData.type_id,
+      operator_id: formData.operator_id,
+      source: formData.source,
+      destination: formData.destination,
+      status: formData.status,
+      images: formData.images,
+      inclusions: cleanedInclusions,
+      itinerary: cleanedItinerary,
       source_id: formData.source.id,
       destination_id: formData.destination.id,
+      ...(cleanedExclusions.length > 0 && { exclusions: cleanedExclusions }),
     };
 
     try {
@@ -427,7 +451,7 @@ function AddTripModal({ handleModalClose }) {
       });
 
       const data = await res.json();
-      // console.log("req", data);
+      console.log("req", payload);
 
       if (res.ok && data.success) {
         toast({
@@ -445,7 +469,6 @@ function AddTripModal({ handleModalClose }) {
       }
     } catch (err) {
       console.error(err);
-
       toast({
         title: "Error",
         description: err.message || "Network error while creating trip.",
@@ -1001,7 +1024,7 @@ function AddTripModal({ handleModalClose }) {
 
       {/* Map Popups outside main layout flow */}
       {showSourceMap && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
               <span className="font-semibold text-gray-800">
@@ -1023,7 +1046,7 @@ function AddTripModal({ handleModalClose }) {
       )}
 
       {showDestinationMap && (
-        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
               <span className="font-semibold text-gray-800">

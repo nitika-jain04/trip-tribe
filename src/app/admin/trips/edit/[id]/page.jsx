@@ -165,6 +165,15 @@ export default function TripEditPage() {
   };
 
   const removeItem = (field, index) => {
+    if (formData.inclusions.length === 1) {
+      toast({
+        title: "Inclusions",
+        description: "1 Inclusion in required",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const updated = formData[field].filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, [field]: updated }));
     setIsModified(true);
@@ -211,10 +220,10 @@ export default function TripEditPage() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: "Error",
-        description: "Image must be less than 2MB",
+        description: "Image must be less than 5MB",
         variant: "destructive",
       });
       return;
