@@ -649,7 +649,7 @@ function Page() {
       "
             >
               <Select value={operatorFilter} onValueChange={setOperatorFilter}>
-                <SelectTrigger className="w-full lg:w-36">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Operator" />
                 </SelectTrigger>
                 <SelectContent>
@@ -663,7 +663,7 @@ function Page() {
               </Select>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full lg:w-30">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -676,7 +676,7 @@ function Page() {
               </Select>
 
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full lg:w-30">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Trip Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -693,7 +693,7 @@ function Page() {
                 value={difficultyFilter}
                 onValueChange={setDifficultyFilter}
               >
-                <SelectTrigger className="w-full lg:w-36">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Difficulty" />
                 </SelectTrigger>
                 <SelectContent>
@@ -707,7 +707,7 @@ function Page() {
               </Select>
 
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full lg:w-30">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
@@ -719,7 +719,7 @@ function Page() {
               </Select>
 
               <Select value={order} onValueChange={setorder}>
-                <SelectTrigger className="w-full lg:w-30">
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort Order" />
                 </SelectTrigger>
                 <SelectContent>
