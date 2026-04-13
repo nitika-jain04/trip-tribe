@@ -97,7 +97,7 @@ function TripsContent() {
       setSearchQuery(s);
       setDebouncedSearchQuery(s);
     }
-  }, [searchParams]);
+  }, [searchQuery, searchParams]);
 
   // Debounce searchQuery for URL and API updates
   useEffect(() => {
@@ -370,13 +370,7 @@ function TripsContent() {
       return;
     }
 
-    const el = document.getElementById("trips");
-    if (el) {
-      const yOffset = -80;
-      const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
-
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentPage]);
 
   const filteredTrips = useMemo(() => {
