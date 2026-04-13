@@ -370,12 +370,14 @@ function TripsContent() {
       return;
     }
 
-    const el = document.getElementById("trips");
-    if (el) {
-      const yOffset = -80;
-      const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
-      window.scrollTo({ top: y, behavior: "smooth" });
-    }
+    requestAnimationFrame(() => {
+      const el = document.getElementById("trips");
+      if (el) {
+        const yOffset = -90;
+        const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
+        window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    });
   }, [currentPage]);
 
   const filteredTrips = useMemo(() => {
