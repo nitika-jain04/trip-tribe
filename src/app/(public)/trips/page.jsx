@@ -90,14 +90,14 @@ function TripsContent() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const prevSearchRef = useRef(searchQuery);
 
-  // Sync state when URL search param changes (e.g. external navigation)
+  // Sync state when URL search param changes (e.g. external navigation, back button)
   useEffect(() => {
     const s = searchParams.get("search") || "";
     if (s !== searchQuery) {
       setSearchQuery(s);
       setDebouncedSearchQuery(s);
     }
-  }, [searchQuery, searchParams]);
+  }, [searchParams]); // Removed searchQuery from dependencies to prevent typing block
 
   // Debounce searchQuery for URL and API updates
   useEffect(() => {
