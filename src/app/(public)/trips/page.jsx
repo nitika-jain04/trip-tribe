@@ -64,9 +64,6 @@ function TripsContent() {
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || "",
   );
-  const groupBy = searchParams.get("group_by");
-  const locationType = searchParams.get("location_type");
-  const search = searchParams.get("search");
 
   const [selectedType, setSelectedType] = useState("All Types");
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
@@ -89,12 +86,63 @@ function TripsContent() {
     total: 0,
     pages: 1,
   });
-  const prevSearchRef = useRef(search);
 
-  if (prevSearchRef.current !== search) {
-    setCurrentPage(1);
-    prevSearchRef.current = search;
-  }
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const prevSearchRef = useRef(searchQuery);
+
+  // Sync state when URL search param changes (e.g. external navigation)
+  useEffect(() => {
+    const s = searchParams.get("search") || "";
+    if (s !== searchQuery) {
+      setSearchQuery(s);
+      setDebouncedSearchQuery(s);
+    }
+  }, [searchParams]);
+
+  // Debounce searchQuery for URL and API updates
+  useEffect(() => {
+    // Set loading immediately when starting to type a valid search (>= 2 chars)
+    // to avoid showing stale results while waiting for the debounce/API.
+    if (searchQuery.trim().length >= 2 && searchQuery !== debouncedSearchQuery) {
+      setLoadingTrips(true);
+    }
+
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery, debouncedSearchQuery]);
+
+  // Update URL based on debounced search
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentUrlSearch = params.get("search") || "";
+
+    if (debouncedSearchQuery !== currentUrlSearch) {
+      if (debouncedSearchQuery.trim().length > 0) {
+        params.set("search", debouncedSearchQuery.trim());
+        if (debouncedSearchQuery.trim().length >= 2) {
+          params.delete("page");
+          params.delete("limit");
+        }
+      } else {
+        params.delete("search");
+      }
+
+      const queryString = params.toString();
+      router.replace(queryString ? `/trips?${queryString}` : "/trips", {
+        scroll: false,
+      });
+    }
+  }, [debouncedSearchQuery, searchParams, router]);
+
+  useEffect(() => {
+    if (prevSearchRef.current !== searchQuery) {
+      setCurrentPage(1);
+      prevSearchRef.current = searchQuery;
+    }
+  }, [searchQuery]);
 
   // Track if data is already fetching
   const isFetchingRef = useRef(false);
@@ -126,14 +174,13 @@ function TripsContent() {
       try {
         if (showLoader) setLoadingTrips(true);
 
-        // Fetch trips
         let url = `${BASE_URL}/api/${API_VERSION}/trips`;
         const params = new URLSearchParams();
-        if (search) {
-          params.set("group_by", groupBy || "location");
-          if (locationType) params.set("location_type", locationType);
-          params.set("search", search);
+
+        if (debouncedSearchQuery.trim().length >= 2) {
+          params.set("search", debouncedSearchQuery.trim());
         }
+
         params.set("page", currentPage);
         params.set("limit", 10);
 
@@ -145,6 +192,8 @@ function TripsContent() {
         }
 
         url += `?${params.toString()}`;
+        console.log("url", url);
+
         const res = await fetch(url);
         const data = await res.json();
         if (!data.success) return;
@@ -155,13 +204,7 @@ function TripsContent() {
           setPagination({ page: 1, limit: 10, total: 0, pages: 1 });
         }
 
-        let rawTrips = [];
-        if (search && (groupBy || "location") === "location") {
-          const groups = data.result?.groups || [];
-          rawTrips = groups.flatMap((g) => g.trips || []);
-        } else {
-          rawTrips = data.result?.trips || [];
-        }
+        const rawTrips = data.result?.trips || [];
 
         const locationsMap = await fetchLocationsMap();
 
@@ -205,7 +248,6 @@ function TripsContent() {
 
         setTrips(enrichedTrips);
         setLoadingTrips(false);
-        // sessionStorage.setItem("trips_cache", JSON.stringify(enrichedTrips));
       } catch (err) {
         console.error("Fetch failed", err);
         setLoadingTrips(false);
@@ -213,15 +255,12 @@ function TripsContent() {
         isFetchingRef.current = false;
       }
     },
-    [
-      groupBy,
-      locationType,
-      search,
-      currentPage,
-      selectedType,
-      selectedDifficulty,
-    ],
+    [debouncedSearchQuery, currentPage, selectedType, selectedDifficulty],
   );
+
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
+  };
 
   const getTripTypes = useCallback(
     async (forceRefresh = false) => {
@@ -320,34 +359,6 @@ function TripsContent() {
     }
   }, [selectedType, selectedDifficulty]);
 
-  // useEffect(() => {
-  //   const isFilterApplied =
-  //     selectedType !== "All Types" || selectedDifficulty !== "All";
-
-  //   const targetId = isFilterApplied ? "filters" : "trips";
-  //   const el = document.getElementById(targetId);
-
-  //   if (el) {
-  //     const yOffset = -80; // adjust based on header height
-  //     const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
-
-  //     window.scrollTo({ top: y, behavior: "smooth" });
-  //   }
-  // }, [selectedType, selectedDifficulty]);
-
-  // useEffect(() => {
-  //   const timeoutId = setTimeout(() => {
-  //     const el = document.getElementById("trips");
-  //     if (el) {
-  //       const yOffset = -80;
-  //       const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
-  //       window.scrollTo({ top: y, behavior: "smooth" });
-  //     }
-  //   }, 100);
-
-  //   return () => clearTimeout(timeoutId);
-  // }, [currentPage]);
-
   const isFirstPageLoad = useRef(true);
 
   useEffect(() => {
@@ -368,8 +379,8 @@ function TripsContent() {
   const filteredTrips = useMemo(() => {
     let result = [...trips];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       result = result.filter(
         (trip) =>
           trip.name.toLowerCase().includes(query) ||
@@ -404,7 +415,7 @@ function TripsContent() {
     }
 
     return result;
-  }, [trips, searchQuery, selectedType, selectedDifficulty, sortBy]);
+  }, [trips, debouncedSearchQuery, selectedType, selectedDifficulty, sortBy]);
 
   const toggleCompare = useCallback((tripId) => {
     setCompareList((prev) => {
@@ -432,8 +443,15 @@ function TripsContent() {
 
   const handleClearSearch = () => {
     setSearchQuery("");
+    setCurrentPage(1);
 
-    router.push("/trips");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("search");
+    params.delete("page");
+    params.delete("limit");
+
+    const queryString = params.toString();
+    router.replace(queryString ? `/trips?${queryString}` : "/trips");
   };
 
   const FiltersContent = () => (
@@ -521,7 +539,7 @@ function TripsContent() {
                 type="text"
                 placeholder="Search destinations, trips..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-12 pr-4 h-14 rounded-xl border-border bg-background text-body shadow-sm"
               />
               {searchQuery && (
@@ -773,7 +791,8 @@ function TripsContent() {
 
               {!loadingTrips &&
                 pagination.pages > 1 &&
-                filteredTrips.length > 0 && (
+                filteredTrips.length > 0 &&
+                (!searchQuery || searchQuery.length >= 2) && (
                   <Pagination>
                     <PaginationContent>
                       <PaginationItem>
