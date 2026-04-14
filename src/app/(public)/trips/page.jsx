@@ -23,6 +23,7 @@ import {
   GitCompare,
   SlidersHorizontal,
   ImageIcon,
+  Route,
 } from "lucide-react";
 import {
   Select,
@@ -236,6 +237,8 @@ function TripsContent() {
             source_region: source.region,
             provider: trip.operator?.name || "Unknown",
             priceFrom: Number(trip.price),
+            startDate: trip.start_date,
+            endDate: trip.end_date,
             duration: `${durationDays} days`,
             groupSize: `${trip.total_seats} people`,
             difficulty:
@@ -245,6 +248,8 @@ function TripsContent() {
             reviewCount: 0,
             verified: true,
             inclusions: trip.inclusions || [],
+            exclusions: trip.exclusions || [],
+            itinerary: trip.itinerary || [],
             type: trip.type?.name || "Other",
           };
         });
@@ -915,20 +920,30 @@ function TripsContent() {
                 {compareTrips.map((trip) => (
                   <div
                     key={trip.id}
-                    className="border border-border rounded-xl overflow-hidden"
+                    className="border border-border rounded-xl overflow-hidden flex flex-col h-full"
                   >
                     <img
                       src={trip.image}
                       alt={trip.name}
                       className="w-full h-40 sm:h-48 md:h-60 object-cover"
                     />
-                    <div className="p-3 sm:p-4">
+                    <div className="p-3 sm:p-4 flex flex-col flex-1">
                       <h4 className="font-medium text-foreground mb-1 text-sm sm:text-base">
                         {trip.name}
                       </h4>
                       <p className="text-body-sm text-muted-foreground mb-3 sm:mb-4">
                         {trip.provider}
                       </p>
+
+                      {/* <div className="text-body-sm text-muted-foreground mb-3 sm:mb-4 flex">
+                        <span>
+                          From: {trip.source_name},{trip.source_region}{" "}
+                          <span>
+                            <Route />
+                          </span>
+                          To: {trip.destination_name}, {trip.destination_region}
+                        </span>
+                      </div> */}
 
                       <div className="space-y-1.5 text-body-sm">
                         <div className="flex justify-between">
@@ -939,10 +954,31 @@ function TripsContent() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
+                            Start Date
+                          </span>
+                          <span>{trip.startDate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            End Date
+                          </span>
+                          <span>{trip.endDate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
                             Duration
                           </span>
                           <span>{trip.duration}</span>
                         </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Route</span>
+                          <span>
+                            {trip.source_name},{trip.source_region}
+                            {" -> "}
+                            {trip.destination_name}, {trip.destination_region}
+                          </span>
+                        </div>
+
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
                             Group Size
@@ -962,7 +998,7 @@ function TripsContent() {
                           Inclusions:
                         </p>
                         <ul className="text-body-sm text-muted-foreground space-y-1">
-                          {trip.inclusions.slice(0, 4).map((inc, i) => (
+                          {trip.inclusions.map((inc, i) => (
                             <li key={i} className="flex items-center gap-1">
                               <span className="w-1 h-1 rounded-full bg-primary" />
                               {inc}
@@ -971,9 +1007,54 @@ function TripsContent() {
                         </ul>
                       </div>
 
+                      {trip?.exclusions && (
+                        <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
+                          <p className="text-body-sm font-medium mb-2">
+                            Exclusions:
+                          </p>
+                          <ul className="text-body-sm text-muted-foreground space-y-1">
+                            {trip.exclusions.map((inc, i) => (
+                              <li key={i} className="flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-primary" />
+                                {inc}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
+                        <p className="text-body-sm font-medium mb-2">
+                          Itinerary
+                        </p>
+                        <div className="space-y-6">
+                          {trip.itinerary.map((dayItem, index) => (
+                            <div key={index} className="flex gap-4">
+                              <h4 className="font-semibold h-fit p-1 rounded-sm bg-primary text-primary-foreground">
+                                Day {dayItem.day}
+                              </h4>
+
+                              <div className="flex-1 bg-gray-50 rounded-sm p-1">
+                                <ul className="">
+                                  {dayItem.activities.map((activity, i) => (
+                                    <li
+                                      key={i}
+                                      className="flex items-start gap-2 text-body text-muted-foreground"
+                                    >
+                                      <span className="w-1.5 h-1.5 mt-2 rounded-full bg-primary shrink-0" />
+                                      {activity}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       <Link
                         href={`/trip/${trip.id}`}
-                        className="block mt-3 sm:mt-4"
+                        className="block mt-auto pt-3 sm:pt-4"
                       >
                         <Button className="btn-primary w-full">
                           View Trip

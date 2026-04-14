@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
+import PhoneInput from "@/app/components/ui/PhoneInput";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import {
@@ -135,13 +136,10 @@ export default function Contact() {
       newErrors.email = "Enter a valid email address";
     }
 
-    // accepts +919876543210, 919876543210, 9876543210
-    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
-
-    if (!formData.phone.trim()) {
+    if (!formData.phone || formData.phone.length <= 3) {
       newErrors.phone = "Phone number is required";
-    } else if (!phoneRegex.test(formData.phone.trim())) {
-      newErrors.phone = "Enter valid phone number like 9876543210";
+    } else if (formData.phone.length < 8) {
+      newErrors.phone = "Enter a valid phone number";
     }
 
     if (!formData.subject.trim()) {
@@ -410,7 +408,7 @@ export default function Contact() {
                             });
                           }
                         }}
-                        className={`h-12 rounded-lg ${errors.name ? "border-red-500" : ""}`}
+                        className={`h-10 rounded-lg ${errors.name ? "border-red-500" : ""}`}
                         placeholder="Your name"
                       />
                       {errors.name && (
@@ -437,7 +435,7 @@ export default function Contact() {
                             });
                           }
                         }}
-                        className={`h-12 rounded-lg ${errors.email ? "border-red-500" : ""}`}
+                        className={`h-10 rounded-lg ${errors.email ? "border-red-500" : ""}`}
                         placeholder="you@email.com"
                       />
                       {errors.email && (
@@ -450,37 +448,26 @@ export default function Contact() {
 
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="phone">Phone Number</Label>
+                    <PhoneInput
+                      className="h-10"
+                      value={formData.phone}
+                      onChange={(phone) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone: phone,
+                        }));
 
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                        +91
-                      </span>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => {
-                          const digits = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 10);
-
-                          setFormData((prev) => ({
-                            ...prev,
-                            phone: digits,
-                          }));
-
-                          if (errors.phone) {
-                            setErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.phone;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className={`h-12 rounded-lg pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
-                        placeholder="9876543210"
-                      />
-                    </div>
+                        if (errors.phone) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.phone;
+                            return updated;
+                          });
+                        }
+                      }}
+                      error={!!errors.phone}
+                      placeholder="Enter phone number"
+                    />
                     {errors.phone && (
                       <p className="text-sm text-admin-error">{errors.phone}</p>
                     )}
@@ -501,7 +488,7 @@ export default function Contact() {
                         });
                       }}
                     >
-                      <SelectTrigger className="h-12 rounded-lg">
+                      <SelectTrigger className="h-10 rounded-lg">
                         <SelectValue placeholder="Select inquiry type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -530,7 +517,7 @@ export default function Contact() {
                             });
                           }}
                         >
-                          <SelectTrigger className="h-12 rounded-lg">
+                          <SelectTrigger className="h-10 rounded-lg">
                             <SelectValue placeholder="Select Trip" />
                           </SelectTrigger>
 
@@ -549,7 +536,7 @@ export default function Contact() {
                         <Label>Operator</Label>
 
                         <Select value={formData.operatorId} disabled>
-                          <SelectTrigger className="h-12 rounded-lg">
+                          <SelectTrigger className="h-10 rounded-lg">
                             <SelectValue placeholder="Operator auto-selected" />
                           </SelectTrigger>
 
@@ -582,7 +569,7 @@ export default function Contact() {
                           });
                         }
                       }}
-                      className={`h-12 rounded-lg ${errors.subject ? "border-red-500" : ""}`}
+                      className={`h-10 rounded-lg ${errors.subject ? "border-red-500" : ""}`}
                       placeholder="How can we help?"
                     />
                     {errors.subject && (
@@ -609,7 +596,7 @@ export default function Contact() {
                           });
                         }
                       }}
-                      className={`h-12 rounded-lg ${errors.message ? "border-red-500" : ""}`}
+                      className={`h-10 rounded-lg ${errors.message ? "border-red-500" : ""}`}
                       placeholder="Tell us more..."
                       rows={5}
                     />

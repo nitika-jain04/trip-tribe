@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
+import PhoneInput from "@/app/components/ui/PhoneInput";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import {
@@ -150,12 +151,10 @@ export default function Partner() {
       newErrors.email = "Enter a valid email address";
     }
 
-    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
-
-    if (!formData.phone.trim()) {
+    if (!formData.phone || formData.phone.length <= 3) {
       newErrors.phone = "Phone number is required";
-    } else if (!phoneRegex.test(formData.phone.trim())) {
-      newErrors.phone = "Enter valid phone number";
+    } else if (formData.phone.length < 8) {
+      newErrors.phone = "Enter a valid phone number";
     }
 
     if (!formData.tripCount) {
@@ -537,31 +536,26 @@ export default function Partner() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Label htmlFor="phone">Phone Number *</Label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                        +91
-                      </span>
-                      <Input
-                        id="phone"
-                        value={formData.phone}
-                        // onChange={(e) =>
-                        //   setFormData({ ...formData, phone: e.target.value })
-                        // }
-                        onChange={(e) => {
-                          const digits = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 10);
-                          setFormData({ ...formData, phone: digits });
+                    <PhoneInput
+                      className="h-12"
+                      value={formData.phone}
+                      onChange={(phone) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone: phone,
+                        }));
 
-                          if (errors.phone) {
-                            setErrors({ ...errors, phone: "" });
-                          }
-                        }}
-                        placeholder="98765 43210"
-                        className={`pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
-                        // required
-                      />
-                    </div>
+                        if (errors.phone) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.phone;
+                            return updated;
+                          });
+                        }
+                      }}
+                      error={!!errors.phone}
+                      placeholder="Enter phone number"
+                    />
                     {errors.phone && (
                       <p className="text-sm text-admin-error">{errors.phone}</p>
                     )}
