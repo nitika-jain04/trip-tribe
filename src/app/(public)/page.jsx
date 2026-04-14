@@ -92,18 +92,47 @@ export default function Page() {
   const { locationMap } = useLocations();
   const { toast } = useToast();
 
-  const { data: locationsData, error: lError, isLoading: lLoading } = useSWR(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`, fetcher);
-  const { data: operatorsData, error: oError, isLoading: oLoading } = useSWR(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`, fetcher);
-  const { data: tripsData, error: tError, isLoading: tLoading } = useSWR(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=9`, fetcher);
+  const {
+    data: locationsData,
+    error: lError,
+    isLoading: lLoading,
+  } = useSWR(
+    `${BASE_URL}/api/${API_VERSION}/trips?group_by=location&sortBy=updated_at&order=DESC`,
+    fetcher,
+  );
+  const {
+    data: operatorsData,
+    error: oError,
+    isLoading: oLoading,
+  } = useSWR(
+    `${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=9`,
+    fetcher,
+  );
+  const {
+    data: tripsData,
+    error: tError,
+    isLoading: tLoading,
+  } = useSWR(
+    `${BASE_URL}/api/${API_VERSION}/trips?sortBy=updated_at&order=DESC&page=1&limit=9`,
+    fetcher,
+  );
 
-  const rawLocationsGroups = locationsData?.success ? locationsData.result?.groups || [] : [];
-  
-  const processedOperators = operatorsData?.success ? operatorsData.result?.operators || [] : [];
+  const rawLocationsGroups = locationsData?.success
+    ? locationsData.result?.groups || []
+    : [];
+
+  const processedOperators = operatorsData?.success
+    ? operatorsData.result?.operators || []
+    : [];
   const operators = processedOperators;
-  const totalOperators = operatorsData?.success ? operatorsData.result?.pagination?.total || processedOperators.length : 0;
+  const totalOperators = operatorsData?.success
+    ? operatorsData.result?.pagination?.total || processedOperators.length
+    : 0;
 
   const rawTrips = tripsData?.success ? tripsData.result?.trips || [] : [];
-  const totalTrips = tripsData?.success ? tripsData.result?.pagination?.total || rawTrips.length : 0;
+  const totalTrips = tripsData?.success
+    ? tripsData.result?.pagination?.total || rawTrips.length
+    : 0;
 
   const processLocations = (groups, locationMap) => {
     if (!groups || !groups.length) return [];
@@ -183,13 +212,14 @@ export default function Page() {
   const isLoading = lLoading || oLoading || tLoading;
 
   // Combined error state
-  const error = lError || oError || tError ? "Failed to load homepage data" : null;
+  const error =
+    lError || oError || tError ? "Failed to load homepage data" : null;
   const hasError = !!error;
 
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{

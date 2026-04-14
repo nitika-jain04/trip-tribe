@@ -151,7 +151,6 @@ function TripsContent() {
   const { data: tripsData, isLoading: loadingTrips } = useSWR(
     tripsUrl,
     fetcher,
-    { keepPreviousData: true }
   );
   const pagination = tripsData?.result?.pagination || {
     page: 1,
@@ -336,7 +335,7 @@ function TripsContent() {
     router.replace(queryString ? `/trips?${queryString}` : "/trips");
   };
 
-  const filtersContent = useMemo(() => (
+  const FiltersContent = () => (
     <div className="space-y-6">
       <div>
         <h4 className="font-medium text-foreground mb-3">Trip Type</h4>
@@ -381,8 +380,25 @@ function TripsContent() {
           ))}
         </div>
       </div>
+
+      {/* <div>
+        <h4 className="font-medium text-foreground mb-3">
+          Popular Destinations
+        </h4>
+        <div className="flex flex-wrap gap-2">
+          {destinations.slice(0, 6).map((dest) => (
+            <button
+              key={dest.name}
+              onClick={() => setSearchQuery(dest.name)}
+              className="px-3 py-1 rounded-full text-body-sm bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
+            >
+              {dest.name}
+            </button>
+          ))}
+        </div>
+      </div> */}
     </div>
-  ), [tripTypesData, selectedType, selectedDifficulty]);
+  );
 
   return (
     <>
@@ -434,7 +450,7 @@ function TripsContent() {
                 <h3 className="font-display text-heading-sm text-foreground mb-6">
                   Filters
                 </h3>
-                {filtersContent}
+                <FiltersContent />
               </div>
             </div>
 
@@ -453,7 +469,7 @@ function TripsContent() {
                         <SheetTitle>Filters</SheetTitle>
                       </SheetHeader>
                       <div className="mt-6">
-                        {filtersContent}
+                        <FiltersContent />
                       </div>
                     </SheetContent>
                   </Sheet>

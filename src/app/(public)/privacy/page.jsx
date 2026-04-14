@@ -612,7 +612,7 @@ const PrivacyPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground/80">
+    <div className="min-h-[100dvh] bg-background font-sans text-foreground/80">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-primary/5 py-20">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(45rem_50rem_at_top,var(--color-primary-light),var(--color-background))] opacity-20" />

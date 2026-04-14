@@ -3,7 +3,7 @@ import { BiTrip } from "react-icons/bi";
 
 export default function NotFound() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6">
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-background px-6">
       <div className="absolute inset-0 -z-10">
         <div className="absolute left-1/2 top-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-3xl" />
         <div className="absolute right-10 top-10 h-50 w-50 rounded-full bg-purple-400/20 blur-2xl" />
