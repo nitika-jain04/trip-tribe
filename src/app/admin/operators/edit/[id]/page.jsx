@@ -19,8 +19,6 @@ import {
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-
-
 export default function OperatorEditPage() {
   const { toast } = useToast();
   const { id } = useParams();
@@ -101,7 +99,13 @@ export default function OperatorEditPage() {
   };
 
   const handleImageUpload = async (e) => {
-    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+    const validTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/heif",
+      "image/heic",
+    ];
 
     const file = e.target.files[0];
     if (!file) return;
@@ -499,7 +503,7 @@ export default function OperatorEditPage() {
                   <div className="flex flex-wrap gap-4">
                     <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200">
                       <span className="w-1.5 h-1.5 bg-teal-500 rounded-full"></span>
-                      PNG, JPG, SVG
+                      PNG, JPG, HEIF, HEIC
                     </span>
                     <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 bg-white px-2.5 py-1 rounded-md border border-slate-200">
                       <span className="w-1.5 h-1.5 bg-teal-500 rounded-full"></span>

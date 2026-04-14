@@ -10,6 +10,9 @@ import {
 } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import useSWR from "swr";
+import { fetcher } from "@/app/hooks/use-fetcher";
+import useLocations from "@/app/hooks/use-locations";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 import { Checkbox } from "@/app/components/ui/checkbox";
@@ -74,19 +77,11 @@ function TripsContent() {
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [interstitialChoiceMade, setInterstitialChoiceMade] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [trips, setTrips] = useState([]);
-  const [loadingTrips, setLoadingTrips] = useState(true);
-  const [tripTypesData, setTripTypesData] = useState(["All Types"]);
   const { toast } = useToast();
   const router = useRouter();
+  const { locationMap } = useLocations();
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 1,
-  });
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const prevSearchRef = useRef(searchQuery);
@@ -102,15 +97,6 @@ function TripsContent() {
 
   // Debounce searchQuery for URL and API updates
   useEffect(() => {
-    // Set loading immediately when starting to type a valid search (>= 2 chars)
-    // to avoid showing stale results while waiting for the debounce/API.
-    if (
-      searchQuery.trim().length >= 2 &&
-      searchQuery !== debouncedSearchQuery
-    ) {
-      setLoadingTrips(true);
-    }
-
     const handler = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
     }, 500);
@@ -148,202 +134,88 @@ function TripsContent() {
     }
   }, [searchQuery]);
 
-  // Track if data is already fetching
-  const isFetchingRef = useRef(false);
+  const params = new URLSearchParams();
+  if (debouncedSearchQuery.trim().length >= 2) {
+    params.set("search", debouncedSearchQuery.trim());
+  }
+  params.set("page", currentPage);
+  params.set("limit", 10);
+  if (selectedType !== "All Types") {
+    params.set("type", selectedType.toLowerCase());
+  }
+  if (selectedDifficulty !== "All") {
+    params.set("difficulty", selectedDifficulty.toUpperCase());
+  }
 
-  // Fetch all locations at once and map them by ID
-  const fetchLocationsMap = async () => {
-    const cached = sessionStorage.getItem("locations_cache");
-    if (cached) return JSON.parse(cached);
-
-    const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations`);
-    const data = await res.json();
-    if (!data.success) return {};
-
-    const locMap = {};
-    (data.result?.locations || []).forEach((loc) => {
-      locMap[loc.id] = { name: loc.name, region: loc.region || "" };
-    });
-
-    sessionStorage.setItem("locations_cache", JSON.stringify(locMap));
-    return locMap;
+  const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?${params.toString()}`;
+  const { data: tripsData, isLoading: loadingTrips } = useSWR(
+    tripsUrl,
+    fetcher,
+    { keepPreviousData: true }
+  );
+  const pagination = tripsData?.result?.pagination || {
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 1,
   };
 
-  // Memoize the fetch function to prevent recreation
-  const fetchTripsAndUpdateCache = useCallback(
-    async (showLoader = true) => {
-      if (isFetchingRef.current) return;
-      isFetchingRef.current = true;
+  const trips = useMemo(() => {
+    const rawTrips = tripsData?.result?.trips || [];
+    return rawTrips.map((trip) => {
+      const start = new Date(trip.start_date);
+      const end = new Date(trip.end_date);
+      const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-      try {
-        if (showLoader) setLoadingTrips(true);
+      const destination = locationMap[trip.destination_id] || {
+        name: "Unknown",
+        region: "",
+      };
+      const source = locationMap[trip.source_id] || {
+        name: "Unknown",
+        region: "",
+      };
 
-        let url = `${BASE_URL}/api/${API_VERSION}/trips`;
-        const params = new URLSearchParams();
+      return {
+        id: trip.id,
+        name: trip.name,
+        image: trip.images ? trip.images[0] : null,
+        destination_name: destination.name,
+        destination_region: destination.region,
+        source_name: source.name,
+        source_region: source.region,
+        provider: trip.operator?.name || "Unknown",
+        priceFrom: Number(trip.price),
+        startDate: trip.start_date,
+        endDate: trip.end_date,
+        duration: `${durationDays} days`,
+        groupSize: `${trip.total_seats} people`,
+        difficulty:
+          trip.difficulty?.charAt(0) +
+            trip.difficulty?.slice(1).toLowerCase() || "Moderate",
+        rating: 4.5,
+        reviewCount: 0,
+        verified: true,
+        inclusions: trip.inclusions || [],
+        exclusions: trip.exclusions || [],
+        itinerary: trip.itinerary || [],
+        type: trip.type?.name || "Other",
+      };
+    });
+  }, [tripsData, locationMap]);
 
-        if (debouncedSearchQuery.trim().length >= 2) {
-          params.set("search", debouncedSearchQuery.trim());
-        }
-
-        params.set("page", currentPage);
-        params.set("limit", 10);
-
-        if (selectedType !== "All Types") {
-          params.set("type", selectedType.toLowerCase());
-        }
-        if (selectedDifficulty !== "All") {
-          params.set("difficulty", selectedDifficulty.toUpperCase());
-        }
-
-        url += `?${params.toString()}`;
-        console.log("url", url);
-
-        const res = await fetch(url);
-        const data = await res.json();
-        if (!data.success) return;
-
-        if (data.result?.pagination) {
-          setPagination(data.result.pagination);
-        } else {
-          setPagination({ page: 1, limit: 10, total: 0, pages: 1 });
-        }
-
-        const rawTrips = data.result?.trips || [];
-
-        const locationsMap = await fetchLocationsMap();
-
-        const enrichedTrips = rawTrips.map((trip) => {
-          const start = new Date(trip.start_date);
-          const end = new Date(trip.end_date);
-          const durationDays =
-            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-          const destination = locationsMap[trip.destination_id] || {
-            name: "Unknown",
-            region: "",
-          };
-          const source = locationsMap[trip.source_id] || {
-            name: "Unknown",
-            region: "",
-          };
-
-          return {
-            id: trip.id,
-            name: trip.name,
-            image: trip.images[0],
-            destination_name: destination.name,
-            destination_region: destination.region,
-            source_name: source.name,
-            source_region: source.region,
-            provider: trip.operator?.name || "Unknown",
-            priceFrom: Number(trip.price),
-            startDate: trip.start_date,
-            endDate: trip.end_date,
-            duration: `${durationDays} days`,
-            groupSize: `${trip.total_seats} people`,
-            difficulty:
-              trip.difficulty?.charAt(0) +
-                trip.difficulty?.slice(1).toLowerCase() || "Moderate",
-            rating: 4.5,
-            reviewCount: 0,
-            verified: true,
-            inclusions: trip.inclusions || [],
-            exclusions: trip.exclusions || [],
-            itinerary: trip.itinerary || [],
-            type: trip.type?.name || "Other",
-          };
-        });
-
-        setTrips(enrichedTrips);
-        setLoadingTrips(false);
-      } catch (err) {
-        console.error("Fetch failed", err);
-        setLoadingTrips(false);
-      } finally {
-        isFetchingRef.current = false;
-      }
-    },
-    [debouncedSearchQuery, currentPage, selectedType, selectedDifficulty],
+  const { data: tripTypesRawData } = useSWR(
+    `${BASE_URL}/api/${API_VERSION}/trip-types`,
+    fetcher,
   );
+  const tripTypesData = useMemo(() => {
+    const types = tripTypesRawData?.result?.trip_types || [];
+    return ["All Types", ...types.map((t) => t.name)];
+  }, [tripTypesRawData]);
 
   const handleSearchChange = (value) => {
     setSearchQuery(value);
   };
-
-  const getTripTypes = useCallback(
-    async (forceRefresh = false) => {
-      try {
-        const cachedTypes = sessionStorage.getItem("trip_types_cache");
-        const cachedTimestamp = sessionStorage.getItem("trip_types_timestamp");
-        const CACHE_DURATION = 30 * 60 * 1000;
-
-        // ✅ Use cache if valid AND not forcing refresh
-        if (
-          !forceRefresh &&
-          cachedTypes &&
-          cachedTimestamp &&
-          Date.now() - parseInt(cachedTimestamp) < CACHE_DURATION
-        ) {
-          setTripTypesData(JSON.parse(cachedTypes));
-          return;
-        }
-
-        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
-        const data = await res.json();
-
-        if (!res.ok) {
-          toast({
-            title: "Error",
-            description: data?.error?.message || "Failed to fetch trip types",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const types = data?.result?.trip_types || [];
-        const formatted = ["All Types", ...types.map((t) => t.name)];
-
-        setTripTypesData(formatted);
-
-        // ✅ Update cache
-        sessionStorage.setItem("trip_types_cache", JSON.stringify(formatted));
-        sessionStorage.setItem("trip_types_timestamp", Date.now().toString());
-      } catch (err) {
-        console.error("Failed to fetch trip types", err);
-      }
-    },
-    [toast],
-  );
-
-  const lastFetchRef = useRef(0);
-
-  useEffect(() => {
-    const handleFocus = () => {
-      const now = Date.now();
-
-      // refresh immediately, with a minor 5-second cooldown just to prevent glitchy focus loops
-      if (now - lastFetchRef.current > 5 * 1000) {
-        getTripTypes(true);
-        lastFetchRef.current = now;
-      }
-    };
-
-    window.addEventListener("focus", handleFocus);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-    };
-  }, [getTripTypes]);
-
-  useEffect(() => {
-    fetchTripsAndUpdateCache(true);
-  }, [fetchTripsAndUpdateCache]);
-
-  useEffect(() => {
-    if (tripTypesData.length === 1) {
-      getTripTypes();
-    }
-  }, []);
 
   const isFirstLoad = useRef(true);
 
@@ -464,7 +336,7 @@ function TripsContent() {
     router.replace(queryString ? `/trips?${queryString}` : "/trips");
   };
 
-  const FiltersContent = () => (
+  const filtersContent = useMemo(() => (
     <div className="space-y-6">
       <div>
         <h4 className="font-medium text-foreground mb-3">Trip Type</h4>
@@ -509,25 +381,8 @@ function TripsContent() {
           ))}
         </div>
       </div>
-
-      {/* <div>
-        <h4 className="font-medium text-foreground mb-3">
-          Popular Destinations
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {destinations.slice(0, 6).map((dest) => (
-            <button
-              key={dest.name}
-              onClick={() => setSearchQuery(dest.name)}
-              className="px-3 py-1 rounded-full text-body-sm bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              {dest.name}
-            </button>
-          ))}
-        </div>
-      </div> */}
     </div>
-  );
+  ), [tripTypesData, selectedType, selectedDifficulty]);
 
   return (
     <>
@@ -579,7 +434,7 @@ function TripsContent() {
                 <h3 className="font-display text-heading-sm text-foreground mb-6">
                   Filters
                 </h3>
-                <FiltersContent />
+                {filtersContent}
               </div>
             </div>
 
@@ -598,7 +453,7 @@ function TripsContent() {
                         <SheetTitle>Filters</SheetTitle>
                       </SheetHeader>
                       <div className="mt-6">
-                        <FiltersContent />
+                        {filtersContent}
                       </div>
                     </SheetContent>
                   </Sheet>
@@ -973,9 +828,15 @@ function TripsContent() {
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Route</span>
                           <span>
-                            {trip.source_name},{trip.source_region}
+                            {trip.source_name}
+                            {trip.source_region
+                              ? `, ${trip.source_region}`
+                              : ""}
                             {" -> "}
-                            {trip.destination_name}, {trip.destination_region}
+                            {trip.destination_name}
+                            {trip.destination_region
+                              ? `, ${trip.destination_region}`
+                              : ""}
                           </span>
                         </div>
 

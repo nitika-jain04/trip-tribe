@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import Cookies from "js-cookie";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Image from "next/image";
 import { useToast } from "@/app/hooks/use-toast";
@@ -221,7 +221,7 @@ export default function OperatorDetail() {
             <span className="flex items-center gap-2">
               <Phone size={17} />
               <a
-                href={`tel:+91 ${operator.phone_number}`}
+                href={`tel:${getDialablePhone(operator.phone_number)}`}
                 className="text-black/80 font-medium"
               >
                 {formatPhoneNumber(operator.phone_number)}

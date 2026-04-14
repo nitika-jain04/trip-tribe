@@ -45,7 +45,7 @@ import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { BiComment } from "react-icons/bi";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import AdminGuard from "@/app/components/AdminGuard";
 
@@ -536,7 +536,7 @@ function Enquiries() {
                               {enquiry.full_name}
                             </span>
                             <span className="text-sm text-muted-foreground">
-                              <a href={`tel:+91${enquiry.phone_number}`}>
+                              <a href={`tel:${getDialablePhone(enquiry.phone_number)}`}>
                                 {formatPhoneNumber(enquiry.phone_number)}
                               </a>
                             </span>
@@ -613,7 +613,7 @@ function Enquiries() {
                       {enquiry.full_name}
                     </h3>
                     <a
-                      href={`tel:+91${enquiry.phone_number}`}
+                      href={`tel:${getDialablePhone(enquiry.phone_number)}`}
                       className="text-sm text-muted-foreground block font-medium mt-1"
                     >
                       {formatPhoneNumber(enquiry.phone_number)}

@@ -257,7 +257,7 @@ export default function MapPicker({
 
         {/* Search Error */}
         {searchError && (
-          <div className="absolute left-4 right-4 mt-1 bg-red-50 border border-red-200 rounded-lg p-3 z-50">
+          <div className="absolute left-4 right-4 mt-1 bg-red-50 border border-red-200 rounded-lg p-3 z-999">
             <p className="text-sm text-red-600">{searchError}</p>
           </div>
         )}

@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import useSWR from "swr";
+import { fetcher } from "@/app/hooks/use-fetcher";
 
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
@@ -85,80 +87,23 @@ export default function Page() {
 
   const [searchDestination, setSearchDestination] = useState("");
   const [searchDates, setSearchDates] = useState("");
-  const [operators, setOperators] = useState([]);
-  const [totalOperators, setTotalOperators] = useState(0);
-  const [rawTrips, setRawTrips] = useState([]);
-  const [totalTrips, setTotalTrips] = useState(0);
-  const [rawLocationsGroups, setRawLocationsGroups] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [imgError, setImgError] = useState(false);
-  const [error, setError] = useState(null);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const { locationMap } = useLocations();
   const { toast } = useToast();
 
-  const safeFetch = async (url) => {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`);
-      return await res.json();
-    } catch (err) {
-      toast({
-        title: "Network Error",
-        description: err.message || "Failed to fetch data",
-        variant: "destructive",
-      });
-      // Return null instead of throwing
-      return null;
-    }
-  };
+  const { data: locationsData, error: lError, isLoading: lLoading } = useSWR(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`, fetcher);
+  const { data: operatorsData, error: oError, isLoading: oLoading } = useSWR(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`, fetcher);
+  const { data: tripsData, error: tError, isLoading: tLoading } = useSWR(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=9`, fetcher);
 
-  const fetchHomePageData = async () => {
-    setLoading(true);
-    setError(null);
+  const rawLocationsGroups = locationsData?.success ? locationsData.result?.groups || [] : [];
+  
+  const processedOperators = operatorsData?.success ? operatorsData.result?.operators || [] : [];
+  const operators = processedOperators;
+  const totalOperators = operatorsData?.success ? operatorsData.result?.pagination?.total || processedOperators.length : 0;
 
-    const [locationsData, operatorsData, tripsData] = await Promise.all([
-      safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?group_by=location`),
-      safeFetch(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=10`),
-      safeFetch(`${BASE_URL}/api/${API_VERSION}/trips?page=1&limit=9`),
-    ]);
-
-    // If any fetch failed, just stop and return
-    if (!locationsData || !operatorsData || !tripsData) {
-      setError("Failed to load homepage data");
-      setRawLocationsGroups([]);
-      setOperators([]);
-      setTotalOperators(0);
-      setRawTrips([]);
-      setTotalTrips(0);
-      setLoading(false);
-      return;
-    }
-
-    // Process operators (since it doesn't depend on locationMap for initial display)
-    const processedOperators = operatorsData.success
-      ? operatorsData.result?.operators || []
-      : [];
-
-    // Update state with raw data
-    setRawLocationsGroups(
-      locationsData.success ? locationsData.result?.groups || [] : [],
-    );
-    setOperators(processedOperators);
-    setTotalOperators(
-      operatorsData.success
-        ? operatorsData.result?.pagination?.total || processedOperators.length
-        : 0,
-    );
-    const loadedTrips = tripsData.success ? tripsData.result?.trips || [] : [];
-    setRawTrips(loadedTrips);
-    setTotalTrips(
-      tripsData.success
-        ? tripsData.result?.pagination?.total || loadedTrips.length
-        : 0,
-    );
-    setLoading(false);
-  };
+  const rawTrips = tripsData?.success ? tripsData.result?.trips || [] : [];
+  const totalTrips = tripsData?.success ? tripsData.result?.pagination?.total || rawTrips.length : 0;
 
   const processLocations = (groups, locationMap) => {
     if (!groups || !groups.length) return [];
@@ -234,23 +179,17 @@ export default function Page() {
     router.push(`/trips?${params.toString()}`);
   };
 
-  useEffect(() => {
-    fetchHomePageData();
-  }, []);
-
-  // Create datalist options from locations
-  const locationNames = locations.map((loc) => loc.name);
-
   // Combined loading state
-  const isLoading = loading;
+  const isLoading = lLoading || oLoading || tLoading;
 
   // Combined error state
-  const hasError = error && !loading;
+  const error = lError || oError || tError ? "Failed to load homepage data" : null;
+  const hasError = !!error;
 
   return (
     <>
       {/* Hero Section */}
-      <section className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
@@ -299,7 +238,7 @@ export default function Page() {
                     />
                     {/* Custom Suggestions Dropdown */}
                     {showSuggestions && locations.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-background/95 border border-border rounded-xl shadow-2xl overflow-y-auto max-h-[300px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-2xl overflow-y-auto max-h-[300px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
                         {/* "Take me anywhere" Option */}
                         <button
                           type="button"
@@ -568,7 +507,7 @@ export default function Page() {
               <p className="text-red-600 font-medium">Failed to load trips</p>
               <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
               <button
-                onClick={fetchHomePageData}
+                onClick={() => {}} // Disabled manual re-fetch due to SWR auto-revalidation
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
               >
                 <Loader2 className="w-4 h-4" />
@@ -692,7 +631,7 @@ export default function Page() {
               </p>
               <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
               <button
-                onClick={fetchHomePageData}
+                onClick={() => {}} // Disabled manual re-fetch due to SWR auto-revalidation
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
               >
                 <Loader2 className="w-4 h-4" />

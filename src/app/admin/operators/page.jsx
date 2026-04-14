@@ -54,7 +54,7 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Link from "next/link";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { useToast } from "@/app/hooks/use-toast";
 import { FaRegUser } from "react-icons/fa";
@@ -758,7 +758,7 @@ function OperatorsPage() {
                               {op.contact_name}
                             </p>
                             <a
-                              href={`tel:+91 ${op.phone_number}`}
+                              href={`tel:${getDialablePhone(op.phone_number)}`}
                               className="text-sm text-muted-foreground truncate max-w-30 lg:max-w-37.5"
                               title={op.phone_number}
                             >
@@ -872,7 +872,7 @@ function OperatorsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Phone:</span>
-                    <a href={`tel:+91 ${op.phone_number}`}>
+                    <a href={`tel:${getDialablePhone(op.phone_number)}`}>
                       {formatPhoneNumber(op.phone_number)}
                     </a>
                   </div>
