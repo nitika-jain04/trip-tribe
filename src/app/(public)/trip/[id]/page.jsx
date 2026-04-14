@@ -207,10 +207,10 @@ ${currentUrl}`;
 
   const { data: tripDataRaw, isLoading: loading } = useSWR(
     id ? `${BASE_URL}/api/${API_VERSION}/trips/${id}` : null,
-    fetcher
+    fetcher,
   );
 
-  const trip = useMemo(() => mapTripData(tripDataRaw), [tripDataRaw]);
+  const trip = mapTripData(tripDataRaw);
 
   useEffect(() => {
     if (trip && trip.images?.[0] && !activeImage) {
@@ -220,7 +220,7 @@ ${currentUrl}`;
 
   if (loading)
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
       </div>
     );
@@ -524,8 +524,13 @@ ${currentUrl}`;
                       </div>
                       {trip.hotelCategory && (
                         <div className="flex justify-between">
-                          <dt className="text-muted-foreground">Hotel Category</dt>
-                          <dd className="font-medium">{trip.hotelCategory} Star{trip.hotelCategory > 1 ? 's' : ''}</dd>
+                          <dt className="text-muted-foreground">
+                            Hotel Category
+                          </dt>
+                          <dd className="font-medium">
+                            {trip.hotelCategory} Star
+                            {trip.hotelCategory > 1 ? "s" : ""}
+                          </dd>
                         </div>
                       )}
                     </dl>
@@ -587,23 +592,25 @@ ${currentUrl}`;
                     ))}
                   </ul>
                 </div>
-                <div>
-                  <h3 className="font-display text-heading-lg text-foreground mb-6 flex items-center gap-2">
-                    <X className="w-6 h-6 text-error" />
-                    What&apos;s Not Included
-                  </h3>
-                  <ul className="space-y-3">
-                    {trip.exclusions.map((item, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center gap-3 text-body text-muted-foreground"
-                      >
-                        <X className="w-5 h-5 text-error shrink-0" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {trip.exclusions.length > 0 && (
+                  <div>
+                    <h3 className="font-display text-heading-lg text-foreground mb-6 flex items-center gap-2">
+                      <X className="w-6 h-6 text-error" />
+                      What&apos;s Not Included
+                    </h3>
+                    <ul className="space-y-3">
+                      {trip.exclusions.map((item, i) => (
+                        <li
+                          key={i}
+                          className="flex items-center gap-3 text-body text-muted-foreground"
+                        >
+                          <X className="w-5 h-5 text-error shrink-0" />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             </TabsContent>
 

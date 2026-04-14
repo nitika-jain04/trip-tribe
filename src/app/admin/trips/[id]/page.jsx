@@ -115,7 +115,7 @@ export default function TripDetail() {
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -139,7 +139,7 @@ export default function TripDetail() {
   // Enhanced Error State
   if (error) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -168,7 +168,7 @@ export default function TripDetail() {
   // Not Found State
   if (!trip) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -196,7 +196,7 @@ export default function TripDetail() {
   }
 
   return (
-    <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh] space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href="/admin/trips"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"

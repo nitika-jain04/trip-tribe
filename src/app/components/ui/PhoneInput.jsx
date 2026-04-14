@@ -28,7 +28,7 @@ const PhoneInput = ({
         placeholder={placeholder}
         className="react-international-phone-container w-full"
         inputClassName={cn(
-          "flex w-full !rounded-r-lg !border-l-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 !font-sans h-full",
+          "flex w-full !rounded-r-lg !border-l-0 border-input bg-background px-3 py-2 text-base md:text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 !font-sans h-full",
           error ? "!border-error" : "",
           props.inputClassName,
         )}
@@ -54,8 +54,13 @@ const PhoneInput = ({
         .react-international-phone-input {
           width: 100% !important;
           font-family: inherit !important;
-          font-size: 0.875rem !important;
+          font-size: 1rem !important; /* Fix zoom on mobile */
           color: var(--foreground) !important;
+        }
+        @media (min-width: 768px) {
+          .react-international-phone-input {
+            font-size: 0.875rem !important;
+          }
         }
         .react-international-phone-country-selector-button {
           background-color: var(--background) !important;
