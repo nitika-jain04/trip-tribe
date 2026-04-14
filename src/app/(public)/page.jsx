@@ -389,7 +389,7 @@ export default function Page() {
           aria-label="Scroll to content"
         >
           <div className="flex flex-col items-center gap-2" id="next-section">
-            <span className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <span className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
               Discover More
             </span>
             <ChevronDown className="w-8 h-8 stroke-[1.5]" />

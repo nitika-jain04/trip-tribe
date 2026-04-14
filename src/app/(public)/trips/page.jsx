@@ -26,7 +26,6 @@ import {
   GitCompare,
   SlidersHorizontal,
   ImageIcon,
-  Route,
 } from "lucide-react";
 import {
   Select,
@@ -57,11 +56,65 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/app/components/ui/pagination";
-import { useToast } from "@/app/hooks/use-toast";
 import { useRouter } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
+
+const FiltersContent = ({
+  selectedType,
+  setSelectedType,
+  selectedDifficulty,
+  setSelectedDifficulty,
+  setIsSheetOpen,
+  tripTypesData,
+}) => (
+  <div className="space-y-6">
+    <div>
+      <h4 className="font-medium text-foreground mb-3">Trip Type</h4>
+      <div className="space-y-2">
+        {tripTypesData.map((type) => (
+          <button
+            key={type}
+            onClick={() => {
+              setSelectedType(type);
+              setTimeout(() => setIsSheetOpen(false), 500);
+            }}
+            className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
+              selectedType === type
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`}
+          >
+            {type}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div>
+      <h4 className="font-medium text-foreground mb-3">Difficulty</h4>
+      <div className="space-y-2">
+        {["All", "Easy", "Moderate", "Hard"].map((diff) => (
+          <button
+            key={diff}
+            onClick={() => {
+              setSelectedDifficulty(diff);
+              setTimeout(() => setIsSheetOpen(false), 500);
+            }}
+            className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
+              selectedDifficulty === diff
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-muted"
+            }`}
+          >
+            {diff}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 function TripsContent() {
   const searchParams = useSearchParams();
@@ -77,7 +130,6 @@ function TripsContent() {
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [interstitialChoiceMade, setInterstitialChoiceMade] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { toast } = useToast();
   const router = useRouter();
   const { locationMap } = useLocations();
 
@@ -91,7 +143,7 @@ function TripsContent() {
     const s = searchParams.get("search") || "";
     if (s !== searchQuery) {
       setSearchQuery(s);
-      setDebouncedSearchQuery(s);
+      setCurrentPage(1); // Syncing page reset with URL change
     }
   }, [searchParams]); // Removed searchQuery from dependencies to prevent typing block
 
@@ -127,12 +179,8 @@ function TripsContent() {
     }
   }, [debouncedSearchQuery, searchParams, router]);
 
-  useEffect(() => {
-    if (prevSearchRef.current !== searchQuery) {
-      setCurrentPage(1);
-      prevSearchRef.current = searchQuery;
-    }
-  }, [searchQuery]);
+  // Removed the useEffect that watched searchQuery to reset page, as it caused cascading renders.
+  // Instead, page reset is handled in handleSearchChange, handleClearSearch, and URL sync.
 
   const params = new URLSearchParams();
   if (debouncedSearchQuery.trim().length >= 2) {
@@ -214,6 +262,7 @@ function TripsContent() {
 
   const handleSearchChange = (value) => {
     setSearchQuery(value);
+    setCurrentPage(1);
   };
 
   const isFirstLoad = useRef(true);
@@ -290,6 +339,9 @@ function TripsContent() {
       case "duration":
         result.sort((a, b) => parseInt(a.duration) - parseInt(b.duration));
         break;
+      case "start date":
+        result.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        break;
       default:
         break;
     }
@@ -335,70 +387,7 @@ function TripsContent() {
     router.replace(queryString ? `/trips?${queryString}` : "/trips");
   };
 
-  const FiltersContent = () => (
-    <div className="space-y-6">
-      <div>
-        <h4 className="font-medium text-foreground mb-3">Trip Type</h4>
-        <div className="space-y-2">
-          {tripTypesData.map((type) => (
-            <button
-              key={type}
-              onClick={() => {
-                setSelectedType(type);
-                setTimeout(() => setIsSheetOpen(false), 500);
-              }}
-              className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
-                selectedType === type
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              {type}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <h4 className="font-medium text-foreground mb-3">Difficulty</h4>
-        <div className="space-y-2">
-          {["All", "Easy", "Moderate", "Hard"].map((diff) => (
-            <button
-              key={diff}
-              onClick={() => {
-                setSelectedDifficulty(diff);
-                setTimeout(() => setIsSheetOpen(false), 500);
-              }}
-              className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
-                selectedDifficulty === diff
-                  ? "bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              {diff}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* <div>
-        <h4 className="font-medium text-foreground mb-3">
-          Popular Destinations
-        </h4>
-        <div className="flex flex-wrap gap-2">
-          {destinations.slice(0, 6).map((dest) => (
-            <button
-              key={dest.name}
-              onClick={() => setSearchQuery(dest.name)}
-              className="px-3 py-1 rounded-full text-body-sm bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              {dest.name}
-            </button>
-          ))}
-        </div>
-      </div> */}
-    </div>
-  );
+  // FiltersContent moved outside to satisfy 'Component created during render' error.
 
   return (
     <>
@@ -450,7 +439,14 @@ function TripsContent() {
                 <h3 className="font-display text-heading-sm text-foreground mb-6">
                   Filters
                 </h3>
-                <FiltersContent />
+                <FiltersContent
+                  selectedType={selectedType}
+                  setSelectedType={setSelectedType}
+                  selectedDifficulty={selectedDifficulty}
+                  setSelectedDifficulty={setSelectedDifficulty}
+                  setIsSheetOpen={setIsSheetOpen}
+                  tripTypesData={tripTypesData}
+                />
               </div>
             </div>
 
@@ -469,7 +465,14 @@ function TripsContent() {
                         <SheetTitle>Filters</SheetTitle>
                       </SheetHeader>
                       <div className="mt-6">
-                        <FiltersContent />
+                        <FiltersContent
+                          selectedType={selectedType}
+                          setSelectedType={setSelectedType}
+                          selectedDifficulty={selectedDifficulty}
+                          setSelectedDifficulty={setSelectedDifficulty}
+                          setIsSheetOpen={setIsSheetOpen}
+                          tripTypesData={tripTypesData}
+                        />
                       </div>
                     </SheetContent>
                   </Sheet>
@@ -521,6 +524,7 @@ function TripsContent() {
                       </SelectItem>
                       {/* <SelectItem value="rating">Highest Rated</SelectItem> */}
                       <SelectItem value="duration">Duration</SelectItem>
+                      <SelectItem value="start date">Start Date</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -827,13 +831,31 @@ function TripsContent() {
                           <span className="text-muted-foreground">
                             Start Date
                           </span>
-                          <span>{trip.startDate}</span>
+                          <span>
+                            {new Date(trip.startDate).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
                             End Date
                           </span>
-                          <span>{trip.endDate}</span>
+                          <span>
+                            {new Date(trip.endDate).toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">
@@ -842,13 +864,20 @@ function TripsContent() {
                           <span>{trip.duration}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Route</span>
+                          <span className="text-muted-foreground">Source</span>
                           <span>
                             {trip.source_name}
                             {trip.source_region
                               ? `, ${trip.source_region}`
                               : ""}
-                            {" -> "}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">
+                            Destination
+                          </span>
+                          <span>
                             {trip.destination_name}
                             {trip.destination_region
                               ? `, ${trip.destination_region}`
@@ -884,7 +913,7 @@ function TripsContent() {
                         </ul>
                       </div>
 
-                      {trip?.exclusions && (
+                      {trip?.exclusions.length > 0 && (
                         <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-border">
                           <p className="text-body-sm font-medium mb-2">
                             Exclusions:

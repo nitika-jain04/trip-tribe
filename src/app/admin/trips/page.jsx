@@ -52,6 +52,7 @@ import Link from "next/link";
 import { useToast } from "@/app/hooks/use-toast";
 import useTripTypes from "@/app/hooks/use-triptypes";
 import AddTripModal from "@/app/components/admin/AddTripModal";
+import { cn } from "@/lib/utils";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -797,8 +798,17 @@ function Page() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {trips.map((trip) => (
-                      <TableRow key={trip.id}>
+                    {trips.map((trip) => {
+                      const isExpired =
+                        trip.start_date && new Date(trip.start_date) < new Date();
+                      return (
+                        <TableRow
+                          key={trip.id}
+                          className={cn(
+                            isExpired &&
+                              "bg-admin-bg-error/30 hover:bg-admin-bg-error/50 border-l-2 border-l-admin-error",
+                          )}
+                        >
                         <TableCell>
                           <div className="flex items-center gap-3">
                             {trip.images && trip.images[0] ? (
@@ -839,17 +849,6 @@ function Page() {
                         </TableCell>
                         <TableCell>
                           <div className="text-sm">
-                            {/* {trip.start_date && trip.end_date ? (
-                              <>
-                                <p className="whitespace-nowrap">
-                                  {new Date(
-                                    trip.start_date,
-                                  ).toLocaleDateString()}
-                                </p>
-                              </>
-                            ) : (
-                              "N/A"
-                            )} */}
                             {trip.start_date && trip.end_date
                               ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
                               : "N/A"}
@@ -886,7 +885,8 @@ function Page() {
                           {renderActions(trip)}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                  })}
                   </TableBody>
                 </Table>
               </div>
@@ -909,8 +909,17 @@ function Page() {
               No trips found
             </p>
           ) : (
-            trips.map((trip) => (
-              <Card key={trip.id} className="border shadow-sm p-4">
+            trips.map((trip) => {
+              const isExpired =
+                trip.start_date && new Date(trip.start_date) < new Date();
+              return (
+                <Card
+                  key={trip.id}
+                  className={cn(
+                    "border shadow-sm p-4",
+                    isExpired && "bg-admin-bg-error/30 border-l-4 border-l-admin-error",
+                  )}
+                >
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex gap-3 w-full">
                     <div className="relative h-16 w-20 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center">
@@ -981,7 +990,8 @@ function Page() {
                   {renderActions(trip)}
                 </div>
               </Card>
-            ))
+            );
+          })
           )}
         </div>
 
