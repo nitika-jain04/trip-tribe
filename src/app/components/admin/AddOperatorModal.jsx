@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { IoCloseSharp } from "react-icons/io5";
 import Input from "../ui/input";
+import PhoneInput from "../ui/PhoneInput";
 import { useToast } from "@/app/hooks/use-toast";
 import Cookies from "js-cookie";
 
@@ -165,8 +166,8 @@ function AddOperatorModal({ handleModalClose }) {
     // Phone validation
     if (!formData.phone_number) {
       errors.phone_number = "Phone number is required";
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone_number)) {
-      errors.phone_number = "Invalid Indian phone number";
+    } else if (formData.phone_number.length < 8) {
+      errors.phone_number = "Please enter a valid phone number";
     }
 
     // Website validation
@@ -432,31 +433,19 @@ function AddOperatorModal({ handleModalClose }) {
             {/* Phone Number */}
             <div>
               <label className="text-sm text-gray-600">Phone Number *</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                  +91
-                </span>
-
-                <Input
-                  type="tel"
-                  placeholder="9876543210"
-                  value={formData.phone_number}
-                  onChange={(e) => {
-                    const digits = e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 10);
-
-                    setFormData((prev) => ({
-                      ...prev,
-                      phone_number: digits,
-                    }));
-                    setFieldErrors((prev) => ({ ...prev, phone_number: "" }));
-                    if (error) setError("");
-                  }}
-                  className="pl-12 text-sm mt-1 w-full"
-                  // required
-                />
-              </div>
+              <PhoneInput
+                value={formData.phone_number}
+                onChange={(phone) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    phone_number: phone,
+                  }));
+                  setFieldErrors((prev) => ({ ...prev, phone_number: "" }));
+                  if (error) setError("");
+                }}
+                className="h-10 mt-1"
+                placeholder="Enter phone number"
+              />
               {fieldErrors.phone_number && (
                 <p className="text-admin-error text-xs mt-1">
                   {fieldErrors.phone_number}

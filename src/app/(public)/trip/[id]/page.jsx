@@ -25,6 +25,7 @@ import {
 import useLocations from "@/app/hooks/use-locations";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
+import PhoneInput from "@/app/components/ui/PhoneInput";
 import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -68,13 +69,17 @@ function TripPage() {
       return;
     }
 
-    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
-
-    if (!phoneRegex.test(formData.phone_number.trim())) {
-      // newErrors.phone = "Enter valid phone number";
+    if (!formData.phone_number || formData.phone_number.length <= 3) {
       toast({
         title: "Phone Number",
-        description: "Enter valid phone number",
+        description: "Phone number is required",
+        variant: "destructive",
+      });
+      return;
+    } else if (formData.phone_number.length < 8) {
+      toast({
+        title: "Phone Number",
+        description: "Enter a valid phone number",
         variant: "destructive",
       });
       return;
@@ -775,24 +780,14 @@ ${currentUrl}`;
                 }
               />
 
-              <div className="relative flex items-center">
-                <span className="absolute left-3 text-muted-foreground text-sm font-medium border-r border-border pr-2 z-10 select-none">
-                  +91
-                </span>
-                <Input
-                  type="tel"
-                  id="phone"
-                  className="w-full pl-14 pr-3 h-10 rounded-lg border border-input bg-background py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 font-medium tracking-wide transition-shadow"
-                  value={formData.phone_number}
-                  onChange={(e) => {
-                    const digits = e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 10);
-                    setFormData({ ...formData, phone_number: digits });
-                  }}
-                  placeholder="98765 43210"
-                />
-              </div>
+              <PhoneInput
+                className="h-10"
+                value={formData.phone_number}
+                onChange={(phone) =>
+                  setFormData({ ...formData, phone_number: phone })
+                }
+                placeholder="Enter phone number"
+              />
 
               <Input
                 type="email"

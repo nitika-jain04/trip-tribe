@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Save, ArrowLeft, AlertCircle, Loader2, X } from "lucide-react";
 import Cookies from "js-cookie";
 import Input from "@/app/components/ui/input";
+import PhoneInput from "@/app/components/ui/PhoneInput";
 import { useToast } from "@/app/hooks/use-toast";
 import {
   Select,
@@ -18,23 +19,7 @@ import {
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-function extractIndianNumber(value) {
-  if (!value) return "";
 
-  let digits = value.replace(/\D/g, "");
-
-  // Remove 91 if present
-  if (digits.startsWith("91") && digits.length > 10) {
-    digits = digits.substring(2);
-  }
-
-  return digits.slice(-10);
-}
-
-function formatIndianNumber(digits) {
-  if (!digits) return "";
-  return `+91 ${digits}`;
-}
 
 export default function OperatorEditPage() {
   const { toast } = useToast();
@@ -73,7 +58,7 @@ export default function OperatorEditPage() {
           setFormData({
             name: data.result.name || "",
             email: data.result.email || "",
-            phone_number: extractIndianNumber(data.result.phone_number || ""),
+            phone_number: data.result.phone_number || "",
             contact_name: data.result.contact_name || "",
             description: data.result.description || "",
             website_url: data.result.website_url || "",
@@ -229,8 +214,8 @@ export default function OperatorEditPage() {
 
     if (!formData.phone_number) {
       errors.phone_number = "Phone number is required";
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone_number)) {
-      errors.phone_number = "Invalid phone number";
+    } else if (formData.phone_number.length < 8) {
+      errors.phone_number = "Please enter a valid phone number";
     }
 
     if (
@@ -275,15 +260,13 @@ export default function OperatorEditPage() {
 
     const token = Cookies.get("token");
 
-    const formattedPhone = formatIndianNumber(formData.phone_number);
-
     // Only changed fields
     const requestBody = {};
 
     Object.keys(formData).forEach((key) => {
       if (key === "phone_number") {
-        if (formattedPhone !== operator.phone_number) {
-          requestBody.phone_number = formattedPhone;
+        if (formData.phone_number !== operator.phone_number) {
+          requestBody.phone_number = formData.phone_number;
         }
       } else if (key === "regions") {
         if (
@@ -541,33 +524,23 @@ export default function OperatorEditPage() {
                   </label>
 
                   {key === "phone_number" ? (
-                    <div className="relative group">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium transition-colors group-focus-within:text-teal-600">
-                        +91
-                      </span>
-                      <Input
-                        name={key}
-                        placeholder="9876543210"
-                        value={formData.phone_number}
-                        onChange={(e) => {
-                          const digits = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 10);
-                          setFormData((prev) => ({
-                            ...prev,
-                            phone_number: digits,
-                          }));
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            phone_number: "",
-                          }));
-                          if (error) setError("");
-                          setIsModified(true);
-                        }}
-                        className="pl-12 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
-                        required
-                      />
-                    </div>
+                    <PhoneInput
+                      value={formData.phone_number}
+                      onChange={(phone) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone_number: phone,
+                        }));
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          phone_number: "",
+                        }));
+                        if (error) setError("");
+                        setIsModified(true);
+                      }}
+                      className="h-10"
+                      placeholder="Enter phone number"
+                    />
                   ) : (
                     <Input
                       name={key}
