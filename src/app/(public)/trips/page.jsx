@@ -147,7 +147,7 @@ function TripsContent() {
     params.set("difficulty", selectedDifficulty.toUpperCase());
   }
 
-  const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?${params.toString()}`;
+  const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?sortBy=updated_at&order=DESC&${params.toString()}`;
   const { data: tripsData, isLoading: loadingTrips } = useSWR(
     tripsUrl,
     fetcher,

@@ -454,7 +454,7 @@ function AddTripModal({ handleModalClose }) {
       });
 
       const data = await res.json();
-      // console.log("req", payload);
+      console.log("req", payload);
 
       if (res.ok && data.success) {
         toast({
@@ -628,7 +628,9 @@ function AddTripModal({ handleModalClose }) {
               <div className="flex items-center h-10 mt-1">
                 <Rating
                   value={formData.hotel_category || 3}
-                  onChange={(val) => setFormData(p => ({ ...p, hotel_category: val }))}
+                  onChange={(val) =>
+                    setFormData((p) => ({ ...p, hotel_category: val }))
+                  }
                 />
               </div>
             </div>
