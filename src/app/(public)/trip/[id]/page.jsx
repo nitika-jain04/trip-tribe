@@ -33,6 +33,52 @@ import { useToast } from "@/app/hooks/use-toast";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const mapTripData = (tripDataRaw) => {
+  if (!tripDataRaw?.success) return null;
+
+  const raw = Array.isArray(tripDataRaw.result?.trips)
+    ? tripDataRaw.result.trips[0]
+    : tripDataRaw.result;
+  if (!raw) return null;
+
+  const start = new Date(raw.start_date);
+  const end = new Date(raw.end_date);
+  const days = Math.max(
+    1,
+    Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
+  );
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description || "",
+    images: raw.images?.length ? raw.images : [],
+    source_id: raw.source_id,
+    destination_id: raw.destination_id,
+    provider: {
+      name: raw.operator.name || "Unknown",
+      phone_number:
+        raw.operator?.phone_number || raw.operator_phone || raw.phone,
+      email: raw.operator?.email || raw.operator_email || raw.email,
+      rating: 4.8,
+      reviewCount: 0,
+    },
+    priceFrom: Number(raw.price) || 0,
+    duration: `${days}`,
+    groupSize: raw.total_seats || 0,
+    difficulty: raw.difficulty || "N/A",
+    hotelCategory: raw.hotel_category || null,
+    rating: 4.7,
+    reviewCount: 0,
+    verified: true,
+    type: "Adventure",
+    startDate: raw.start_date,
+    highlights: raw.itinerary || [],
+    inclusions: raw.inclusions || [],
+    exclusions: raw.exclusions || [],
+  };
+};
+
 function TripPage() {
   const { id } = useParams();
   const { locationMap } = useLocations();
@@ -164,51 +210,7 @@ ${currentUrl}`;
     fetcher
   );
 
-  const trip = useMemo(() => {
-    if (!tripDataRaw?.success) return null;
-
-    const raw = Array.isArray(tripDataRaw.result?.trips)
-      ? tripDataRaw.result.trips[0]
-      : tripDataRaw.result;
-    if (!raw) return null;
-
-    const start = new Date(raw.start_date);
-    const end = new Date(raw.end_date);
-    const days = Math.max(
-      1,
-      Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
-    );
-
-    return {
-      id: raw.id,
-      name: raw.name,
-      description: raw.description || "",
-      images: raw.images?.length ? raw.images : [],
-      source_id: raw.source_id,
-      destination_id: raw.destination_id,
-      provider: {
-        name: raw.operator.name || "Unknown",
-        phone_number:
-          raw.operator?.phone_number || raw.operator_phone || raw.phone,
-        email: raw.operator?.email || raw.operator_email || raw.email,
-        rating: 4.8,
-        reviewCount: 0,
-      },
-      priceFrom: Number(raw.price) || 0,
-      duration: `${days}`,
-      groupSize: raw.total_seats || 0,
-      difficulty: raw.difficulty || "N/A",
-      hotelCategory: raw.hotel_category || null,
-      rating: 4.7,
-      reviewCount: 0,
-      verified: true,
-      type: "Adventure",
-      startDate: raw.start_date,
-      highlights: raw.itinerary || [],
-      inclusions: raw.inclusions || [],
-      exclusions: raw.exclusions || [],
-    };
-  }, [tripDataRaw]);
+  const trip = useMemo(() => mapTripData(tripDataRaw), [tripDataRaw]);
 
   useEffect(() => {
     if (trip && trip.images?.[0] && !activeImage) {
@@ -729,7 +731,7 @@ ${currentUrl}`;
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[90dvh] animate-in zoom-in-95 duration-200">
             {/* Close Button */}
             <button
               onClick={() => setShowForm(false)}
