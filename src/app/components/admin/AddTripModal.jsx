@@ -12,6 +12,7 @@ import {
 import { Card, CardContent } from "../ui/card";
 import { useToast } from "@/app/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { Rating } from "../ui/rating";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -54,6 +55,7 @@ function AddTripModal({ handleModalClose }) {
     difficulty: "",
     total_seats: "",
     type_id: "",
+    hotel_category: 3,
     operator_id: "",
     source: {
       name: "",
@@ -428,6 +430,7 @@ function AddTripModal({ handleModalClose }) {
       difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
       type_id: formData.type_id,
+      hotel_category: formData.hotel_category,
       operator_id: formData.operator_id,
       source: formData.source,
       destination: formData.destination,
@@ -451,7 +454,7 @@ function AddTripModal({ handleModalClose }) {
       });
 
       const data = await res.json();
-      console.log("req", payload);
+      // console.log("req", payload);
 
       if (res.ok && data.success) {
         toast({
@@ -616,6 +619,18 @@ function AddTripModal({ handleModalClose }) {
                   {fieldErrors.type_id}
                 </p>
               )}
+            </div>
+
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">
+                Hotel Category
+              </label>
+              <div className="flex items-center h-10 mt-1">
+                <Rating
+                  value={formData.hotel_category || 3}
+                  onChange={(val) => setFormData(p => ({ ...p, hotel_category: val }))}
+                />
+              </div>
             </div>
 
             <div className="col-span-1">
@@ -1025,7 +1040,7 @@ function AddTripModal({ handleModalClose }) {
       {/* Map Popups outside main layout flow */}
       {showSourceMap && (
         <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
+          <div className="bg-white w-[80vw] md:w-[60vw] h-[40vh] md:h-[65vh]  rounded-xl flex flex-col shadow-2xl overflow-hidden">
             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
               <span className="font-semibold text-gray-800">
                 Select Source Location
@@ -1047,7 +1062,7 @@ function AddTripModal({ handleModalClose }) {
 
       {showDestinationMap && (
         <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-4xl h-[80vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
+          <div className="bg-white w-[80vw] md:w-[60vw] h-[40vh] md:h-[65vh]  rounded-xl flex flex-col shadow-2xl overflow-hidden">
             <div className="p-4 border-b flex justify-between items-center bg-gray-50">
               <span className="font-semibold text-gray-800">
                 Select Destination Location

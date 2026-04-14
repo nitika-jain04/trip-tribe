@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import useSWR from "swr";
+import { fetcher } from "@/app/hooks/use-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -61,8 +63,6 @@ const team = [
 ];
 
 export default function About() {
-  const [operatorCount, setOperatorCount] = useState(0);
-  const [loading, setLoading] = useState(false);
   const pathname = usePathname();
 
   const handleNavClick = (e, href) => {
@@ -71,6 +71,13 @@ export default function About() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
+
+  const { data: operatorsData, isLoading: loading } = useSWR(
+    `${BASE_URL}/api/${API_VERSION}/operators`,
+    fetcher
+  );
+
+  const operatorCount = operatorsData?.success ? operatorsData?.result?.pagination?.total : 0;
 
   const milestones = [
     {
@@ -89,31 +96,6 @@ export default function About() {
         : "Onboarding verified community trip providers across India.",
     },
   ];
-
-  useEffect(() => {
-    const fetchOperators = async () => {
-      try {
-        setLoading(true);
-
-        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/operators`);
-
-        const data = await res.json();
-
-        if (data.success) {
-          setOperatorCount(data?.result?.pagination?.total);
-        } else {
-          throw new Error(data.error.message || "Failed to fetch operators");
-        }
-      } catch (err) {
-        console.error(err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOperators();
-  }, []);
 
   return (
     <>

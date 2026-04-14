@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import Input from "@/app/components/ui/input";
+import { Rating } from "@/app/components/ui/rating";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -40,6 +41,7 @@ export default function TripEditPage() {
     end_date: "",
     difficulty: "",
     total_seats: "",
+    hotel_category: 3,
     source: {},
     destination: {},
     images: [],
@@ -109,6 +111,7 @@ export default function TripEditPage() {
             end_date: data.result.end_date || "",
             difficulty: data.result.difficulty || "",
             total_seats: data.result.total_seats || "",
+            hotel_category: data.result.hotel_category || 3,
             description: data.result.description || "",
             images: data.result.images || [],
             inclusions: data.result.inclusions || [],
@@ -206,7 +209,13 @@ export default function TripEditPage() {
   };
 
   const handleImageUpload = async (e) => {
-    const validTypes = ["image/jpeg", "image/png", "image/jpg"];
+    const validTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/heif",
+      "image/heic",
+    ];
 
     const file = e.target.files[0];
     if (!file) return;
@@ -740,6 +749,18 @@ export default function TripEditPage() {
                     {errors.type_id}
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Hotel Category
+                </label>
+                <div className="flex items-center h-10 mt-1">
+                  <Rating
+                    value={formData.hotel_category || 3}
+                    onChange={(val) => handleChange("hotel_category", val)}
+                  />
+                </div>
               </div>
             </div>
 

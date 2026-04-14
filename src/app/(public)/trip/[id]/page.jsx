@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, Suspense, useMemo } from "react";
+import useSWR from "swr";
+import { fetcher } from "@/app/hooks/use-fetcher";
 
 import {
   MapPin,
@@ -36,9 +38,7 @@ function TripPage() {
   const { locationMap } = useLocations();
   const { toast } = useToast();
 
-  const [trip, setTrip] = useState(null);
   const [tripReviews, setTripReviews] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -159,91 +159,62 @@ ${currentUrl}`;
     }
   };
 
+  const { data: tripDataRaw, isLoading: loading } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/trips/${id}` : null,
+    fetcher
+  );
+
+  const trip = useMemo(() => {
+    if (!tripDataRaw?.success) return null;
+
+    const raw = Array.isArray(tripDataRaw.result?.trips)
+      ? tripDataRaw.result.trips[0]
+      : tripDataRaw.result;
+    if (!raw) return null;
+
+    const start = new Date(raw.start_date);
+    const end = new Date(raw.end_date);
+    const days = Math.max(
+      1,
+      Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
+    );
+
+    return {
+      id: raw.id,
+      name: raw.name,
+      description: raw.description || "",
+      images: raw.images?.length ? raw.images : [],
+      source_id: raw.source_id,
+      destination_id: raw.destination_id,
+      provider: {
+        name: raw.operator.name || "Unknown",
+        phone_number:
+          raw.operator?.phone_number || raw.operator_phone || raw.phone,
+        email: raw.operator?.email || raw.operator_email || raw.email,
+        rating: 4.8,
+        reviewCount: 0,
+      },
+      priceFrom: Number(raw.price) || 0,
+      duration: `${days}`,
+      groupSize: raw.total_seats || 0,
+      difficulty: raw.difficulty || "N/A",
+      hotelCategory: raw.hotel_category || null,
+      rating: 4.7,
+      reviewCount: 0,
+      verified: true,
+      type: "Adventure",
+      startDate: raw.start_date,
+      highlights: raw.itinerary || [],
+      inclusions: raw.inclusions || [],
+      exclusions: raw.exclusions || [],
+    };
+  }, [tripDataRaw]);
+
   useEffect(() => {
-    if (!id) return;
-
-    // ✅ Initialize AbortController to manage this specific request
-    const controller = new AbortController();
-
-    async function fetchTrip() {
-      try {
-        setLoading(true);
-
-        // Fetch trip details
-        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`, {
-          signal: controller.signal, // ✅ Attach signal to fetch
-        });
-
-        const data = await res.json();
-
-        if (!data?.success) {
-          setTrip(null);
-          return;
-        }
-
-        const raw = Array.isArray(data.result?.trips)
-          ? data.result.trips[0]
-          : data.result;
-        if (!raw) return setTrip(null);
-
-        const start = new Date(raw.start_date);
-        const end = new Date(raw.end_date);
-        const days = Math.max(
-          1,
-          Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
-        );
-
-        setActiveImage(raw.images?.[0]);
-
-        setTrip({
-          id: raw.id,
-          name: raw.name,
-          description: raw.description || "",
-          images: raw.images?.length ? raw.images : [],
-          source_id: raw.source_id,
-          destination_id: raw.destination_id,
-          provider: {
-            name: raw.operator.name || "Unknown",
-            phone_number:
-              raw.operator?.phone_number || raw.operator_phone || raw.phone,
-            email: raw.operator?.email || raw.operator_email || raw.email,
-            rating: 4.8,
-            reviewCount: 0,
-          },
-          priceFrom: Number(raw.price) || 0,
-          duration: `${days}`,
-          groupSize: raw.total_seats || 0,
-          difficulty: raw.difficulty || "N/A",
-          rating: 4.7,
-          reviewCount: 0,
-          verified: true,
-          type: "Adventure",
-          startDate: raw.start_date,
-          highlights: raw.itinerary || [],
-          inclusions: raw.inclusions || [],
-          exclusions: raw.exclusions || [],
-        });
-
-        setTripReviews([]);
-      } catch (err) {
-        // ✅ Silently handle aborted requests
-        if (err.name === "AbortError") return;
-
-        console.error("Trip fetch error:", err);
-        setTrip(null);
-      } finally {
-        // ✅ Only update loading if this request wasn't replaced
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
+    if (trip && trip.images?.[0] && !activeImage) {
+      setActiveImage(trip.images[0]);
     }
-
-    fetchTrip();
-
-    // ✅ Cleanup function: Abort the fetch if the component unmounts or id changes
-    return () => controller.abort();
-  }, [id]);
+  }, [trip, activeImage]);
 
   if (loading)
     return (
@@ -549,6 +520,12 @@ ${currentUrl}`;
                         <dt className="text-muted-foreground">Group Size</dt>
                         <dd className="font-medium">{trip.groupSize}</dd>
                       </div>
+                      {trip.hotelCategory && (
+                        <div className="flex justify-between">
+                          <dt className="text-muted-foreground">Hotel Category</dt>
+                          <dd className="font-medium">{trip.hotelCategory} Star{trip.hotelCategory > 1 ? 's' : ''}</dd>
+                        </div>
+                      )}
                     </dl>
                   </div>
                 </div>
