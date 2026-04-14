@@ -385,10 +385,10 @@ export default function Page() {
               nextSection.scrollIntoView({ behavior: "smooth" });
             }
           }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-background/60 hover:text-background transition-all duration-300 animate-bounce group cursor-pointer"
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 text-background/60 hover:text-background transition-all duration-300 animate-bounce group cursor-pointer z-20"
           aria-label="Scroll to content"
         >
-          <div className="flex flex-col items-center gap-2" id="next-section">
+          <div className="flex flex-col items-center gap-2">
             <span className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
               Discover More
             </span>
@@ -398,7 +398,7 @@ export default function Page() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-white" id="next-section">
         <div className="container-premium">
           <div className="grid grid-cols-2 justify-center items-center md:px-40">
             <div className="flex flex-col items-center justify-center text-center">
