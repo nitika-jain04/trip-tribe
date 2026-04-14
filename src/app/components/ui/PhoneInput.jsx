@@ -28,7 +28,7 @@ const PhoneInput = ({
         placeholder={placeholder}
         className="react-international-phone-container w-full"
         inputClassName={cn(
-          "flex w-full !rounded-r-lg !border-l-0 border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 !font-sans h-full",
+          "flex w-full !rounded-r-lg !border-l-0 border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 !font-sans h-full",
           error ? "!border-error" : "",
           props.inputClassName,
         )}
