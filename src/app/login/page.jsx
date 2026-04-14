@@ -124,7 +124,7 @@ export default function TestLogin() {
   }, []);
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center">
+    <div className="min-h-[100dvh] relative flex items-center justify-center">
       {/* Background */}
       <Image
         src="/loginimg.jpeg"

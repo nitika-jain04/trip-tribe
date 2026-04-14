@@ -77,7 +77,7 @@ export default function OperatorDetail() {
 
   if (loading) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -99,7 +99,7 @@ export default function OperatorDetail() {
 
   if (error) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -125,7 +125,7 @@ export default function OperatorDetail() {
 
   if (!operator) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -150,7 +150,7 @@ export default function OperatorDetail() {
   }
 
   return (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 min-h-[100dvh]">
       <Link
         href="/admin/operators"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"

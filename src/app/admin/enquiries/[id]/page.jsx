@@ -155,7 +155,7 @@ export default function EnquiryDetail() {
 
   if (loading) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/enquiries"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
