@@ -295,14 +295,35 @@ function TripsContent() {
       return;
     }
 
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       const el = document.getElementById("trips");
-      if (el) {
-        const yOffset = -90;
-        const y = el.getBoundingClientRect().top + window.scrollY + yOffset;
-        window.scrollTo({ top: y, behavior: "smooth" });
+      if (!el) return;
+
+      const isMobile = window.innerWidth < 768;
+
+      if (isMobile) {
+        // Mobile: native scroll (works best with mobile browser chrome)
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      } else {
+        // Desktop: custom eased scroll with slower duration
+        const targetY = el.getBoundingClientRect().top + window.scrollY;
+        const startY = window.scrollY;
+        const diff = targetY - startY;
+        const duration = 800;
+        let start;
+
+        const step = (timestamp) => {
+          if (!start) start = timestamp;
+          const progress = Math.min((timestamp - start) / duration, 1);
+          // ease-out cubic
+          const eased = 1 - Math.pow(1 - progress, 3);
+          window.scrollTo(0, startY + diff * eased);
+          if (progress < 1) requestAnimationFrame(step);
+        };
+
+        requestAnimationFrame(step);
       }
-    });
+    }, 100);
   }, [currentPage]);
 
   const filteredTrips = useMemo(() => {
@@ -410,10 +431,22 @@ function TripsContent() {
                 placeholder="Search destinations, trips..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={(e) => {
+                  // On mobile, scroll the search box into view when keyboard opens
+                  setTimeout(() => {
+                    e.target?.scrollIntoView({
+                      block: "center",
+                      behavior: "smooth",
+                    });
+                  }, 300);
+                }}
                 onBlur={() => {
                   // On mobile, nudge viewport back after keyboard closes
                   setTimeout(() => {
-                    window.scrollTo({ top: window.scrollY, behavior: 'instant' });
+                    window.scrollTo({
+                      top: window.scrollY,
+                      behavior: "instant",
+                    });
                   }, 150);
                 }}
                 className="pl-12 pr-4 h-14 rounded-xl border-border bg-background text-body shadow-sm"
@@ -536,7 +569,13 @@ function TripsContent() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mt-5 mb-8">
+              <div
+                key={currentPage}
+                className="grid md:grid-cols-2 gap-6 mt-5 mb-8"
+                style={{
+                  animation: "tripsFadeIn 0.35s ease-out",
+                }}
+              >
                 {!loadingTrips && filteredTrips.length > 0 ? (
                   filteredTrips.map((trip) => (
                     <div
@@ -1062,7 +1101,7 @@ function TripsContent() {
 
 export default function TripsPage() {
   return (
-    <Suspense fallback={<div className="p-8">Loading trips...</div>}>
+    <Suspense>
       <TripsContent />
     </Suspense>
   );

@@ -265,7 +265,13 @@ export default function Page() {
                       placeholder="Where do you want to go?"
                       value={searchDestination}
                       onChange={(e) => setSearchDestination(e.target.value)}
-                      onFocus={() => setShowSuggestions(true)}
+                      onFocus={(e) => {
+                        setShowSuggestions(true);
+                        // On mobile, scroll the search box into view when keyboard opens
+                        setTimeout(() => {
+                          e.target?.scrollIntoView({ block: "center", behavior: "smooth" });
+                        }, 300);
+                      }}
                       onBlur={() => {
                         setTimeout(() => setShowSuggestions(false), 200);
                         // On mobile, nudge viewport back after keyboard closes

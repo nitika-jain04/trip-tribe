@@ -564,3 +564,14 @@
 .react-datepicker-popper {
   z-index: 9999 !important;
 }
+
+@keyframes tripsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
