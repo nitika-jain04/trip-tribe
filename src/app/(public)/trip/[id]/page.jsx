@@ -749,8 +749,8 @@ ${currentUrl}`;
       </section>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[90dvh] my-auto animate-in zoom-in-95 duration-200">
+        <div className="fixed top-0 left-0 w-full h-[100dvh] z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
             {/* Close Button */}
             <button
               onClick={() => setShowForm(false)}

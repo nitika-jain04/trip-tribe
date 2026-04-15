@@ -32,3 +32,20 @@ export const getDialablePhone = (phone) => {
   const digits = phone.replace(/\D/g, "");
   return `+91${digits.slice(-10)}`;
 };
+
+export const animatedScrollTo = (targetY, duration = 400) => {
+  const startY = window.scrollY;
+  const diff = targetY - startY;
+  let start;
+
+  const step = (timestamp) => {
+    if (!start) start = timestamp;
+    const progress = Math.min((timestamp - start) / duration, 1);
+    // easeOutCubic for a very smooth, decelerating finish
+    const eased = 1 - Math.pow(1 - progress, 3);
+    window.scrollTo(0, startY + diff * eased);
+    if (progress < 1) requestAnimationFrame(step);
+  };
+
+  requestAnimationFrame(step);
+};
