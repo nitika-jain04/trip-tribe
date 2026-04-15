@@ -1,5 +1,7 @@
 "use client";
 
+import { createPortal } from "react-dom";
+
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense, useMemo } from "react";
@@ -99,6 +101,15 @@ function TripPage() {
     (valid) => setIsPhoneValid(valid),
     [],
   );
+
+  // Scroll to top on page load / trip change — fixes mobile Chrome restoring stale scroll position
+  useEffect(() => {
+    // Disable browser scroll restoration so Chrome/Safari don't jump to a cached position
+    if (typeof window !== "undefined" && "scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [id]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -748,7 +759,7 @@ ${currentUrl}`;
         </div>
       </section>
 
-      {showForm && (
+      {showForm && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
           <div className="bg-card text-card-foreground w-full max-w-sm rounded-[14px] shadow-2xl ring-1 ring-border relative overflow-hidden border border-border flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
             {/* Close Button */}
@@ -830,7 +841,8 @@ ${currentUrl}`;
               </Button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </Suspense>
   );

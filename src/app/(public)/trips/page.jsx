@@ -141,6 +141,14 @@ function TripsContent() {
   const prevSearchRef = useRef(searchQuery);
   const searchScrollRef = useRef(null);
 
+  // Scroll to top on initial page load — fixes mobile Chrome restoring stale scroll position
+  useEffect(() => {
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []); // Empty deps = run only on first mount
+
   // Mobile keyboard dismiss detection for smooth shift back
   useEffect(() => {
     if (!window.visualViewport) return;
@@ -154,7 +162,7 @@ function TripsContent() {
           document.activeElement.blur();
         }
         if (window.innerWidth < 768 && searchScrollRef.current !== null) {
-          animatedScrollTo(searchScrollRef.current, 700); // Premium damped shift down
+          animatedScrollTo(searchScrollRef.current, 350); // Premium damped shift down
           searchScrollRef.current = null;
         }
       }
@@ -467,8 +475,8 @@ function TripsContent() {
                       const rect = e.target.getBoundingClientRect();
                       const targetY = window.scrollY + rect.top - 90;
                       // Ensure we don't scroll to a negative value
-                      animatedScrollTo(Math.max(0, targetY), 400);
-                    }, 300);
+                      animatedScrollTo(Math.max(0, targetY), 350);
+                    }, 150);
                   }
                 }}
                 onBlur={() => {
