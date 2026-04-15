@@ -117,7 +117,8 @@ export default function Page() {
     };
 
     window.visualViewport.addEventListener("resize", handleResize);
-    return () => window.visualViewport.removeEventListener("resize", handleResize);
+    return () =>
+      window.visualViewport.removeEventListener("resize", handleResize);
   }, []);
 
   const {
@@ -549,17 +550,7 @@ export default function Page() {
           </div>
 
           {/* Loading State */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-16 rounded-xl">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">
-                Loading featured trips...
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Discover amazing adventures
-              </p>
-            </div>
-          )}
+          {isLoading && <TripsDestinationsSkeleton />}
 
           {/* Error State */}
           {hasError && (
@@ -671,17 +662,7 @@ export default function Page() {
           </div>
 
           {/* Loading State */}
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-16">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">
-                Loading destinations...
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Discover amazing places to visit
-              </p>
-            </div>
-          )}
+          {isLoading && <TripsDestinationsSkeleton />}
 
           {/* Error State */}
           {hasError && (
@@ -775,17 +756,7 @@ export default function Page() {
           </div>
 
           {/* Loading State */}
-          {isLoading && (
-            <div className="flex flex-col justify-center items-center py-4">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">
-                Loading Trusted Trip Organisers...
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Discover amazing adventures
-              </p>
-            </div>
-          )}
+          {isLoading && <ProvidersSkeleton />}
 
           {/* Providers Grid */}
           {!isLoading && !hasError && operators.length > 0 && (
@@ -859,5 +830,41 @@ export default function Page() {
         </div>
       </section>
     </>
+  );
+}
+
+function TripsDestinationsSkeleton() {
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div
+          key={index}
+          className="rounded-2xl overflow-hidden bg-muted/40 animate-pulse"
+        >
+          <div className="aspect-16/10 bg-muted" />
+          <div className="p-6">
+            <div className="h-4 w-28 bg-muted-foreground/20 rounded mb-3" />
+            <div className="h-6 w-3/4 bg-muted-foreground/20 rounded mb-3" />
+            <div className="h-4 w-1/2 bg-muted-foreground/20 rounded" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ProvidersSkeleton() {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-5 md:gap-8">
+      {Array.from({ length: 9 }).map((_, index) => (
+        <div
+          key={index}
+          className="flex items-center gap-3 px-5 py-3 rounded-full bg-muted/50 animate-pulse min-w-[180px]"
+        >
+          <div className="h-16 w-16 rounded-full bg-muted" />
+          <div className="h-5 w-24 bg-muted rounded" />
+        </div>
+      ))}
+    </div>
   );
 }
