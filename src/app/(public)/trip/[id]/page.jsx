@@ -759,91 +759,92 @@ ${currentUrl}`;
         </div>
       </section>
 
-      {showForm && createPortal(
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
-          <div className="bg-card text-card-foreground w-full max-w-sm rounded-[14px] shadow-2xl ring-1 ring-border relative overflow-hidden border border-border flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
-            {/* Close Button */}
-            <button
-              onClick={() => setShowForm(false)}
-              className="absolute top-4 right-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
-            >
-              <X className="w-4 h-4" />
-            </button>
+      {showForm &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+            <div className="bg-card text-card-foreground w-full max-w-sm rounded-[14px] shadow-2xl ring-1 ring-border relative overflow-hidden border border-border flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+              {/* Close Button */}
+              <button
+                onClick={() => setShowForm(false)}
+                className="absolute top-4 right-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
 
-            {/* Header */}
-            <div className="px-5 pt-5 pb-2">
-              <h3 className="font-display text-xl font-semibold text-foreground">
-                Booking Request
-              </h3>
-            </div>
-
-            {/* Content */}
-            <div className="px-5 py-3 overflow-y-auto space-y-3">
-              <Input
-                type="text"
-                placeholder="Full Name"
-                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
-
-              <PhoneInput
-                className="h-10 text-foreground [&_input]:bg-background [&_input]:border-input [&_input]:text-foreground [&_input]:placeholder:text-muted-foreground [&_.react-international-phone-country-selector-button]:bg-background [&_.react-international-phone-country-selector-button]:border-input"
-                value={formData.phone_number}
-                onChange={(phone) =>
-                  setFormData({ ...formData, phone_number: phone })
-                }
-                onValidationChange={handlePhoneValidation}
-                placeholder="Enter phone number"
-              />
-
-              <Input
-                type="email"
-                placeholder="Email id"
-                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-              />
-
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  type="text"
-                  value={trip.provider.name}
-                  disabled
-                  className="w-full h-9 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
-                />
-                <Input
-                  type="text"
-                  value={trip.name}
-                  disabled
-                  className="w-full h-9 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
-                />
+              {/* Header */}
+              <div className="px-5 pt-5 pb-2">
+                <h3 className="font-display text-xl font-semibold text-foreground">
+                  Booking Request
+                </h3>
               </div>
 
-              <textarea
-                placeholder="Any special requests? (Optional)"
-                className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
-                value={formData.message}
-                onChange={(e) =>
-                  setFormData({ ...formData, message: e.target.value })
-                }
-              />
+              {/* Content */}
+              <div className="px-5 py-3 overflow-y-auto space-y-3">
+                <Input
+                  type="text"
+                  placeholder="Full Name"
+                  className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
 
-              <Button
-                onClick={handleSubmit}
-                className="w-full btn-primary h-11 mt-1 text-sm font-semibold shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
-              >
-                Send Request
-              </Button>
+                <PhoneInput
+                  className="h-10 text-foreground [&_input]:bg-background [&_input]:border-input [&_input]:text-foreground [&_input]:placeholder:text-muted-foreground [&_.react-international-phone-country-selector-button]:bg-background [&_.react-international-phone-country-selector-button]:border-input"
+                  value={formData.phone_number}
+                  onChange={(phone) =>
+                    setFormData({ ...formData, phone_number: phone })
+                  }
+                  onValidationChange={handlePhoneValidation}
+                  placeholder="Enter phone number"
+                />
+
+                <Input
+                  type="email"
+                  placeholder="Email id"
+                  className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    type="text"
+                    value={trip.provider.name}
+                    disabled
+                    className="w-full h-9 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
+                  />
+                  <Input
+                    type="text"
+                    value={trip.name}
+                    disabled
+                    className="w-full h-9 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
+                  />
+                </div>
+
+                <textarea
+                  placeholder="Any special requests? (Optional)"
+                  className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
+                  value={formData.message}
+                  onChange={(e) =>
+                    setFormData({ ...formData, message: e.target.value })
+                  }
+                />
+
+                <Button
+                  onClick={handleSubmit}
+                  className="w-full btn-primary h-11 mt-1 text-sm font-semibold shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
+                >
+                  Send Request
+                </Button>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body
-      )}
+          </div>,
+          document.body,
+        )}
     </Suspense>
   );
 }
