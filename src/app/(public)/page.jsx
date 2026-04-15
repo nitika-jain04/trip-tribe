@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -97,6 +97,28 @@ export default function Page() {
     loading: locationLoading,
     error: locationError,
   } = useLocations();
+
+  // Mobile keyboard dismiss detection
+  useEffect(() => {
+    if (!window.visualViewport) return;
+
+    let initialHeight = window.visualViewport.height;
+
+    const handleResize = () => {
+      const currentHeight = window.visualViewport.height;
+      // If viewport grows by more than 150px, keyboard was likely closed by native swipe/back button
+      if (currentHeight > initialHeight + 150) {
+        setShowSuggestions(false);
+        if (document.activeElement?.tagName === "INPUT") {
+          document.activeElement.blur();
+        }
+      }
+      initialHeight = currentHeight;
+    };
+
+    window.visualViewport.addEventListener("resize", handleResize);
+    return () => window.visualViewport.removeEventListener("resize", handleResize);
+  }, []);
 
   const {
     data: locationsData,
