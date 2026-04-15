@@ -40,7 +40,10 @@ export function Navbar() {
   }, [isMobileMenuOpen]);
 
   const isHeaderSolid = isScrolled || isMobileMenuOpen;
+  // const isTransparentAndHome = pathname === "/" && !isHeaderSolid;
   const isTransparentAndHome = pathname === "/" && !isHeaderSolid;
+  const isDarkHome =
+    pathname === "/" && document.documentElement.classList.contains("dark");
 
   const handleNavClick = (e, href) => {
     if (pathname === href) {
@@ -57,7 +60,6 @@ export function Navbar() {
             ? "backdrop-blur-lg border-b border-border bg-white"
             : "bg-transparent"
         }`}
-        style={{ transform: "translateZ(0)" }}
       >
         <nav className="container-premium">
           <div className="flex items-center justify-between h-18">
@@ -72,8 +74,17 @@ export function Navbar() {
                 alt="TripTribe"
                 className="h-12 w-12 rounded-lg transition-transform duration-300 group-hover:scale-105"
               />
-              <span
+              {/* <span
                 className={`font-display text-xl font-semibold transition-colors ${isTransparentAndHome ? "text-white" : "text-foreground"}`}
+              >
+                TripTribe
+              </span> */}
+              <span
+                className={`font-display text-xl font-semibold transition-colors ${
+                  isTransparentAndHome || isDarkHome
+                    ? "text-white"
+                    : "text-foreground"
+                }`}
               >
                 TripTribe
               </span>
