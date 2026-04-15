@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -11,6 +11,7 @@ import Input from "@/app/components/ui/input";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { animatedScrollTo } from "@/lib/utils";
 
 import {
   ArrowRight,
@@ -83,6 +84,7 @@ const steps = [
 
 export default function Page() {
   const router = useRouter();
+  const searchScrollRef = useRef(0);
 
   const [searchDestination, setSearchDestination] = useState("");
   const [searchDates, setSearchDates] = useState("");
@@ -267,20 +269,23 @@ export default function Page() {
                       onChange={(e) => setSearchDestination(e.target.value)}
                       onFocus={(e) => {
                         setShowSuggestions(true);
-                        // On mobile, scroll the search box into view when keyboard opens
+                        // Store the current scroll position before we shift it up
+                        searchScrollRef.current = window.scrollY;
+                        // On mobile, elegantly animate the search box into the center of the available viewport
                         setTimeout(() => {
-                          e.target?.scrollIntoView({ block: "center", behavior: "smooth" });
-                        }, 300);
+                          const el = e.target;
+                          const rect = el.getBoundingClientRect();
+                          const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+                          animatedScrollTo(targetY, 400); // 400ms gentle ease
+                        }, 250); // wait for keyboard
                       }}
                       onBlur={() => {
-                        setTimeout(() => setShowSuggestions(false), 200);
-                        // On mobile, nudge viewport back after keyboard closes
+                        // Close dropdown instantly since we use onMouseDown for selections
+                        setShowSuggestions(false);
+                        // On mobile, gently nudge viewport back to where it was before focus
                         setTimeout(() => {
-                          window.scrollTo({
-                            top: window.scrollY,
-                            behavior: "instant",
-                          });
-                        }, 150);
+                          animatedScrollTo(searchScrollRef.current, 400);
+                        }, 50);
                       }}
                       className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
@@ -290,7 +295,7 @@ export default function Page() {
                         {/* "Take me anywhere" Option */}
                         <button
                           type="button"
-                          onClick={() => router.push("/trips")}
+                          onMouseDown={() => router.push("/trips")}
                           className="w-full flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/60 transition-all text-left group"
                         >
                           <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -310,7 +315,7 @@ export default function Page() {
                                 <button
                                   key={loc.id}
                                   type="button"
-                                  onClick={() => {
+                                  onMouseDown={() => {
                                     setSearchDestination(loc.name);
                                     setShowSuggestions(false);
                                   }}
