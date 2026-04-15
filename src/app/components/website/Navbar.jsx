@@ -43,7 +43,9 @@ export function Navbar() {
   // const isTransparentAndHome = pathname === "/" && !isHeaderSolid;
   const isTransparentAndHome = pathname === "/" && !isHeaderSolid;
   const isDarkHome =
-    pathname === "/" && document.documentElement.classList.contains("dark");
+    pathname === "/" &&
+    typeof document !== "undefined" &&
+    document.documentElement.classList.contains("dark");
 
   const handleNavClick = (e, href) => {
     if (pathname === href) {
