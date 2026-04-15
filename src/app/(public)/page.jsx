@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -84,7 +84,6 @@ const steps = [
 
 export default function Page() {
   const router = useRouter();
-  const searchScrollRef = useRef(0);
 
   const [searchDestination, setSearchDestination] = useState("");
   const [searchDates, setSearchDates] = useState("");
@@ -267,25 +266,12 @@ export default function Page() {
                       placeholder="Where do you want to go?"
                       value={searchDestination}
                       onChange={(e) => setSearchDestination(e.target.value)}
-                      onFocus={(e) => {
+                      onFocus={() => {
                         setShowSuggestions(true);
-                        // Store the current scroll position before we shift it up
-                        searchScrollRef.current = window.scrollY;
-                        // On mobile, elegantly animate the search box into the center of the available viewport
-                        setTimeout(() => {
-                          const el = e.target;
-                          const rect = el.getBoundingClientRect();
-                          const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-                          animatedScrollTo(targetY, 400); // 400ms gentle ease
-                        }, 250); // wait for keyboard
                       }}
                       onBlur={() => {
                         // Close dropdown instantly since we use onMouseDown for selections
                         setShowSuggestions(false);
-                        // On mobile, gently nudge viewport back to where it was before focus
-                        setTimeout(() => {
-                          animatedScrollTo(searchScrollRef.current, 400);
-                        }, 50);
                       }}
                       className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
