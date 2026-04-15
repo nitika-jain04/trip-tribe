@@ -749,19 +749,19 @@ ${currentUrl}`;
       </section>
 
       {showForm && (
-        <div className="fixed top-0 left-0 w-full h-[100dvh] z-[100] flex items-center justify-center bg-slate-900/70 p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-sm rounded-[14px] shadow-2xl ring-1 ring-black/10 relative overflow-hidden border border-gray-200 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200" style={{ colorScheme: 'light' }}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200">
+          <div className="bg-card text-card-foreground w-full max-w-sm rounded-[14px] shadow-2xl ring-1 ring-border relative overflow-hidden border border-border flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
             {/* Close Button */}
             <button
               onClick={() => setShowForm(false)}
-              className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-colors z-10"
+              className="absolute top-4 right-4 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground"
             >
               <X className="w-4 h-4" />
             </button>
 
             {/* Header */}
             <div className="px-5 pt-5 pb-2">
-              <h3 className="font-display text-xl font-semibold text-gray-900">
+              <h3 className="font-display text-xl font-semibold text-foreground">
                 Booking Request
               </h3>
             </div>
@@ -771,7 +771,7 @@ ${currentUrl}`;
               <Input
                 type="text"
                 placeholder="Full Name"
-                className="w-full h-10 rounded-lg border border-gray-300 bg-white px-3 py-2 text-base md:text-sm text-gray-900 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -779,7 +779,7 @@ ${currentUrl}`;
               />
 
               <PhoneInput
-                className="h-10 text-gray-900 [&_input]:bg-white [&_input]:border-gray-300"
+                className="h-10 text-foreground [&_input]:bg-background [&_input]:border-input [&_input]:text-foreground [&_input]:placeholder:text-muted-foreground [&_.react-international-phone-country-selector-button]:bg-background [&_.react-international-phone-country-selector-button]:border-input"
                 value={formData.phone_number}
                 onChange={(phone) =>
                   setFormData({ ...formData, phone_number: phone })
@@ -791,7 +791,7 @@ ${currentUrl}`;
               <Input
                 type="email"
                 placeholder="Email id"
-                className="w-full h-10 rounded-lg border border-gray-300 bg-white px-3 py-2 text-base md:text-sm text-gray-900 ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-shadow"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
@@ -803,19 +803,19 @@ ${currentUrl}`;
                   type="text"
                   value={trip.provider.name}
                   disabled
-                  className="w-full h-9 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 truncate cursor-not-allowed"
+                  className="w-full h-9 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
                 />
                 <Input
                   type="text"
                   value={trip.name}
                   disabled
-                  className="w-full h-9 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-gray-500 truncate cursor-not-allowed"
+                  className="w-full h-9 rounded-lg border border-border bg-muted px-3 py-1.5 text-xs text-muted-foreground truncate cursor-not-allowed"
                 />
               </div>
 
               <textarea
                 placeholder="Any special requests? (Optional)"
-                className="flex min-h-[80px] w-full rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-base md:text-sm text-gray-900 ring-offset-white placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
+                className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-base md:text-sm text-foreground placeholder:text-muted-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
                 value={formData.message}
                 onChange={(e) =>
                   setFormData({ ...formData, message: e.target.value })
@@ -839,11 +839,7 @@ ${currentUrl}`;
 export default TripPage;
 
 function SkeletonBox({ className = "" }) {
-  return (
-    <div
-      className={`animate-pulse rounded-xl bg-admin-background ${className}`}
-    />
-  );
+  return <div className={`animate-pulse rounded-xl bg-muted ${className}`} />;
 }
 
 function TripPageSkeleton() {

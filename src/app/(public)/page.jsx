@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -97,6 +97,7 @@ export default function Page() {
     loading: locationLoading,
     error: locationError,
   } = useLocations();
+  const searchScrollRef = useRef(null);
 
   // Mobile keyboard dismiss detection
   useEffect(() => {
@@ -111,6 +112,11 @@ export default function Page() {
         setShowSuggestions(false);
         if (document.activeElement?.tagName === "INPUT") {
           document.activeElement.blur();
+        }
+        // Smoothly shift back to the original scroll position recorded before the keyboard opened
+        if (window.innerWidth < 768 && searchScrollRef.current !== null) {
+          animatedScrollTo(searchScrollRef.current, 700); // 700ms premium dampened shift down
+          searchScrollRef.current = null; // Reset
         }
       }
       initialHeight = currentHeight;
@@ -289,8 +295,21 @@ export default function Page() {
                       placeholder="Where do you want to go?"
                       value={searchDestination}
                       onChange={(e) => setSearchDestination(e.target.value)}
-                      onFocus={() => {
+                      onFocus={(e) => {
                         setShowSuggestions(true);
+                        
+                        if (window.innerWidth < 768) {
+                          // Record the scroll position BEFORE the keyboard starts opening
+                          searchScrollRef.current = window.scrollY;
+
+                          // Wait for keyboard to start popping up, then shift the container to the visual center
+                          setTimeout(() => {
+                            const rect = e.target.getBoundingClientRect();
+                            const targetY = window.scrollY + rect.top - 90;
+                            // Ensure we don't scroll to a negative value
+                            animatedScrollTo(Math.max(0, targetY), 400);
+                          }, 300);
+                        }
                       }}
                       onBlur={() => {
                         // Close dropdown instantly since we use onMouseDown for selections
