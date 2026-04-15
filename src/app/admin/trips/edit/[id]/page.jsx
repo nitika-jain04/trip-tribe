@@ -41,7 +41,7 @@ export default function TripEditPage() {
     end_date: "",
     difficulty: "",
     total_seats: "",
-    hotel_category: 3,
+    hotel_category: "",
     source: {},
     destination: {},
     images: [],
@@ -464,7 +464,7 @@ export default function TripEditPage() {
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -487,7 +487,7 @@ export default function TripEditPage() {
   // Enhanced Error State
   if (error && !formData) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -515,7 +515,7 @@ export default function TripEditPage() {
   // Not Found State
   if (!formData) {
     return (
-      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -537,7 +537,7 @@ export default function TripEditPage() {
   }
 
   return (
-    <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh] space-y-4 sm:space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href={`/admin/trips/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -757,7 +757,7 @@ export default function TripEditPage() {
                 </label>
                 <div className="flex items-center h-10 mt-1">
                   <Rating
-                    value={formData.hotel_category || 3}
+                    value={formData.hotel_category}
                     onChange={(val) => handleChange("hotel_category", val)}
                   />
                 </div>
