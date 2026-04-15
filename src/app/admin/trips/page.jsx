@@ -357,6 +357,74 @@ function Page() {
     [trips.length, page, toast],
   );
 
+  // const handleDuplicateTrip = useCallback(
+  //   async (trip) => {
+  //     const token = Cookies.get("token");
+
+  //     try {
+  //       // ✅ Prepare clean payload
+  //       const payload = {
+  //         name: `Copy of ${trip.name}`,
+  //         price: trip.price,
+  //         start_date: trip.start_date,
+  //         end_date: trip.end_date,
+  //         difficulty: trip.difficulty,
+  //         total_seats: trip.total_seats,
+  //         description: trip.description,
+  //         itinerary: trip.itinerary,
+  //         images: trip.images,
+  //         inclusions: trip.inclusions,
+  //         exclusions: trip.exclusions,
+  //         operator_id: trip.operator_id,
+  //         source_id: trip.source_id,
+  //         destination_id: trip.destination_id,
+  //         type_id: trip.type_id,
+  //         status: "DRAFT",
+  //       };
+
+  //       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify(payload),
+  //       });
+
+  //       const data = await res.json();
+
+  //       if (!res.ok || !data.success) {
+  //         return toast({
+  //           title: "Error",
+  //           description: data?.error?.message || "Failed to duplicate trip",
+  //           variant: "destructive",
+  //         });
+  //       }
+
+  //       toast({
+  //         title: "Success",
+  //         description: "Trip duplicated successfully!",
+  //         variant: "success",
+  //       });
+
+  //       // ✅ Local state update: Add new trip to the top
+  //       const newTrip = data.result.trip || data.result;
+  //       if (newTrip && typeof newTrip === "object") {
+  //         setTrips((prev) => [newTrip, ...prev].slice(0, limit));
+  //         setTotalTrips((prev) => prev + 1);
+  //       } else {
+  //         getAllTrips(); // Fallback if data format is unexpected
+  //       }
+  //     } catch (err) {
+  //       toast({
+  //         title: "Error",
+  //         description: err.message,
+  //         variant: "destructive",
+  //       });
+  //     }
+  //   },
+  //   [toast, limit, getAllTrips],
+  // );
   const handleDuplicateTrip = useCallback(
     async (trip) => {
       const token = Cookies.get("token");
@@ -374,13 +442,19 @@ function Page() {
           itinerary: trip.itinerary,
           images: trip.images,
           inclusions: trip.inclusions,
-          exclusions: trip.exclusions,
+          ...(trip.exclusions &&
+          ((Array.isArray(trip.exclusions) && trip.exclusions.length > 0) ||
+            (!Array.isArray(trip.exclusions) && trip.exclusions !== ""))
+            ? { exclusions: trip.exclusions }
+            : {}),
           operator_id: trip.operator_id,
           source_id: trip.source_id,
           destination_id: trip.destination_id,
           type_id: trip.type_id,
           status: "DRAFT",
         };
+
+        console.log("req", payload);
 
         const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
           method: "POST",
@@ -800,93 +874,94 @@ function Page() {
                   <TableBody>
                     {trips.map((trip) => {
                       const isExpired =
-                        trip.start_date && new Date(trip.start_date) < new Date();
+                        trip.start_date &&
+                        new Date(trip.start_date) < new Date();
                       return (
                         <TableRow
                           key={trip.id}
                           className={cn(
                             isExpired &&
-                              "bg-admin-bg-error/30 hover:bg-admin-bg-error/50 border-l-2 border-l-admin-error",
+                              "bg-admin-bg-error/60 hover:bg-admin-bg-error/80 border-l-2 border-l-admin-error",
                           )}
                         >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {trip.images && trip.images[0] ? (
-                              <img
-                                src={trip.images[0]}
-                                alt={trip.name}
-                                loading="lazy"
-                                className="h-12 w-16 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="h-12 w-16 rounded bg-gray-100 flex items-center justify-center">
-                                <MapPin className="h-4 w-4 text-gray-400" />
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              {trip.images && trip.images[0] ? (
+                                <img
+                                  src={trip.images[0]}
+                                  alt={trip.name}
+                                  loading="lazy"
+                                  className="h-12 w-16 rounded object-cover"
+                                />
+                              ) : (
+                                <div className="h-12 w-16 rounded bg-gray-100 flex items-center justify-center">
+                                  <MapPin className="h-4 w-4 text-gray-400" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  className="font-medium truncate cursor-pointer"
+                                  title={trip.name}
+                                >
+                                  {trip.name || "N/A"}
+                                </p>
                               </div>
-                            )}
-                            <div className="min-w-0 flex-1">
-                              <p
-                                className="font-medium truncate cursor-pointer"
-                                title={trip.name}
-                              >
-                                {trip.name || "N/A"}
-                              </p>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground min-w-0">
-                          <p
-                            className="truncate"
-                            title={getOperatorName(trip.operator_id)}
-                          >
-                            {getOperatorName(trip.operator_id)}
-                          </p>
-                        </TableCell>
-                        <TableCell className="font-medium whitespace-nowrap">
-                          <div className="flex items-center gap-1">
-                            <IndianRupee className="h-3 w-3" />
-                            {trip.price?.toLocaleString("en-IN") || "N/A"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
+                          </TableCell>
+                          <TableCell className="text-muted-foreground min-w-0">
+                            <p
+                              className="truncate"
+                              title={getOperatorName(trip.operator_id)}
+                            >
+                              {getOperatorName(trip.operator_id)}
+                            </p>
+                          </TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            <div className="flex items-center gap-1">
+                              <IndianRupee className="h-3 w-3" />
+                              {trip.price?.toLocaleString("en-IN") || "N/A"}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {trip.start_date && trip.end_date
+                                ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
+                                : "N/A"}
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
                             {trip.start_date && trip.end_date
-                              ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
+                              ? `${Math.ceil(
+                                  (new Date(trip.end_date) -
+                                    new Date(trip.start_date)) /
+                                    (1000 * 60 * 60 * 24),
+                                )} days`
                               : "N/A"}
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {trip.start_date && trip.end_date
-                            ? `${Math.ceil(
-                                (new Date(trip.end_date) -
-                                  new Date(trip.start_date)) /
-                                  (1000 * 60 * 60 * 24),
-                              )} days`
-                            : "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          <span
-                            className={`text-sm font-medium ${
-                              trip.difficulty === "EASY"
-                                ? "text-green-600"
-                                : trip.difficulty === "MODERATE"
-                                  ? "text-orange-600"
-                                  : trip.difficulty === "HARD"
-                                    ? "text-red-600"
-                                    : "text-gray-500"
-                            }`}
-                          >
-                            {trip.difficulty || "N/A"}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={trip.status} />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {renderActions(trip)}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`text-sm font-medium ${
+                                trip.difficulty === "EASY"
+                                  ? "text-green-600"
+                                  : trip.difficulty === "MODERATE"
+                                    ? "text-orange-600"
+                                    : trip.difficulty === "HARD"
+                                      ? "text-red-600"
+                                      : "text-gray-500"
+                              }`}
+                            >
+                              {trip.difficulty || "N/A"}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={trip.status} />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {renderActions(trip)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -917,81 +992,82 @@ function Page() {
                   key={trip.id}
                   className={cn(
                     "border shadow-sm p-4",
-                    isExpired && "bg-admin-bg-error/30 border-l-4 border-l-admin-error",
+                    isExpired &&
+                      "bg-admin-bg-error/30 border-l-4 border-l-admin-error",
                   )}
                 >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex gap-3 w-full">
-                    <div className="relative h-16 w-20 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center">
-                      {trip.images && trip.images[0] ? (
-                        <img
-                          src={trip.images[0]}
-                          alt={trip.name}
-                          loading="lazy"
-                          className="object-cover h-full w-full"
-                        />
-                      ) : (
-                        <MapPin className="h-6 w-6 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold line-clamp-2 text-[15px]">
-                        {trip.name || "N/A"}
-                      </h3>
-                      <p className="text-sm text-muted-foreground line-clamp-1">
-                        {getOperatorName(trip.operator_id)}
-                      </p>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex gap-3 w-full">
+                      <div className="relative h-16 w-20 rounded-lg overflow-hidden shrink-0 bg-gray-100 flex items-center justify-center">
+                        {trip.images && trip.images[0] ? (
+                          <img
+                            src={trip.images[0]}
+                            alt={trip.name}
+                            loading="lazy"
+                            className="object-cover h-full w-full"
+                          />
+                        ) : (
+                          <MapPin className="h-6 w-6 text-gray-400" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold line-clamp-2 text-[15px]">
+                          {trip.name || "N/A"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {getOperatorName(trip.operator_id)}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="space-y-2 text-sm mt-3 border-t pt-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Price:</span>
-                    <span className="font-medium flex items-center gap-1">
-                      <IndianRupee className="h-3 w-3" />
-                      {trip.price?.toLocaleString("en-IN") || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Dates:</span>
-                    {/* <span>
+                  <div className="space-y-2 text-sm mt-3 border-t pt-3">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Price:</span>
+                      <span className="font-medium flex items-center gap-1">
+                        <IndianRupee className="h-3 w-3" />
+                        {trip.price?.toLocaleString("en-IN") || "N/A"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Dates:</span>
+                      {/* <span>
                       {trip.start_date && trip.end_date
                         ? `${new Date(trip.start_date).toLocaleDateString()} - ${new Date(trip.end_date).toLocaleDateString()}`
                         : "N/A"}
                     </span> */}
-                    <span>
-                      {trip.start_date && trip.end_date
-                        ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
-                        : "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">
-                      Diff / Status:
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`font-medium ${trip.difficulty === "EASY" ? "text-green-600" : trip.difficulty === "MODERATE" ? "text-orange-600" : trip.difficulty === "HARD" ? "text-red-600" : "text-gray-500"}`}
-                      >
-                        {trip.difficulty || "N/A"}
+                      <span>
+                        {trip.start_date && trip.end_date
+                          ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
+                          : "N/A"}
                       </span>
-                      <StatusBadge status={trip.status} />
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-muted-foreground">
+                        Diff / Status:
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`font-medium ${trip.difficulty === "EASY" ? "text-green-600" : trip.difficulty === "MODERATE" ? "text-orange-600" : trip.difficulty === "HARD" ? "text-red-600" : "text-gray-500"}`}
+                        >
+                          {trip.difficulty || "N/A"}
+                        </span>
+                        <StatusBadge status={trip.status} />
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-4 flex gap-2 w-full items-center">
-                  <Link href={`/admin/trips/${trip.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full text-sm h-9">
-                      <Eye className="h-4 w-4 mr-2" /> View
-                    </Button>
-                  </Link>
-                  {renderActions(trip)}
-                </div>
-              </Card>
-            );
-          })
+                  <div className="mt-4 flex gap-2 w-full items-center">
+                    <Link href={`/admin/trips/${trip.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full text-sm h-9">
+                        <Eye className="h-4 w-4 mr-2" /> View
+                      </Button>
+                    </Link>
+                    {renderActions(trip)}
+                  </div>
+                </Card>
+              );
+            })
           )}
         </div>
 

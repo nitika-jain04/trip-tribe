@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState, Suspense, useMemo } from "react";
+import { useEffect, useState, useCallback, Suspense, useMemo } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/app/hooks/use-fetcher";
 
@@ -94,9 +94,18 @@ function TripPage() {
     email: "",
     subject: "Book Trip",
   });
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const handlePhoneValidation = useCallback(
+    (valid) => setIsPhoneValid(valid),
+    [],
+  );
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.phone_number || !formData.email) {
+    if (
+      !formData.name.trim() ||
+      !formData.phone_number.trim() ||
+      !formData.email.trim()
+    ) {
       toast({
         title: "Form",
         description: "Please fill required fields",
@@ -105,8 +114,7 @@ function TripPage() {
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      // newErrors.email = "Enter a valid email address";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) {
       toast({
         title: "Form",
         description: "Enter a valid email address",
@@ -115,17 +123,11 @@ function TripPage() {
       return;
     }
 
-    if (!formData.phone_number || formData.phone_number.length <= 3) {
+    if (!isPhoneValid) {
       toast({
-        title: "Phone Number",
-        description: "Phone number is required",
-        variant: "destructive",
-      });
-      return;
-    } else if (formData.phone_number.length < 8) {
-      toast({
-        title: "Phone Number",
-        description: "Enter a valid phone number",
+        title: "Invalid phone number",
+        description:
+          "Please enter a valid phone number for the selected country.",
         variant: "destructive",
       });
       return;
@@ -139,23 +141,20 @@ function TripPage() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        full_name: formData.name,
-        email: formData.email,
+        full_name: formData.name.trim(),
+        email: formData.email.trim(),
         phone_number: formData.phone_number,
         inquiry_type: "TRIP",
         trip_id: trip.id,
         subject: "Book Trip",
-        message: formData?.remark || `User is interested in ${trip.name}`,
+        message:
+          formData.message?.trim() || `User is interested in ${trip.name}`,
       }),
     };
 
     try {
-      // ✅ 1. Call Enquiry API
       await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, payload);
 
-      // console.log("payload", payload);
-
-      // ✅ 2. Prepare WhatsApp message
       const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
 
       const message = `Hi, I wanted to confirm the availability for the following trip:
@@ -169,7 +168,7 @@ function TripPage() {
 ${currentUrl}`;
 
       const rawNumber = trip.provider.phone_number || "";
-      const whatsappNumber = rawNumber.replace(/\D/g, ""); // Keep only digits
+      const whatsappNumber = rawNumber.replace(/\D/g, "");
 
       if (!whatsappNumber) {
         toast({
@@ -185,7 +184,6 @@ ${currentUrl}`;
         message,
       )}`;
 
-      // ✅ 3. Redirect to WhatsApp in a new tab
       window.open(url, "_blank");
 
       setShowForm(false);
@@ -193,8 +191,12 @@ ${currentUrl}`;
       setFormData({
         name: "",
         phone_number: "",
+        message: "",
         email: "",
+        subject: "Book Trip",
       });
+
+      setIsPhoneValid(false);
     } catch (error) {
       console.error("Enquiry error:", error);
       toast({
@@ -218,12 +220,8 @@ ${currentUrl}`;
     }
   }, [trip, activeImage]);
 
-  if (loading)
-    return (
-      <div className="min-h-dvh flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-      </div>
-    );
+  if (loading) return <TripPageSkeleton />;
+
   if (!trip)
     return (
       <div className="min-h-[100dvh] flex items-center justify-center">
@@ -759,7 +757,7 @@ ${currentUrl}`;
               <Input
                 type="text"
                 placeholder="Full Name"
-                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow"
                 value={formData.name}
                 onChange={(e) =>
                   setFormData({ ...formData, name: e.target.value })
@@ -772,13 +770,14 @@ ${currentUrl}`;
                 onChange={(phone) =>
                   setFormData({ ...formData, phone_number: phone })
                 }
+                onValidationChange={handlePhoneValidation}
                 placeholder="Enter phone number"
               />
 
               <Input
                 type="email"
                 placeholder="Email id"
-                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow"
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 py-2 text-base md:text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-shadow"
                 value={formData.email}
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
@@ -802,10 +801,10 @@ ${currentUrl}`;
 
               <textarea
                 placeholder="Any special requests? (Optional)"
-                className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
+                className="flex min-h-[80px] w-full rounded-xl border border-input bg-background px-3 py-2.5 text-base md:text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y transition-shadow"
                 value={formData.message}
                 onChange={(e) =>
-                  setFormData({ ...formData, remark: e.target.value })
+                  setFormData({ ...formData, message: e.target.value })
                 }
               />
 
@@ -829,3 +828,108 @@ ${currentUrl}`;
 }
 
 export default TripPage;
+
+function SkeletonBox({ className = "" }) {
+  return (
+    <div
+      className={`animate-pulse rounded-xl bg-admin-background ${className}`}
+    />
+  );
+}
+
+function TripPageSkeleton() {
+  return (
+    <>
+      <section className="relative pt-24">
+        <div className="container-premium">
+          <div className="mb-4">
+            <SkeletonBox className="h-5 w-28" />
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <SkeletonBox className="aspect-4/3 w-full rounded-2xl" />
+              <div className="grid grid-cols-4 gap-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <SkeletonBox
+                    key={i}
+                    className="aspect-square w-full rounded-lg"
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <SkeletonBox className="h-8 w-28 rounded-full" />
+                <SkeletonBox className="h-8 w-24 rounded-full" />
+              </div>
+
+              <SkeletonBox className="h-10 w-2/3 mb-3" />
+              <SkeletonBox className="h-5 w-1/2 mb-6" />
+
+              <div className="card-premium p-4 mb-6">
+                <div className="flex items-center gap-4">
+                  <SkeletonBox className="w-12 h-12 rounded-xl" />
+                  <div className="flex-1 space-y-2">
+                    <SkeletonBox className="h-4 w-24" />
+                    <SkeletonBox className="h-5 w-40" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="card-premium p-4 space-y-3">
+                    <SkeletonBox className="h-5 w-5 rounded-md" />
+                    <SkeletonBox className="h-4 w-20" />
+                    <SkeletonBox className="h-5 w-24" />
+                  </div>
+                ))}
+              </div>
+
+              <div className="card-premium p-6 bg-primary/5 border-primary/20">
+                <div className="mb-4 space-y-2">
+                  <SkeletonBox className="h-4 w-24" />
+                  <SkeletonBox className="h-10 w-32" />
+                  <SkeletonBox className="h-4 w-20" />
+                </div>
+                <SkeletonBox className="h-12 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="section bg-background">
+        <div className="container-premium">
+          <div className="flex gap-4 border-b border-border mb-8 pb-2">
+            <SkeletonBox className="h-10 w-24" />
+            <SkeletonBox className="h-10 w-24" />
+            <SkeletonBox className="h-10 w-28" />
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              <SkeletonBox className="h-8 w-40" />
+              <SkeletonBox className="h-4 w-full" />
+              <SkeletonBox className="h-4 w-full" />
+              <SkeletonBox className="h-4 w-5/6" />
+              <SkeletonBox className="h-4 w-4/6" />
+            </div>
+
+            <div className="card-premium p-6 space-y-4">
+              <SkeletonBox className="h-6 w-28" />
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <SkeletonBox className="h-4 w-20" />
+                  <SkeletonBox className="h-4 w-24" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

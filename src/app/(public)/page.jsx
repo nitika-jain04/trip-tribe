@@ -9,7 +9,6 @@ import { fetcher } from "@/app/hooks/use-fetcher";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -89,8 +88,14 @@ export default function Page() {
   const [searchDates, setSearchDates] = useState("");
   const [imgError, setImgError] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const { locationMap } = useLocations();
+  // const { locationMap } = useLocations();
   const { toast } = useToast();
+
+  const {
+    locationMap,
+    loading: locationLoading,
+    error: locationError,
+  } = useLocations();
 
   const {
     data: locationsData,
@@ -144,7 +149,7 @@ export default function Page() {
 
       return {
         id: firstTrip?.destination_id || group.location_name,
-        name: group.location_name,
+        name: locationData?.name || group.location_name,
         region: locationData?.region || "",
         type: "destination",
         trips: group.total_trips,
@@ -209,11 +214,11 @@ export default function Page() {
   };
 
   // Combined loading state
-  const isLoading = lLoading || oLoading || tLoading;
+  const isLoading = lLoading || oLoading || tLoading || locationLoading;
 
-  // Combined error state
   const error =
-    lError || oError || tError ? "Failed to load homepage data" : null;
+    lError || oError || tError || locationError ? "Failed to load data" : null;
+
   const hasError = !!error;
 
   return (
@@ -263,6 +268,13 @@ export default function Page() {
                       onFocus={() => setShowSuggestions(true)}
                       onBlur={() => {
                         setTimeout(() => setShowSuggestions(false), 200);
+                        // On mobile, nudge viewport back after keyboard closes
+                        setTimeout(() => {
+                          window.scrollTo({
+                            top: window.scrollY,
+                            behavior: "instant",
+                          });
+                        }, 150);
                       }}
                       className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
@@ -388,7 +400,7 @@ export default function Page() {
           className="absolute bottom-10 left-1/2 -translate-x-1/2 text-background/60 hover:text-background transition-all duration-300 animate-bounce group cursor-pointer z-20"
           aria-label="Scroll to content"
         >
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-2" id="next-section">
             <span className="text-xs font-medium uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
               Discover More
             </span>
@@ -398,7 +410,7 @@ export default function Page() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-12 bg-white" id="next-section">
+      <section className="py-12 bg-white">
         <div className="container-premium">
           <div className="grid grid-cols-2 justify-center items-center md:px-40">
             <div className="flex flex-col items-center justify-center text-center">
@@ -571,7 +583,7 @@ export default function Page() {
                       <img
                         src={trip.images[0]}
                         alt={trip.name}
-                        className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onError={() => setImgError(true)}
                       />
                     ) : (
@@ -696,7 +708,7 @@ export default function Page() {
                     <img
                       src={location.image}
                       alt={location.name}
-                      className="w-full h-full object-fill transition-transform duration-500 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       onError={(e) => {
                         e.currentTarget.style.display = "none";
                         e.currentTarget.nextSibling.style.display = "flex";

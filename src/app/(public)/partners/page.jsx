@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 import PhoneInput from "@/app/components/ui/PhoneInput";
@@ -132,6 +132,11 @@ export default function Partner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const handlePhoneValidation = useCallback(
+    (valid) => setIsPhoneValid(valid),
+    [],
+  );
   const { toast } = useToast();
 
   const validateForm = () => {
@@ -151,9 +156,7 @@ export default function Partner() {
       newErrors.email = "Enter a valid email address";
     }
 
-    if (!formData.phone || formData.phone.length <= 3) {
-      newErrors.phone = "Phone number is required";
-    } else if (formData.phone.length < 8) {
+    if (!isPhoneValid) {
       newErrors.phone = "Enter a valid phone number";
     }
 
@@ -177,8 +180,8 @@ export default function Partner() {
 
     if (!aboutText) {
       newErrors.about = "Business description is required";
-    } else if (aboutText.length < 50) {
-      newErrors.about = `Description must be at least 50 characters (${aboutText.length}/50)`;
+    } else if (aboutText.length < 25) {
+      newErrors.about = `Description must be at least 25 characters (${aboutText.length}/25)`;
     }
 
     setErrors(newErrors);
@@ -553,12 +556,10 @@ export default function Partner() {
                           });
                         }
                       }}
-                      error={!!errors.phone}
+                      onValidationChange={handlePhoneValidation}
+                      error={errors.phone}
                       placeholder="Enter phone number"
                     />
-                    {errors.phone && (
-                      <p className="text-sm text-admin-error">{errors.phone}</p>
-                    )}
                   </div>
                 </div>
 
@@ -688,7 +689,7 @@ export default function Partner() {
       </section>
 
       {/* Testimonial */}
-      <section className="section bg-primary text-primary-foreground">
+      {/* <section className="section bg-primary text-primary-foreground">
         <div className="container-premium">
           <div className="max-w-3xl mx-auto text-center">
             <div className="flex items-center justify-center gap-1 mb-6">
@@ -709,7 +710,7 @@ export default function Partner() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </>
   );
 }
