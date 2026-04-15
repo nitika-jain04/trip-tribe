@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { IoCloseSharp } from "react-icons/io5";
 import Input from "../ui/input";
 import PhoneInput from "../ui/PhoneInput";
@@ -34,6 +34,8 @@ function AddOperatorModal({ handleModalClose }) {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const handlePhoneValidation = useCallback((valid) => setIsPhoneValid(valid), []);
   const { toast } = useToast();
 
   function handleChange(e) {
@@ -164,9 +166,7 @@ function AddOperatorModal({ handleModalClose }) {
     }
 
     // Phone validation
-    if (!formData.phone_number) {
-      errors.phone_number = "Phone number is required";
-    } else if (formData.phone_number.length < 8) {
+    if (!isPhoneValid) {
       errors.phone_number = "Please enter a valid phone number";
     }
 
@@ -443,14 +443,11 @@ function AddOperatorModal({ handleModalClose }) {
                   setFieldErrors((prev) => ({ ...prev, phone_number: "" }));
                   if (error) setError("");
                 }}
+                onValidationChange={handlePhoneValidation}
+                error={fieldErrors.phone_number}
                 className="h-10 mt-1"
                 placeholder="Enter phone number"
               />
-              {fieldErrors.phone_number && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.phone_number}
-                </p>
-              )}
             </div>
 
             {/* Region */}

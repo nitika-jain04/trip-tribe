@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Save, ArrowLeft, AlertCircle, Loader2, X } from "lucide-react";
 import Cookies from "js-cookie";
 import Input from "@/app/components/ui/input";
@@ -36,6 +36,8 @@ export default function OperatorEditPage() {
   const [editingValue, setEditingValue] = useState("");
   const [regionInput, setRegionInput] = useState("");
   const [isModified, setIsModified] = useState(false);
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const handlePhoneValidation = useCallback((valid) => setIsPhoneValid(valid), []);
 
   // Fetch operator
   useEffect(() => {
@@ -216,9 +218,7 @@ export default function OperatorEditPage() {
       errors.email = "Invalid email format.";
     }
 
-    if (!formData.phone_number) {
-      errors.phone_number = "Phone number is required";
-    } else if (formData.phone_number.length < 8) {
+    if (!isPhoneValid) {
       errors.phone_number = "Please enter a valid phone number";
     }
 
@@ -542,6 +542,9 @@ export default function OperatorEditPage() {
                         if (error) setError("");
                         setIsModified(true);
                       }}
+                      onValidationChange={handlePhoneValidation}
+                      error={fieldErrors.phone_number}
+                      showValidation={!fieldErrors.phone_number}
                       className="h-10"
                       placeholder="Enter phone number"
                     />

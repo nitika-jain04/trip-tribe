@@ -410,6 +410,12 @@ function TripsContent() {
                 placeholder="Search destinations, trips..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onBlur={() => {
+                  // On mobile, nudge viewport back after keyboard closes
+                  setTimeout(() => {
+                    window.scrollTo({ top: window.scrollY, behavior: 'instant' });
+                  }, 150);
+                }}
                 className="pl-12 pr-4 h-14 rounded-xl border-border bg-background text-body shadow-sm"
               />
               {searchQuery && (
