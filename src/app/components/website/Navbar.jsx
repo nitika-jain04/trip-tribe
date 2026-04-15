@@ -57,6 +57,7 @@ export function Navbar() {
             ? "backdrop-blur-lg border-b border-border bg-white"
             : "bg-transparent"
         }`}
+        style={{ transform: "translateZ(0)" }}
       >
         <nav className="container-premium">
           <div className="flex items-center justify-between h-18">

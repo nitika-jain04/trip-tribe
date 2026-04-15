@@ -100,7 +100,19 @@ function TripPage() {
     [],
   );
 
-  const handleSubmit = async () => {
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showForm) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showForm]);
+
+  const handleSubmit = () => {
     if (
       !formData.name.trim() ||
       !formData.phone_number.trim() ||
@@ -133,8 +145,46 @@ function TripPage() {
       return;
     }
 
-    const currentUrl = window.location.href;
+    const rawNumber = trip.provider.phone_number || "";
+    const whatsappNumber = rawNumber.replace(/\D/g, "");
 
+    if (!whatsappNumber) {
+      toast({
+        title: "Contact Info Missing",
+        description:
+          "We couldn't find a contact number for this provider. Please try again later or contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const currentUrl = window.location.href;
+    const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
+
+    const message = `Hi, I wanted to confirm the availability for the following trip:
+
+*Trip Details*
+• *Trip:* ${trip.name}
+• *Operator:* ${trip.provider.name}
+• *Start Date:* ${startDate}
+
+*View details for ${trip.name}:*
+${currentUrl}`;
+
+    const url = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(
+      message,
+    )}`;
+
+    // Use a temporary anchor element to open WhatsApp — works on both mobile and desktop
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Fire the enquiry API call in the background (no await)
     const payload = {
       method: "POST",
       headers: {
@@ -152,59 +202,23 @@ function TripPage() {
       }),
     };
 
-    try {
-      await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, payload);
+    fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, payload).catch(
+      (error) => {
+        console.error("Enquiry error:", error);
+      },
+    );
 
-      const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
+    setShowForm(false);
 
-      const message = `Hi, I wanted to confirm the availability for the following trip:
+    setFormData({
+      name: "",
+      phone_number: "",
+      message: "",
+      email: "",
+      subject: "Book Trip",
+    });
 
-*Trip Details*
-• *Trip:* ${trip.name}
-• *Operator:* ${trip.provider.name}
-• *Start Date:* ${startDate}
-
-*View details for ${trip.name}:*
-${currentUrl}`;
-
-      const rawNumber = trip.provider.phone_number || "";
-      const whatsappNumber = rawNumber.replace(/\D/g, "");
-
-      if (!whatsappNumber) {
-        toast({
-          title: "Contact Info Missing",
-          description:
-            "We couldn't find a contact number for this provider. Please try again later or contact support.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const url = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(
-        message,
-      )}`;
-
-      window.open(url, "_blank");
-
-      setShowForm(false);
-
-      setFormData({
-        name: "",
-        phone_number: "",
-        message: "",
-        email: "",
-        subject: "Book Trip",
-      });
-
-      setIsPhoneValid(false);
-    } catch (error) {
-      console.error("Enquiry error:", error);
-      toast({
-        title: "Form",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    }
+    setIsPhoneValid(false);
   };
 
   const { data: tripDataRaw, isLoading: loading } = useSWR(
@@ -735,8 +749,8 @@ ${currentUrl}`;
       </section>
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[90dvh] animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[90dvh] my-auto animate-in zoom-in-95 duration-200">
             {/* Close Button */}
             <button
               onClick={() => setShowForm(false)}
