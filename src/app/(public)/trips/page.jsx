@@ -139,7 +139,6 @@ function TripsContent() {
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const prevSearchRef = useRef(searchQuery);
-  const searchScrollRef = useRef(0);
 
   // Sync state when URL search param changes (e.g. external navigation, back button)
   useEffect(() => {
@@ -435,20 +434,10 @@ function TripsContent() {
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onFocus={(e) => {
-                  searchScrollRef.current = window.scrollY;
-                  // On mobile, elegantly animate the search box into the center of the available viewport
-                  setTimeout(() => {
-                    const el = e.target;
-                    const rect = el.getBoundingClientRect();
-                    const targetY = window.scrollY + rect.top - (window.innerHeight / 2) + (rect.height / 2);
-                    animatedScrollTo(targetY, 400); // 400ms gentle ease
-                  }, 250); // wait for keyboard
+                  // Native browser behavior applies automatically
                 }}
                 onBlur={() => {
-                  // On mobile, gently nudge viewport back to where it was before focus
-                  setTimeout(() => {
-                    animatedScrollTo(searchScrollRef.current, 400);
-                  }, 50);
+                  // No artificial resetting needed
                 }}
                 className="pl-12 pr-4 h-14 rounded-xl border-border bg-background text-body shadow-sm"
               />

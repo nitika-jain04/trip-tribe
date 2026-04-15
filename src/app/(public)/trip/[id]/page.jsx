@@ -749,8 +749,8 @@ ${currentUrl}`;
       </section>
 
       {showForm && (
-        <div className="fixed top-0 left-0 w-full h-[100dvh] z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="bg-background w-full max-w-sm rounded-xl shadow-xl relative overflow-hidden border border-border flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+        <div className="fixed top-0 left-0 w-full h-[100dvh] z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-background w-full max-w-sm rounded-xl shadow-2xl ring-1 ring-black/10 relative overflow-hidden border border-border flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
             {/* Close Button */}
             <button
               onClick={() => setShowForm(false)}
@@ -854,7 +854,7 @@ function SkeletonBox({ className = "" }) {
 function TripPageSkeleton() {
   return (
     <>
-      <section className="relative pt-24">
+      <section className="relative pt-24 min-h-[100dvh]">
         <div className="container-premium">
           <div className="mb-4">
             <SkeletonBox className="h-5 w-28" />
