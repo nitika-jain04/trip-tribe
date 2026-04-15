@@ -212,7 +212,7 @@ export default function TripDetail() {
             <img
               src={activeImage}
               alt={trip.name}
-              className="w-full h-72 h-full object-fill bg-gray-100 rounded-lg"
+              className="w-full h-72 h-full object-cover bg-gray-100 rounded-lg"
               onError={(e) => {
                 e.currentTarget.src = "/vercel.svg";
               }}
