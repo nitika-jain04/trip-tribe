@@ -26,103 +26,88 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { useToast } from "@/app/hooks/use-toast";
 import AdminGuard from "@/app/components/AdminGuard";
+import { useAdminAudit } from "@/app/hooks/use-admin-audit";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function AuditLogs() {
   const router = useRouter();
-
-  const [logs, setLogs] = useState([]);
-
-  const [search, setSearch] = useState("");
-  const [actionFilter, setActionFilter] = useState("all");
-
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
-
-  const [error, setError] = useState(null);
-
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-
-  const [entityType, setEntityType] = useState("all");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { toast } = useToast();
 
-  const fetchLogs = useCallback(async () => {
-    const token = Cookies.get("token");
+  // Derive values from URL (Source of Truth)
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const actionFilter = searchParams.get("action") || "all";
+  const entityType = searchParams.get("entity_type") || "all";
+  const fromDate = searchParams.get("from_date") || "";
+  const toDate = searchParams.get("to_date") || "";
+  const debouncedSearch = searchParams.get("search") || "";
 
-    if (!token) {
-      router.push("/");
-      return;
+  // Local state for immediate typing responsiveness
+  const [search, setSearch] = useState(debouncedSearch);
+  const [searchError, setSearchError] = useState("");
+
+  // Handle URL sync
+  const updateQuery = useCallback((updates) => {
+    const current = new URLSearchParams(searchParams.toString());
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "" || value === "all") {
+        current.delete(key);
+      } else {
+        current.set(key, value);
+      }
+    });
+
+    // Always reset page to 1 when filters (other than page itself) change
+    if (!updates.page) {
+      current.set("page", "1");
     }
 
-    setLoading(true);
-    setError(null);
+    const currentQuery = searchParams.toString();
+    const newQuery = current.toString();
 
-    try {
-      const params = new URLSearchParams();
-
-      if (search) params.append("search", search);
-
-      if (actionFilter !== "all") {
-        params.append("action", actionFilter);
-      }
-
-      if (entityType !== "all") {
-        params.append("entity_type", entityType);
-      }
-
-      if (fromDate) params.append("from_date", fromDate);
-      if (toDate) params.append("to_date", toDate);
-
-      params.append("page", page.toString());
-      params.append("limit", limit.toString());
-
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/audit?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data?.error?.message || "Failed to fetch audit logs",
-          variant: "destructive",
-        });
-      }
-
-      if (data.success) {
-        setLogs(data.result.logs || []);
-
-        setTotalPages(data.result.pagination?.pages || 1);
-        setTotalItems(data.result.pagination?.total || 0);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
+    if (currentQuery !== newQuery) {
+      router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, { scroll: false });
     }
-  }, [search, actionFilter, entityType, fromDate, toDate, page, limit, router]); // limit is UI-controlled state; it's safe in deps now that we no longer setLimit from the response
+  }, [searchParams, pathname, router]);
 
+  // Debounce search update to URL
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    const timer = setTimeout(() => {
+      const value = search.trim();
+      if (value.length === 0 || value.length >= 2) {
+        setSearchError("");
+        updateQuery({ search: value });
+      } else {
+        setSearchError("Search must be at least 2 characters");
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search, updateQuery]);
+
+  // Fetch using SWR
+  const { logs, pagination, isLoading, isError, error, mutate } = useAdminAudit({
+    search: debouncedSearch,
+    action: actionFilter,
+    entity_type: entityType,
+    from_date: fromDate,
+    to_date: toDate,
+    page,
+    limit
+  });
+
+  const totalPages = pagination?.pages || 1;
+  const totalItems = pagination?.total || 0;
+
+  // Synchronization logic moved to derivation and event handlers
 
   const actionBadge = (action) => {
     if (!action) return null;
@@ -193,9 +178,9 @@ function AuditLogs() {
     </div>
   );
 
-  if (initialLoading) return <PageSkeleton />;
+  if (isLoading && !logs.length) return <PageSkeleton />;
 
-  if (error) {
+  if (isError) {
     return (
       <div className="p-6 text-red-500 flex gap-2">
         <AlertCircle />
@@ -227,7 +212,6 @@ function AuditLogs() {
               placeholder="Search actor / entity"
               value={search}
               onChange={(e) => {
-                setPage(1);
                 setSearch(e.target.value);
               }}
             />
@@ -243,8 +227,7 @@ function AuditLogs() {
             <Select
               value={entityType}
               onValueChange={(value) => {
-                setPage(1);
-                setEntityType(value);
+                updateQuery({ entity_type: value });
               }}
             >
               <SelectTrigger className="w-full lg:w-40">
@@ -270,8 +253,7 @@ function AuditLogs() {
                 if (!e.target.value) e.target.type = "text";
               }}
               onChange={(e) => {
-                setPage(1);
-                setFromDate(e.target.value);
+                updateQuery({ from_date: e.target.value });
               }}
               className="w-full lg:w-40"
             />
@@ -285,8 +267,7 @@ function AuditLogs() {
                 if (!e.target.value) e.target.type = "text";
               }}
               onChange={(e) => {
-                setPage(1);
-                setToDate(e.target.value);
+                updateQuery({ to_date: e.target.value });
               }}
               className="w-full lg:w-40"
             />
@@ -296,7 +277,7 @@ function AuditLogs() {
 
       {/* Loading */}
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
           <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
           <p className="text-gray-600 font-medium">Loading audit logs...</p>
@@ -376,7 +357,7 @@ function AuditLogs() {
       )}
 
       {/* Mobile View: Cards */}
-      {!loading && !error && logs.length > 0 && (
+      {!isLoading && !isError && logs.length > 0 && (
         <div className="sm:hidden space-y-4 pt-2">
           <div className="px-1 pb-2">
             <h2 className="text-lg font-semibold">All Logs ({totalItems})</h2>
@@ -448,7 +429,7 @@ function AuditLogs() {
           <Button
             variant="outline"
             disabled={page === 1}
-            onClick={() => setPage(page - 1)}
+            onClick={() => updateQuery({ page: (page - 1).toString() })}
             className="flex-1 sm:flex-none"
           >
             Previous
@@ -457,7 +438,7 @@ function AuditLogs() {
           <Button
             variant="outline"
             disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
+            onClick={() => updateQuery({ page: (page + 1).toString() })}
             className="flex-1 sm:flex-none"
           >
             Next

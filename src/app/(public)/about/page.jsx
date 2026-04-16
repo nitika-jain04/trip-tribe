@@ -74,10 +74,12 @@ export default function About() {
 
   const { data: operatorsData, isLoading: loading } = useSWR(
     `${BASE_URL}/api/${API_VERSION}/operators`,
-    fetcher
+    fetcher,
   );
 
-  const operatorCount = operatorsData?.success ? operatorsData?.result?.pagination?.total : 0;
+  const operatorCount = operatorsData?.success
+    ? operatorsData?.result?.pagination?.total
+    : 0;
 
   const milestones = [
     {
@@ -163,17 +165,6 @@ export default function About() {
                   className="w-full h-full object-fill"
                 />
               </div>
-              {/* <div className="absolute -bottom-6 -left-6 glass rounded-2xl p-6 shadow-premium-md max-w-xs">
-                <div className="flex items-center gap-3 mb-2">
-                  <GitCompare className="w-6 h-6 text-primary" />
-                  <span className="font-semibold text-foreground">
-                    Compare & Choose
-                  </span>
-                </div>
-                <p className="text-body-sm text-muted-foreground">
-                  See prices, reviews, and inclusions side-by-side.
-                </p>
-              </div> */}
             </div>
           </div>
         </div>

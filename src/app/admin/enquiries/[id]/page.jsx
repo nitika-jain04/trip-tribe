@@ -33,6 +33,8 @@ import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { useToast } from "@/app/hooks/use-toast";
 import Cookies from "js-cookie";
 import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -45,53 +47,23 @@ export default function EnquiryDetail() {
   const [enquiry, setEnquiry] = useState(null);
   const [status, setStatus] = useState("new");
   const [adminNotes, setAdminNotes] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const { data: enquiryData, error: enquiryError, isLoading: loading, mutate } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}` : null,
+    adminFetcher
+  );
+
   useEffect(() => {
-    const fetchEnquiry = async () => {
-      const token = Cookies.get("token");
-
-      //console.log("id", id);
-
-      try {
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-        const data = await res.json();
-
-        //console.log("res", data);
-
-        const fetchedEnquiry =
-          data?.result?.data?.find((e) => e.id === id) || data?.result || null;
-
-        if (!fetchedEnquiry) {
-          toast({
-            title: "Error",
-            description: "Enquiry not found",
-            variant: "destructive",
-          });
-          return;
-        }
-
+    if (enquiryData) {
+      const fetchedEnquiry = enquiryData?.result?.data?.find((e) => e.id === id) || enquiryData?.result || null;
+      if (fetchedEnquiry) {
         setEnquiry(fetchedEnquiry);
         setStatus(fetchedEnquiry.status?.toLowerCase() || "new");
         setAdminNotes(fetchedEnquiry.admin_notes || "");
-      } catch (err) {
-        console.error("Error fetching enquiry:", err);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchEnquiry();
-  }, [id, toast]);
+    }
+  }, [enquiryData, id]);
 
   const handleSave = async () => {
     const token = Cookies.get("token");
@@ -137,11 +109,8 @@ export default function EnquiryDetail() {
           variant: "success",
         });
 
-        router.push("/admin/enquiries");
-        return;
+        mutate(); // Optimistic refresh
       }
-
-      router.refresh();
     } catch (err) {
       toast({
         title: "Error",

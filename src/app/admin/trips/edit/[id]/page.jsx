@@ -21,13 +21,16 @@ import {
 } from "@/app/components/ui/select";
 import Input from "@/app/components/ui/input";
 import { Rating } from "@/app/components/ui/rating";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
+import useTripTypes from "@/app/hooks/use-triptypes";
 
 export default function TripEditPage() {
   const { id } = useParams();
   const router = useRouter();
 
   const [trip, setTrip] = useState(null);
-  const [tripTypesData, setTripTypesData] = useState(["All Types"]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [errors, setErrors] = useState({});
@@ -56,85 +59,60 @@ export default function TripEditPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-  async function getTripTypes() {
-    try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+  const { tripTypes } = useTripTypes();
+  const tripTypesData = tripTypes.length ? tripTypes : ["All Types"];
 
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch trip types",
-          variant: "destructive",
-        });
-      }
+  const {
+    data: tripData,
+    error: tripFetchError,
+    isLoading: loadingTrip,
+    mutate: refreshTrip,
+  } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}` : null,
+    adminFetcher,
+    { revalidateOnFocus: false },
+  );
 
-      const data = await res.json();
-
-      const types = data?.result?.trip_types || [];
-
-      setTripTypesData(types);
-    } catch (err) {
-      console.error("Failed to fetch trip types", err);
-    }
-  }
-
-  // Fetch trip
+  // Synchronize error states
   useEffect(() => {
-    const fetchTrip = async () => {
-      const token = Cookies.get("token");
-      setError("");
+    if (tripFetchError) {
+      setError(tripFetchError);
+      toast({
+        title: "Error",
+        description: tripFetchError,
+        variant: "destructive",
+      });
+    }
+  }, [tripFetchError, toast]);
 
-      try {
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        const data = await res.json();
-
-        if (data.success) {
-          setTrip({
-            ...data.result,
-            difficulty: data.result.difficulty || "",
-            type_id: data.result?.type?.id || "",
-          });
-          setFormData({
-            name: data.result.name || "",
-            price: data.result.price || "",
-            start_date: data.result.start_date || "",
-            end_date: data.result.end_date || "",
-            difficulty: data.result.difficulty || "",
-            total_seats: data.result.total_seats || "",
-            hotel_category: data.result.hotel_category || 0,
-            description: data.result.description || "",
-            images: data.result.images || [],
-            inclusions: data.result.inclusions || [],
-            exclusions: data.result.exclusions || [],
-            itinerary: data.result.itinerary || [],
-            status: data.result.status || "",
-            type_id: data.result?.type?.id || "",
-          });
-        } else {
-          // throw new Error(data.message || "Failed to fetch trip");
-          toast({
-            title: "Error",
-            description: "Failed to fetch trip",
-            variant: "destructive",
-          });
-        }
-      } catch (err) {
-        setError(err.message || "Failed to fetch trip");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getTripTypes();
-
-    if (id) fetchTrip();
-  }, [id]);
+  // Seed form data on successful data load
+  useEffect(() => {
+    if (tripData?.success) {
+      const dbTrip = tripData.result;
+      setTrip({
+        ...dbTrip,
+        difficulty: dbTrip.difficulty || "",
+        type_id: dbTrip?.type?.id || "",
+      });
+      setFormData({
+        name: dbTrip.name || "",
+        price: dbTrip.price || "",
+        start_date: dbTrip.start_date || "",
+        end_date: dbTrip.end_date || "",
+        difficulty: dbTrip.difficulty || "",
+        total_seats: dbTrip.total_seats || "",
+        hotel_category: dbTrip.hotel_category || 0,
+        description: dbTrip.description || "",
+        images: dbTrip.images || [],
+        inclusions: dbTrip.inclusions || [],
+        exclusions: dbTrip.exclusions || [],
+        itinerary: dbTrip.itinerary || [],
+        status: dbTrip.status || "",
+        type_id: dbTrip?.type?.id || "",
+      });
+      setLoading(false);
+    }
+  }, [tripData]);
 
   // Basic field change
   const handleChange = (field, value) => {
@@ -432,7 +410,7 @@ export default function TripEditPage() {
         },
       );
 
-      console.log("req body", requestBody);
+      // console.log("req body", requestBody);
 
       const data = await res.json();
 

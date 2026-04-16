@@ -24,95 +24,49 @@ import { GoTriangleUp } from "react-icons/go";
 import Image from "next/image";
 import { Rating } from "@/app/components/ui/rating";
 import { useToast } from "@/app/hooks/use-toast";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export default function TripDetail() {
-  const [trip, setTrip] = useState(null);
-  const [operator, setOperator] = useState(null);
-  const [source, setSource] = useState(null);
-  const [destination, setDestination] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeImage, setActiveImage] = useState(null);
   const { id } = useParams();
   const { toast } = useToast();
+  const [activeImage, setActiveImage] = useState(null);
+
+  // 1. Core Fetch
+  const { data: tripData, error: tripError, isLoading: loading } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}` : null,
+    adminFetcher
+  );
+  
+  const trip = tripData?.result || null;
+  const error = tripError?.message || null;
+
+  // 2. Dependent Fetches
+  const { data: operatorData } = useSWR(
+    trip?.operator_id ? `${BASE_URL}/api/${API_VERSION}/operators/admin/${trip.operator_id}` : null,
+    adminFetcher
+  );
+  const { data: sourceData } = useSWR(
+    trip?.source_id ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.source_id}` : null,
+    adminFetcher
+  );
+  const { data: destData } = useSWR(
+    trip?.destination_id ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.destination_id}` : null,
+    adminFetcher
+  );
+
+  const operator = operatorData?.result || null;
+  const source = sourceData?.result || null;
+  const destination = destData?.result || null;
 
   useEffect(() => {
-    const fetchTripAndRelated = async () => {
-      const token = Cookies.get("token");
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Fetch trip
-        const tripRes = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        const tripData = await tripRes.json();
-        if (!tripData.success) {
-          toast({
-            title: "Error",
-            description: "Failed to fetch trip",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const tripResult = tripData.result;
-        setTrip(tripResult);
-        setActiveImage(tripResult.images?.[0] || null);
-
-        // Fetch operator + locations in parallel
-        const requests = [];
-
-        if (tripResult.operator_id) {
-          requests.push(
-            fetch(
-              `${BASE_URL}/api/${API_VERSION}/operators/admin/${tripResult.operator_id}`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            ).then((r) => r.json()),
-          );
-        } else requests.push(Promise.resolve(null));
-
-        if (tripResult.source_id) {
-          requests.push(
-            fetch(
-              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.source_id}`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            ).then((r) => r.json()),
-          );
-        } else requests.push(Promise.resolve(null));
-
-        if (tripResult.destination_id) {
-          requests.push(
-            fetch(
-              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.destination_id}`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            ).then((r) => r.json()),
-          );
-        } else requests.push(Promise.resolve(null));
-
-        const [operatorRes, sourceRes, destRes] = await Promise.all(requests);
-
-        if (operatorRes?.success) setOperator(operatorRes.result);
-        if (sourceRes?.success) setSource(sourceRes.result);
-        if (destRes?.success) setDestination(destRes.result);
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Failed to fetch trip details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) fetchTripAndRelated();
-  }, [id]);
+    if (trip?.images?.[0] && !activeImage) {
+      setActiveImage(trip.images[0]);
+    }
+  }, [trip, activeImage]);
 
   // Enhanced Loading State
   if (loading) {
