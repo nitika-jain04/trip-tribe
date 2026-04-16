@@ -13,8 +13,8 @@ const Rating = React.forwardRef(({ className, value = 0, max = 5, onChange, ...p
             type="button"
             onClick={() => onChange?.(starValue)}
             className={cn(
-              "p-0.5 hover:scale-110 transition-all outline-none focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
-              !onChange && "cursor-default hover:scale-100"
+              "p-0.5 hover:scale-110 transition-all outline-none focus:outline-none disabled:cursor-not-allowed disabled:hover:scale-100",
+              !onChange ? "cursor-default hover:scale-100 opacity-100" : "disabled:opacity-50"
             )}
             disabled={!onChange}
           >

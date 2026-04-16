@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/app/components/ui/select";
+import { Rating } from "@/app/components/ui/rating";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -37,7 +38,10 @@ export default function OperatorEditPage() {
   const [regionInput, setRegionInput] = useState("");
   const [isModified, setIsModified] = useState(false);
   const [isPhoneValid, setIsPhoneValid] = useState(false);
-  const handlePhoneValidation = useCallback((valid) => setIsPhoneValid(valid), []);
+  const handlePhoneValidation = useCallback(
+    (valid) => setIsPhoneValid(valid),
+    [],
+  );
 
   // Fetch operator
   useEffect(() => {
@@ -60,10 +64,11 @@ export default function OperatorEditPage() {
             email: data.result.email || "",
             phone_number: data.result.phone_number || "",
             contact_name: data.result.contact_name || "",
-            description: data.result.description || "",
+            business_description: data.result.business_description || "",
             website_url: data.result.website_url || "",
             logo_url: data.result.logo_url || "",
             status: data.result.status || "",
+            hotel_category: data.result.hotel_category || 0,
 
             total_trips: data.result.total_trips || null,
             trips_per_year: data.result.trips_per_year || null,
@@ -189,8 +194,12 @@ export default function OperatorEditPage() {
       errors.name = "Operator name must be at least 2 characters.";
     }
 
-    if (!formData.description || formData.description.trim().length < 2) {
-      errors.description = "Description must be at least 25 characters.";
+    if (
+      !formData.business_description ||
+      formData.business_description.trim().length < 2
+    ) {
+      errors.business_description =
+        "Description must be at least 25 characters.";
     }
 
     if (!formData.regions || formData.regions.length == 0) {
@@ -228,14 +237,6 @@ export default function OperatorEditPage() {
     ) {
       errors.website_url = "Invalid website URL.";
     }
-
-    // if (formData.total_trips && formData.total_trips < 0) {
-    //   errors.total_trips = "Total trips must be a positive number.";
-    // }
-
-    // if (formData.trips_per_year && formData.trips_per_year < 0) {
-    //   errors.trips_per_year = "Trips per year must be a positive number.";
-    // }
 
     // Social links validation
     Object.entries(formData.social_links).forEach(([platform, url]) => {
@@ -636,6 +637,21 @@ export default function OperatorEditPage() {
               </div>
             </div>
 
+            <div>
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Hotel Category
+              </label>
+              <div className="flex items-center h-10 mt-1">
+                <Rating
+                  value={formData.hotel_category || 0}
+                  onChange={(val) => {
+                    setFormData((p) => ({ ...p, hotel_category: val }))
+                    setIsModified(true);
+                  }}
+                />
+              </div>
+            </div>
+
             {/* Regions */}
             <div className="border-t border-slate-100 pt-8 mt-4">
               <label className="text-sm font-semibold text-slate-700 tracking-wide mb-3 block">
@@ -832,15 +848,15 @@ export default function OperatorEditPage() {
               </label>
               <textarea
                 name="description"
-                value={formData.description}
+                value={formData.business_description}
                 onChange={handleChange}
                 rows={8}
                 className="w-full mt-2 leading-normal bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
                 placeholder="Describe the operator's services, specialties, and experience..."
               />
-              {fieldErrors.description && (
+              {fieldErrors.business_description && (
                 <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1">
-                  {fieldErrors.description}
+                  {fieldErrors.business_description}
                 </p>
               )}
             </div>

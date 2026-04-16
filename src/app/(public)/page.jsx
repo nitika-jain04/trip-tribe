@@ -115,7 +115,7 @@ export default function Page() {
         }
         // Smoothly shift back to the original scroll position recorded before the keyboard opened
         if (window.innerWidth < 768 && searchScrollRef.current !== null) {
-          animatedScrollTo(searchScrollRef.current, 350); // 350ms snappy but smooth shift down
+          animatedScrollTo(searchScrollRef.current); // Uses framer motion default slower smooth shift
           searchScrollRef.current = null; // Reset
         }
       }
@@ -307,7 +307,7 @@ export default function Page() {
                             const rect = e.target.getBoundingClientRect();
                             const targetY = window.scrollY + rect.top - 90;
                             // Ensure we don't scroll to a negative value
-                            animatedScrollTo(Math.max(0, targetY), 350);
+                            animatedScrollTo(Math.max(0, targetY)); // Framer motion slower smooth shift up
                           }, 150);
                         }
                       }}

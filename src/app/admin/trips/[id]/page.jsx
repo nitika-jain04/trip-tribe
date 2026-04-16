@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   AlertCircle,
   Loader2,
+  Building2,
   Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
@@ -21,6 +22,7 @@ import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { BiTrip } from "react-icons/bi";
 import { GoTriangleUp } from "react-icons/go";
 import Image from "next/image";
+import { Rating } from "@/app/components/ui/rating";
 import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -293,6 +295,18 @@ export default function TripDetail() {
                 value={trip.type?.name}
               />
             </div>
+
+            <div>
+              <InfoItem
+                label="Hotel Category"
+                icon={<Building2 size={16} />}
+                value={
+                  <div className="-ml-1">
+                    <Rating value={trip.hotel_category || 0} />
+                  </div>
+                }
+              />
+            </div>
           </CardContent>
         </div>
       </div>
@@ -364,7 +378,7 @@ function InfoItem({ icon, label, value }) {
       <div className="text-teal-600">{icon}</div>
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-medium">{value}</p>
+        <div className="font-medium">{value}</div>
       </div>
     </div>
   );

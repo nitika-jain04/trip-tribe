@@ -80,10 +80,10 @@ const sections = [
           withdraw your consent, you may do so by writing to the following email
           id:{" "}
           <a
-            href="mailto:privacy@go-mmt.com"
+            href="mailto:admin@triptribe.co"
             className="text-primary font-medium hover:underline"
           >
-            privacy@go-mmt.com
+            admin@triptribe.co
           </a>
           .
         </p>
@@ -623,7 +623,7 @@ const PrivacyPage = () => {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
               </span>
-              Last updated: April 14, 2026
+              Last updated: April, 2026
             </div>
             <h1 className="font-display text-5xl font-bold tracking-tight text-foreground sm:text-7xl">
               Privacy Policy

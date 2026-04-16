@@ -139,6 +139,32 @@ function TripsContent() {
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const prevSearchRef = useRef(searchQuery);
+  const searchScrollRef = useRef(null);
+
+  // Mobile keyboard dismiss detection
+  useEffect(() => {
+    if (!window.visualViewport) return;
+
+    let initialHeight = window.visualViewport.height;
+
+    const handleResize = () => {
+      const currentHeight = window.visualViewport.height;
+      if (currentHeight > initialHeight + 150) {
+        if (document.activeElement?.tagName === "INPUT") {
+          document.activeElement.blur();
+        }
+        if (window.innerWidth < 768 && searchScrollRef.current !== null) {
+          animatedScrollTo(searchScrollRef.current);
+          searchScrollRef.current = null;
+        }
+      }
+      initialHeight = currentHeight;
+    };
+
+    window.visualViewport.addEventListener("resize", handleResize);
+    return () =>
+      window.visualViewport.removeEventListener("resize", handleResize);
+  }, []);
 
   // Sync state when URL search param changes (e.g. external navigation, back button)
   useEffect(() => {
@@ -434,7 +460,14 @@ function TripsContent() {
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 onFocus={(e) => {
-                  // Native browser behavior applies automatically
+                  if (window.innerWidth < 768) {
+                    searchScrollRef.current = window.scrollY;
+                    setTimeout(() => {
+                      const rect = e.target.getBoundingClientRect();
+                      const targetY = window.scrollY + rect.top - 90;
+                      animatedScrollTo(Math.max(0, targetY));
+                    }, 150);
+                  }
                 }}
                 onBlur={() => {
                   // No artificial resetting needed

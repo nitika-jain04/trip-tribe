@@ -24,6 +24,7 @@ import Cookies from "js-cookie";
 import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Image from "next/image";
+import { Rating } from "@/app/components/ui/rating";
 import { useToast } from "@/app/hooks/use-toast";
 import { FaRegUser } from "react-icons/fa";
 
@@ -58,6 +59,7 @@ export default function OperatorDetail() {
           },
         );
         const data = await res.json();
+
         if (data.success) setOperator(data.result);
         else
           toast({
@@ -206,7 +208,7 @@ export default function OperatorDetail() {
           </div>
 
           <div className="text-muted-foreground">
-            {operator.description || "No description provided"}
+            {operator.business_description || "No description provided"}
           </div>
 
           <div className="flex flex-wrap justify-between text-sm text-muted-foreground pt-2 gap-3">
@@ -270,6 +272,7 @@ export default function OperatorDetail() {
               : "N/A"
           }
         />
+
         <StatCard
           label="Last Updated"
           value={
@@ -294,7 +297,7 @@ export default function OperatorDetail() {
           />
           <DetailItem label="Website" value={operator.website_url ?? "N/A"} />
           <DetailItem label="Total Trips" value={operator.trip?.length ?? 0} />
-          {/* <DetailItem label="Trips Per Year" value={operator.trips_per_year} /> */}
+          <DetailItem label="Hotel Category" value={<Rating value={operator.hotel_category || 0} className="mt-1" />} />
           <DetailItem
             label="Regions"
             value={operator.regions?.join(", ") || "N/A"}
@@ -338,7 +341,7 @@ function DetailItem({ label, value }) {
   return (
     <div>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="font-medium text-sm wrap-break-word">{value || "N/A"}</p>
+      <div className="font-medium text-sm wrap-break-word">{value || "N/A"}</div>
     </div>
   );
 }

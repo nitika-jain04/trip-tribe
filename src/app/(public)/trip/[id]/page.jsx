@@ -20,6 +20,7 @@ import {
   Check,
   X,
 } from "lucide-react";
+import { Rating } from "@/app/components/ui/rating";
 import {
   Tabs,
   TabsContent,
@@ -69,7 +70,7 @@ const mapTripData = (tripDataRaw) => {
     duration: `${days}`,
     groupSize: raw.total_seats || 0,
     difficulty: raw.difficulty || "N/A",
-    hotelCategory: raw.hotel_category || null,
+    hotelCategory: raw.hotel_category || 0,
     rating: 4.7,
     reviewCount: 0,
     verified: true,
@@ -101,15 +102,6 @@ function TripPage() {
     (valid) => setIsPhoneValid(valid),
     [],
   );
-
-  // Scroll to top on page load / trip change — fixes mobile Chrome restoring stale scroll position
-  useEffect(() => {
-    // Disable browser scroll restoration so Chrome/Safari don't jump to a cached position
-    if (typeof window !== "undefined" && "scrollRestoration" in history) {
-      history.scrollRestoration = "manual";
-    }
-    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [id]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -244,6 +236,21 @@ ${currentUrl}`;
       setActiveImage(trip.images[0]);
     }
   }, [trip, activeImage]);
+
+  // Scroll to top on page load / trip change — fixes mobile Chrome restoring stale scroll position
+  useEffect(() => {
+    // Disable browser scroll restoration so Chrome/Safari don't jump to a cached position
+    if (typeof window !== "undefined" && "scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+
+    // Use a small timeout to allow the browser to paint the new content before scrolling, avoiding scroll anchoring jumps
+    const timer = setTimeout(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }, 10);
+
+    return () => clearTimeout(timer);
+  }, [id, loading]);
 
   if (loading) return <TripPageSkeleton />;
 
@@ -545,14 +552,13 @@ ${currentUrl}`;
                         <dt className="text-muted-foreground">Group Size</dt>
                         <dd className="font-medium">{trip.groupSize}</dd>
                       </div>
-                      {trip.hotelCategory && (
+                      {trip.hotelCategory !== null && (
                         <div className="flex justify-between">
-                          <dt className="text-muted-foreground">
+                          <dt className="text-muted-foreground mt-1">
                             Hotel Category
                           </dt>
-                          <dd className="font-medium">
-                            {trip.hotelCategory} Star
-                            {trip.hotelCategory > 1 ? "s" : ""}
+                          <dd className="font-medium -mr-1">
+                            <Rating value={trip.hotelCategory} />
                           </dd>
                         </div>
                       )}
