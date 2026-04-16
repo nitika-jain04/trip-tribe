@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { SlLocationPin } from "react-icons/sl";
 import { LuTag } from "react-icons/lu";
 import dynamic from "next/dynamic";
@@ -16,7 +22,7 @@ import {
   Plus,
 } from "lucide-react";
 import Cookies from "js-cookie";
-import { IoCloseSharp } from "react-icons/io5";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/app/hooks/use-toast";
 import {
   Select,
@@ -26,6 +32,10 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import useLocations from "@/app/hooks/use-locations";
+import {
+  useAdminLocations,
+  useAdminTripTypes,
+} from "@/app/hooks/use-admin-settings";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -39,8 +49,19 @@ const formatName = (value) => {
 };
 
 function Page() {
-  const [activeTab, setActiveTab] = useState("destinations");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const activeTab = searchParams.get("tab") || "destinations";
   const { toast } = useToast();
+
+  const handleTabChange = (tab) => {
+    const params = new URLSearchParams(); // Fresh params for the new tab
+    params.set("tab", tab);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <>
@@ -59,7 +80,7 @@ function Page() {
                 ? "bg-white shadow-sm"
                 : "hover:bg-gray-200"
             }`}
-            onClick={() => setActiveTab("destinations")}
+            onClick={() => handleTabChange("destinations")}
           >
             <SlLocationPin size={18} />
             Destinations
@@ -71,7 +92,7 @@ function Page() {
                 ? "bg-white shadow-sm"
                 : "hover:bg-gray-200"
             }`}
-            onClick={() => setActiveTab("categories")}
+            onClick={() => handleTabChange("categories")}
           >
             <LuTag size={18} />
             Categories
@@ -87,177 +108,114 @@ function Page() {
 //////////////////// DESTINATIONS ////////////////////
 
 function Destinations() {
-  const [destinations, setDestinations] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [region, setRegion] = useState("");
-  const [regionsList, setRegionsList] = useState([]);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
-  const token = Cookies.get("token");
-  const { refreshLocations } = useLocations();
 
-  const getAllRegions = useCallback(async () => {
-    try {
-      if (!token) return;
+  const [showModal, setShowModal] = useState(false);
+  
+  // Derive from URL
+  const page = Number(searchParams.get("page")) || 1;
+  const region = searchParams.get("region") || "";
+  const limit = 10;
 
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+  // Handle URL sync
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
 
-      const data = await res.json();
-
-      const locations = data?.result?.locations || [];
-
-      // ✅ extract + normalize + dedupe
-      const uniqueRegions = Array.from(
-        new Set(
-          locations
-            .map((loc) => loc.region?.trim())
-            .filter(Boolean)
-            .map((r) => formatName(r)), // normalize case
-        ),
-      );
-
-      setRegionsList(uniqueRegions.sort());
-    } catch (err) {
-      console.error("Failed to fetch regions", err);
-    }
-  }, []);
-
-  useEffect(() => {
-    getAllRegions();
-  }, [getAllRegions]);
-
-  const getAllDestinations = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const token = typeof window !== "undefined" ? Cookies.get("token") : null;
-
-      if (!token) {
-        setError("Authentication token missing");
-        return;
+      if (!updates.page) {
+        params.set("page", "1");
       }
 
-      // ✅ PARAMS
-      const params = new URLSearchParams();
-      params.append("page", String(page));
-      params.append("limit", String(limit));
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
 
-      if (region) {
-        params.append("region", region);
-      }
-
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin?sortBy=created_at&order=DESC&${params.toString()}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      // console.log("params", params.toString());
-
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch destinations",
-          variant: "destructive",
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
         });
       }
+    },
+    [searchParams, pathname, router],
+  );
 
-      const data = await res.json();
+  // Fetch using SWR
+  const { locations, pagination, isLoading, error, mutate } = useAdminLocations(
+    {
+      page,
+      limit,
+      region: region === "all" ? "" : region,
+    },
+  );
 
-      const locations = data?.result?.locations ?? [];
-      const pagination = data?.result?.pagination;
+  const totalPages = pagination?.pages || 1;
+  const totalItems = pagination?.total || 0;
 
-      // ✅ USE BACKEND PAGINATION
-      setDestinations(locations);
-      setTotalPages(pagination?.pages || 1);
-      setTotalItems(pagination?.total || 0);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load destinations");
-    } finally {
-      setLoading(false);
-    }
-  }, [page, limit, toast, region]);
+  // Optimized regions list (fetch all once to populate dropdown)
+  const { locations: allLocations } = useAdminLocations({ limit: 1000 });
+  const regionsList = useMemo(() => {
+    const uni = Array.from(
+      new Set(
+        allLocations
+          .map((loc) => loc.region?.trim())
+          .filter(Boolean)
+          .map((r) => formatName(r)),
+      ),
+    ).sort();
+    return uni;
+  }, [allLocations]);
 
   const deleteDestination = async (locationId) => {
     try {
       const token = Cookies.get("token");
-
       if (!token) {
         toast({
-          title: "Authentication Token",
-          description: "Authentication Token Missing!",
+          title: "Auth Error",
+          description: "Token Missing!",
           variant: "destructive",
         });
         return;
       }
 
-      const confirmDelete = window.confirm(
-        "Are you sure you want to delete this destination?",
-      );
-
-      if (!confirmDelete) return;
+      if (!window.confirm("Are you sure you want to delete this destination?"))
+        return;
 
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/locations/admin/${locationId}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         },
       );
 
       const data = await res.json().catch(() => null);
 
-      // ✅ 🔥 HANDLE VALIDATION ERROR FIRST (no throw)
       if (data?.error?.code === "VALIDATION_ERROR") {
         toast({
           title: "Cannot Delete",
           description:
-            data?.error?.message ||
-            "Trips exist for this destination. Delete trips first.",
-          variant: "destructive",
-        });
-        return; // ❌ STOP here
-      }
-
-      // ❗ other API errors
-      if (!res.ok || !data?.success) {
-        toast({
-          title: "Error",
-          description:
-            data?.error?.message ||
-            data?.message ||
-            "Failed to delete destination",
+            data?.error?.message || "Trips exist for this destination.",
           variant: "destructive",
         });
         return;
       }
 
-      // ✅ Success
-      if (destinations.length === 1 && page > 1) {
-        setPage((prev) => prev - 1);
-      } else {
-        setDestinations((prev) => prev.filter((item) => item.id !== locationId));
-        setTotalItems((prev) => Math.max(0, prev - 1));
+      if (!res.ok || !data?.success) {
+        toast({
+          title: "Error",
+          description: data?.error?.message || "Failed to delete destination",
+          variant: "destructive",
+        });
+        return;
       }
 
       toast({
@@ -265,12 +223,9 @@ function Destinations() {
         description: "Destination deleted successfully",
         variant: "success",
       });
-
-      refreshLocations();
+      mutate(); // Refresh current page data
     } catch (error) {
       console.error(error);
-
-      // ❗ Only unexpected errors land here
       toast({
         title: "Something went wrong",
         description: "Please try again later",
@@ -279,13 +234,7 @@ function Destinations() {
     }
   };
 
-  useEffect(() => {
-    getAllDestinations();
-  }, [getAllDestinations]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [region]);
+  // Logic moved to derivations and event handlers
 
   return (
     <div className="flex flex-col gap-5">
@@ -299,8 +248,7 @@ function Destinations() {
             <Select
               value={region || "all"}
               onValueChange={(value) => {
-                setPage(1);
-                setRegion(value === "all" ? "" : value);
+                updateQuery({ region: value === "all" ? "" : value });
               }}
             >
               <SelectTrigger className="w-full sm:w-48">
@@ -331,10 +279,10 @@ function Destinations() {
         </div>
       </div>
 
-      {loading && <DestinationSkeleton />}
+      {isLoading && <DestinationSkeleton />}
 
       {/* Enhanced Error State */}
-      {error && !loading && (
+      {error && !isLoading && (
         <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
           <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
           <p className="text-red-600 font-medium">
@@ -352,7 +300,7 @@ function Destinations() {
       )}
 
       {/* Enhanced Empty State */}
-      {!loading && !error && destinations.length === 0 && (
+      {!isLoading && !error && locations.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
           <MapPin className="w-12 h-12 text-gray-400 mb-4" />
           <p className="text-gray-600 font-medium">No destinations found</p>
@@ -369,7 +317,7 @@ function Destinations() {
       )}
 
       {/* Desktop Table */}
-      {!loading && !error && destinations.length > 0 && (
+      {!isLoading && !error && locations.length > 0 && (
         <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden mt-5">
           <div className="grid grid-cols-[2.5fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
             <div>Destination</div>
@@ -379,7 +327,7 @@ function Destinations() {
             <div>Actions</div>
           </div>
 
-          {destinations.map((des, i) => (
+          {locations.map((des, i) => (
             <div
               key={des.id || i}
               className="grid grid-cols-[2.5fr_2fr_2fr_1fr] px-3 py-4 hover:bg-gray-50 transition-colors border-t border-gray-100"
@@ -410,9 +358,9 @@ function Destinations() {
       )}
 
       {/* Mobile Card Layout */}
-      {!loading && !error && destinations.length > 0 && (
+      {!isLoading && !error && locations.length > 0 && (
         <div className="md:hidden space-y-4 mt-5">
-          {destinations.map((des, i) => (
+          {locations.map((des, i) => (
             <div
               key={des.id || i}
               className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
@@ -455,7 +403,7 @@ function Destinations() {
           <Button
             variant="outline"
             disabled={page === 1}
-            onClick={() => setPage(page - 1)}
+            onClick={() => updateQuery({ page: (page - 1).toString() })}
             className="flex-1 sm:flex-none"
           >
             Previous
@@ -464,7 +412,7 @@ function Destinations() {
           <Button
             variant="outline"
             disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
+            onClick={() => updateQuery({ page: (page + 1).toString() })}
             className="flex-1 sm:flex-none"
           >
             Next
@@ -477,9 +425,7 @@ function Destinations() {
         <AddDestinationModal
           onClose={() => setShowModal(false)}
           refresh={() => {
-            setPage(1);
-            getAllDestinations();
-            getAllRegions();
+            mutate();
             setShowModal(false);
           }}
         />
@@ -881,105 +827,92 @@ function AddDestinationModal({ onClose, refresh }) {
 //////////////////// CATEGORIES ////////////////////
 
 function Categories() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [editData, setEditData] = useState(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [order, setOrder] = useState("DESC");
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
-  const [isActive, setIsActive] = useState("true");
-
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
+  const [showModal, setShowModal] = useState(false);
+  const [editData, setEditData] = useState(null);
+  
+  // Derive from URL
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const sortBy = searchParams.get("sortBy") || "created_at";
+  const order = searchParams.get("order") || "DESC";
+  const isActive = searchParams.get("isActive") || "true";
+  const debouncedSearch = searchParams.get("search") || "";
+
+  // Local state for immediate typing responsiveness
+  const [search, setSearch] = useState(debouncedSearch);
+  const [searchError, setSearchError] = useState("");
+
+  // Handle URL sync
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      if (!updates.page) {
+        params.set("page", "1");
+      }
+
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
+
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
+        });
+      }
+    },
+    [searchParams, pathname, router],
+  );
+
+  // Debounce search update to URL
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 400);
-
+      const value = search.trim();
+      updateQuery({ search: value });
+    }, 500);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, updateQuery]);
 
-  // Simulate API fetch with loading state
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Fetch using SWR
+  const {
+    categories: rawCategories,
+    pagination,
+    isLoading,
+    error,
+    mutate,
+  } = useAdminTripTypes({
+    page,
+    limit,
+    sortBy,
+    order,
+    is_active: isActive === "all" ? undefined : isActive,
+    search: debouncedSearch,
+  });
 
-        const token = Cookies.get("token");
+  const categories = useMemo(() => {
+    return (rawCategories || []).map((item, index) => ({
+      id: item.id,
+      category: item.name,
+      description: item.description,
+      is_active: item.is_active,
+      trips: item.trip_count ?? 0,
+      color: ["green", "pink", "blue", "teal", "yellow"][index % 5],
+    }));
+  }, [rawCategories]);
 
-        if (!token) {
-          setError("Authentication token missing");
-          return;
-        }
-
-        const params = new URLSearchParams();
-        params.append("page", String(page));
-        params.append("limit", String(limit));
-
-        if (sortBy) params.append("sortBy", sortBy);
-        if (order) params.append("order", order);
-        if (isActive) params.append("is_active", isActive);
-        if (debouncedSearch) params.append("search", debouncedSearch);
-
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/trip-types/admin?${params.toString()}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        const data = await res.json();
-
-        // console.log("categories", data);
-
-        if (!res.ok) {
-          toast({
-            title: "Error",
-            description: data?.error?.message || "Failed to fetch categories",
-            variant: "destructive",
-          });
-        }
-
-        const tripTypes = data?.result?.trip_types ?? [];
-        const pagination = data?.result?.pagination;
-
-        const formatted = tripTypes.map((item, index) => ({
-          id: item.id,
-          category: item.name,
-          description: item.description,
-          is_active: item.is_active,
-          trips: item.trip_count ?? 0,
-          color: ["green", "pink", "blue", "teal", "yellow"][index % 5],
-        }));
-
-        setCategories(formatted);
-        setTotalPages(pagination?.pages || 1);
-        setTotalItems(pagination?.total || 0);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load categories");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, [page, limit, debouncedSearch, sortBy, order, isActive]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, sortBy, order, isActive]);
+  const totalPages = pagination?.pages || 1;
+  const totalItems = pagination?.total || 0;
 
   const colorMap = {
     green: "bg-green-100 text-green-600",
@@ -1017,7 +950,7 @@ function Categories() {
           />
         </div>
 
-        <Select value={sortBy} onValueChange={setSortBy}>
+        <Select value={sortBy} onValueChange={(val) => updateQuery({ sortBy: val })}>
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue />
           </SelectTrigger>
@@ -1028,7 +961,7 @@ function Categories() {
           </SelectContent>
         </Select>
 
-        <Select value={order} onValueChange={setOrder}>
+        <Select value={order} onValueChange={(val) => updateQuery({ order: val })}>
           <SelectTrigger className="w-full sm:w-32">
             <SelectValue />
           </SelectTrigger>
@@ -1038,7 +971,7 @@ function Categories() {
           </SelectContent>
         </Select>
 
-        <Select value={isActive} onValueChange={setIsActive}>
+        <Select value={isActive} onValueChange={(val) => updateQuery({ isActive: val })}>
           <SelectTrigger className="w-full sm:w-32">
             <SelectValue />
           </SelectTrigger>
@@ -1050,10 +983,10 @@ function Categories() {
       </div>
 
       {/* Loading State */}
-      {loading && <CategorySkeleton />}
+      {isLoading && <CategorySkeleton />}
 
       {/* Error State */}
-      {error && !loading && (
+      {error && !isLoading && (
         <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200 mt-5">
           <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
           <p className="text-red-600 font-medium">Failed to load categories</p>
@@ -1062,7 +995,7 @@ function Categories() {
       )}
 
       {/* Categories Desktop Table */}
-      {!loading && !error && (
+      {!isLoading && !error && (
         <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden mt-5">
           {/* Header Row */}
           <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
@@ -1142,7 +1075,7 @@ function Categories() {
       )}
 
       {/* Categories Mobile Card Layout */}
-      {!loading && !error && categories.length > 0 && (
+      {!isLoading && !error && categories.length > 0 && (
         <div className="md:hidden space-y-4 mt-5">
           {categories.map((category) => (
             <div
@@ -1192,7 +1125,7 @@ function Categories() {
       )}
 
       {/* Pagination */}
-      {!loading && !error && categories.length > 0 && (
+      {!isLoading && !error && categories.length > 0 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
             <span>
@@ -1209,7 +1142,7 @@ function Categories() {
             <Button
               variant="outline"
               disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => updateQuery({ page: (page - 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Previous
@@ -1218,7 +1151,7 @@ function Categories() {
             <Button
               variant="outline"
               disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => updateQuery({ page: (page + 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Next
@@ -1232,7 +1165,7 @@ function Categories() {
         <AddCategoryModal
           onClose={() => setShowModal(false)}
           refresh={() => {
-            setPage(1);
+            mutate();
             setShowModal(false);
           }}
         />
@@ -1242,19 +1175,8 @@ function Categories() {
         <EditCategoryModal
           data={editData}
           onClose={() => setEditData(null)}
-          refresh={(updated) => {
-            setCategories((prev) =>
-              prev.map((cat) =>
-                cat.id === updated.id
-                  ? {
-                      ...cat,
-                      category: updated.name,
-                      description: updated.description,
-                      is_active: updated.is_active,
-                    }
-                  : cat,
-              ),
-            );
+          refresh={() => {
+            mutate();
             setEditData(null);
           }}
         />

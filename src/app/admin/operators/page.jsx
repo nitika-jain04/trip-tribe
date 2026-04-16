@@ -56,157 +56,117 @@ import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Link from "next/link";
 import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { useToast } from "@/app/hooks/use-toast";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { FaRegUser } from "react-icons/fa";
 import AddOperatorModal from "@/app/components/admin/AddOperatorModal";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
+import { useToast } from "@/app/hooks/use-toast";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function OperatorsPage() {
-  const [operators, setOperators] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { toast } = useToast();
+
+  // Derive values from URL (Source of Truth)
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const statusFilter = searchParams.get("status")?.toLowerCase() || "all";
+  const sortBy = searchParams.get("sortBy") || "created_at";
+  const sortOrder = searchParams.get("sortOrder") || "DESC";
+  const sourceFilter = searchParams.get("source")?.toLowerCase() || "all";
+  const debouncedSearch = searchParams.get("search") || "";
+
+  // UI state
   const [showAddModal, setShowAddModal] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalOperators, setTotalOperators] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [sortOrder, setSortOrder] = useState("DESC");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchQuery, setSearchQuery] = useState(debouncedSearch);
   const [searchError, setSearchError] = useState("");
-  const [initialLoading, setInitialLoading] = useState(true);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedOperatorId, setSelectedOperatorId] = useState(null);
   const [operatorTrips, setOperatorTrips] = useState([]);
 
-  const { toast } = useToast();
-
-  // Fetch operators from API
-  const getOperators = useCallback(async () => {
-    const token = Cookies.get("token");
-
-    if (!token) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams();
-
-      params.append("page", String(page));
-      params.append("limit", String(limit));
-
-      if (sourceFilter && sourceFilter !== "all") {
-        params.append("source", sourceFilter.toUpperCase());
-      }
-
-      if (statusFilter && statusFilter !== "all") {
-        params.append("status", statusFilter.toUpperCase());
-      }
-
-      if (sortBy) {
-        params.append("sortBy", sortBy);
-      }
-
-      if (sortOrder) {
-        params.append("sortOrder", sortOrder);
-      }
-
-      const searchValue = debouncedSearch?.trim();
-
-      if (searchValue && searchValue.length < 2) {
-        setSearchError("Search must be at least 2 characters");
-      } else if (searchValue && searchValue.length >= 2) {
-        params.append("search", searchValue);
-      }
-
-      const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
-
-      // console.log("search url", url);
-
-      // //console.log"Final URL:", url);
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  // Handle URL sync
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
       });
 
-      const data = await res.json();
+      // Always reset page to 1 when filters (other than page itself) change
+      if (!updates.page) {
+        params.set("page", "1");
+      }
 
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data?.error?.message || "Failed to fetch operators",
-          variant: "destructive",
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
+
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
         });
-        return;
       }
+    },
+    [searchParams, pathname, router],
+  );
 
-      const operatorsArray = data?.result?.operators || [];
-      const pagination = data?.result?.pagination || {};
+  // Build API params
+  const params = new URLSearchParams({ page, limit, sortBy, sortOrder });
+  if (sourceFilter && sourceFilter !== "all")
+    params.append("source", sourceFilter.toUpperCase());
+  if (statusFilter && statusFilter !== "all")
+    params.append("status", statusFilter.toUpperCase());
+  const searchValue = debouncedSearch?.trim();
+  if (searchValue && searchValue.length >= 2)
+    params.append("search", searchValue);
 
-      setOperators(operatorsArray);
-      setTotalOperators(pagination.total || 0);
-      setTotalPages(pagination.pages || 1);
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
-      console.error("Fetch error:", err);
-      setError(err.message);
-      setOperators([]);
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
-    }
-  }, [
-    page,
-    limit,
-    statusFilter,
-    sourceFilter,
-    sortBy,
-    sortOrder,
-    debouncedSearch,
-  ]);
+  const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
 
-  useEffect(() => {
-    getOperators();
-  }, [getOperators]);
+  // Logic previously here moved to derivation and individual event handlers
+
+  // 2. Fetch using SWR
+  const {
+    data,
+    error: fetchError,
+    isLoading,
+    mutate: refreshOperators,
+  } = useSWR(url, adminFetcher, {
+    keepPreviousData: true,
+  });
+
+  const operators = data?.result?.operators || [];
+  const totalOperators = data?.result?.pagination?.total || 0;
+  const totalPages = data?.result?.pagination?.pages || 1;
+  const loading = isLoading;
+  const initialLoading = isLoading && !data;
+  const error = fetchError?.message || null;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       const value = searchQuery.trim();
 
-      if (value.length === 0) {
+      if (value.length === 0 || value.length >= 2) {
         setSearchError("");
-        setDebouncedSearch("");
-        setPage(1);
-      } else if (value.length < 2) {
-        setSearchError("Search must be at least 2 characters");
+        updateQuery({ search: value });
       } else {
-        setSearchError("");
-        setDebouncedSearch(value);
-        setPage(1);
+        setSearchError("Search must be at least 2 characters");
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, updateQuery]);
 
   const handleAddModalClose = (value, wasCreated = false) => {
     setShowAddModal(value);
-    if (!value && wasCreated) getOperators();
+    if (!value && wasCreated) refreshOperators();
   };
 
   const handleInactivateOperator = async (operatorId) => {
@@ -288,10 +248,7 @@ function OperatorsPage() {
         description: "Operator updated successfully!",
         variant: "success",
       });
-      // getOperators();
-      setOperators((prev) =>
-        prev.map((op) => (op.id === operatorId ? { ...op, ...payload } : op)),
-      );
+      refreshOperators();
     } catch (err) {
       toast({
         title: "Error",
@@ -337,12 +294,10 @@ function OperatorsPage() {
         variant: "success",
       });
 
-      // ✅ Local state update instead of refetch
       if (operators.length === 1 && page > 1) {
-        setPage((prev) => prev - 1);
+        updateQuery({ page: (page - 1).toString() });
       } else {
-        setOperators((prev) => prev.filter((op) => op.id !== operatorId));
-        setTotalOperators((prev) => Math.max(0, prev - 1));
+        refreshOperators();
       }
     } catch (err) {
       toast({
@@ -590,7 +545,6 @@ function OperatorsPage() {
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setPage(1);
                   }}
                   className="pl-10 w-full lg:max-w-110"
                 />
@@ -608,7 +562,10 @@ function OperatorsPage() {
               lg:flex lg:flex-row lg:items-center
             "
             >
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => updateQuery({ status: value })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -620,7 +577,10 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <Select
+                value={sourceFilter}
+                onValueChange={(value) => updateQuery({ source: value })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
@@ -631,7 +591,10 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select
+                value={sortBy}
+                onValueChange={(value) => updateQuery({ sortBy: value })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
@@ -641,7 +604,10 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={sortOrder} onValueChange={setSortOrder}>
+              <Select
+                value={sortOrder}
+                onValueChange={(value) => updateQuery({ sortOrder: value })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort Order" />
                 </SelectTrigger>
@@ -677,7 +643,7 @@ function OperatorsPage() {
                   Failed to load operators
                 </p>
                 <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
-                <Button onClick={getOperators} variant="destructive">
+                <Button onClick={refreshOperators} variant="destructive">
                   Try Again
                 </Button>
               </div>
@@ -921,7 +887,7 @@ function OperatorsPage() {
               variant="outline"
               size="sm"
               disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => updateQuery({ page: (page - 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Previous
@@ -931,7 +897,7 @@ function OperatorsPage() {
               variant="outline"
               size="sm"
               disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => updateQuery({ page: (page + 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Next

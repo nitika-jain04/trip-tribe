@@ -51,193 +51,113 @@ import { Skeleton } from "@/app/components/ui/skeleton";
 import Link from "next/link";
 import { useToast } from "@/app/hooks/use-toast";
 import useTripTypes from "@/app/hooks/use-triptypes";
+import useAdminOperators from "@/app/hooks/use-admin-operators";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 import AddTripModal from "@/app/components/admin/AddTripModal";
 import { cn } from "@/lib/utils";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function Page() {
-  const [trips, setTrips] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [totalTrips, setTotalTrips] = useState(0);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [sortBy, setSortBy] = useState("created_at");
-  const [order, setorder] = useState("DESC");
-  const [showModal, setShowModal] = useState(false);
-  const [operators, setOperators] = useState([]);
-  const [loadingOperators, setLoadingOperators] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refresh, setRefresh] = useState(0);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
-  const { tripTypes } = useTripTypes();
+  // Derive values from URL (Source of Truth)
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const sortBy = searchParams.get("sortBy") || "created_at";
+  const order = searchParams.get("order") || "DESC";
+  const statusFilter = searchParams.get("status")?.toLowerCase() || "all";
+  const typeFilter = searchParams.get("type_id") || "all";
+  const difficultyFilter = searchParams.get("difficulty")?.toLowerCase() || "all";
+  const operatorFilter = searchParams.get("operator_id") || "all";
 
-  // Filter states
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [typeFilter, setTypeFilter] = useState("all");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [operatorFilter, setOperatorFilter] = useState("all");
+  const [showModal, setShowModal] = useState(false);
+  const { tripTypes } = useTripTypes();
+  const { operators, loadingOperators } = useAdminOperators("ALL");
+
+  // Keep local search for typing responsiveness
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
   const [searchError, setSearchError] = useState("");
 
-  const fetchOperators = useCallback(async () => {
-    setLoadingOperators(true);
-    const token = Cookies.get("token");
-
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin?application_status=APPROVED`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setOperators(data.result.operators || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch operators:", err);
-    } finally {
-      setLoadingOperators(false);
-    }
-  }, []);
-
-  const getAllTrips = useCallback(async () => {
-    const token = Cookies.get("token");
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams({
-        page,
-        limit,
-        sortBy,
-        order,
-      });
-
-      if (statusFilter !== "all")
-        params.set("status", statusFilter.toUpperCase());
-
-      if (operatorFilter && operatorFilter !== "all") {
-        params.set("operator_id", operatorFilter);
-      }
-
-      if (typeFilter !== "all") {
-        // console.log(typeFilter);
-        params.set("type_id", typeFilter);
-      }
-
-      if (difficultyFilter !== "all")
-        params.set("difficulty", difficultyFilter.toUpperCase());
-
-      const searchValue = debouncedSearch?.trim();
-      if (searchValue && searchValue.length < 2) {
-        setSearchError("Search must be at least 2 characters");
-      } else if (searchValue && searchValue.length >= 2) {
-        params.append("search", searchValue);
-      }
-
-      const url = `${BASE_URL}/api/${API_VERSION}/trips/admin?${params.toString()}`;
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setTrips(data.result.trips || []);
-        setTotalTrips(data.result.pagination?.total || 0);
-        setTotalPages(data.result.pagination?.pages || 1);
+  const updateQuery = useCallback((updates) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "" || value === "all") {
+        params.delete(key);
       } else {
-        // throw new Error(data.message || "Failed to fetch trips");
-        toast({
-          title: "Error",
-          description: "Failed to fetch trips",
-          variant: "destructive",
-        });
+        params.set(key, value);
       }
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
-      setError(err.message);
-      setTrips([]);
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
+    });
+    
+    // Always reset page to 1 when filters (other than page itself) change
+    if (!updates.page) {
+      params.set("page", "1");
     }
-  }, [
-    page,
-    limit,
-    sortBy,
-    order,
-    statusFilter,
-    operatorFilter,
-    typeFilter,
-    difficultyFilter,
-    debouncedSearch,
-    toast,
-  ]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [
-    statusFilter,
-    difficultyFilter,
-    sortBy,
-    order,
-    typeFilter,
-    operatorFilter,
-  ]);
+    const currentQuery = searchParams.toString();
+    const newQuery = params.toString();
+    
+    if (currentQuery !== newQuery) {
+      router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
 
-  useEffect(() => {
-    fetchOperators();
-  }, []);
-
-  useEffect(() => {
-    getAllTrips();
-  }, [getAllTrips]);
-
+  // Debounce search update to URL
   useEffect(() => {
     const timer = setTimeout(() => {
       const value = search.trim();
-
-      if (value.length === 0) {
-        setSearchError("");
-        setDebouncedSearch("");
-        setPage(1);
-      } else if (value.length < 2) {
-        setSearchError("Search must be at least 2 characters");
-        // setTrips([]);
-        // setTotalTrips(0);
-        // setTotalPages(1);
-      } else {
+      if (value.length === 0 || value.length >= 2) {
         setSearchError("");
         setDebouncedSearch(value);
-        setPage(1);
+        updateQuery({ search: value });
+      } else {
+        setSearchError("Search must be at least 2 characters");
       }
     }, 500);
-
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, updateQuery]);
+
+  // 1. Build Query String (for API)
+  const apiParams = new URLSearchParams({ page, limit, sortBy, order });
+
+  if (statusFilter !== "all") apiParams.set("status", statusFilter.toUpperCase());
+  if (operatorFilter && operatorFilter !== "all")
+    apiParams.set("operator_id", operatorFilter);
+  if (typeFilter !== "all") apiParams.set("type_id", typeFilter);
+  if (difficultyFilter !== "all")
+    apiParams.set("difficulty", difficultyFilter.toUpperCase());
+
+  const searchValue = debouncedSearch?.trim();
+  if (searchValue && searchValue.length >= 2)
+    apiParams.append("search", searchValue);
+
+  const url = `${BASE_URL}/api/${API_VERSION}/trips/admin?${apiParams.toString()}`;
+
+  // 2. Fetch using SWR
+  const {
+    data,
+    error: fetchError,
+    isLoading,
+    mutate: refreshTrips,
+  } = useSWR(url, adminFetcher, {
+    keepPreviousData: true,
+  });
+
+  const trips = data?.result?.trips || [];
+  const totalTrips = data?.result?.pagination?.total || 0;
+  const totalPages = data?.result?.pagination?.pages || 1;
+  const loading = isLoading;
+  const initialLoading = isLoading && !data;
+  const error = fetchError?.message || null;
+
+  // No local state sync effects needed anymore as variables are derived from URL
 
   const operatorMap = useMemo(
     () => Object.fromEntries(operators.map((op) => [op.id, op.name])),
@@ -248,7 +168,7 @@ function Page() {
 
   const handleModalClose = (value) => {
     setShowModal(value);
-    if (value === false) getAllTrips(); // explicit, one-time refetch
+    if (value === false) refreshTrips(); // explicit, one-time refetch
   };
 
   const handleUpdateTrip = useCallback(
@@ -285,12 +205,7 @@ function Page() {
           variant: "success",
         });
 
-        // ✅ Local state update instead of refetch
-        setTrips((prev) =>
-          prev.map((trip) =>
-            trip.id === tripId ? { ...trip, ...payload } : trip,
-          ),
-        );
+        refreshTrips();
       } catch (err) {
         toast({
           title: "Error",
@@ -339,12 +254,10 @@ function Page() {
           variant: "success",
         });
 
-        // ✅ Local state update instead of refetch
         if (trips.length === 1 && page > 1) {
-          setPage((prev) => prev - 1);
+          updateQuery({ page: (page - 1).toString() });
         } else {
-          setTrips((prev) => prev.filter((trip) => trip.id !== tripId));
-          setTotalTrips((prev) => Math.max(0, prev - 1));
+          refreshTrips(); // trigger refetch
         }
       } catch (err) {
         toast({
@@ -354,77 +267,9 @@ function Page() {
         });
       }
     },
-    [trips.length, page, toast],
+    [trips.length, page, toast, updateQuery, refreshTrips],
   );
 
-  // const handleDuplicateTrip = useCallback(
-  //   async (trip) => {
-  //     const token = Cookies.get("token");
-
-  //     try {
-  //       // ✅ Prepare clean payload
-  //       const payload = {
-  //         name: `Copy of ${trip.name}`,
-  //         price: trip.price,
-  //         start_date: trip.start_date,
-  //         end_date: trip.end_date,
-  //         difficulty: trip.difficulty,
-  //         total_seats: trip.total_seats,
-  //         description: trip.description,
-  //         itinerary: trip.itinerary,
-  //         images: trip.images,
-  //         inclusions: trip.inclusions,
-  //         exclusions: trip.exclusions,
-  //         operator_id: trip.operator_id,
-  //         source_id: trip.source_id,
-  //         destination_id: trip.destination_id,
-  //         type_id: trip.type_id,
-  //         status: "DRAFT",
-  //       };
-
-  //       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify(payload),
-  //       });
-
-  //       const data = await res.json();
-
-  //       if (!res.ok || !data.success) {
-  //         return toast({
-  //           title: "Error",
-  //           description: data?.error?.message || "Failed to duplicate trip",
-  //           variant: "destructive",
-  //         });
-  //       }
-
-  //       toast({
-  //         title: "Success",
-  //         description: "Trip duplicated successfully!",
-  //         variant: "success",
-  //       });
-
-  //       // ✅ Local state update: Add new trip to the top
-  //       const newTrip = data.result.trip || data.result;
-  //       if (newTrip && typeof newTrip === "object") {
-  //         setTrips((prev) => [newTrip, ...prev].slice(0, limit));
-  //         setTotalTrips((prev) => prev + 1);
-  //       } else {
-  //         getAllTrips(); // Fallback if data format is unexpected
-  //       }
-  //     } catch (err) {
-  //       toast({
-  //         title: "Error",
-  //         description: err.message,
-  //         variant: "destructive",
-  //       });
-  //     }
-  //   },
-  //   [toast, limit, getAllTrips],
-  // );
   const handleDuplicateTrip = useCallback(
     async (trip) => {
       const token = Cookies.get("token");
@@ -454,7 +299,7 @@ function Page() {
           status: "DRAFT",
         };
 
-        console.log("req", payload);
+        // console.log("req", payload);
 
         const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/admin`, {
           method: "POST",
@@ -481,14 +326,8 @@ function Page() {
           variant: "success",
         });
 
-        // ✅ Local state update: Add new trip to the top
         const newTrip = data.result.trip || data.result;
-        if (newTrip && typeof newTrip === "object") {
-          setTrips((prev) => [newTrip, ...prev].slice(0, limit));
-          setTotalTrips((prev) => prev + 1);
-        } else {
-          getAllTrips(); // Fallback if data format is unexpected
-        }
+        refreshTrips();
       } catch (err) {
         toast({
           title: "Error",
@@ -497,7 +336,7 @@ function Page() {
         });
       }
     },
-    [toast, limit, getAllTrips],
+    [toast, limit, refreshTrips],
   );
 
   const difficulties = ["EASY", "MODERATE", "HARD"];
@@ -705,7 +544,6 @@ function Page() {
                   value={search}
                   onChange={(e) => {
                     setSearch(e.target.value);
-                    setPage(1);
                   }}
                   className="pl-10 w-full lg:w-70"
                 />
@@ -723,7 +561,7 @@ function Page() {
         lg:flex lg:flex-wrap lg:items-center lg:w-auto
       "
             >
-              <Select value={operatorFilter} onValueChange={setOperatorFilter}>
+              <Select value={operatorFilter} onValueChange={(val) => updateQuery({ operator_id: val })}>
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Operator" />
                 </SelectTrigger>
@@ -737,7 +575,7 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={(val) => updateQuery({ status: val })}>
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -750,7 +588,7 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <Select value={typeFilter} onValueChange={(val) => updateQuery({ type_id: val })}>
                 <SelectTrigger className="w-full lg:w-28">
                   <SelectValue placeholder="Trip Type" />
                 </SelectTrigger>
@@ -766,7 +604,7 @@ function Page() {
 
               <Select
                 value={difficultyFilter}
-                onValueChange={setDifficultyFilter}
+                onValueChange={(val) => updateQuery({ difficulty: val })}
               >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Difficulty" />
@@ -781,7 +619,7 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Select value={sortBy} onValueChange={(val) => updateQuery({ sortBy: val })}>
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
@@ -793,7 +631,7 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={order} onValueChange={setorder}>
+              <Select value={order} onValueChange={(val) => updateQuery({ order: val })}>
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort Order" />
                 </SelectTrigger>
@@ -825,7 +663,7 @@ function Page() {
                 <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
                 <p className="text-red-600 font-medium">Failed to load trips</p>
                 <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
-                <Button onClick={getAllTrips} variant="destructive">
+                <Button onClick={refreshTrips} variant="destructive">
                   Try Again
                 </Button>
               </div>
@@ -1091,7 +929,7 @@ function Page() {
             <Button
               variant="outline"
               disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => updateQuery({ page: (page - 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Previous
@@ -1100,7 +938,7 @@ function Page() {
             <Button
               variant="outline"
               disabled={page >= totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => updateQuery({ page: (page + 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Next

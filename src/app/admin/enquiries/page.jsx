@@ -43,126 +43,99 @@ import {
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { BiComment } from "react-icons/bi";
 import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import AdminGuard from "@/app/components/AdminGuard";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function Enquiries() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [enquiryFilter, setEnquiryFilter] = useState("all");
-
-  const [enquiries, setEnquiries] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // pagination states
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-
-  // date filter states
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
-
-  const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { toast } = useToast();
 
-  const fetchEnquiries = useCallback(async () => {
-    const token = Cookies.get("token");
+  // Derive values from URL (Source of Truth)
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const statusFilter = searchParams.get("status")?.toLowerCase() || "all";
+  const enquiryFilter = searchParams.get("inquiry_type") || "all";
+  const fromDate = searchParams.get("from_date") || "";
+  const toDate = searchParams.get("to_date") || "";
+  const debouncedSearch = searchParams.get("search") || "";
 
-    setLoading(true);
-    setError(null);
+  // Local state for immediate typing responsiveness
+  const [search, setSearch] = useState(debouncedSearch);
+  const [searchError, setSearchError] = useState("");
 
-    try {
-      const params = new URLSearchParams();
-
-      if (debouncedSearch) params.append("search", debouncedSearch);
-
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter.toUpperCase());
+  // Handle URL sync
+  const updateQuery = useCallback((updates) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "" || value === "all") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
       }
+    });
 
-      if (enquiryFilter !== "all") {
-        params.append("inquiry_type", enquiryFilter);
-      }
-
-      if (fromDate) params.append("from_date", fromDate);
-      if (toDate) params.append("to_date", toDate);
-
-      params.append("page", page.toString());
-      params.append("limit", limit.toString());
-
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/enquiries/admin?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: data?.error?.message || "Failed to fetch enquiries",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.success) {
-        setEnquiries(data.result.data || []);
-        setTotalPages(data.result.pagination?.pages || 1);
-        setTotalItems(data.result.pagination?.total || 0);
-        // setPage(data.result.pagination?.page || 1);
-        // setLimit(data.result.pagination?.limit || 10);
-      }
-    } catch (err) {
-      setError(err.message);
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-      setInitialLoading(false); // ✅ important
+    // Always reset page to 1 when filters (other than page itself) change
+    if (!updates.page) {
+      params.set("page", "1");
     }
-  }, [
-    debouncedSearch,
-    statusFilter,
-    enquiryFilter,
-    page,
-    limit,
-    fromDate,
-    toDate,
-    router,
-  ]);
 
+    const currentQuery = searchParams.toString();
+    const newQuery = params.toString();
+
+    if (currentQuery !== newQuery) {
+      router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, { scroll: false });
+    }
+  }, [searchParams, pathname, router]);
+
+  // Debounce search update to URL
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      const value = search.trim();
+      if (value.length === 0 || value.length >= 2) {
+        setSearchError("");
+        updateQuery({ search: value });
+      } else {
+        setSearchError("Search must be at least 2 characters");
+      }
     }, 500);
-
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, updateQuery]);
 
-  useEffect(() => {
-    fetchEnquiries();
-  }, [fetchEnquiries, router]);
+  // 1. Build Query String
+  const params = new URLSearchParams();
+  if (debouncedSearch) params.append("search", debouncedSearch);
+  if (statusFilter !== "all") params.append("status", statusFilter.toUpperCase());
+  if (enquiryFilter !== "all") params.append("inquiry_type", enquiryFilter);
+  if (fromDate) params.append("from_date", fromDate);
+  if (toDate) params.append("to_date", toDate);
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+
+  const url = `${BASE_URL}/api/${API_VERSION}/enquiries/admin?${params.toString()}`;
+
+  // 2. Fetch using SWR
+  const { data, error: fetchError, isLoading, mutate: refreshEnquiries } = useSWR(url, adminFetcher, {
+    keepPreviousData: true
+  });
+
+  const enquiries = data?.result?.data || [];
+  const totalPages = data?.result?.pagination?.pages || 1;
+  const totalItems = data?.result?.pagination?.total || 0;
+  const loading = isLoading;
+  const initialLoading = isLoading && !data;
+  const error = fetchError?.message || null;
+
+  // Synchronization logic moved to derivation and individual event handlers
 
   const handleDelete = async (id) => {
     const token = Cookies.get("token");
@@ -198,9 +171,12 @@ function Enquiries() {
         variant: "success",
       });
 
-      // fetchEnquiries();
-      setEnquiries((prev) => prev.filter((e) => e.id !== id));
-      setTotalItems((prev) => prev - 1);
+      // refreshEnquiries();
+      if (enquiries.length === 1 && page > 1) {
+        updateQuery({ page: (page - 1).toString() });
+      } else {
+        refreshEnquiries();
+      }
     } catch (err) {
       toast({
         title: "Error",
@@ -250,10 +226,7 @@ function Enquiries() {
         variant: "success",
       });
 
-      // fetchEnquiries();
-      setEnquiries((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, status: "CLOSED" } : e)),
-      );
+      refreshEnquiries();
     } catch (err) {
       toast({
         title: "Error",
@@ -397,7 +370,6 @@ function Enquiries() {
                 placeholder="Search"
                 value={search}
                 onChange={(e) => {
-                  setPage(1);
                   setSearch(e.target.value);
                 }}
               />
@@ -413,8 +385,7 @@ function Enquiries() {
               <Select
                 value={statusFilter}
                 onValueChange={(value) => {
-                  setPage(1);
-                  setStatusFilter(value);
+                  updateQuery({ status: value });
                 }}
               >
                 <SelectTrigger className="w-full lg:w-36">
@@ -431,8 +402,7 @@ function Enquiries() {
               <Select
                 value={enquiryFilter}
                 onValueChange={(value) => {
-                  setPage(1);
-                  setEnquiryFilter(value);
+                  updateQuery({ inquiry_type: value });
                 }}
               >
                 <SelectTrigger className="w-full lg:w-44">
@@ -457,8 +427,7 @@ function Enquiries() {
                   if (!e.target.value) e.target.type = "text";
                 }}
                 onChange={(e) => {
-                  setPage(1);
-                  setFromDate(e.target.value);
+                  updateQuery({ from_date: e.target.value });
                 }}
                 className="w-full lg:w-40"
               />
@@ -472,8 +441,7 @@ function Enquiries() {
                   if (!e.target.value) e.target.type = "text";
                 }}
                 onChange={(e) => {
-                  setPage(1);
-                  setToDate(e.target.value);
+                  updateQuery({ to_date: e.target.value });
                 }}
                 className="w-full lg:w-40"
               />
@@ -695,7 +663,7 @@ function Enquiries() {
             <Button
               variant="outline"
               disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => updateQuery({ page: (page - 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Previous
@@ -704,7 +672,7 @@ function Enquiries() {
             <Button
               variant="outline"
               disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => updateQuery({ page: (page + 1).toString() })}
               className="flex-1 sm:flex-none"
             >
               Next

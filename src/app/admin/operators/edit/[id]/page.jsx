@@ -16,6 +16,8 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { Rating } from "@/app/components/ui/rating";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -43,59 +45,54 @@ export default function OperatorEditPage() {
     [],
   );
 
-  // Fetch operator
+  const {
+    data: operatorData,
+    error: operatorFetchError,
+    isLoading: loadingOperator,
+    mutate: mutateOperator,
+  } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}` : null,
+    adminFetcher,
+    { revalidateOnFocus: false },
+  );
+
+  // Synchronize error states
   useEffect(() => {
-    const fetchOperator = async () => {
-      const token = Cookies.get("token");
+    if (operatorFetchError) {
+      setError(operatorFetchError);
+      toast({
+        title: "Error",
+        description: operatorFetchError,
+        variant: "destructive",
+      });
+    }
+  }, [operatorFetchError, toast]);
 
-      try {
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        const data = await res.json();
-        if (data.success) {
-          setOperator(data.result);
-          setFormData({
-            name: data.result.name || "",
-            email: data.result.email || "",
-            phone_number: data.result.phone_number || "",
-            contact_name: data.result.contact_name || "",
-            business_description: data.result.business_description || "",
-            website_url: data.result.website_url || "",
-            logo_url: data.result.logo_url || "",
-            status: data.result.status || "",
-            hotel_category: data.result.hotel_category || 0,
-
-            total_trips: data.result.total_trips || null,
-            trips_per_year: data.result.trips_per_year || null,
-            regions: data.result.regions || [],
-            trip: data.result.trip || [],
-            social_links: data.result.social_links || {},
-          });
-
-          //console.log"operator", data.result);
-        } else {
-          // throw new Error(data.message || "Failed to fetch operator");
-          toast({
-            title: "Error",
-            description: "Failed to fetch operator",
-            variant: "destructive",
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Failed to fetch operator");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) fetchOperator();
-  }, [id]);
+  // Handle data load - Seed ONLY once when operator is null
+  useEffect(() => {
+    if (operatorData?.success && !operator) {
+      const dbOp = operatorData.result;
+      setOperator(dbOp);
+      setFormData({
+        name: dbOp.name || "",
+        email: dbOp.email || "",
+        phone_number: dbOp.phone_number || "",
+        contact_name: dbOp.contact_name || "",
+        business_description: dbOp.business_description || "",
+        website_url: dbOp.website_url || "",
+        logo_url: dbOp.logo_url || "",
+        status: dbOp.status || "",
+        hotel_category: dbOp.hotel_category || 0,
+        total_trips: dbOp.total_trips || null,
+        trips_per_year: dbOp.trips_per_year || null,
+        regions: dbOp.regions || [],
+        trip: dbOp.trip || [],
+        social_links: dbOp.social_links || {},
+      });
+      setIsPhoneValid(true); // Trust existing data on load
+      setLoading(false);
+    }
+  }, [operatorData, operator]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -196,23 +193,19 @@ export default function OperatorEditPage() {
 
     if (
       !formData.business_description ||
-      formData.business_description.trim().length < 2
+      formData.business_description.trim().length < 25
     ) {
       errors.business_description =
         "Description must be at least 25 characters.";
     }
 
-    if (!formData.regions || formData.regions.length == 0) {
-      errors.regions = "Add atleast 1 operating region.";
+    if (!formData.regions || formData.regions.length === 0) {
+      errors.regions = "Add at least 1 operating region.";
     }
 
-    if (!formData.name || formData.name.trim().length < 2) {
-      errors.name = "Operator name must be at least 2 characters.";
-    }
-
-    if (!formData.logo_url) {
-      errors.logo_url = "Add Image.";
-    }
+    // if (!formData.logo_url) {
+    //   errors.logo_url = "Add Image.";
+    // }
 
     if (!formData.contact_name || formData.contact_name.trim().length < 2) {
       errors.contact_name = "Contact person must be at least 2 characters.";
@@ -238,10 +231,10 @@ export default function OperatorEditPage() {
       errors.website_url = "Invalid website URL.";
     }
 
-    // Social links validation
-    Object.entries(formData.social_links).forEach(([platform, url]) => {
+    // Social links validation - Using keys that match JSX expectations
+    Object.entries(formData.social_links || {}).forEach(([platform, url]) => {
       if (url && !/^https?:\/\/.+\..+/.test(url)) {
-        errors[platform] = `Invalid URL for ${platform}`;
+        errors[`social_links.${platform}`] = `Invalid URL for ${platform}`;
       }
     });
 
@@ -251,10 +244,10 @@ export default function OperatorEditPage() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    // console.log("operator", operator);
     if (!operator) return;
 
     if (!validateForm()) {
-      scrollToFirstError();
       setSaving(false);
       scrollToFirstError();
       return;
@@ -315,6 +308,8 @@ export default function OperatorEditPage() {
       return;
     }
 
+    // console.log("req", requestBody);
+
     try {
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
@@ -340,13 +335,17 @@ export default function OperatorEditPage() {
         return;
       }
 
+      mutateOperator(); // Refresh SWR cache with updated data
       toast({
         title: "Operator",
         description: "Operator updated successfully!",
         variant: "success",
       });
 
-      router.push(`/admin/operators/${id}`);
+      // Small delay to let mutate finish before navigating
+      setTimeout(() => {
+        router.push(`/admin/operators/${id}`);
+      }, 100);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -426,7 +425,7 @@ export default function OperatorEditPage() {
         [platform]: value,
       },
     }));
-    setFieldErrors((prev) => ({ ...prev, [platform]: "" }));
+    setFieldErrors((prev) => ({ ...prev, [`social_links.${platform}`]: "" }));
     if (error) setError("");
     setIsModified(true);
   };

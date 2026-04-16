@@ -22,6 +22,8 @@ import Cookies from "js-cookie";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { ActivityFeed } from "@/app/components/admin/ActivityFeed";
 import { useToast } from "@/app/hooks/use-toast";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -54,7 +56,6 @@ export default function DashboardPage() {
   });
 
   const [enquiryChart, setEnquiryChart] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState([]);
   const [tripChart, setTripChart] = useState([]);
   const [topDestinations, setTopDestinations] = useState([]);
@@ -90,99 +91,83 @@ export default function DashboardPage() {
     }
   };
 
+  const { data: dashboardData, error: dashboardError, isLoading: loading } = useSWR(
+    `${BASE_URL}/api/${API_VERSION}/dashboard`,
+    adminFetcher
+  );
+
   useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        const token = Cookies.get("token");
+    if (dashboardError) {
+      console.error("Dashboard fetch error:", dashboardError);
+      toast({
+        title: "Error",
+        description: "Could not load dashboard. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/dashboard`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        });
+    if (dashboardData?.success) {
+      const result = dashboardData.result;
 
-        const data = await res.json();
-        const result = data?.result;
+      /* ---------- Stats Mapping ---------- */
+      setStats({
+        operators: {
+          total: result.stats.operators.total,
+          active: result.stats.operators.status_counts?.ACTIVE || 0,
+          inactive: result.stats.operators.status_counts?.INACTIVE || 0,
+          suspended: result.stats.operators.status_counts?.SUSPENDED || 0,
+          pending_approval: result.stats.operators.pending_approval || 0,
+          change_percent: result.stats.operators.change_percent || 0,
+        },
+        trips: {
+          total: result.stats.trips.total,
+          live: result.stats.trips.status_counts?.PUBLISHED || 0,
+          draft: result.stats.trips.status_counts?.DRAFT || 0,
+          archived: result.stats.trips.status_counts?.ARCHIVED || 0,
+          cancelled: result.stats.trips.status_counts?.CANCELLED || 0,
+          change_percent: result.stats.trips.change_percent || 0,
+        },
+        enquiries: {
+          total: result.stats.enquiries.total,
+          this_week: result.stats.enquiries.this_week,
+          this_month: result.stats.enquiries.this_month,
+          change_percent: result.stats.enquiries.change_percent,
+        },
+        reviews_pending: result.stats.reviews_pending || 0,
+      });
 
-        if (!result) return;
+      /* ---------- Activity Mapping ---------- */
+      const formattedActivities = result.recent_activity.map(
+        (item, index) => ({
+          id: index,
+          type: mapActivityType(item.type),
+          action: formatAction(item.type),
+          description: item.message,
+          timestamp: item.created_at,
+        })
+      );
+      setActivities(formattedActivities);
 
-        /* ---------- Stats Mapping ---------- */
+      /* ---------- Chart Mapping ---------- */
+      const formattedChart = result.charts.enquiry_trends.data.map(
+        (item) => ({
+          name: item.month,
+          enquiries: item.count,
+        })
+      );
+      const formattedTripsChart = result.charts.trip_listings.data.map(
+        (item) => ({
+          name: item.month,
+          trips: item.count,
+        })
+      );
 
-        setStats({
-          operators: {
-            total: result.stats.operators.total,
-            active: result.stats.operators.status_counts?.ACTIVE || 0,
-            inactive: result.stats.operators.status_counts?.INACTIVE || 0,
-            suspended: result.stats.operators.status_counts?.SUSPENDED || 0,
-            pending_approval: result.stats.operators.pending_approval || 0,
-            change_percent: result.stats.operators.change_percent || 0,
-          },
-
-          trips: {
-            total: result.stats.trips.total,
-            live: result.stats.trips.status_counts?.PUBLISHED || 0,
-            draft: result.stats.trips.status_counts?.DRAFT || 0,
-            archived: result.stats.trips.status_counts?.ARCHIVED || 0,
-            cancelled: result.stats.trips.status_counts?.CANCELLED || 0,
-            change_percent: result.stats.trips.change_percent || 0,
-          },
-
-          enquiries: {
-            total: result.stats.enquiries.total,
-            this_week: result.stats.enquiries.this_week,
-            this_month: result.stats.enquiries.this_month,
-            change_percent: result.stats.enquiries.change_percent,
-          },
-
-          reviews_pending: result.stats.reviews_pending || 0,
-        });
-
-        /* ---------- Activity Mapping ---------- */
-
-        const formattedActivities = result.recent_activity.map(
-          (item, index) => ({
-            id: index,
-            type: mapActivityType(item.type),
-            action: formatAction(item.type),
-            description: item.message,
-            timestamp: item.created_at,
-          }),
-        );
-
-        setActivities(formattedActivities);
-
-        /* ---------- Chart Mapping ---------- */
-
-        const formattedChart = result.charts.enquiry_trends.data.map(
-          (item) => ({
-            name: item.month,
-            enquiries: item.count,
-          }),
-        );
-
-        const formattedTripsChart = result.charts.trip_listings.data.map(
-          (item) => ({
-            name: item.month,
-            trips: item.count,
-          }),
-        );
-
-        setEnquiryChart(formattedChart);
-        setTripChart(formattedTripsChart);
-        setTopDestinations(result.top_destinations || []);
-      } catch (err) {
-        console.error("Dashboard fetch error:", err);
-        toast({
-          title: "Error",
-          description: "Could not load dashboard. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-  }, []);
+      setEnquiryChart(formattedChart);
+      setTripChart(formattedTripsChart);
+      setTopDestinations(result.top_destinations || []);
+    }
+  }, [dashboardData, dashboardError, toast]);
 
   if (loading) {
     return (
