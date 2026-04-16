@@ -751,7 +751,7 @@ function Page() {
               </Select>
 
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-full lg:w-40">
+                <SelectTrigger className="w-full lg:w-28">
                   <SelectValue placeholder="Trip Type" />
                 </SelectTrigger>
                 <SelectContent>

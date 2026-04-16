@@ -96,6 +96,7 @@ export default function Page() {
     locationMap,
     loading: locationLoading,
     error: locationError,
+    refreshLocations,
   } = useLocations();
   const searchScrollRef = useRef(null);
 
@@ -131,6 +132,7 @@ export default function Page() {
     data: locationsData,
     error: lError,
     isLoading: lLoading,
+    mutate: mutateLocations,
   } = useSWR(
     `${BASE_URL}/api/${API_VERSION}/trips?group_by=location&sortBy=updated_at&order=DESC`,
     fetcher,
@@ -139,6 +141,7 @@ export default function Page() {
     data: operatorsData,
     error: oError,
     isLoading: oLoading,
+    mutate: mutateOperators,
   } = useSWR(
     `${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=9`,
     fetcher,
@@ -147,6 +150,7 @@ export default function Page() {
     data: tripsData,
     error: tError,
     isLoading: tLoading,
+    mutate: mutateTrips,
   } = useSWR(
     `${BASE_URL}/api/${API_VERSION}/trips?sortBy=updated_at&order=DESC&page=1&limit=9`,
     fetcher,
@@ -578,7 +582,12 @@ export default function Page() {
               <p className="text-red-600 font-medium">Failed to load trips</p>
               <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
               <button
-                onClick={() => {}} // Disabled manual re-fetch due to SWR auto-revalidation
+                onClick={() => {
+                  if (lError) mutateLocations();
+                  if (oError) mutateOperators();
+                  if (tError) mutateTrips();
+                  if (locationError) refreshLocations();
+                }}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
               >
                 <Loader2 className="w-4 h-4" />
@@ -692,7 +701,11 @@ export default function Page() {
               </p>
               <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
               <button
-                onClick={() => {}} // Disabled manual re-fetch due to SWR auto-revalidation
+                onClick={() => {
+                  if (lError) mutateLocations();
+                  if (oError) mutateOperators();
+                  if (tError) mutateTrips();
+                }} // Disabled manual re-fetch due to SWR auto-revalidation
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
               >
                 <Loader2 className="w-4 h-4" />
