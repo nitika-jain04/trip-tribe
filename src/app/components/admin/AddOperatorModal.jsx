@@ -675,7 +675,7 @@ function AddOperatorModal({ handleModalClose }) {
             <div className="col-span-1 sm:col-span-2">
               <label className="text-sm text-gray-600">Description *</label>
               <textarea
-                name="description"
+                name="business_description"
                 // required
                 value={formData.business_description}
                 onChange={handleChange}
