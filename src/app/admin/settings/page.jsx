@@ -879,10 +879,12 @@ function Categories() {
   useEffect(() => {
     const timer = setTimeout(() => {
       const value = search.trim();
-      updateQuery({ search: value });
+      if (value !== debouncedSearch) {
+        updateQuery({ search: value });
+      }
     }, 500);
     return () => clearTimeout(timer);
-  }, [search, updateQuery]);
+  }, [search, debouncedSearch, updateQuery]);
 
   // Fetch using SWR
   const {

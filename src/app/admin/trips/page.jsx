@@ -82,8 +82,8 @@ function Page() {
   const { operators, loadingOperators } = useAdminOperators("ALL");
 
   // Keep local search for typing responsiveness
-  const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const debouncedSearch = searchParams.get("search") || "";
+  const [search, setSearch] = useState(debouncedSearch);
   const [searchError, setSearchError] = useState("");
 
   const updateQuery = useCallback((updates) => {
@@ -115,14 +115,15 @@ function Page() {
       const value = search.trim();
       if (value.length === 0 || value.length >= 2) {
         setSearchError("");
-        setDebouncedSearch(value);
-        updateQuery({ search: value });
+        if (value !== debouncedSearch) {
+          updateQuery({ search: value });
+        }
       } else {
         setSearchError("Search must be at least 2 characters");
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [search, updateQuery]);
+  }, [search, debouncedSearch, updateQuery]);
 
   // 1. Build Query String (for API)
   const apiParams = new URLSearchParams({ page, limit, sortBy, order });
