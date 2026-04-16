@@ -103,13 +103,15 @@ function Enquiries() {
       const value = search.trim();
       if (value.length === 0 || value.length >= 2) {
         setSearchError("");
-        updateQuery({ search: value });
+        if (value !== debouncedSearch) {
+          updateQuery({ search: value });
+        }
       } else {
         setSearchError("Search must be at least 2 characters");
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [search, updateQuery]);
+  }, [search, debouncedSearch, updateQuery]);
 
   // 1. Build Query String
   const params = new URLSearchParams();

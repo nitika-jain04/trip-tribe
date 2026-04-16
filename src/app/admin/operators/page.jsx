@@ -155,14 +155,16 @@ function OperatorsPage() {
 
       if (value.length === 0 || value.length >= 2) {
         setSearchError("");
-        updateQuery({ search: value });
+        if (value !== debouncedSearch) {
+          updateQuery({ search: value });
+        }
       } else {
         setSearchError("Search must be at least 2 characters");
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, updateQuery]);
+  }, [searchQuery, debouncedSearch, updateQuery]);
 
   const handleAddModalClose = (value, wasCreated = false) => {
     setShowAddModal(value);

@@ -46,6 +46,7 @@ function AuditLogs() {
   const limit = 10;
   const actionFilter = searchParams.get("action") || "all";
   const entityType = searchParams.get("entity_type") || "all";
+  const action = searchParams.get("action") || "all";
   const fromDate = searchParams.get("from_date") || "";
   const toDate = searchParams.get("to_date") || "";
   const debouncedSearch = searchParams.get("search") || "";
@@ -55,29 +56,34 @@ function AuditLogs() {
   const [searchError, setSearchError] = useState("");
 
   // Handle URL sync
-  const updateQuery = useCallback((updates) => {
-    const current = new URLSearchParams(searchParams.toString());
-    
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === "" || value === "all") {
-        current.delete(key);
-      } else {
-        current.set(key, value);
+  const updateQuery = useCallback(
+    (updates) => {
+      const current = new URLSearchParams(searchParams.toString());
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          current.delete(key);
+        } else {
+          current.set(key, value);
+        }
+      });
+
+      // Always reset page to 1 when filters (other than page itself) change
+      if (!updates.page) {
+        current.set("page", "1");
       }
-    });
 
-    // Always reset page to 1 when filters (other than page itself) change
-    if (!updates.page) {
-      current.set("page", "1");
-    }
+      const currentQuery = searchParams.toString();
+      const newQuery = current.toString();
 
-    const currentQuery = searchParams.toString();
-    const newQuery = current.toString();
-
-    if (currentQuery !== newQuery) {
-      router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, { scroll: false });
-    }
-  }, [searchParams, pathname, router]);
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
+        });
+      }
+    },
+    [searchParams, pathname, router],
+  );
 
   // Debounce search update to URL
   useEffect(() => {
@@ -85,24 +91,29 @@ function AuditLogs() {
       const value = search.trim();
       if (value.length === 0 || value.length >= 2) {
         setSearchError("");
-        updateQuery({ search: value });
+        if (value !== debouncedSearch) {
+          updateQuery({ search: value });
+        }
       } else {
         setSearchError("Search must be at least 2 characters");
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [search, updateQuery]);
+  }, [search, debouncedSearch, updateQuery]);
 
   // Fetch using SWR
-  const { logs, pagination, isLoading, isError, error, mutate } = useAdminAudit({
-    search: debouncedSearch,
-    action: actionFilter,
-    entity_type: entityType,
-    from_date: fromDate,
-    to_date: toDate,
-    page,
-    limit
-  });
+  const { logs, pagination, isLoading, isError, error, mutate } = useAdminAudit(
+    {
+      search: debouncedSearch,
+      action: actionFilter,
+      entity_type: entityType,
+      action: action,
+      from_date: fromDate,
+      to_date: toDate,
+      page,
+      limit,
+    },
+  );
 
   const totalPages = pagination?.pages || 1;
   const totalItems = pagination?.total || 0;
@@ -154,29 +165,6 @@ function AuditLogs() {
       </span>
     );
   };
-
-  const PageSkeleton = () => (
-    <div className="space-y-6 p-6">
-      <Skeleton className="h-8 w-48" />
-
-      <div className="flex gap-2 flex-wrap">
-        <Skeleton className="h-10 w-80" />
-        <Skeleton className="h-10 w-40" />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="h-6 w-full" />
-          ))}
-        </CardContent>
-      </Card>
-    </div>
-  );
 
   if (isLoading && !logs.length) return <PageSkeleton />;
 
@@ -243,6 +231,26 @@ function AuditLogs() {
                 <SelectItem value="enquiry">Enquiry</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* <Select
+              value={action}
+              onValueChange={(value) => {
+                updateQuery({ action: value });
+              }}
+            >
+              <SelectTrigger className="w-full lg:w-40">
+                <SelectValue placeholder="Action" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">Action</SelectItem>
+                <SelectItem value="CREATE">Create</SelectItem>
+                <SelectItem value="UPDATE">Update</SelectItem>
+                <SelectItem value="DELETE">Delete</SelectItem>
+                <SelectItem value="LOGIN">Login</SelectItem>
+                <SelectItem value="LOGOUT">Logout</SelectItem>
+              </SelectContent>
+            </Select> */}
 
             <Input
               type={fromDate ? "date" : "text"}
@@ -450,3 +458,26 @@ function AuditLogs() {
 }
 
 export default AuditLogs;
+
+const PageSkeleton = () => (
+  <div className="space-y-6 p-6">
+    <Skeleton className="h-8 w-48" />
+
+    <div className="flex gap-2 flex-wrap">
+      <Skeleton className="h-10 w-80" />
+      <Skeleton className="h-10 w-40" />
+    </div>
+
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-40" />
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Skeleton key={i} className="h-6 w-full" />
+        ))}
+      </CardContent>
+    </Card>
+  </div>
+);
