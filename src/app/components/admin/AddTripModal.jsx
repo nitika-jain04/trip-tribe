@@ -55,7 +55,7 @@ function AddTripModal({ handleModalClose }) {
     difficulty: "",
     total_seats: "",
     type_id: "",
-    hotel_category: "",
+    hotel_category: 0,
     operator_id: "",
     source: {
       name: "",
@@ -182,8 +182,8 @@ function AddTripModal({ handleModalClose }) {
       "image/jpeg",
       "image/png",
       "image/jpg",
-      // "image/heif",
-      // "image/heic",
+      "image/heif",
+      "image/heic",
     ];
 
     const file = e.target.files[0];
@@ -623,18 +623,6 @@ function AddTripModal({ handleModalClose }) {
 
             <div className="col-span-1">
               <label className="text-sm text-gray-600 mb-1 block">
-                Hotel Category
-              </label>
-              <div className="flex items-center h-10 mt-1">
-                <Rating
-                  value={formData.hotel_category}
-                  onChange={(val) => setFormData(p => ({ ...p, hotel_category: val }))}
-                />
-              </div>
-            </div>
-
-            <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
                 Start Date *
               </label>
               <div className="relative">
@@ -713,6 +701,20 @@ function AddTripModal({ handleModalClose }) {
                   {fieldErrors.end_date}
                 </p>
               )}
+            </div>
+
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">
+                Hotel Category
+              </label>
+              <div className="flex items-center h-10 mt-1">
+                <Rating
+                  value={formData.hotel_category}
+                  onChange={(val) =>
+                    setFormData((p) => ({ ...p, hotel_category: val }))
+                  }
+                />
+              </div>
             </div>
 
             <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">

@@ -76,7 +76,7 @@ const DisclaimerPage = () => {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
               </span>
-              Last updated: April 14, 2026
+              Last updated: April, 2026
             </div>
             <h1 className="font-display text-5xl font-bold tracking-tight text-foreground sm:text-7xl">
               Disclaimer

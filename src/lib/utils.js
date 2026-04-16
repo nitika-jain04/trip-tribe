@@ -33,19 +33,16 @@ export const getDialablePhone = (phone) => {
   return `+91${digits.slice(-10)}`;
 };
 
-export const animatedScrollTo = (targetY, duration = 400) => {
+import { animate } from "framer-motion";
+
+export const animatedScrollTo = (targetY, duration = 600) => {
   const startY = window.scrollY;
-  const diff = targetY - startY;
-  let start;
-
-  const step = (timestamp) => {
-    if (!start) start = timestamp;
-    const progress = Math.min((timestamp - start) / duration, 1);
-    // easeOutCubic for a very smooth, decelerating finish
-    const eased = 1 - Math.pow(1 - progress, 3);
-    window.scrollTo(0, startY + diff * eased);
-    if (progress < 1) requestAnimationFrame(step);
-  };
-
-  requestAnimationFrame(step);
+  // Use framer-motion's animate for a silky smooth feel
+  animate(startY, targetY, {
+    duration: duration / 1000,
+    ease: [0.25, 1, 0.5, 1], // Very slow and gentle smooth ease out
+    onUpdate: (latest) => {
+      window.scrollTo({ top: latest, behavior: "instant" });
+    },
+  });
 };

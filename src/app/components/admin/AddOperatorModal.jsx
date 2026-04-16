@@ -4,6 +4,7 @@ import Input from "../ui/input";
 import PhoneInput from "../ui/PhoneInput";
 import { useToast } from "@/app/hooks/use-toast";
 import Cookies from "js-cookie";
+import { Rating } from "../ui/rating";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -15,7 +16,8 @@ function AddOperatorModal({ handleModalClose }) {
     phone_number: "",
     contact_name: "",
     regions: "",
-    description: "",
+    business_description: "",
+    hotel_category: 0,
     website_url: "",
     logo_url: "",
     rating: 4.5,
@@ -35,7 +37,10 @@ function AddOperatorModal({ handleModalClose }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isPhoneValid, setIsPhoneValid] = useState(false);
-  const handlePhoneValidation = useCallback((valid) => setIsPhoneValid(valid), []);
+  const handlePhoneValidation = useCallback(
+    (valid) => setIsPhoneValid(valid),
+    [],
+  );
   const { toast } = useToast();
 
   function handleChange(e) {
@@ -64,8 +69,8 @@ function AddOperatorModal({ handleModalClose }) {
       "image/jpeg",
       "image/png",
       "image/jpg",
-      // "image/heif",
-      // "image/heic",
+      "image/heif",
+      "image/heic",
     ];
 
     const file = e.target.files[0];
@@ -154,8 +159,12 @@ function AddOperatorModal({ handleModalClose }) {
       errors.regions = "Enter the operating regions.";
     }
 
-    if (!formData.description || formData.description.trim().length < 2) {
-      errors.description = "The description must be atleast 25 characters.";
+    if (
+      !formData.business_description ||
+      formData.business_description.trim().length < 2
+    ) {
+      errors.business_description =
+        "The description must be atleast 25 characters.";
     }
 
     // Email validation
@@ -227,7 +236,7 @@ function AddOperatorModal({ handleModalClose }) {
 
     const requestBody = {
       name: formData.name,
-      description: formData.description,
+      business_description: formData.business_description,
       contact_name: formData.contact_name,
       email: formData.email,
       phone_number: formData.phone_number,
@@ -238,6 +247,7 @@ function AddOperatorModal({ handleModalClose }) {
             .filter(Boolean)
         : [],
       website_url: formData.website_url || undefined,
+      hotel_category: formData.hotel_category || 0,
       logo_url: formData.logo_url || undefined,
       // rating: parseFloat(formData.rating) || 4.5,
       // status: formData.status,
@@ -497,6 +507,20 @@ function AddOperatorModal({ handleModalClose }) {
               />
             </div>
 
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">
+                Hotel Category
+              </label>
+              <div className="flex items-center h-10 mt-1">
+                <Rating
+                  value={formData.hotel_category}
+                  onChange={(val) =>
+                    setFormData((p) => ({ ...p, hotel_category: val }))
+                  }
+                />
+              </div>
+            </div>
+
             {/* Status - Commented out */}
             {/* <div>
               <label className="text-sm text-gray-600">Status *</label>
@@ -653,16 +677,16 @@ function AddOperatorModal({ handleModalClose }) {
               <textarea
                 name="description"
                 // required
-                value={formData.description}
+                value={formData.business_description}
                 onChange={handleChange}
                 rows="4"
                 className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
                 placeholder="Describe the operator's services, specialties, and experience..."
               ></textarea>
 
-              {fieldErrors.description && (
+              {fieldErrors.business_description && (
                 <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.description}
+                  {fieldErrors.business_description}
                 </p>
               )}
             </div>
