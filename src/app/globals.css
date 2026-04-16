@@ -4,12 +4,13 @@
 
 @plugin "tailwindcss-animate";
 
-@custom-variant dark (&:is(.dark *));
+
 
 /* ===================== */
 /* CSS CUSTOM PROPERTIES */
 /* ===================== */
 :root {
+  color-scheme: light;
   /* core */
   --background: #ffffff;
   --foreground: #0a121f;
@@ -64,29 +65,7 @@
   --admin-backseach: #f9fafb;
 }
 
-.dark {
-  --background: #0a121f;
-  --foreground: #ededed;
-  --card: #14181f;
-  --card-foreground: #ededed;
-  --popover: #14181f;
-  --popover-foreground: #ededed;
-  --border: #1f2937;
-  --input: #1f2937;
-  --ring: #475569;
 
-  --secondary: #1e293b;
-  --secondary-foreground: #f1f5f9;
-
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
-
-  /* admin dark tweaks */
-  --admin-background: #0f172a;
-  --admin-haze: #94a3b8;
-  --admin-bg-warning: #3a2a0a;
-  --admin-bg-error: #3f1d1d;
-}
 
 /* ===================== */
 /* TAILWIND THEME CONFIG */
