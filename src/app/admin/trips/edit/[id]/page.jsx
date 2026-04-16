@@ -41,7 +41,7 @@ export default function TripEditPage() {
     end_date: "",
     difficulty: "",
     total_seats: "",
-    hotel_category: 0,
+    hotel_category: null,
     source: {},
     destination: {},
     images: [],
@@ -53,9 +53,6 @@ export default function TripEditPage() {
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // const operators = []; // TODO: fetch
-  // const tripTypes = []; // TODO: fetch
-
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
@@ -63,7 +60,6 @@ export default function TripEditPage() {
     try {
       const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
 
-      // if (!res.ok) throw new Error("Failed to fetch trip types");
       if (!res.ok) {
         toast({
           title: "Error",
@@ -436,10 +432,10 @@ export default function TripEditPage() {
         },
       );
 
+      console.log("req body", requestBody);
+
       const data = await res.json();
 
-      // if (!res.ok || !data.success)
-      //   throw new Error(data.message || "Update failed");
       if (!res.ok) {
         toast({
           title: "Error",
@@ -853,7 +849,7 @@ export default function TripEditPage() {
                     onChange={(e) =>
                       handleArrayChange("inclusions", i, e.target.value)
                     }
-                    className="flex-1 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                    className="flex-1 text-base bg-white border-slate-200 focus:ring-teal-500/20"
                     placeholder="e.g., Accommodation"
                   />
                   <button
@@ -897,7 +893,7 @@ export default function TripEditPage() {
                     onChange={(e) =>
                       handleArrayChange("exclusions", i, e.target.value)
                     }
-                    className="flex-1 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                    className="flex-1 text-base bg-white border-slate-200 focus:ring-teal-500/20"
                     placeholder="e.g., Personal Expenses"
                   />
                   <button
@@ -988,7 +984,7 @@ export default function TripEditPage() {
                           onChange={(e) =>
                             handleItineraryChange(dayIndex, i, e.target.value)
                           }
-                          className="flex-1 text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                          className="flex-1 text-base bg-white border-slate-200 focus:ring-teal-500/20"
                           placeholder={`Activity ${i + 1}`}
                         />
 

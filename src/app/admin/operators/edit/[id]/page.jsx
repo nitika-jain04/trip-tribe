@@ -645,7 +645,7 @@ export default function OperatorEditPage() {
                 <Rating
                   value={formData.hotel_category || 0}
                   onChange={(val) => {
-                    setFormData((p) => ({ ...p, hotel_category: val }))
+                    setFormData((p) => ({ ...p, hotel_category: val }));
                     setIsModified(true);
                   }}
                 />
@@ -710,7 +710,7 @@ export default function OperatorEditPage() {
                     setIsModified(true);
                     setRegionInput("");
                   }}
-                  className="px-6 py-2 bg-slate-900 text-white rounded-xl text-sm font-bold shadow-sm hover:bg-black hover:shadow-md transition-all active:scale-95"
+                  className="px-6 py-2 bg-slate-900 text-white rounded-xl text-base font-bold shadow-sm hover:bg-black hover:shadow-md transition-all active:scale-95"
                 >
                   Add
                 </button>
@@ -721,7 +721,7 @@ export default function OperatorEditPage() {
                 {formData.regions.map((region, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-2 px-3.5 py-1.5 bg-white border border-slate-200 rounded-full text-sm font-medium text-slate-600 transition-all hover:border-teal-500 hover:shadow-sm group"
+                    className="flex items-center gap-2 px-3.5 py-1.5 bg-white border border-slate-200 rounded-full text-base font-medium text-slate-600 transition-all hover:border-teal-500 hover:shadow-sm group"
                   >
                     {editingIndex === index ? (
                       <input
@@ -847,11 +847,11 @@ export default function OperatorEditPage() {
                 Description
               </label>
               <textarea
-                name="description"
+                name="business_description"
                 value={formData.business_description}
                 onChange={handleChange}
                 rows={8}
-                className="w-full mt-2 leading-normal bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
+                className="w-full mt-2 leading-normal bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200"
                 placeholder="Describe the operator's services, specialties, and experience..."
               />
               {fieldErrors.business_description && (
