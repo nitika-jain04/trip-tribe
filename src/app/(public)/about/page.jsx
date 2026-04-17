@@ -331,7 +331,7 @@ export default function About() {
               and book your next adventure.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/trips">
+              <Link href="/trips" prefetch={false}>
                 <Button
                   className="btn-primary text-body px-8 py-6"
                   onClick={(e) => handleNavClick(e, "/trips")}
@@ -340,7 +340,7 @@ export default function About() {
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Link href="/partners">
+              <Link href="/partners" prefetch={false}>
                 <Button className="btn-secondary text-body px-8 py-6">
                   Become a Partner
                 </Button>

@@ -605,7 +605,7 @@ function TripsContent() {
                       key={trip.id}
                       className="card-premium overflow-hidden group"
                     >
-                      <Link href={`/trip/${trip.id}`}>
+                      <Link href={`/trip/${trip.id}`} prefetch={false}>
                         <div className="aspect-16/10 relative overflow-hidden">
                           {trip.image ? (
                             <img
@@ -643,7 +643,7 @@ function TripsContent() {
                             ? `, ${trip.destination_region}`
                             : ""}
                         </div>
-                        <Link href={`/trip/${trip.id}`}>
+                        <Link href={`/trip/${trip.id}`} prefetch={false}>
                           <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors">
                             {trip.name}
                           </h3>
@@ -688,7 +688,11 @@ function TripsContent() {
                               Compare
                             </label>
                           </div>
-                          <Link href={`/trip/${trip.id}`} className="flex-1">
+                          <Link
+                            href={`/trip/${trip.id}`}
+                            className="flex-1"
+                            prefetch={false}
+                          >
                             <Button className="btn-primary w-full">
                               View Details
                             </Button>
@@ -1028,6 +1032,7 @@ function TripsContent() {
 
                       <Link
                         href={`/trip/${trip.id}`}
+                        prefetch={false}
                         className="block mt-auto pt-3 sm:pt-4"
                       >
                         <Button className="btn-primary w-full">
