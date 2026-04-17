@@ -69,6 +69,7 @@ export function Navbar() {
             <Link
               href="/"
               className="flex items-center gap-2 group"
+              prefetch={false}
               onClick={(e) => handleNavClick(e, "/")}
             >
               <img
@@ -98,6 +99,7 @@ export function Navbar() {
                 <Link
                   key={item.name}
                   href={item.href}
+                  prefetch={false}
                   className={`px-4 py-2 text-body-sm font-medium rounded-full transition-colors duration-200 ${
                     pathname === item.href
                       ? "text-primary bg-primary-light"
@@ -113,7 +115,7 @@ export function Navbar() {
 
             {/* CTA Button */}
             <div className="hidden md:flex items-center gap-3">
-              <Link href="/trips">
+              <Link href="/trips" prefetch={false}>
                 <Button className="btn-primary">Explore Trips</Button>
               </Link>
             </div>
@@ -151,6 +153,7 @@ export function Navbar() {
                 <Link
                   key={item.name}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`px-4 py-3 text-body font-medium rounded-lg transition-colors duration-200 ${
                     pathname === item.href
@@ -164,6 +167,7 @@ export function Navbar() {
 
               <Link
                 href="/trips"
+                prefetch={false}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="mt-4"
               >
