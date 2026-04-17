@@ -161,7 +161,7 @@ function AddOperatorModal({ handleModalClose }) {
 
     if (
       !formData.business_description ||
-      formData.business_description.trim().length < 2
+      formData.business_description.trim().length < 25
     ) {
       errors.business_description =
         "The description must be atleast 25 characters.";
