@@ -62,6 +62,7 @@ import AddOperatorModal from "@/app/components/admin/AddOperatorModal";
 import useSWR from "swr";
 import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 import { useToast } from "@/app/hooks/use-toast";
+import { AdminConfirmDialog } from "@/app/components/admin/AdminConfirmDialog";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -88,6 +89,12 @@ function OperatorsPage() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedOperatorId, setSelectedOperatorId] = useState(null);
   const [operatorTrips, setOperatorTrips] = useState([]);
+  const [dialogConfig, setDialogConfig] = useState({
+    type: "delete",
+    title: "",
+    description: "",
+  });
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // Handle URL sync
   const updateQuery = useCallback(
@@ -201,14 +208,24 @@ function OperatorsPage() {
       if (trips.length > 0) {
         setSelectedOperatorId(operatorId);
         setOperatorTrips(trips);
+        setDialogConfig({
+          type: "inactivate",
+          title: "Confirm Inactivation",
+          description: `This operator has ${trips.length} trip(s). Are you sure you want to inactivate?`,
+        });
         setConfirmDialogOpen(true);
         return;
       }
 
       // No trips → directly update
-      await handleUpdateOperator(operatorId, {
-        status: "INACTIVE",
+      setSelectedOperatorId(operatorId);
+      setDialogConfig({
+        type: "inactivate",
+        title: "Confirm Inactivation",
+        description: "Are you sure you want to inactivate this operator?",
       });
+      setOperatorTrips([]);
+      setConfirmDialogOpen(true);
     } catch (err) {
       toast({
         title: "Error",
@@ -220,6 +237,7 @@ function OperatorsPage() {
 
   const handleUpdateOperator = async (operatorId, payload) => {
     const token = Cookies.get("token");
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
@@ -251,27 +269,38 @@ function OperatorsPage() {
         variant: "success",
       });
       refreshOperators();
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
   const handleDeleteOperator = async (operatorId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this operator? This action cannot be undone.",
-    );
+    setSelectedOperatorId(operatorId);
+    setDialogConfig({
+      type: "delete",
+      title: "Delete Operator",
+      description:
+        "Are you sure you want to delete this operator? This action cannot be undone.",
+    });
+    setConfirmDialogOpen(true);
+  };
 
-    if (!confirmed) return;
+  const executeDeleteOperator = async () => {
+    if (!selectedOperatorId) return;
 
     const token = Cookies.get("token");
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin/${operatorId}`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${selectedOperatorId}`,
         {
           method: "DELETE",
           headers: {
@@ -283,11 +312,12 @@ function OperatorsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        return toast({
+        toast({
           title: "Error",
-          description: data?.error?.message,
+          description: data?.error?.message || "Failed to delete operator",
           variant: "destructive",
         });
+        return;
       }
 
       toast({
@@ -301,12 +331,15 @@ function OperatorsPage() {
       } else {
         refreshOperators();
       }
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -329,11 +362,12 @@ function OperatorsPage() {
           <>
             <DropdownMenuItem
               className="text-success"
-              onClick={() =>
+              onSelect={(e) => {
+                e.preventDefault();
                 handleUpdateOperator(op.id, {
                   application_status: "APPROVED",
-                })
-              }
+                });
+              }}
             >
               <UserCheck className="h-4 w-4 mr-2" />
               Approve
@@ -341,11 +375,12 @@ function OperatorsPage() {
 
             <DropdownMenuItem
               className="text-warning"
-              onClick={() =>
+              onSelect={(e) => {
+                e.preventDefault();
                 handleUpdateOperator(op.id, {
                   application_status: "REJECTED",
-                })
-              }
+                });
+              }}
             >
               <UserX className="h-4 w-4 mr-2" />
               Reject
@@ -363,7 +398,10 @@ function OperatorsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-warning"
-              onClick={() => handleInactivateOperator(op.id)}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleInactivateOperator(op.id);
+              }}
             >
               <UserX className="h-4 w-4 mr-2" />
               Inactivate
@@ -371,11 +409,12 @@ function OperatorsPage() {
 
             <DropdownMenuItem
               className="text-destructive"
-              onClick={() =>
+              onSelect={(e) => {
+                e.preventDefault();
                 handleUpdateOperator(op.id, {
                   status: "SUSPENDED",
-                })
-              }
+                });
+              }}
             >
               <UserX className="h-4 w-4 mr-2" />
               Suspend
@@ -386,18 +425,22 @@ function OperatorsPage() {
           <>
             <DropdownMenuItem
               className="text-warning"
-              onClick={() =>
+              onSelect={(e) => {
+                e.preventDefault();
                 handleUpdateOperator(op.id, {
                   status: "ACTIVE",
-                })
-              }
+                });
+              }}
             >
               <UserX className="h-4 w-4 mr-2" />
               Activate
             </DropdownMenuItem>
 
             <DropdownMenuItem
-              onClick={() => handleDeleteOperator(op.id)}
+              onSelect={(e) => {
+                e.preventDefault();
+                handleDeleteOperator(op.id);
+              }}
               className="text-error"
             >
               <Trash2 className="h-4 w-4 mr-2 text-error" />
@@ -409,11 +452,12 @@ function OperatorsPage() {
         {op.application_status === "APPROVED" && op.status === "SUSPENDED" && (
           <DropdownMenuItem
             className="text-success"
-            onClick={() =>
+            onSelect={(e) => {
+              e.preventDefault();
               handleUpdateOperator(op.id, {
                 status: "ACTIVE",
-              })
-            }
+              });
+            }}
           >
             <UserX className="h-4 w-4 mr-2" />
             Activate
@@ -911,51 +955,42 @@ function OperatorsPage() {
       {showAddModal && (
         <AddOperatorModal handleModalClose={handleAddModalClose} />
       )}
-
-      <Dialog
-        open={confirmDialogOpen}
+      <AdminConfirmDialog
+        isOpen={confirmDialogOpen}
         onOpenChange={setConfirmDialogOpen}
-        className="bg-yellow-200"
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        confirmText={
+          dialogConfig.type === "delete" ? "Delete Operator" : "Yes, Inactivate"
+        }
+        onConfirm={() => {
+          if (dialogConfig.type === "delete") {
+            executeDeleteOperator();
+          } else {
+            handleUpdateOperator(selectedOperatorId, { status: "INACTIVE" });
+            setConfirmDialogOpen(false);
+          }
+        }}
+        isLoading={isActionLoading}
+        variant={dialogConfig.type === "delete" ? "destructive" : "default"}
       >
-        <DialogContent className="">
-          <DialogHeader>
-            <DialogTitle>Confirm Inactivation</DialogTitle>
-            <DialogDescription>
-              This operator has {operatorTrips.length} trip(s). Are you sure you
-              want to inactivate?
-            </DialogDescription>
-          </DialogHeader>
-
-          {/* Optional: Show trip names */}
-          <div className="max-h-40 overflow-y-auto text-sm text-muted-foreground">
+        {dialogConfig.type === "inactivate" && operatorTrips.length > 0 && (
+          <div className="max-h-40 overflow-y-auto text-sm text-slate-600 space-y-1">
+            <p className="font-semibold mb-2">Affected Trips:</p>
             {operatorTrips.slice(0, 5).map((trip) => (
-              <p key={trip.id}>• {trip.name}</p>
+              <p key={trip.id} className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
+                {trip.name}
+              </p>
             ))}
-            {operatorTrips.length > 5 && <p>...and more</p>}
+            {operatorTrips.length > 5 && (
+              <p className="text-slate-400 italic">
+                ...and {operatorTrips.length - 5} others
+              </p>
+            )}
           </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                await handleUpdateOperator(selectedOperatorId, {
-                  status: "INACTIVE",
-                });
-                setConfirmDialogOpen(false);
-              }}
-            >
-              Yes, Inactivate
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        )}
+      </AdminConfirmDialog>
     </>
   );
 }

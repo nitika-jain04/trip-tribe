@@ -36,6 +36,8 @@ import {
   useAdminLocations,
   useAdminTripTypes,
 } from "@/app/hooks/use-admin-settings";
+import { AdminConfirmDialog } from "@/app/components/admin/AdminConfirmDialog";
+import { IoCloseSharp } from "react-icons/io5";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -114,7 +116,10 @@ function Destinations() {
   const { toast } = useToast();
 
   const [showModal, setShowModal] = useState(false);
-  
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
   // Derive from URL
   const page = Number(searchParams.get("page")) || 1;
   const region = searchParams.get("region") || "";
@@ -174,7 +179,14 @@ function Destinations() {
     return uni;
   }, [allLocations]);
 
-  const deleteDestination = async (locationId) => {
+  const deleteDestination = (locationId) => {
+    setSelectedLocationId(locationId);
+    setConfirmDialogOpen(true);
+  };
+
+  const executeDeleteDestination = async () => {
+    if (!selectedLocationId) return;
+
     try {
       const token = Cookies.get("token");
       if (!token) {
@@ -186,11 +198,10 @@ function Destinations() {
         return;
       }
 
-      if (!window.confirm("Are you sure you want to delete this destination?"))
-        return;
+      setIsActionLoading(true);
 
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin/${locationId}`,
+        `${BASE_URL}/api/${API_VERSION}/locations/admin/${selectedLocationId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
@@ -223,7 +234,8 @@ function Destinations() {
         description: "Destination deleted successfully",
         variant: "success",
       });
-      mutate(); // Refresh current page data
+      mutate();
+      setConfirmDialogOpen(false);
     } catch (error) {
       console.error(error);
       toast({
@@ -231,6 +243,8 @@ function Destinations() {
         description: "Please try again later",
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -430,6 +444,17 @@ function Destinations() {
           }}
         />
       )}
+
+      <AdminConfirmDialog
+        isOpen={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title="Delete Destination"
+        description="Are you sure you want to delete this destination? This action cannot be undone."
+        confirmText="Delete Destination"
+        onConfirm={executeDeleteDestination}
+        isLoading={isActionLoading}
+        variant="destructive"
+      />
     </div>
   );
 }
@@ -834,7 +859,7 @@ function Categories() {
 
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState(null);
-  
+
   // Derive from URL
   const page = Number(searchParams.get("page")) || 1;
   const limit = 10;
@@ -952,7 +977,10 @@ function Categories() {
           />
         </div>
 
-        <Select value={sortBy} onValueChange={(val) => updateQuery({ sortBy: val })}>
+        <Select
+          value={sortBy}
+          onValueChange={(val) => updateQuery({ sortBy: val })}
+        >
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue />
           </SelectTrigger>
@@ -963,7 +991,10 @@ function Categories() {
           </SelectContent>
         </Select>
 
-        <Select value={order} onValueChange={(val) => updateQuery({ order: val })}>
+        <Select
+          value={order}
+          onValueChange={(val) => updateQuery({ order: val })}
+        >
           <SelectTrigger className="w-full sm:w-32">
             <SelectValue />
           </SelectTrigger>
@@ -973,7 +1004,10 @@ function Categories() {
           </SelectContent>
         </Select>
 
-        <Select value={isActive} onValueChange={(val) => updateQuery({ isActive: val })}>
+        <Select
+          value={isActive}
+          onValueChange={(val) => updateQuery({ isActive: val })}
+        >
           <SelectTrigger className="w-full sm:w-32">
             <SelectValue />
           </SelectTrigger>
