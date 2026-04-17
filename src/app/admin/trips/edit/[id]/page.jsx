@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, AlertCircle, Loader2, Plus, X } from "lucide-react";
+import { ArrowLeft, AlertCircle, Loader2, Plus, X, ChevronDown } from "lucide-react";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { FaTrash } from "react-icons/fa";
@@ -59,8 +59,23 @@ export default function TripEditPage() {
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-  const { tripTypes } = useTripTypes();
-  const tripTypesData = tripTypes.length ? tripTypes : ["All Types"];
+  const [typePage, setTypePage] = useState(1);
+  const { tripTypes, pagination: typePagination, loadingTripTypes } = useTripTypes({
+    status: "ACTIVE",
+    page: typePage,
+    limit: 10,
+  });
+  const [accumulatedTripTypes, setAccumulatedTripTypes] = useState([]);
+
+  useEffect(() => {
+    if (tripTypes?.length > 0) {
+      setAccumulatedTripTypes((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const newTypes = tripTypes.filter((t) => !existingIds.has(t.id));
+        return [...prev, ...newTypes];
+      });
+    }
+  }, [tripTypes]);
 
   const {
     data: tripData,
@@ -710,11 +725,26 @@ export default function TripEditPage() {
                   </SelectTrigger>
 
                   <SelectContent>
-                    {tripTypesData.map((type) => (
+                    {accumulatedTripTypes.map((type) => (
                       <SelectItem key={type.id} value={type.id.toString()}>
                         {type.name}
                       </SelectItem>
                     ))}
+
+                    {typePagination?.pages > 1 && typePage < typePagination.pages && (
+                      <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
+                        <div 
+                          className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
+                          onMouseEnter={() => {
+                            if (typePage < typePagination.pages && !loadingTripTypes) {
+                              setTypePage(prev => prev + 1);
+                            }
+                          }}
+                        >
+                          <ChevronDown className="h-4 w-4 text-teal-600" />
+                        </div>
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
 

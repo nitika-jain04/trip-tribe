@@ -18,9 +18,11 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar as CalendarIcon } from "lucide-react";
 import useTripTypes from "@/app/hooks/use-triptypes";
+import useAdminOperators from "@/app/hooks/use-admin-operators";
 import dynamic from "next/dynamic";
 import Cookies from "js-cookie";
 import { FaPlus, FaTrash } from "react-icons/fa";
+import { ChevronDown } from "lucide-react";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -39,12 +41,47 @@ function AddTripModal({ handleModalClose }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
   const [showDestinationMap, setShowDestinationMap] = useState(false);
-  const [operators, setOperators] = useState([]);
-  const [loadingOperators, setLoadingOperators] = useState(false);
-  const [error, setError] = useState("");
+
   const [fieldErrors, setFieldErrors] = useState({});
-  const { tripTypes, loadingTripTypes } = useTripTypes();
   const { toast } = useToast();
+
+  // Operator Pagination & Accumulation
+  const [opPage, setOpPage] = useState(1);
+  const { operators, pagination: opPagination, loadingOperators } = useAdminOperators({
+    status: "ACTIVE",
+    page: opPage,
+    limit: 10,
+  });
+  const [accumulatedOperators, setAccumulatedOperators] = useState([]);
+
+  useEffect(() => {
+    if (operators?.length > 0) {
+      setAccumulatedOperators((prev) => {
+        const existingIds = new Set(prev.map((o) => o.id));
+        const newOps = operators.filter((o) => !existingIds.has(o.id));
+        return [...prev, ...newOps];
+      });
+    }
+  }, [operators]);
+
+  // Trip Type Pagination & Accumulation
+  const [typePage, setTypePage] = useState(1);
+  const { tripTypes, pagination: typePagination, loadingTripTypes } = useTripTypes({
+    status: "ACTIVE",
+    page: typePage,
+    limit: 10,
+  });
+  const [accumulatedTripTypes, setAccumulatedTripTypes] = useState([]);
+
+  useEffect(() => {
+    if (tripTypes?.length > 0) {
+      setAccumulatedTripTypes((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const newTypes = tripTypes.filter((t) => !existingIds.has(t.id));
+        return [...prev, ...newTypes];
+      });
+    }
+  }, [tripTypes]);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -80,35 +117,7 @@ function AddTripModal({ handleModalClose }) {
     itinerary: [{ day: 1, activities: [""] }],
   });
 
-  const fetchOperators = useCallback(async () => {
-    setLoadingOperators(true);
-    const token = Cookies.get("token");
-
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin?status=ACTIVE&application_status=APPROVED`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setOperators(data.result.operators || []);
-      }
-    } catch (err) {
-      console.error("Failed to fetch operators:", err);
-    } finally {
-      setLoadingOperators(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchOperators();
-  }, [fetchOperators]);
+  // Removed manual fetchOperators in favor of useAdminOperators hook
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -178,25 +187,25 @@ function AddTripModal({ handleModalClose }) {
   };
 
   const handleImageUpload = async (e) => {
-    const validTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "image/heif",
-      "image/heic",
-    ];
+    // const validTypes = [
+    //   "image/jpeg",
+    //   "image/png",
+    //   "image/jpg",
+    //   "image/heif",
+    //   "image/heic",
+    // ];
 
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Error",
-        description: "Only JPG and PNG images are allowed",
-        variant: "destructive",
-      });
-      return;
-    }
+    // if (!validTypes.includes(file.type)) {
+    //   toast({
+    //     title: "Error",
+    //     description: "Only JPG and PNG images are allowed",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
     if (file.size > 5 * 1024 * 1024) {
       toast({
@@ -607,11 +616,26 @@ function AddTripModal({ handleModalClose }) {
                   <SelectValue placeholder="Trip Type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tripTypes.map((t) => (
+                  {accumulatedTripTypes.map((t) => (
                     <SelectItem key={t.id} value={t.id.toString()}>
                       {t.name}
                     </SelectItem>
                   ))}
+
+                  {typePagination?.pages > 1 && typePage < typePagination.pages && (
+                    <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
+                      <div 
+                        className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
+                        onMouseEnter={() => {
+                          if (typePage < typePagination.pages && !loadingTripTypes) {
+                            setTypePage(prev => prev + 1);
+                          }
+                        }}
+                      >
+                        <ChevronDown className="h-4 w-4 text-teal-600" />
+                      </div>
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
               {fieldErrors.type_id && (
@@ -737,11 +761,26 @@ function AddTripModal({ handleModalClose }) {
                   <SelectValue placeholder="Select Operator" />
                 </SelectTrigger>
                 <SelectContent>
-                  {operators.map((o) => (
+                  {accumulatedOperators.map((o) => (
                     <SelectItem key={o.id} value={o.id.toString()}>
                       {o.name}
                     </SelectItem>
                   ))}
+
+                  {opPagination?.pages > 1 && opPage < opPagination.pages && (
+                    <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
+                      <div 
+                        className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
+                        onMouseEnter={() => {
+                          if (opPage < opPagination.pages && !loadingOperators) {
+                            setOpPage(prev => prev + 1);
+                          }
+                        }}
+                      >
+                        <ChevronDown className="h-4 w-4 text-teal-600" />
+                      </div>
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
               {fieldErrors.operator_id && (

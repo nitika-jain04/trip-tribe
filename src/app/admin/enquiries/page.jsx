@@ -50,6 +50,7 @@ import { Skeleton } from "@/app/components/ui/skeleton";
 import AdminGuard from "@/app/components/AdminGuard";
 import useSWR from "swr";
 import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
+import { AdminConfirmDialog } from "@/app/components/admin/AdminConfirmDialog";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -72,6 +73,14 @@ function Enquiries() {
   // Local state for immediate typing responsiveness
   const [search, setSearch] = useState(debouncedSearch);
   const [searchError, setSearchError] = useState("");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedEnquiryId, setSelectedEnquiryId] = useState(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    type: "delete",
+    title: "",
+    description: "",
+  });
 
   // Handle URL sync
   const updateQuery = useCallback((updates) => {
@@ -139,15 +148,26 @@ function Enquiries() {
 
   // Synchronization logic moved to derivation and individual event handlers
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
+    setSelectedEnquiryId(id);
+    setDialogConfig({
+      type: "delete",
+      title: "Delete Enquiry",
+      description: "Are you sure you want to delete this enquiry? This action cannot be undone.",
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!selectedEnquiryId) return;
     const token = Cookies.get("token");
     if (!token) return;
 
-    if (!confirm("Are you sure you want to delete this enquiry?")) return;
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${selectedEnquiryId}`,
         {
           method: "DELETE",
           headers: {
@@ -173,30 +193,43 @@ function Enquiries() {
         variant: "success",
       });
 
-      // refreshEnquiries();
       if (enquiries.length === 1 && page > 1) {
         updateQuery({ page: (page - 1).toString() });
       } else {
         refreshEnquiries();
       }
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
-  const handleCloseEnquiry = async (id) => {
+  const handleCloseEnquiry = (id) => {
+    setSelectedEnquiryId(id);
+    setDialogConfig({
+      type: "close",
+      title: "Close Enquiry",
+      description: "Are you sure you want to close this enquiry?",
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeCloseEnquiry = async () => {
+    if (!selectedEnquiryId) return;
     const token = Cookies.get("token");
     if (!token) return;
 
-    if (!confirm("Are you sure you want to close this enquiry?")) return;
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${selectedEnquiryId}`,
         {
           method: "PUT",
           headers: {
@@ -206,10 +239,6 @@ function Enquiries() {
           body: JSON.stringify({ status: "CLOSED" }),
         },
       );
-
-      // if (!res.ok) {
-      //   throw new Error("Failed to close enquiry");
-      // }
 
       const data = await res.json();
 
@@ -229,12 +258,15 @@ function Enquiries() {
       });
 
       refreshEnquiries();
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -265,14 +297,22 @@ function Enquiries() {
         </DropdownMenuItem>
 
         {enquiry.status.toLowerCase() !== "closed" && (
-          <DropdownMenuItem onClick={() => handleCloseEnquiry(enquiry.id)}>
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault();
+              handleCloseEnquiry(enquiry.id);
+            }}
+          >
             <CheckCircle className="mr-2" size={15} />
             Mark as Closed
           </DropdownMenuItem>
         )}
 
         <DropdownMenuItem
-          onClick={() => handleDelete(enquiry.id)}
+          onSelect={(e) => {
+            e.preventDefault();
+            handleDelete(enquiry.id);
+          }}
           className="text-red-600"
         >
           <Trash className="mr-2" size={15} />
@@ -682,6 +722,17 @@ function Enquiries() {
           </div>
         </div>
       </div>
+      <AdminConfirmDialog
+        isOpen={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        confirmText={dialogConfig.type === "delete" ? "Delete Enquiry" : "Close Enquiry"}
+        cancelText="Cancel"
+        onConfirm={dialogConfig.type === "delete" ? executeDelete : executeCloseEnquiry}
+        variant={dialogConfig.type === "delete" ? "destructive" : "default"}
+        isLoading={isActionLoading}
+      />
     </>
   );
 }

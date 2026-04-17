@@ -65,25 +65,25 @@ function AddOperatorModal({ handleModalClose }) {
   }
 
   async function handleImageUpload(e) {
-    const validTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/jpg",
-      "image/heif",
-      "image/heic",
-    ];
+    // const validTypes = [
+    //   "image/jpeg",
+    //   "image/png",
+    //   "image/jpg",
+    //   "image/heif",
+    //   "image/heic",
+    // ];
 
     const file = e.target.files[0];
     if (!file) return;
 
-    if (!validTypes.includes(file.type)) {
-      toast({
-        title: "Error",
-        description: "Only JPG and PNG images are allowed",
-        variant: "destructive",
-      });
-      return;
-    }
+    // if (!validTypes.includes(file.type)) {
+    //   toast({
+    //     title: "Error",
+    //     description: "Only JPG and PNG images are allowed",
+    //     variant: "destructive",
+    //   });
+    //   return;
+    // }
 
     if (file.size > 5 * 1024 * 1024) {
       toast({
@@ -354,7 +354,7 @@ function AddOperatorModal({ handleModalClose }) {
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:bg-[#4ED0C3]/10 file:text-[#4ED0C3] hover:file:bg-[#4ED0C3]/20"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Upload a logo image (JPG, PNG, SVG)
+                    Upload a logo image
                   </p>
                 </div>
                 {formData.logo_url && (
