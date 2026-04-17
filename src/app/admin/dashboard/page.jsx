@@ -18,7 +18,6 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useEffect, useState } from "react";
-import Cookies from "js-cookie";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { ActivityFeed } from "@/app/components/admin/ActivityFeed";
 import { useToast } from "@/app/hooks/use-toast";
@@ -91,10 +90,11 @@ export default function DashboardPage() {
     }
   };
 
-  const { data: dashboardData, error: dashboardError, isLoading: loading } = useSWR(
-    `${BASE_URL}/api/${API_VERSION}/dashboard`,
-    adminFetcher
-  );
+  const {
+    data: dashboardData,
+    error: dashboardError,
+    isLoading: loading,
+  } = useSWR(`${BASE_URL}/api/${API_VERSION}/dashboard`, adminFetcher);
 
   useEffect(() => {
     if (dashboardError) {
@@ -138,29 +138,25 @@ export default function DashboardPage() {
       });
 
       /* ---------- Activity Mapping ---------- */
-      const formattedActivities = result.recent_activity.map(
-        (item, index) => ({
-          id: index,
-          type: mapActivityType(item.type),
-          action: formatAction(item.type),
-          description: item.message,
-          timestamp: item.created_at,
-        })
-      );
+      const formattedActivities = result.recent_activity.map((item, index) => ({
+        id: index,
+        type: mapActivityType(item.type),
+        action: formatAction(item.type),
+        description: item.message,
+        timestamp: item.created_at,
+      }));
       setActivities(formattedActivities);
 
       /* ---------- Chart Mapping ---------- */
-      const formattedChart = result.charts.enquiry_trends.data.map(
-        (item) => ({
-          name: item.month,
-          enquiries: item.count,
-        })
-      );
+      const formattedChart = result.charts.enquiry_trends.data.map((item) => ({
+        name: item.month,
+        enquiries: item.count,
+      }));
       const formattedTripsChart = result.charts.trip_listings.data.map(
         (item) => ({
           name: item.month,
           trips: item.count,
-        })
+        }),
       );
 
       setEnquiryChart(formattedChart);
