@@ -49,14 +49,22 @@ export default function EnquiryDetail() {
   const [adminNotes, setAdminNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const { data: enquiryData, error: enquiryError, isLoading: loading, mutate } = useSWR(
+  const {
+    data: enquiryData,
+    error: enquiryError,
+    isLoading: loading,
+    mutate,
+  } = useSWR(
     id ? `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}` : null,
-    adminFetcher
+    adminFetcher,
   );
 
   useEffect(() => {
     if (enquiryData) {
-      const fetchedEnquiry = enquiryData?.result?.data?.find((e) => e.id === id) || enquiryData?.result || null;
+      const fetchedEnquiry =
+        enquiryData?.result?.data?.find((e) => e.id === id) ||
+        enquiryData?.result ||
+        null;
       if (fetchedEnquiry) {
         setEnquiry(fetchedEnquiry);
         setStatus(fetchedEnquiry.status?.toLowerCase() || "new");
@@ -110,6 +118,7 @@ export default function EnquiryDetail() {
         });
 
         mutate(); // Optimistic refresh
+        router.push("/admin/enquiries");
       }
     } catch (err) {
       toast({
