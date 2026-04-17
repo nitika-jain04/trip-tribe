@@ -302,6 +302,16 @@ export default function TripsClient({ initialTrips, locationMap, tripTypesData }
                 placeholder="Search destinations, trips..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
+                onFocus={(e) => {
+                  if (window.innerWidth < 640) {
+                    searchScrollRef.current = window.scrollY;
+                    setTimeout(() => {
+                      const rect = e.target.getBoundingClientRect();
+                      const targetY = window.scrollY + rect.top - 80;
+                      animatedScrollTo(Math.max(0, targetY));
+                    }, 300);
+                  }
+                }}
                 className="pl-12 pr-4 h-14 rounded-xl border-border bg-background shadow-sm"
               />
               {searchQuery && (

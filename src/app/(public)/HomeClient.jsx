@@ -208,13 +208,13 @@ export default function HomeClient({
                       onChange={(e) => setSearchDestination(e.target.value)}
                       onFocus={(e) => {
                         setShowSuggestions(true);
-                        if (window.innerWidth < 768) {
+                        if (window.innerWidth < 640) {
                           searchScrollRef.current = window.scrollY;
                           setTimeout(() => {
                             const rect = e.target.getBoundingClientRect();
-                            const targetY = window.scrollY + rect.top - 90;
+                            const targetY = window.scrollY + rect.top - 80;
                             animatedScrollTo(Math.max(0, targetY));
-                          }, 150);
+                          }, 300);
                         }
                       }}
                       onBlur={() => setShowSuggestions(false)}
@@ -294,6 +294,16 @@ export default function HomeClient({
                           readOnly
                           inputMode="none"
                           className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground w-full"
+                          onFocus={(e) => {
+                            if (window.innerWidth < 640) {
+                              searchScrollRef.current = window.scrollY;
+                              setTimeout(() => {
+                                const rect = e.target.getBoundingClientRect();
+                                const targetY = window.scrollY + rect.top - 80;
+                                animatedScrollTo(Math.max(0, targetY));
+                              }, 300);
+                            }
+                          }}
                         />
                       }
                     />

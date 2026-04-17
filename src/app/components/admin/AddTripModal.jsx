@@ -128,11 +128,9 @@ function AddTripModal({ handleModalClose }) {
         [location]: { ...p[location], [field]: value },
       }));
       setFieldErrors((p) => ({ ...p, [location]: "" }));
-      if (error) setError("");
     } else {
       setFormData((p) => ({ ...p, [name]: value }));
       setFieldErrors((p) => ({ ...p, [name]: "" }));
-      if (error) setError("");
     }
   };
 
@@ -266,7 +264,6 @@ function AddTripModal({ handleModalClose }) {
     arr[index] = value;
     setFormData((p) => ({ ...p, [key]: arr }));
     setFieldErrors((p) => ({ ...p, [key]: "" }));
-    if (error) setError("");
   };
 
   const addListItem = (key) =>
@@ -314,7 +311,6 @@ function AddTripModal({ handleModalClose }) {
     it[dIdx].activities[aIdx] = val;
     setFormData((p) => ({ ...p, itinerary: it }));
     setFieldErrors((p) => ({ ...p, itinerary: "" }));
-    if (error) setError("");
   };
 
   const scrollToFirstError = () => {
@@ -609,7 +605,6 @@ function AddTripModal({ handleModalClose }) {
                 onValueChange={(v) => {
                   setFormData((p) => ({ ...p, type_id: v }));
                   setFieldErrors((p) => ({ ...p, type_id: "" }));
-                  if (error) setError("");
                 }}
               >
                 <SelectTrigger>
