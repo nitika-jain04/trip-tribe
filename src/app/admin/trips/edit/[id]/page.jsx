@@ -3,131 +3,446 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Save, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  AlertCircle,
+  Loader2,
+  Plus,
+  X,
+  ChevronDown,
+  IndianRupee,
+} from "lucide-react";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
+import { FaTrash } from "react-icons/fa";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { Calendar as CalendarIcon } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import Input from "@/app/components/ui/input";
+import { Rating } from "@/app/components/ui/rating";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
+import useTripTypes from "@/app/hooks/use-triptypes";
+import { Button } from "@/app/components/ui/button";
 
 export default function TripEditPage() {
   const { id } = useParams();
   const router = useRouter();
 
   const [trip, setTrip] = useState(null);
-  const [tripTypesData, setTripTypesData] = useState(["All Types"]);
-  const [formData, setFormData] = useState(null);
+
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [isModified, setIsModified] = useState(false);
   const { toast } = useToast();
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price_categories: [{ category: "Base Price", price: "" }],
+    start_date: "",
+    end_date: "",
+    difficulty: "",
+    total_seats: "",
+    hotel_category: null,
+    source: {},
+    destination: {},
+    images: [],
+    inclusions: [""],
+    exclusions: [""],
+    itinerary: [{ day: 1, activities: [""] }],
+    cancellation_policy: "",
+  });
+
+  const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-  async function getTripTypes() {
-    try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trip-types`);
+  const [typePage, setTypePage] = useState(1);
+  const {
+    tripTypes,
+    pagination: typePagination,
+    loadingTripTypes,
+  } = useTripTypes({
+    status: "ACTIVE",
+    page: typePage,
+    limit: 10,
+  });
+  const [accumulatedTripTypes, setAccumulatedTripTypes] = useState([]);
 
-      // if (!res.ok) throw new Error("Failed to fetch trip types");
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch trip types",
-          variant: "destructive",
-        });
-      }
-
-      const data = await res.json();
-
-      const types = data?.result?.trip_types || [];
-
-      setTripTypesData(types);
-    } catch (err) {
-      console.error("Failed to fetch trip types", err);
-    }
-  }
-
-  // Fetch trip
   useEffect(() => {
-    const fetchTrip = async () => {
-      const token = Cookies.get("token");
-      setError("");
+    if (tripTypes?.length > 0) {
+      setAccumulatedTripTypes((prev) => {
+        const existingIds = new Set(prev.map((t) => t.id));
+        const newTypes = tripTypes.filter((t) => !existingIds.has(t.id));
+        return [...prev, ...newTypes];
+      });
+    }
+  }, [tripTypes]);
 
-      try {
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
+  const {
+    data: tripData,
+    error: tripFetchError,
+    isLoading: loadingTrip,
+    mutate: refreshTrip,
+  } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}` : null,
+    adminFetcher,
+    { revalidateOnFocus: false },
+  );
 
-        const data = await res.json();
+  // Synchronize error states
+  useEffect(() => {
+    if (tripFetchError) {
+      setError(tripFetchError);
+      toast({
+        title: "Error",
+        description: tripFetchError,
+        variant: "destructive",
+      });
+    }
+  }, [tripFetchError, toast]);
 
-        if (data.success) {
-          setTrip({
-            ...data.result,
-            type_id: data.result?.type?.id || "",
-          });
-          setFormData({
-            name: data.result.name || "",
-            price: data.result.price || "",
-            start_date: data.result.start_date || "",
-            end_date: data.result.end_date || "",
-            difficulty: data.result.difficulty || "",
-            total_seats: data.result.total_seats || "",
-            description: data.result.description || "",
-            images: data.result.images || [],
-            inclusions: data.result.inclusions || [],
-            exclusions: data.result.exclusions || [],
-            itinerary: data.result.itinerary || [],
-            status: data.result.status || "",
-            type_id: data.result?.type?.id || "",
-          });
-        } else {
-          // throw new Error(data.message || "Failed to fetch trip");
-          toast({
-            title: "Error",
-            description: "Failed to fetch trip",
-            variant: "destructive",
-          });
-        }
-      } catch (err) {
-        setError(err.message || "Failed to fetch trip");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getTripTypes();
-
-    if (id) fetchTrip();
-  }, [id]);
+  // Seed form data on successful data load
+  useEffect(() => {
+    if (tripData?.success) {
+      const dbTrip = tripData.result;
+      setTrip({
+        ...dbTrip,
+        difficulty: dbTrip.difficulty || "",
+        type_id: dbTrip?.type?.id || "",
+        cancellation_policy: dbTrip.cancellation_policy || "",
+      });
+      setFormData({
+        name: dbTrip.name || "",
+        price_categories:
+          dbTrip.price_categories?.length > 0
+            ? dbTrip.price_categories
+            : [{ category: "Base Price", price: dbTrip.price || "" }],
+        start_date: dbTrip.start_date || "",
+        end_date: dbTrip.end_date || "",
+        difficulty: dbTrip.difficulty || "",
+        total_seats: dbTrip.total_seats || "",
+        hotel_category: dbTrip.hotel_category || 0,
+        description: dbTrip.description || "",
+        images: dbTrip.images || [],
+        inclusions: dbTrip.inclusions || [],
+        exclusions: dbTrip.exclusions || [],
+        itinerary: dbTrip.itinerary || [],
+        status: dbTrip.status || "",
+        type_id: dbTrip?.type?.id || "",
+        cancellation_policy: dbTrip.cancellation_policy || "",
+      });
+      setLoading(false);
+    }
+  }, [tripData]);
 
   // Basic field change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "type_id" ? value : value,
-    }));
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (error) setError("");
+    setIsModified(true);
   };
 
   // Array input handler (comma separated)
-  const handleArrayChange = (key, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [key]: value.split(",").map((v) => v.trim()),
-    }));
+  const handleArrayChange = (field, index, value) => {
+    const updated = [...formData[field]];
+    updated[index] = value;
+    setFormData((prev) => ({ ...prev, [field]: updated }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+    if (error) setError("");
+    setIsModified(true);
   };
 
   // Itinerary update
-  const handleItineraryChange = (index, value) => {
-    const updated = [...formData.itinerary];
-    updated[index].activities = value.split(",").map((v) => v.trim());
+  const addItem = (field) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: [...prev[field], ""],
+    }));
+    setIsModified(true);
+  };
 
+  const removeItem = (field, index) => {
+    if (formData.inclusions.length === 1) {
+      toast({
+        title: "Inclusions",
+        description: "1 Inclusion in required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const updated = formData[field].filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, [field]: updated }));
+    setIsModified(true);
+  };
+
+  const handleItineraryChange = (dayIndex, activityIndex, value) => {
+    const updated = [...formData.itinerary];
+    updated[dayIndex].activities[activityIndex] = value;
     setFormData((prev) => ({ ...prev, itinerary: updated }));
+    if (error) setError("");
+    setIsModified(true);
+  };
+
+  const handlePriceCategoryChange = (index, field, value) => {
+    const categories = [...formData.price_categories];
+    categories[index] = { ...categories[index], [field]: value };
+    setFormData((prev) => ({ ...prev, price_categories: categories }));
+    if (error) setError("");
+    setIsModified(true);
+  };
+
+  const addPriceCategory = () => {
+    setFormData((prev) => ({
+      ...prev,
+      price_categories: [...prev.price_categories, { category: "", price: "" }],
+    }));
+    setIsModified(true);
+  };
+
+  const removePriceCategory = (index) => {
+    if (formData.price_categories.length === 1) return;
+    const categories = formData.price_categories.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, price_categories: categories }));
+    setIsModified(true);
+  };
+
+  const addActivity = (dayIndex) => {
+    const updated = [...formData.itinerary];
+    updated[dayIndex].activities.push("");
+    setFormData((prev) => ({ ...prev, itinerary: updated }));
+    setIsModified(true);
+  };
+
+  const addDay = () => {
+    setFormData((prev) => ({
+      ...prev,
+      itinerary: [
+        ...prev.itinerary,
+        { day: prev.itinerary.length + 1, activities: [""] },
+      ],
+    }));
+    setIsModified(true);
+  };
+
+  const handleImageUpload = async (e) => {
+    const validTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "image/heif",
+      "image/heic",
+    ];
+
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: "Error",
+        description: "Only JPG and PNG images are allowed",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: "Image must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const token = Cookies.get("token");
+    setUploadingImage(true);
+    setError("");
+
+    const formDataObj = new FormData();
+    formDataObj.append("image", file);
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataObj,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({
+          title: "Error",
+          description: data?.error?.message || "Upload failed",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (res.ok && data.success) {
+        setFormData((p) => ({
+          ...p,
+          images: [...p.images, data.result.url],
+        }));
+        setIsModified(true);
+
+        toast({
+          title: "Uploaded",
+          description: "Image uploaded successfully",
+          variant: "success",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: data?.error?.message || "Failed to upload image",
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setError(err.message || "Failed to upload image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleDeleteImage = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index),
+    }));
+    setIsModified(true);
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    const name = formData.name?.trim();
+
+    if (!name) {
+      newErrors.name = "Trip name is required";
+    } else if (name.length < 2) {
+      newErrors.name = "Trip name must be at least 2 characters";
+    }
+
+    if (!formData.price_categories || formData.price_categories.length === 0) {
+      newErrors.price_categories = "At least one price category is required";
+    } else {
+      const basePrices = formData.price_categories.filter(
+        (c) => c.category?.trim().toLowerCase() === "base price",
+      );
+      if (basePrices.length === 0) {
+        newErrors.price_categories = "Base Price category is required";
+      } else if (basePrices.length > 1) {
+        newErrors.price_categories = "Exactly one Base Price required";
+      } else if (
+        formData.price_categories.some((c) => !c.category?.trim() || !c.price)
+      ) {
+        newErrors.price_categories = "Incomplete categories detected";
+      } else if (formData.price_categories.some((c) => Number(c.price) <= 0)) {
+        newErrors.price_categories = "Prices must be greater than 0";
+      }
+    }
+
+    if (!formData.images || formData.images.length == 0) {
+      newErrors.images = "Atleast one image is required";
+    }
+
+    if (!formData.total_seats || Number(formData.total_seats) <= 0) {
+      newErrors.total_seats = "Total seats must be greater than 0";
+    }
+
+    if (!formData.difficulty) {
+      newErrors.difficulty = "Please select difficulty";
+    }
+
+    if (!formData.start_date) {
+      newErrors.start_date = "Start date is required";
+    }
+
+    if (!formData.end_date) {
+      newErrors.end_date = "End date is required";
+    }
+
+    if (
+      formData.start_date &&
+      formData.end_date &&
+      new Date(formData.end_date) <= new Date(formData.start_date)
+    ) {
+      newErrors.end_date = "End date must be after start date";
+    }
+
+    if (!formData.type_id) {
+      newErrors.type_id = "Trip type is required";
+    }
+
+    if (!formData.description?.trim()) {
+      newErrors.description = "Description is required";
+    }
+
+    if (!formData.inclusions || formData.inclusions.some((i) => !i.trim())) {
+      newErrors.inclusions =
+        "Please fill all inclusion fields or remove empty ones.";
+    }
+
+    if (!formData.exclusions || formData.exclusions.some((i) => !i.trim())) {
+      newErrors.exclusions =
+        "Please fill all exclusion fields or remove empty ones.";
+    }
+
+    const hasIncompleteItinerary = formData.itinerary.some(
+      (day) => !day.activities || day.activities.some((a) => !a.trim()),
+    );
+    if (hasIncompleteItinerary) {
+      newErrors.itinerary =
+        "Please complete all itinerary days or remove empty activities.";
+    }
+
+    setErrors(newErrors);
+    return newErrors;
+  };
+
+  const scrollToFirstError = () => {
+    setTimeout(() => {
+      const el = document.querySelector(".text-admin-error");
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 100);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const validationErrors = validateForm();
+
+    if (Object.keys(validationErrors).length > 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please fix the highlighted fields",
+        variant: "destructive",
+      });
+
+      scrollToFirstError();
+      return;
+    }
+
     if (!trip) return;
 
     setSaving(true);
@@ -138,7 +453,22 @@ export default function TripEditPage() {
     const requestBody = {};
     Object.keys(formData).forEach((key) => {
       if (JSON.stringify(formData[key]) !== JSON.stringify(trip[key])) {
-        requestBody[key] = formData[key];
+        if (key === "price_categories") {
+          requestBody[key] = formData[key].map((c) => ({
+            ...c,
+            price: Number(c.price),
+          }));
+        } else if (key === "hotel_category") {
+          if (formData[key] && formData[key] > 0) {
+            requestBody[key] = formData[key];
+          }
+        } else if (key === "cancellation_policy") {
+          if (formData[key]?.trim()) {
+            requestBody[key] = formData[key].trim();
+          }
+        } else {
+          requestBody[key] = formData[key];
+        }
       }
     });
 
@@ -148,6 +478,9 @@ export default function TripEditPage() {
         description: "No Changes Detected",
       });
       setSaving(false);
+      setIsModified(false);
+      router.push(`/admin/trips/${id}`);
+      ``;
       return;
     }
 
@@ -164,16 +497,25 @@ export default function TripEditPage() {
         },
       );
 
+      // console.log("req body", requestBody);
+
       const data = await res.json();
 
-      // if (!res.ok || !data.success)
-      //   throw new Error(data.message || "Update failed");
       if (!res.ok) {
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Failed to update";
+
         toast({
           title: "Error",
-          description: "Failed to update",
+          description: errorMessage,
           variant: "destructive",
         });
+
+        return;
       }
 
       toast({
@@ -192,7 +534,7 @@ export default function TripEditPage() {
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -215,7 +557,7 @@ export default function TripEditPage() {
   // Enhanced Error State
   if (error && !formData) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -243,7 +585,7 @@ export default function TripEditPage() {
   // Not Found State
   if (!formData) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -265,204 +607,623 @@ export default function TripEditPage() {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href={`/admin/trips/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
       >
-        <ArrowLeft size={16} /> Back to Details
+        <ArrowLeft size={25} />
+        Back to Details
       </Link>
 
-      <div className="bg-white rounded-lg border shadow-sm p-6">
-        <h1 className="text-2xl font-semibold mb-6">Edit Trip</h1>
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 tracking-tight mb-6 sm:mb-8">
+          Edit Trip
+        </h1>
 
         {/* Enhanced Error Display */}
         {error && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
-        <form onSubmit={handleSave} className="grid grid-cols-2 gap-5">
-          {/* Basic fields */}
-          {[
-            ["name", "Trip Name"],
-            ["price", "Price (₹)"],
-            ["total_seats", "Total Seats"],
-          ].map(([key, label]) => (
-            <div key={key}>
-              <label className="text-sm font-medium text-gray-700">
-                {label}
-              </label>
-              <input
-                name={key}
-                value={formData[key]}
-                onChange={handleChange}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                placeholder={`Enter ${label.toLowerCase()}`}
-                type={
-                  key === "price" || key === "total_seats" ? "number" : "text"
-                }
-              />
-            </div>
-          ))}
+        <form onSubmit={handleSave} className="space-y-8">
+          {/* BASIC INFO */}
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Basic Information
+            </h3>
 
-          {/* Dates */}
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Start Date
-            </label>
-            <input
-              type="date"
-              name="start_date"
-              value={formData.start_date}
-              onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              End Date
-            </label>
-            <input
-              type="date"
-              name="end_date"
-              value={formData.end_date}
-              onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-            />
-          </div>
-
-          {/* Dropdowns */}
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Difficulty
-            </label>
-            <select
-              name="difficulty"
-              value={formData.difficulty}
-              onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="EASY">Easy</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HARD">Hard</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">Status</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-            >
-              <option value="DRAFT">Draft</option>
-              {/* <option value="LIVE">Live</option> */}
-              <option value="PUBLISHED">Published</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-gray-700">
-              Trip Type
-            </label>
-            <select
-              name="type_id"
-              value={formData?.type_id || ""}
-              onChange={handleChange}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-            >
-              {tripTypesData.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Description */}
-          <div className="col-span-2">
-            <label className="text-sm font-medium text-gray-700">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-              placeholder="Describe the trip in detail..."
-            />
-          </div>
-
-          {/* Arrays */}
-          {["images", "inclusions", "exclusions"].map((key) => (
-            <div key={key} className="col-span-2">
-              <label className="text-sm font-medium text-gray-700 capitalize">
-                {key}
-              </label>
-              <input
-                value={formData[key].join(", ")}
-                onChange={(e) => handleArrayChange(key, e.target.value)}
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                placeholder="Comma separated values"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter values separated by commas (e.g., item1, item2, item3)
-              </p>
-            </div>
-          ))}
-
-          {/* Itinerary */}
-          <div className="col-span-2 space-y-3">
-            <label className="text-sm font-medium text-gray-700">
-              Itinerary
-            </label>
-            {formData.itinerary.map((day, index) => (
-              <div
-                key={index}
-                className="border border-gray-200 rounded-lg p-4"
-              >
-                <p className="text-xs font-medium text-gray-500 mb-2">
-                  Day {day.day}
-                </p>
-                <input
-                  value={day.activities.join(", ")}
-                  onChange={(e) => handleItineraryChange(index, e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
-                  placeholder={`Activities for day ${day.day} (comma separated)`}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Trip Name*
+                </label>
+                <Input
+                  value={formData.name}
+                  required
+                  onChange={(e) =>
+                    handleChange("name", e.target.value.replace(/^\s+/, ""))
+                  }
+                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
                 />
+                {errors.name && (
+                  <p className="text-xs text-admin-error mt-1">{errors.name}</p>
+                )}
               </div>
-            ))}
-          </div>
 
-          <div className="col-span-2 flex justify-end gap-3 pt-6 border-t">
-            <Link
-              href={`/admin/trips/${id}`}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+              <div className="space-y-4 col-span-1 sm:col-span-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                    Price Categories*
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPriceCategory}
+                    className="h-8 gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Add Category
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {formData.price_categories.map((cat, idx) => (
+                    <div key={idx} className="flex gap-3 items-start">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Category (e.g. Base Price)"
+                          value={cat.category}
+                          onChange={(e) =>
+                            handlePriceCategoryChange(
+                              idx,
+                              "category",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full text-sm bg-white border-slate-200"
+                        />
+                      </div>
+                      <div className="w-32 sm:w-40">
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <Input
+                            type="number"
+                            placeholder="Price"
+                            value={cat.price}
+                            onChange={(e) =>
+                              handlePriceCategoryChange(
+                                idx,
+                                "price",
+                                e.target.value,
+                              )
+                            }
+                            className="pl-9 w-full text-sm bg-white border-slate-200"
+                          />
+                        </div>
+                      </div>
+                      {formData.price_categories.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePriceCategory(idx)}
+                          className="text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-colors"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {errors.price_categories && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.price_categories}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Start Date*
+                </label>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                  <DatePicker
+                    selected={
+                      formData.start_date ? new Date(formData.start_date) : null
+                    }
+                    onChange={(date) =>
+                      handleChange(
+                        "start_date",
+                        date ? format(date, "yyyy-MM-dd") : "",
+                      )
+                    }
+                    minDate={new Date()}
+                    placeholderText="Pick a date"
+                    dateFormat="MMM d, yyyy"
+                    wrapperClassName="w-full"
+                    customInput={
+                      <Input
+                        readOnly
+                        inputMode="none"
+                        className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                      />
+                    }
+                  />
+                </div>
+                {errors.start_date && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.start_date}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  End Date*
+                </label>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                  <DatePicker
+                    selected={
+                      formData.end_date ? new Date(formData.end_date) : null
+                    }
+                    onChange={(date) =>
+                      handleChange(
+                        "end_date",
+                        date ? format(date, "yyyy-MM-dd") : "",
+                      )
+                    }
+                    minDate={
+                      formData.start_date
+                        ? new Date(
+                            Math.max(new Date(), new Date(formData.start_date)),
+                          )
+                        : new Date()
+                    }
+                    placeholderText="Pick a date"
+                    dateFormat="MMM d, yyyy"
+                    wrapperClassName="w-full"
+                    customInput={
+                      <Input
+                        readOnly
+                        inputMode="none"
+                        className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                      />
+                    }
+                  />
+                </div>
+                {errors.end_date && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.end_date}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Total Seats*
+                </label>
+                <Input
+                  type="number"
+                  value={formData.total_seats}
+                  onChange={(e) => handleChange("total_seats", e.target.value)}
+                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
+                />
+                {errors.total_seats && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.total_seats}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Difficulty*
+                </label>
+                <Select
+                  value={formData.difficulty || ""}
+                  onValueChange={(value) => handleChange("difficulty", value)}
+                >
+                  <SelectTrigger className="w-full text-sm bg-white border-slate-200 h-10 focus:ring-teal-500/20">
+                    <SelectValue placeholder="Select Difficulty" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    <SelectItem value="EASY">Easy</SelectItem>
+                    <SelectItem value="MODERATE">Moderate</SelectItem>
+                    <SelectItem value="HARD">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {errors.difficulty && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.difficulty}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Trip Type*
+                </label>
+                <Select
+                  value={formData.type_id?.toString() || ""}
+                  onValueChange={(value) => handleChange("type_id", value)}
+                >
+                  <SelectTrigger className="w-full text-sm bg-white border-slate-200 h-10 focus:ring-teal-500/20">
+                    <SelectValue placeholder="Select Trip Type" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {accumulatedTripTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id.toString()}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+
+                    {typePagination?.pages > 1 &&
+                      typePage < typePagination.pages && (
+                        <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
+                          <div
+                            className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
+                            onMouseEnter={() => {
+                              if (
+                                typePage < typePagination.pages &&
+                                !loadingTripTypes
+                              ) {
+                                setTypePage((prev) => prev + 1);
+                              }
+                            }}
+                          >
+                            <ChevronDown className="h-4 w-4 text-teal-600" />
+                          </div>
+                        </div>
+                      )}
+                  </SelectContent>
+                </Select>
+
+                {errors.type_id && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.type_id}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Hotel Category
+                </label>
+                <div className="flex items-center h-10 mt-1">
+                  <Rating
+                    value={formData.hotel_category}
+                    onChange={(val) => handleChange("hotel_category", val)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => handleChange("description", e.target.value)}
+                rows={4}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500/20 bg-white"
+              />
+              {errors.description && (
+                <p className="text-xs text-admin-error mt-1">
+                  {errors.description}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5 col-span-1 sm:col-span-2">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Cancellation Policy
+              </label>
+              <pre
+                contentEditable
+                onInput={() => setIsModified(true)}
+                onBlur={(e) => {
+                  const value = e.currentTarget.innerText;
+                  setFormData((prev) => ({
+                    ...prev,
+                    cancellation_policy: value,
+                  }));
+                  setIsModified(true);
+                }}
+                className="w-full min-h-[120px] p-4 text-sm border border-slate-200 rounded-lg bg-white overflow-auto whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-sans"
+                suppressContentEditableWarning={true}
+              >
+                {formData.cancellation_policy}
+              </pre>
+            </div>
+          </section>
+
+          {/* IMAGES */}
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Images
+            </h3>
+
+            <div className="space-y-4">
+              <div className="relative group">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                  className="w-full border-slate-200 bg-white hover:border-teal-500 file:bg-teal-50 file:text-teal-700 file:border-0 file:px-4 file:py-2 file:rounded-xl file:text-xs file:font-bold hover:file:bg-teal-100 transition-all cursor-pointer"
+                />
+                {uploadingImage && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2 bg-white/80 px-2 rounded-full">
+                    <Loader2 className="w-4 h-4 text-teal-600 animate-spin" />
+                    <span className="text-[10px] font-bold text-teal-700">
+                      UPLOADING
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-4 mt-6">
+                {formData.images.map((img, i) => (
+                  <div key={i} className="relative group/img">
+                    <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-slate-200 shadow-sm transition-transform group-hover/img:scale-105">
+                      <img
+                        src={img}
+                        alt={`Trip ${i + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/img:opacity-100 transition-opacity" />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteImage(i)}
+                      className="absolute -top-2 -right-2 bg-slate-900 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover/img:opacity-100 transition-all hover:bg-red-500"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {formData.images.length === 0 && (
+                  <div className="h-24 w-full flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50 text-slate-400 text-sm">
+                    No images uploaded yet
+                  </div>
+                )}
+              </div>
+            </div>
+            {errors.images && (
+              <p className="text-xs text-admin-error mt-1">{errors.images}</p>
+            )}
+          </section>
+
+          {/* INCLUSIONS */}
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Inclusions
+            </h3>
+
+            <div className="space-y-4">
+              {formData.inclusions.map((item, i) => (
+                <div key={i} className="flex gap-3 group">
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleArrayChange("inclusions", i, e.target.value)
+                    }
+                    className="flex-1 text-base bg-white border-slate-200 focus:ring-teal-500/20"
+                    placeholder="e.g., Accommodation"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem("inclusions", i)}
+                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    title="Remove inclusion"
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => addItem("inclusions")}
+                className="inline-flex items-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all active:scale-95 mt-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Inclusion
+              </button>
+            </div>
+            {errors.inclusions && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.inclusions}
+              </p>
+            )}
+          </section>
+
+          {/* EXCLUSIONS */}
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-slate-800 mb-6 sm:mb-8">
+              Exclusions
+            </h3>
+
+            <div className="space-y-4">
+              {formData.exclusions.map((item, i) => (
+                <div key={i} className="flex gap-3 group">
+                  <Input
+                    value={item}
+                    onChange={(e) =>
+                      handleArrayChange("exclusions", i, e.target.value)
+                    }
+                    className="flex-1 text-base bg-white border-slate-200 focus:ring-teal-500/20"
+                    placeholder="e.g., Personal Expenses"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeItem("exclusions", i)}
+                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                    title="Remove exclusion"
+                  >
+                    <FaTrash size={14} />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => addItem("exclusions")}
+                className="inline-flex items-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all active:scale-95 mt-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Exclusion
+              </button>
+            </div>
+            {errors.exclusions && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.exclusions}
+              </p>
+            )}
+          </section>
+
+          {/* ITINERARY */}
+          <section className="bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+              <h3 className="text-lg font-bold text-slate-800">Itinerary</h3>
+              <button
+                type="button"
+                onClick={addDay}
+                className="inline-flex items-center justify-center gap-2 text-sm font-bold text-teal-600 hover:text-teal-700 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                Add Day
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {formData.itinerary.map((day, dayIndex) => (
+                <div
+                  key={dayIndex}
+                  className="bg-slate-50/50 border border-slate-200 rounded-2xl p-4 sm:p-6 relative"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-slate-900 text-white text-xs font-bold px-2 py-1 rounded-md">
+                        DAY {day.day}
+                      </div>
+                      <h4 className="font-bold text-slate-800">
+                        Plan for Day {day.day}
+                      </h4>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = formData.itinerary.filter(
+                          (_, i) => i !== dayIndex,
+                        );
+                        const reIndexed = updated.map((d, i) => ({
+                          ...d,
+                          day: i + 1,
+                        }));
+                        setFormData((prev) => ({
+                          ...prev,
+                          itinerary: reIndexed,
+                        }));
+                      }}
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                      title="Remove day"
+                    >
+                      <FaTrash size={14} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {day.activities.map((act, i) => (
+                      <div key={i} className="flex gap-3 group">
+                        <Input
+                          value={act}
+                          required
+                          onChange={(e) =>
+                            handleItineraryChange(dayIndex, i, e.target.value)
+                          }
+                          className="flex-1 text-base bg-white border-slate-200 focus:ring-teal-500/20"
+                          placeholder={`Activity ${i + 1}`}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = [...formData.itinerary];
+                            updated[dayIndex].activities = updated[
+                              dayIndex
+                            ].activities.filter((_, index) => index !== i);
+
+                            if (updated[dayIndex].activities.length === 0) {
+                              updated[dayIndex].activities = [""];
+                            }
+
+                            setFormData((prev) => ({
+                              ...prev,
+                              itinerary: updated,
+                            }));
+                          }}
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        >
+                          <FaTrash size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => addActivity(dayIndex)}
+                    className="mt-4 text-xs font-bold text-teal-600 hover:text-teal-700 transition-colors uppercase tracking-wider"
+                  >
+                    + Add activity to day {day.day}
+                  </button>
+                </div>
+              ))}
+
+              {formData.itinerary.length === 0 && (
+                <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 text-slate-400 italic">
+                  No itinerary days added yet
+                </div>
+              )}
+            </div>
+            {errors.itinerary && (
+              <p className="text-admin-error text-xs font-medium animate-in fade-in slide-in-from-top-1 mt-2">
+                {errors.itinerary}
+              </p>
+            )}
+          </section>
+
+          {/* SUBMIT */}
+          <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-slate-200">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
             >
               Cancel
-            </Link>
+            </button>
+
             <button
               type="submit"
-              disabled={saving}
-              className="px-6 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              disabled={!isModified || saving || uploadingImage}
+              className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-linear-to-r from-teal-500 to-emerald-500 text-white text-sm font-semibold shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={16} />
-                  Save Changes
-                </>
+              {(saving || uploadingImage) && (
+                <Loader2 className="w-4 h-4 animate-spin" />
               )}
+              {saving ? "SAVING..." : "SAVE CHANGES"}
             </button>
           </div>
         </form>

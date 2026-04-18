@@ -26,114 +26,99 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { useToast } from "@/app/hooks/use-toast";
+import AdminGuard from "@/app/components/AdminGuard";
+import { useAdminAudit } from "@/app/hooks/use-admin-audit";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function AuditLogs() {
   const router = useRouter();
-
-  const [logs, setLogs] = useState([]);
-
-  const [search, setSearch] = useState("");
-  const [actionFilter, setActionFilter] = useState("all");
-
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
-
-  const [error, setError] = useState(null);
-
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-
-  const [entityType, setEntityType] = useState("all");
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { toast } = useToast();
 
-  const fetchLogs = useCallback(async () => {
-    const token = Cookies.get("token");
+  // Derive values from URL (Source of Truth)
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const actionFilter = searchParams.get("action") || "all";
+  const entityType = searchParams.get("entity_type") || "all";
+  const action = searchParams.get("action") || "all";
+  const fromDate = searchParams.get("from_date") || "";
+  const toDate = searchParams.get("to_date") || "";
+  const debouncedSearch = searchParams.get("search") || "";
 
-    if (!token) {
-      router.push("/");
-      return;
-    }
+  // Local state for immediate typing responsiveness
+  const [search, setSearch] = useState(debouncedSearch);
+  const [searchError, setSearchError] = useState("");
 
-    setLoading(true);
-    setError(null);
+  // Handle URL sync
+  const updateQuery = useCallback(
+    (updates) => {
+      const current = new URLSearchParams(searchParams.toString());
 
-    try {
-      const params = new URLSearchParams();
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          current.delete(key);
+        } else {
+          current.set(key, value);
+        }
+      });
 
-      if (search) params.append("search", search);
-
-      if (actionFilter !== "all") {
-        params.append("action", actionFilter);
+      // Always reset page to 1 when filters (other than page itself) change
+      if (!updates.page) {
+        current.set("page", "1");
       }
 
-      if (entityType !== "all") {
-        params.append("entity_type", entityType);
-      }
+      const currentQuery = searchParams.toString();
+      const newQuery = current.toString();
 
-      if (fromDate) params.append("from_date", fromDate);
-      if (toDate) params.append("to_date", toDate);
-
-      params.append("page", page.toString());
-      params.append("limit", limit.toString());
-
-      if (search) params.append("search", search);
-
-      if (actionFilter !== "all") {
-        params.append("action", actionFilter);
-      }
-
-      params.append("page", page.toString());
-      params.append("limit", limit.toString());
-
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/audit?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      // if (!res.ok) throw new Error("Failed to fetch audit logs");
-      if (!res.ok)
-        toast({
-          title: "Error",
-          description: "Failed to fetch audit logs",
-          variant: "destructive",
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
         });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setLogs(data.result.logs || []);
-
-        setTotalPages(data.result.pagination?.pages || 1);
-        setTotalItems(data.result.pagination?.total || 0);
-        setPage(data.result.pagination?.page || 1);
-        setLimit(data.result.pagination?.limit || 10);
       }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
-    }
-  }, [search, actionFilter, entityType, fromDate, toDate, page, limit, router]);
+    },
+    [searchParams, pathname, router],
+  );
 
+  // Debounce search update to URL
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    const timer = setTimeout(() => {
+      const value = search.trim();
+      if (value.length === 0 || value.length >= 2) {
+        setSearchError("");
+        if (value !== debouncedSearch) {
+          updateQuery({ search: value });
+        }
+      } else {
+        setSearchError("Search must be at least 2 characters");
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search, debouncedSearch, updateQuery]);
+
+  // Fetch using SWR
+  const { logs, pagination, isLoading, isError, error, mutate } = useAdminAudit(
+    {
+      search: debouncedSearch,
+      action: actionFilter,
+      entity_type: entityType,
+      action: action,
+      from_date: fromDate,
+      to_date: toDate,
+      page,
+      limit,
+    },
+  );
+
+  const totalPages = pagination?.pages || 1;
+  const totalItems = pagination?.total || 0;
+
+  // Synchronization logic moved to derivation and event handlers
 
   const actionBadge = (action) => {
     if (!action) return null;
@@ -181,32 +166,9 @@ function AuditLogs() {
     );
   };
 
-  const PageSkeleton = () => (
-    <div className="space-y-6 p-6">
-      <Skeleton className="h-8 w-48" />
+  if (isLoading && !logs.length) return <PageSkeleton />;
 
-      <div className="flex gap-2 flex-wrap">
-        <Skeleton className="h-10 w-80" />
-        <Skeleton className="h-10 w-40" />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          {Array.from({ length: 10 }).map((_, i) => (
-            <Skeleton key={i} className="h-6 w-full" />
-          ))}
-        </CardContent>
-      </Card>
-    </div>
-  );
-
-  if (initialLoading) return <PageSkeleton />;
-
-  if (error) {
+  if (isError) {
     return (
       <div className="p-6 text-red-500 flex gap-2">
         <AlertCircle />
@@ -216,7 +178,7 @@ function AuditLogs() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
       {/* Header */}
 
       <div>
@@ -228,207 +190,255 @@ function AuditLogs() {
 
       {/* Filters */}
 
-      <CardContent className="pt-2 flex gap-2 flex-wrap w-full">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-3 h-4 w-4" />
-          <Input
-            className="pl-10"
-            placeholder="Search actor / entity"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
+      <CardContent className="pt-2">
+        <div className="flex flex-col lg:flex-row gap-3 w-full">
+          {/* 🔍 Search */}
+          <div className="relative w-full lg:flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              className="pl-10 w-full"
+              placeholder="Search actor / entity"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+              }}
+            />
+          </div>
+
+          {/* 🎛 Filters */}
+          <div
+            className="
+        grid grid-cols-2 gap-3 w-full
+        lg:flex lg:flex-row lg:items-center lg:w-auto
+      "
+          >
+            <Select
+              value={entityType}
+              onValueChange={(value) => {
+                updateQuery({ entity_type: value });
+              }}
+            >
+              <SelectTrigger className="w-full lg:w-40">
+                <SelectValue placeholder="Entity" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">Entity</SelectItem>
+                <SelectItem value="trip">Trip</SelectItem>
+                <SelectItem value="user">User</SelectItem>
+                <SelectItem value="operator">Operator</SelectItem>
+                <SelectItem value="location">Location</SelectItem>
+                <SelectItem value="enquiry">Enquiry</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* <Select
+              value={action}
+              onValueChange={(value) => {
+                updateQuery({ action: value });
+              }}
+            >
+              <SelectTrigger className="w-full lg:w-40">
+                <SelectValue placeholder="Action" />
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">Action</SelectItem>
+                <SelectItem value="CREATE">Create</SelectItem>
+                <SelectItem value="UPDATE">Update</SelectItem>
+                <SelectItem value="DELETE">Delete</SelectItem>
+                <SelectItem value="LOGIN">Login</SelectItem>
+                <SelectItem value="LOGOUT">Logout</SelectItem>
+              </SelectContent>
+            </Select> */}
+
+            <Input
+              type={fromDate ? "date" : "text"}
+              placeholder="Start Date"
+              value={fromDate}
+              onFocus={(e) => (e.target.type = "date")}
+              onBlur={(e) => {
+                if (!e.target.value) e.target.type = "text";
+              }}
+              onChange={(e) => {
+                updateQuery({ from_date: e.target.value });
+              }}
+              className="w-full lg:w-40"
+            />
+
+            <Input
+              type={toDate ? "date" : "text"}
+              placeholder="End Date"
+              value={toDate}
+              onFocus={(e) => (e.target.type = "date")}
+              onBlur={(e) => {
+                if (!e.target.value) e.target.type = "text";
+              }}
+              onChange={(e) => {
+                updateQuery({ to_date: e.target.value });
+              }}
+              className="w-full lg:w-40"
+            />
+          </div>
         </div>
-
-        {/* <Select
-          value={actionFilter}
-          onValueChange={(value) => {
-            setPage(1);
-            setActionFilter(value);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Action" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">Action</SelectItem>
-            <SelectItem value="CREATE">Create</SelectItem>
-            <SelectItem value="UPDATE">Update</SelectItem>
-            <SelectItem value="LOCATION_DELETE">Delete</SelectItem>
-            <SelectItem value="USER_LOGIN">Login</SelectItem>
-          </SelectContent>
-        </Select> */}
-
-        <Select
-          value={entityType}
-          onValueChange={(value) => {
-            setPage(1);
-            setEntityType(value);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Entity" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">Entity</SelectItem>
-            <SelectItem value="trip">Trip</SelectItem>
-            <SelectItem value="user">User</SelectItem>
-            <SelectItem value="operator">Operator</SelectItem>
-            <SelectItem value="location">Location</SelectItem>
-            <SelectItem value="enquiry">Enquiry</SelectItem>
-          </SelectContent>
-        </Select>
-
-        {/* <Input
-          type="date"
-          className="w-44"
-          value={fromDate}
-          onChange={(e) => {
-            setPage(1);
-            setFromDate(e.target.value);
-          }}
-        /> */}
-        <Input
-          type={fromDate ? "date" : "text"}
-          placeholder="Start Date"
-          value={fromDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setFromDate(e.target.value);
-          }}
-          className="w-44 focus:outline-none focus:border-none placeholder:text-black"
-        />
-
-        {/* <Input
-          type="date"
-          className="w-44"
-          value={toDate}
-          onChange={(e) => {
-            setPage(1);
-            setToDate(e.target.value);
-          }}
-        /> */}
-
-        <Input
-          type={toDate ? "date" : "text"}
-          placeholder="End Date"
-          value={toDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setFromDate(e.target.value);
-          }}
-          className="w-44 focus:outline-none focus:border-none placeholder:text-black"
-        />
       </CardContent>
 
       {/* Loading */}
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
           <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
           <p className="text-gray-600 font-medium">Loading audit logs...</p>
         </div>
       ) : (
-        <Card>
-          <CardHeader>
+        <Card className="hidden sm:block border shadow-sm">
+          <CardHeader className="px-4 sm:px-6 pb-2">
             <CardTitle>All Logs ({totalItems})</CardTitle>
           </CardHeader>
 
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Entity</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Old Values</TableHead>
-                  <TableHead>New Values</TableHead>
-                  <TableHead>Actor</TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {logs.length === 0 && (
+          <CardContent className="px-4 sm:px-6 pt-2">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center py-10 text-muted-foreground"
-                    >
-                      No audit logs found
-                    </TableCell>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Entity</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Old Values</TableHead>
+                    <TableHead>New Values</TableHead>
+                    <TableHead>Actor</TableHead>
                   </TableRow>
-                )}
+                </TableHeader>
 
-                {logs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell>{actionBadge(log.action)}</TableCell>
-                    {/* <TableCell>{log.action}</TableCell> */}
+                <TableBody>
+                  {logs.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-10 text-muted-foreground"
+                      >
+                        No audit logs found
+                      </TableCell>
+                    </TableRow>
+                  )}
 
-                    <TableCell>{entityBadge(log.entity_type)}</TableCell>
+                  {logs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell>{actionBadge(log.action)}</TableCell>
+                      {/* <TableCell>{log.action}</TableCell> */}
 
-                    <TableCell>
-                      {new Date(log.createdAt).toLocaleString()}
-                    </TableCell>
+                      <TableCell>{entityBadge(log.entity_type)}</TableCell>
 
-                    <TableCell
-                      className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
-                      title={JSON.stringify(log.old_values)}
-                    >
-                      {log.old_values ? JSON.stringify(log.old_values) : "-"}
-                    </TableCell>
+                      <TableCell>
+                        {new Date(log.createdAt).toLocaleString()}
+                      </TableCell>
 
-                    <TableCell
-                      className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
-                      title={JSON.stringify(log.new_values)}
-                    >
-                      {log.new_values ? JSON.stringify(log.new_values) : "-"}
-                    </TableCell>
+                      <TableCell
+                        className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
+                        title={JSON.stringify(log.old_values)}
+                      >
+                        {log.old_values ? JSON.stringify(log.old_values) : "-"}
+                      </TableCell>
 
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span>{log.actor?.name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {log.actor?.email}
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                      <TableCell
+                        className="text-xs text-muted-foreground truncate max-w-50 cursor-pointer"
+                        title={JSON.stringify(log.new_values)}
+                      >
+                        {log.new_values ? JSON.stringify(log.new_values) : "-"}
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span>{log.actor?.name}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {log.actor?.email}
+                          </span>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}
 
+      {/* Mobile View: Cards */}
+      {!isLoading && !isError && logs.length > 0 && (
+        <div className="sm:hidden space-y-4 pt-2">
+          <div className="px-1 pb-2">
+            <h2 className="text-lg font-semibold">All Logs ({totalItems})</h2>
+          </div>
+          {logs.map((log) => (
+            <Card key={log.id} className="border shadow-sm p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex flex-col items-start gap-2">
+                  {actionBadge(log.action)}
+                  {entityBadge(log.entity_type)}
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{log.actor?.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {log.actor?.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm mt-3 border-t pt-3">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Date:</span>
+                  <span className="font-medium">
+                    {new Date(log.createdAt).toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="pt-2">
+                  <span className="text-muted-foreground text-xs block mb-1">
+                    Old Values:
+                  </span>
+                  <p className="text-[10px] font-mono bg-gray-50 p-2 rounded max-h-20 overflow-y-auto break-all">
+                    {log.old_values ? JSON.stringify(log.old_values) : "-"}
+                  </p>
+                </div>
+
+                <div className="pt-1">
+                  <span className="text-muted-foreground text-xs block mb-1">
+                    New Values:
+                  </span>
+                  <p className="text-[10px] font-mono bg-gray-50 p-2 rounded max-h-20 overflow-y-auto break-all">
+                    {log.new_values ? JSON.stringify(log.new_values) : "-"}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* Pagination */}
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+        {/* 📄 Info */}
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+          <span>
+            Showing {(page - 1) * limit + 1} to{" "}
+            {Math.min(page * limit, totalItems)} of {totalItems}
+          </span>
 
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-sm text-muted-foreground">
-          Showing {(page - 1) * limit + 1} to{" "}
-          {Math.min(page * limit, totalItems)} of {totalItems}
-        </span>
+          <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
 
-        <span className="px-3 py-1 text-center text-sm">
-          Page {page} of {totalPages}
-        </span>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+        </div>
 
-        <div className="flex gap-2">
+        {/* 🔘 Buttons */}
+        <div className="flex gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             disabled={page === 1}
-            onClick={() => setPage(page - 1)}
+            onClick={() => updateQuery({ page: (page - 1).toString() })}
+            className="flex-1 sm:flex-none"
           >
             Previous
           </Button>
@@ -436,7 +446,8 @@ function AuditLogs() {
           <Button
             variant="outline"
             disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
+            onClick={() => updateQuery({ page: (page + 1).toString() })}
+            className="flex-1 sm:flex-none"
           >
             Next
           </Button>
@@ -447,3 +458,26 @@ function AuditLogs() {
 }
 
 export default AuditLogs;
+
+const PageSkeleton = () => (
+  <div className="space-y-6 p-6">
+    <Skeleton className="h-8 w-48" />
+
+    <div className="flex gap-2 flex-wrap">
+      <Skeleton className="h-10 w-80" />
+      <Skeleton className="h-10 w-40" />
+    </div>
+
+    <Card>
+      <CardHeader>
+        <Skeleton className="h-6 w-40" />
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Skeleton key={i} className="h-6 w-full" />
+        ))}
+      </CardContent>
+    </Card>
+  </div>
+);

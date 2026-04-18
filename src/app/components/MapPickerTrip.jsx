@@ -1,4 +1,3 @@
-// app/components/MapPicker.js
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -73,12 +72,13 @@ export default function MapPicker({
         // if (!response.ok) {
         //   throw new Error("Reverse geocoding failed");
         // }
-        if (!res.ok) {
+        if (!response.ok) {
           toast({
             title: "Error",
             description: "Reverse geocoding failed",
             variant: "destructive",
           });
+          return;
         }
 
         const data = await response.json();
@@ -147,7 +147,9 @@ export default function MapPicker({
         // if (!response.ok) {
         //   throw new Error("Search failed");
         // }
-        if (!res.ok) {
+        const data = await response.json();
+
+        if (!response.ok) {
           toast({
             title: "Error",
             description: "Search failed",
@@ -155,7 +157,6 @@ export default function MapPicker({
           });
         }
 
-        const data = await response.json();
         setSearchResults(data);
 
         if (data.length === 0) {
@@ -256,7 +257,7 @@ export default function MapPicker({
 
         {/* Search Error */}
         {searchError && (
-          <div className="absolute left-4 right-4 mt-1 bg-red-50 border border-red-200 rounded-lg p-3 z-10">
+          <div className="absolute left-4 right-4 mt-1 bg-red-50 border border-red-200 rounded-lg p-3 z-999">
             <p className="text-sm text-red-600">{searchError}</p>
           </div>
         )}

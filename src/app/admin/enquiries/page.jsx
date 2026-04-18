@@ -43,141 +43,131 @@ import {
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { BiComment } from "react-icons/bi";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
+import AdminGuard from "@/app/components/AdminGuard";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
+import { AdminConfirmDialog } from "@/app/components/admin/AdminConfirmDialog";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function Enquiries() {
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [enquiryFilter, setEnquiryFilter] = useState("all");
-
-  const [enquiries, setEnquiries] = useState([]);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // pagination states
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-
-  // date filter states
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
-
-  const [debouncedSearch, setDebouncedSearch] = useState(search);
-
-  const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const { toast } = useToast();
 
-  const fetchEnquiries = useCallback(async () => {
-    const token = Cookies.get("token");
+  // Derive values from URL (Source of Truth)
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const statusFilter = searchParams.get("status")?.toLowerCase() || "all";
+  const enquiryFilter = searchParams.get("inquiry_type") || "all";
+  const fromDate = searchParams.get("from_date") || "";
+  const toDate = searchParams.get("to_date") || "";
+  const debouncedSearch = searchParams.get("search") || "";
 
-    if (!token) {
-      router.push("/");
-      return;
+  // Local state for immediate typing responsiveness
+  const [search, setSearch] = useState(debouncedSearch);
+  const [searchError, setSearchError] = useState("");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedEnquiryId, setSelectedEnquiryId] = useState(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [dialogConfig, setDialogConfig] = useState({
+    type: "delete",
+    title: "",
+    description: "",
+  });
+
+  // Handle URL sync
+  const updateQuery = useCallback((updates) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === "" || value === "all") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
+    });
+
+    // Always reset page to 1 when filters (other than page itself) change
+    if (!updates.page) {
+      params.set("page", "1");
     }
 
-    setLoading(true);
-    setError(null);
+    const currentQuery = searchParams.toString();
+    const newQuery = params.toString();
 
-    try {
-      const params = new URLSearchParams();
-
-      if (debouncedSearch) params.append("search", debouncedSearch);
-
-      if (statusFilter !== "all") {
-        params.append("status", statusFilter.toUpperCase());
-      }
-
-      if (enquiryFilter !== "all") {
-        params.append("inquiry_type", enquiryFilter);
-      }
-
-      if (fromDate) params.append("from_date", fromDate);
-      if (toDate) params.append("to_date", toDate);
-
-      params.append("page", page.toString());
-      params.append("limit", limit.toString());
-
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/enquiries/admin?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
-
-      // if (!res.ok) throw new Error("Failed to fetch enquiries");
-      if (!res.ok)
-        toast({
-          title: "Error",
-          description: "Failed to fetch enquiries",
-          variant: "destructive",
-        });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setEnquiries(data.result.data || []);
-        setTotalPages(data.result.pagination?.pages || 1);
-        setTotalItems(data.result.pagination?.total || 0);
-        setPage(data.result.pagination?.page || 1);
-        setLimit(data.result.pagination?.limit || 10);
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-      setInitialLoading(false); // ✅ important
+    if (currentQuery !== newQuery) {
+      router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, { scroll: false });
     }
-  }, [
-    debouncedSearch,
-    statusFilter,
-    enquiryFilter,
-    page,
-    limit,
-    fromDate,
-    toDate,
-    router,
-  ]);
+  }, [searchParams, pathname, router]);
 
+  // Debounce search update to URL
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-      setPage(1);
+      const value = search.trim();
+      if (value.length === 0 || value.length >= 2) {
+        setSearchError("");
+        if (value !== debouncedSearch) {
+          updateQuery({ search: value });
+        }
+      } else {
+        setSearchError("Search must be at least 2 characters");
+      }
     }, 500);
-
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, debouncedSearch, updateQuery]);
 
-  useEffect(() => {
-    const token = Cookies.get("token");
+  // 1. Build Query String
+  const params = new URLSearchParams();
+  if (debouncedSearch) params.append("search", debouncedSearch);
+  if (statusFilter !== "all") params.append("status", statusFilter.toUpperCase());
+  if (enquiryFilter !== "all") params.append("inquiry_type", enquiryFilter);
+  if (fromDate) params.append("from_date", fromDate);
+  if (toDate) params.append("to_date", toDate);
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
 
-    if (!token) {
-      router.push("/");
-      return;
-    }
+  const url = `${BASE_URL}/api/${API_VERSION}/enquiries/admin?${params.toString()}`;
 
-    fetchEnquiries();
-  }, [fetchEnquiries, router]);
+  // 2. Fetch using SWR
+  const { data, error: fetchError, isLoading, mutate: refreshEnquiries } = useSWR(url, adminFetcher, {
+    keepPreviousData: true
+  });
 
-  const handleDelete = async (id) => {
+  const enquiries = data?.result?.data || [];
+  const totalPages = data?.result?.pagination?.pages || 1;
+  const totalItems = data?.result?.pagination?.total || 0;
+  const loading = isLoading;
+  const initialLoading = isLoading && !data;
+  const error = fetchError?.message || null;
+
+  // Synchronization logic moved to derivation and individual event handlers
+
+  const handleDelete = (id) => {
+    setSelectedEnquiryId(id);
+    setDialogConfig({
+      type: "delete",
+      title: "Delete Enquiry",
+      description: "Are you sure you want to delete this enquiry? This action cannot be undone.",
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!selectedEnquiryId) return;
     const token = Cookies.get("token");
     if (!token) return;
 
-    if (!confirm("Are you sure you want to delete this enquiry?")) return;
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${selectedEnquiryId}`,
         {
           method: "DELETE",
           headers: {
@@ -186,15 +176,16 @@ function Enquiries() {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to delete enquiry");
-      // }
-      if (!res.ok)
+      const data = await res.json();
+
+      if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to delete enquiry",
+          description: data?.error?.message || "Failed to delete enquiry",
           variant: "destructive",
         });
+        return;
+      }
 
       toast({
         title: "Enquiry Deleted",
@@ -202,25 +193,43 @@ function Enquiries() {
         variant: "success",
       });
 
-      fetchEnquiries();
+      if (enquiries.length === 1 && page > 1) {
+        updateQuery({ page: (page - 1).toString() });
+      } else {
+        refreshEnquiries();
+      }
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
-  const handleCloseEnquiry = async (id) => {
+  const handleCloseEnquiry = (id) => {
+    setSelectedEnquiryId(id);
+    setDialogConfig({
+      type: "close",
+      title: "Close Enquiry",
+      description: "Are you sure you want to close this enquiry?",
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeCloseEnquiry = async () => {
+    if (!selectedEnquiryId) return;
     const token = Cookies.get("token");
     if (!token) return;
 
-    if (!confirm("Are you sure you want to close this enquiry?")) return;
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
+        `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${selectedEnquiryId}`,
         {
           method: "PUT",
           headers: {
@@ -231,15 +240,16 @@ function Enquiries() {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to close enquiry");
-      // }
-      if (!res.ok)
+      const data = await res.json();
+
+      if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to close enquiry",
+          description: data?.error?.message || "Failed to close enquiry",
           variant: "destructive",
         });
+        return;
+      }
 
       toast({
         title: "Enquiry Closed",
@@ -247,13 +257,16 @@ function Enquiries() {
         variant: "success",
       });
 
-      fetchEnquiries();
+      refreshEnquiries();
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -266,6 +279,46 @@ function Enquiries() {
       </div>
     );
   }
+
+  const renderActions = (enquiry) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={`/admin/enquiries/${enquiry.id}`}>
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </Link>
+        </DropdownMenuItem>
+
+        {enquiry.status.toLowerCase() !== "closed" && (
+          <DropdownMenuItem
+            onSelect={() => {
+              handleCloseEnquiry(enquiry.id);
+            }}
+          >
+            <CheckCircle className="mr-2" size={15} />
+            Mark as Closed
+          </DropdownMenuItem>
+        )}
+
+        <DropdownMenuItem
+          onSelect={() => {
+            handleDelete(enquiry.id);
+          }}
+          className="text-red-600"
+        >
+          <Trash className="mr-2" size={15} />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   const PageSkeleton = () => (
     <div className="space-y-6 p-6">
@@ -337,163 +390,270 @@ function Enquiries() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-3xl font-bold">Enquiries</h1>
-        <p className="text-muted-foreground">Manage all traveller enquiries</p>
-      </div>
-      {/* Filters */}
-      {/* <Card> */}
-      <CardContent className="pt-2 flex gap-2 flex-wrap w-full">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-3 h-4 w-4" />
-          <Input
-            className="pl-10"
-            placeholder="Search"
-            value={search}
-            onChange={(e) => {
-              setPage(1);
-              setSearch(e.target.value);
-            }}
-          />
-        </div>
-
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => {
-            setPage(1);
-            setStatusFilter(value);
-          }}
-        >
-          <SelectTrigger className="w-40">
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">Status</SelectItem>
-            <SelectItem value="new">New</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="closed">Closed</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select
-          value={enquiryFilter}
-          onValueChange={(value) => {
-            setPage(1);
-            setEnquiryFilter(value);
-          }}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Inquiry Type" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="all">Enquiry Type</SelectItem>
-            <SelectItem value="GENERAL">General</SelectItem>
-            <SelectItem value="TRIP">Trip</SelectItem>
-            <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
-            <SelectItem value="SUPPORT">Support</SelectItem>
-            <SelectItem value="FEEDBACK">Feedback</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Input
-          type={fromDate ? "date" : "text"}
-          placeholder="Start Date"
-          value={fromDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setFromDate(e.target.value);
-          }}
-          className="w-40 focus:outline-none focus:border-none placeholder:text-black"
-        />
-
-        <Input
-          type={toDate ? "date" : "text"}
-          placeholder="End Date"
-          value={toDate}
-          onFocus={(e) => (e.target.type = "date")}
-          onBlur={(e) => {
-            if (!e.target.value) e.target.type = "text";
-          }}
-          onChange={(e) => {
-            setPage(1);
-            setToDate(e.target.value);
-          }}
-          className="w-40 focus:outline-none focus:border-none placeholder:text-black"
-        />
-      </CardContent>
-      {/* </Card> */}
-
-      {!loading && !error && enquiries.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
-          <BiComment className="w-12 h-12 text-gray-400 mb-4" />
-          <p className="text-gray-600 font-medium">No Enquiries found</p>
-          <p className="text-sm text-gray-400 mt-1">
-            {search && "No enquiries match your search criteria"}
+    <>
+      <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
+        <div>
+          <h1 className="text-3xl font-bold">Enquiries</h1>
+          <p className="text-muted-foreground">
+            Manage all traveller enquiries
           </p>
         </div>
-      ) : loading ? (
-        <div className="space-y-6 p-6">
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
-              <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
-              <p className="text-gray-600 font-medium">Loading enquiries...</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Please wait while we fetch your data
-              </p>
+        {/* Filters */}
+        {/* <Card> */}
+        <CardContent className="pt-2">
+          <div className="flex flex-col lg:flex-row gap-3 w-full">
+            {/* 🔍 Search */}
+            <div className="relative w-full lg:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                className="pl-10 w-full"
+                placeholder="Search"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                }}
+              />
             </div>
-          </CardContent>
-        </div>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>All Enquiries ({totalItems})</CardTitle>
-          </CardHeader>
 
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Enquiry Type</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
+            {/* 🎛 Filters */}
+            <div
+              className="
+        grid grid-cols-2 gap-3 w-full
+        lg:flex lg:flex-row lg:items-center lg:w-auto
+      "
+            >
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => {
+                  updateQuery({ status: value });
+                }}
+              >
+                <SelectTrigger className="w-full lg:w-36">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Status</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
 
-              <TableBody>
-                {enquiries.map((enquiry) => (
-                  <TableRow key={enquiry.id}>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium">{enquiry.full_name}</span>
-                        <span className="text-sm text-muted-foreground">
-                          {formatPhoneNumber(enquiry.phone_number)}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
+              <Select
+                value={enquiryFilter}
+                onValueChange={(value) => {
+                  updateQuery({ inquiry_type: value });
+                }}
+              >
+                <SelectTrigger className="w-full lg:w-44">
+                  <SelectValue placeholder="Inquiry Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Enquiry Type</SelectItem>
+                  <SelectItem value="GENERAL">General</SelectItem>
+                  <SelectItem value="TRIP">Trip</SelectItem>
+                  <SelectItem value="PARTNERSHIP">Partnership</SelectItem>
+                  <SelectItem value="SUPPORT">Support</SelectItem>
+                  <SelectItem value="FEEDBACK">Feedback</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Input
+                type={fromDate ? "date" : "text"}
+                placeholder="Start Date"
+                value={fromDate}
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!e.target.value) e.target.type = "text";
+                }}
+                onChange={(e) => {
+                  updateQuery({ from_date: e.target.value });
+                }}
+                className="w-full lg:w-40"
+              />
+
+              <Input
+                type={toDate ? "date" : "text"}
+                placeholder="End Date"
+                value={toDate}
+                onFocus={(e) => (e.target.type = "date")}
+                onBlur={(e) => {
+                  if (!e.target.value) e.target.type = "text";
+                }}
+                onChange={(e) => {
+                  updateQuery({ to_date: e.target.value });
+                }}
+                className="w-full lg:w-40"
+              />
+            </div>
+          </div>
+        </CardContent>
+        {/* </Card> */}
+
+        {!loading && !error && enquiries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 bg-gray-50">
+            <BiComment className="w-12 h-12 text-gray-400 mb-4" />
+            <p className="text-gray-600 font-medium">No Enquiries found</p>
+            <p className="text-sm text-gray-400 mt-1">
+              {search && "No enquiries match your search criteria"}
+            </p>
+          </div>
+        ) : loading ? (
+          <div className="space-y-6 p-6">
+            <CardContent>
+              <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
+                <Loader2 className="w-8 h-8 text-teal-500 animate-spin mb-4" />
+                <p className="text-gray-600 font-medium">
+                  Loading enquiries...
+                </p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Please wait while we fetch your data
+                </p>
+              </div>
+            </CardContent>
+          </div>
+        ) : (
+          <Card className="hidden sm:block border shadow-sm">
+            <CardHeader className="px-4 sm:px-6 pb-2">
+              <CardTitle>All Enquiries ({totalItems})</CardTitle>
+            </CardHeader>
+
+            <CardContent className="px-4 sm:px-6 pt-2">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-40 whitespace-nowrap">
+                        Name
+                      </TableHead>
+                      <TableHead>Enquiry Type</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead />
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {enquiries.map((enquiry) => (
+                      <TableRow key={enquiry.id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {enquiry.full_name}
+                            </span>
+                            <span className="text-sm text-muted-foreground">
+                              <a href={`tel:${getDialablePhone(enquiry.phone_number)}`}>
+                                {formatPhoneNumber(enquiry.phone_number)}
+                              </a>
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {enquiry.inquiry_type ? (
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                enquiry.inquiry_type === "GENERAL"
+                                  ? "bg-blue-100 text-blue-500"
+                                  : enquiry.inquiry_type === "TRIP"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : enquiry.inquiry_type === "PARTNERSHIP"
+                                      ? "bg-green-100 text-green-700"
+                                      : enquiry.inquiry_type === "FEEDBACK"
+                                        ? "bg-red-100 text-red-700"
+                                        : "bg-gray-100 text-gray-700"
+                              }`}
+                            >
+                              {enquiry.inquiry_type
+                                .replace("_", " ")
+                                .toLowerCase()
+                                .replace(/\b\w/g, (c) => c.toUpperCase())}
+                            </span>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+
+                        <TableCell>
+                          <a
+                            href={`mailto:${enquiry.email}`}
+                            className="truncate cursor-pointer"
+                            title={enquiry.email}
+                          >
+                            {enquiry.email}
+                          </a>
+                        </TableCell>
+
+                        <TableCell>
+                          {new Date(enquiry.createdAt).toLocaleDateString()}
+                        </TableCell>
+
+                        <TableCell>
+                          <StatusBadge status={enquiry.status.toLowerCase()} />
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          {renderActions(enquiry)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Mobile View: Cards */}
+        {!loading && !error && enquiries.length > 0 && (
+          <div className="sm:hidden space-y-4 pt-2">
+            <div className="px-1 pb-2">
+              <h2 className="text-lg font-semibold">
+                All Enquiries ({totalItems})
+              </h2>
+            </div>
+            {enquiries.map((enquiry) => (
+              <Card key={enquiry.id} className="border shadow-sm p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {enquiry.full_name}
+                    </h3>
+                    <a
+                      href={`tel:${getDialablePhone(enquiry.phone_number)}`}
+                      className="text-sm text-muted-foreground block font-medium mt-1"
+                    >
+                      {formatPhoneNumber(enquiry.phone_number)}
+                    </a>
+                    <a
+                      href={`mailto:${enquiry.email}`}
+                      className="text-sm text-primary block mt-1"
+                    >
+                      {enquiry.email}
+                    </a>
+                  </div>
+                  <div>
+                    <StatusBadge status={enquiry.status.toLowerCase()} />
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm mt-4 border-t pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span>
                       {enquiry.inquiry_type ? (
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          className={`px-2 py-1 rounded-full text-[11px] font-medium ${
                             enquiry.inquiry_type === "GENERAL"
-                              ? "bg-blue-100 text-blue-500"
+                              ? "bg-blue-100 text-blue-700"
                               : enquiry.inquiry_type === "TRIP"
-                                ? "bg-yellow-100 text-yellow-700"
+                                ? "bg-yellow-100 text-yellow-800"
                                 : enquiry.inquiry_type === "PARTNERSHIP"
-                                  ? "bg-green-100 text-green-700"
+                                  ? "bg-green-100 text-green-800"
                                   : enquiry.inquiry_type === "FEEDBACK"
-                                    ? "bg-red-100 text-red-700"
-                                    : "bg-gray-100 text-gray-700"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {enquiry.inquiry_type
@@ -504,91 +664,74 @@ function Enquiries() {
                       ) : (
                         "-"
                       )}
-                    </TableCell>
-
-                    <TableCell>{enquiry.email}</TableCell>
-
-                    <TableCell>
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Date:</span>
+                    <span className="font-medium">
                       {new Date(enquiry.createdAt).toLocaleDateString()}
-                    </TableCell>
+                    </span>
+                  </div>
+                </div>
 
-                    <TableCell>
-                      <StatusBadge status={enquiry.status.toLowerCase()} />
-                    </TableCell>
+                <div className="mt-4 flex gap-2 w-full justify-end">
+                  {renderActions(enquiry)}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
 
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal />
-                          </Button>
-                        </DropdownMenuTrigger>
+        {/* Pagination */}
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-4">
+          {/* 📄 Info */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+            <span>
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, totalItems)} of {totalItems}
+            </span>
 
-                        <DropdownMenuContent>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/admin/enquiries/${enquiry.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View Details
-                            </Link>
-                          </DropdownMenuItem>
+            <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
 
-                          {enquiry.status.toLowerCase() !== "closed" && (
-                            <DropdownMenuItem
-                              onClick={() => handleCloseEnquiry(enquiry.id)}
-                            >
-                              <CheckCircle className="mr-2" size={15} />
-                              Mark as Closed
-                            </DropdownMenuItem>
-                          )}
+            <span>
+              Page {page} of {totalPages}
+            </span>
+          </div>
 
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(enquiry.id)}
-                            className="text-red-600"
-                          >
-                            <Trash className="mr-2" size={15} />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+          {/* 🔘 Buttons */}
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => updateQuery({ page: (page - 1).toString() })}
+              className="flex-1 sm:flex-none"
+            >
+              Previous
+            </Button>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4">
-        <span className="text-sm text-muted-foreground">
-          Showing {(page - 1) * limit + 1} to{" "}
-          {Math.min(page * limit, totalItems)} of {totalItems}
-        </span>
-
-        <span className="px-3 py-1 text-center text-sm">
-          Page {page} of {totalPages}
-        </span>
-
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Previous
-          </Button>
-
-          <Button
-            variant="outline"
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-          >
-            Next
-          </Button>
+            <Button
+              variant="outline"
+              disabled={page === totalPages}
+              onClick={() => updateQuery({ page: (page + 1).toString() })}
+              className="flex-1 sm:flex-none"
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+      <AdminConfirmDialog
+        isOpen={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        confirmText={dialogConfig.type === "delete" ? "Delete Enquiry" : "Close Enquiry"}
+        cancelText="Cancel"
+        onConfirm={dialogConfig.type === "delete" ? executeDelete : executeCloseEnquiry}
+        variant={dialogConfig.type === "delete" ? "destructive" : "default"}
+        isLoading={isActionLoading}
+      />
+    </>
   );
 }
 

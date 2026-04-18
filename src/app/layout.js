@@ -35,7 +35,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en">
       <body>
         {children}
         <Toaster />

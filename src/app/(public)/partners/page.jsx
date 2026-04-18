@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
+import PhoneInput from "@/app/components/ui/PhoneInput";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import {
@@ -17,6 +18,7 @@ import {
   Headphones,
 } from "lucide-react";
 import { useToast } from "@/app/hooks/use-toast";
+import { useOnlineStatus } from "@/app/hooks/use-online-status";
 
 const benefits = [
   {
@@ -94,6 +96,29 @@ const stats = [
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const slowScrollTo = (targetId, duration = 1800) => {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const targetY = target.getBoundingClientRect().top + window.scrollY;
+  const startY = window.scrollY;
+  const diff = targetY - startY;
+  let startTime = null;
+  // Disable CSS smooth-scroll to prevent browser double-animating our scrollTo calls
+  document.documentElement.style.scrollBehavior = "auto";
+  const step = (timestamp) => {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    window.scrollTo(0, startY + diff * progress);
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      document.documentElement.style.scrollBehavior = "";
+    }
+  };
+  requestAnimationFrame(step);
+};
+
 export default function Partner() {
   const [formData, setFormData] = useState({
     companyName: "",
@@ -108,7 +133,13 @@ export default function Partner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const handlePhoneValidation = useCallback(
+    (valid) => setIsPhoneValid(valid),
+    [],
+  );
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   const validateForm = () => {
     const newErrors = {};
@@ -127,12 +158,8 @@ export default function Partner() {
       newErrors.email = "Enter a valid email address";
     }
 
-    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!phoneRegex.test(formData.phone.trim())) {
-      newErrors.phone = "Enter valid phone number";
+    if (!isPhoneValid) {
+      newErrors.phone = "Enter a valid phone number";
     }
 
     if (!formData.tripCount) {
@@ -155,8 +182,8 @@ export default function Partner() {
 
     if (!aboutText) {
       newErrors.about = "Business description is required";
-    } else if (aboutText.length < 50) {
-      newErrors.about = `Description must be at least 50 characters (${aboutText.length}/50)`;
+    } else if (aboutText.length < 25) {
+      newErrors.about = `Description must be at least 25 characters (${aboutText.length}/25)`;
     }
 
     setErrors(newErrors);
@@ -183,20 +210,18 @@ export default function Partner() {
 
     try {
       const payload = {
-        name: formData.companyName,
-        contact_name: formData.contactName,
-        email: formData.email,
-        phone_number: cleanedPhone,
-        website_url: formData.website,
+        name: formData.companyName || "",
+        contact_name: formData.contactName || "",
+        email: formData.email || "",
+        phone_number: cleanedPhone || "",
+        website_url: formData.website || "",
         trips_per_year: Number(formData.tripCount) || 0,
-        regions: formData.regions
+        regions: (formData.regions || "")
           .split(",")
           .map((r) => r.trim())
           .filter(Boolean),
-        business_description: formData.about,
+        business_description: formData.about || "",
       };
-
-      console.log("req", payload);
 
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/operators/apply`,
@@ -236,6 +261,7 @@ export default function Partner() {
           description: message,
           variant: "destructive",
         });
+        return;
       }
 
       // Success
@@ -304,11 +330,7 @@ export default function Partner() {
 
             <Button
               className="btn-primary text-body px-8 py-6"
-              onClick={() =>
-                document
-                  .getElementById("apply")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
+              onClick={() => slowScrollTo("apply")}
             >
               Apply to Join
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -414,8 +436,8 @@ export default function Partner() {
                 Partner Application
               </h2>
               <p className="text-body text-muted-foreground">
-                Fill out the form below and our team will get back to you within
-                48 hours.
+                Fill out the form below and our team will get back to you
+                shortly.
               </p>
             </div>
 
@@ -429,8 +451,7 @@ export default function Partner() {
                 </h3>
                 <p className="text-body text-muted-foreground mb-6">
                   Thank you for your interest in partnering with TripTribe. Our
-                  team will review your application and reach out within 48
-                  hours.
+                  team will review your application and reach out soon.
                 </p>
                 <Button
                   onClick={() => setIsSubmitted(false)}
@@ -520,34 +541,27 @@ export default function Partner() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <Label htmlFor="phone">Phone Number *</Label>
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                        +91
-                      </span>
-                      <Input
-                        id="phone"
-                        value={formData.phone}
-                        // onChange={(e) =>
-                        //   setFormData({ ...formData, phone: e.target.value })
-                        // }
-                        onChange={(e) => {
-                          const digits = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 10);
-                          setFormData({ ...formData, phone: digits });
+                    <PhoneInput
+                      className="h-12"
+                      value={formData.phone}
+                      onChange={(phone) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone: phone,
+                        }));
 
-                          if (errors.phone) {
-                            setErrors({ ...errors, phone: "" });
-                          }
-                        }}
-                        placeholder="98765 43210"
-                        className={`pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
-                        // required
-                      />
-                    </div>
-                    {errors.phone && (
-                      <p className="text-sm text-admin-error">{errors.phone}</p>
-                    )}
+                        if (errors.phone) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.phone;
+                            return updated;
+                          });
+                        }
+                      }}
+                      onValidationChange={handlePhoneValidation}
+                      error={errors.phone}
+                      placeholder="Enter phone number"
+                    />
                   </div>
                 </div>
 
@@ -661,9 +675,13 @@ export default function Partner() {
                 <Button
                   type="submit"
                   className="btn-primary w-full py-6"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isOnline}
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                  {!isOnline
+                    ? "No Internet Connection"
+                    : isSubmitting
+                      ? "Submitting..."
+                      : "Submit Application"}
                 </Button>
 
                 <p className="text-body-sm text-muted-foreground text-center">
@@ -677,7 +695,7 @@ export default function Partner() {
       </section>
 
       {/* Testimonial */}
-      <section className="section bg-primary text-primary-foreground">
+      {/* <section className="section bg-primary text-primary-foreground">
         <div className="container-premium">
           <div className="max-w-3xl mx-auto text-center">
             <div className="flex items-center justify-center gap-1 mb-6">
@@ -698,7 +716,7 @@ export default function Partner() {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
     </>
   );
 }

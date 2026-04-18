@@ -1,7 +1,12 @@
 "use client";
 
-import AdminGuard from "@/app/components/AdminGuard";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { SlLocationPin } from "react-icons/sl";
 import { LuTag } from "react-icons/lu";
 import dynamic from "next/dynamic";
@@ -17,18 +22,52 @@ import {
   Plus,
 } from "lucide-react";
 import Cookies from "js-cookie";
-import { IoCloseSharp } from "react-icons/io5";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useToast } from "@/app/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/app/components/ui/select";
+import useLocations from "@/app/hooks/use-locations";
+import {
+  useAdminLocations,
+  useAdminTripTypes,
+} from "@/app/hooks/use-admin-settings";
+import { AdminConfirmDialog } from "@/app/components/admin/AdminConfirmDialog";
+import { IoCloseSharp } from "react-icons/io5";
+
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const formatName = (value) => {
+  return value
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
 function Page() {
-  const [activeTab, setActiveTab] = useState("destinations");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const activeTab = searchParams.get("tab") || "destinations";
   const { toast } = useToast();
 
+  const handleTabChange = (tab) => {
+    const params = new URLSearchParams(); // Fresh params for the new tab
+    params.set("tab", tab);
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   return (
-    <AdminGuard>
-      <div className="px-5 py-10 flex flex-col gap-5">
+    <>
+      <div className="p-3 py-6 sm:p-6 sm:py-10 flex flex-col gap-5">
         <div>
           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
           <p className="text-muted-foreground mt-1">
@@ -43,7 +82,7 @@ function Page() {
                 ? "bg-white shadow-sm"
                 : "hover:bg-gray-200"
             }`}
-            onClick={() => setActiveTab("destinations")}
+            onClick={() => handleTabChange("destinations")}
           >
             <SlLocationPin size={18} />
             Destinations
@@ -55,7 +94,7 @@ function Page() {
                 ? "bg-white shadow-sm"
                 : "hover:bg-gray-200"
             }`}
-            onClick={() => setActiveTab("categories")}
+            onClick={() => handleTabChange("categories")}
           >
             <LuTag size={18} />
             Categories
@@ -64,162 +103,200 @@ function Page() {
 
         {activeTab === "destinations" ? <Destinations /> : <Categories />}
       </div>
-    </AdminGuard>
+    </>
   );
 }
 
 //////////////////// DESTINATIONS ////////////////////
 
 function Destinations() {
-  const [destinations, setDestinations] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
-  const getAllDestinations = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const [showModal, setShowModal] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
-      const token = typeof window !== "undefined" ? Cookies.get("token") : null;
+  // Derive from URL
+  const page = Number(searchParams.get("page")) || 1;
+  const region = searchParams.get("region") || "";
+  const limit = 10;
 
-      if (!token) {
-        setError("Authentication token missing");
-        return;
+  // Handle URL sync
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      if (!updates.page) {
+        params.set("page", "1");
       }
 
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to fetch destinations");
-      // }
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch destinations",
-          variant: "destructive",
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
         });
       }
+    },
+    [searchParams, pathname, router],
+  );
 
-      const data = await res.json();
+  // Fetch using SWR
+  const { locations, pagination, isLoading, error, mutate } = useAdminLocations(
+    {
+      page,
+      limit,
+      region: region === "all" ? "" : region,
+    },
+  );
 
-      // Safe API parsing
-      const locations = data?.result?.locations ?? [];
+  const totalPages = pagination?.pages || 1;
+  const totalItems = pagination?.total || 0;
 
-      setDestinations(locations);
-    } catch (err) {
-      console.error(err);
-      setError("Failed to load destinations");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Optimized regions list (fetch all once to populate dropdown)
+  const { locations: allLocations } = useAdminLocations({ limit: 1000 });
+  const regionsList = useMemo(() => {
+    const uni = Array.from(
+      new Set(
+        allLocations
+          .map((loc) => loc.region?.trim())
+          .filter(Boolean)
+          .map((r) => formatName(r)),
+      ),
+    ).sort();
+    return uni;
+  }, [allLocations]);
 
-  const deleteDestination = async (locationId) => {
+  const deleteDestination = (locationId) => {
+    setSelectedLocationId(locationId);
+    setConfirmDialogOpen(true);
+  };
+
+  const executeDeleteDestination = async () => {
+    if (!selectedLocationId) return;
+
     try {
       const token = Cookies.get("token");
-
       if (!token) {
         toast({
-          title: "Authentication Token",
-          description: "Authentication Token Missing!",
+          title: "Auth Error",
+          description: "Token Missing!",
+          variant: "destructive",
         });
         return;
       }
 
-      const confirmDelete = window.confirm(
-        "Are you sure you want to delete this destination?",
-      );
-
-      if (!confirmDelete) return;
+      setIsActionLoading(true);
 
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/locations/admin/${locationId}`,
+        `${BASE_URL}/api/${API_VERSION}/locations/admin/${selectedLocationId}`,
         {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         },
       );
 
       const data = await res.json().catch(() => null);
 
-      // ✅ 🔥 HANDLE VALIDATION ERROR FIRST (no throw)
       if (data?.error?.code === "VALIDATION_ERROR") {
         toast({
           title: "Cannot Delete",
           description:
-            data?.error?.message ||
-            "Trips exist for this destination. Delete trips first.",
-          variant: "destructive",
-        });
-        return; // ❌ STOP here
-      }
-
-      // ❗ other API errors
-      if (!res.ok || !data?.success) {
-        toast({
-          title: "Error",
-          description:
-            data?.error?.message ||
-            data?.message ||
-            "Failed to delete destination",
+            data?.error?.message || "Trips exist for this destination.",
           variant: "destructive",
         });
         return;
       }
 
-      // ✅ Success
-      setDestinations((prev) => prev.filter((item) => item.id !== locationId));
+      if (!res.ok || !data?.success) {
+        toast({
+          title: "Error",
+          description: data?.error?.message || "Failed to delete destination",
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success",
         description: "Destination deleted successfully",
+        variant: "success",
       });
+      mutate();
+      setConfirmDialogOpen(false);
     } catch (error) {
       console.error(error);
-
-      // ❗ Only unexpected errors land here
       toast({
         title: "Something went wrong",
         description: "Please try again later",
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
-  useEffect(() => {
-    getAllDestinations();
-  }, [getAllDestinations]);
+  // Logic moved to derivations and event handlers
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex justify-between">
-        <p className="text-[#65758b]">
+        <p className="text-[#65758b] hidden md:visible">
           Manage travel destinations displayed on the platform
         </p>
 
-        {/* <Button label="Add Destination" fnClose={() => setShowModal(true)} /> */}
-        <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Destination
-        </Button>
+        <div className="w-full flex justify-end">
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Select
+              value={region || "all"}
+              onValueChange={(value) => {
+                updateQuery({ region: value === "all" ? "" : value });
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Select Region">
+                  {region || "All Regions"}
+                </SelectValue>
+              </SelectTrigger>
+
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+
+                {regionsList.map((reg) => (
+                  <SelectItem key={reg} value={reg}>
+                    {reg}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              onClick={() => setShowModal(true)}
+              className="w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Destination
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {loading && <DestinationSkeleton />}
+      {isLoading && <DestinationSkeleton />}
 
       {/* Enhanced Error State */}
-      {error && !loading && (
+      {error && !isLoading && (
         <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
           <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
           <p className="text-red-600 font-medium">
@@ -237,7 +314,7 @@ function Destinations() {
       )}
 
       {/* Enhanced Empty State */}
-      {!loading && !error && destinations.length === 0 && (
+      {!isLoading && !error && locations.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-lg border border-gray-200">
           <MapPin className="w-12 h-12 text-gray-400 mb-4" />
           <p className="text-gray-600 font-medium">No destinations found</p>
@@ -253,10 +330,10 @@ function Destinations() {
         </div>
       )}
 
-      {/* Table */}
-      {!loading && !error && destinations.length > 0 && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
-          <div className="grid grid-cols-[2.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
+      {/* Desktop Table */}
+      {!isLoading && !error && locations.length > 0 && (
+        <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden mt-5">
+          <div className="grid grid-cols-[2.5fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4 text-sm font-medium">
             <div>Destination</div>
             <div>Region</div>
             <div>Type</div>
@@ -264,10 +341,10 @@ function Destinations() {
             <div>Actions</div>
           </div>
 
-          {destinations.map((des, i) => (
+          {locations.map((des, i) => (
             <div
               key={des.id || i}
-              className="grid grid-cols-[2.5fr_2fr_2fr_2fr_1fr] px-3 py-4 hover:bg-gray-50 transition-colors border-t border-gray-100"
+              className="grid grid-cols-[2.5fr_2fr_2fr_1fr] px-3 py-4 hover:bg-gray-50 transition-colors border-t border-gray-100"
             >
               <div className="font-medium">{des?.name || "-"}</div>
               <div className="text-gray-600">{des?.region || "-"}</div>
@@ -291,24 +368,93 @@ function Destinations() {
               </div>
             </div>
           ))}
-
-          {/* Summary */}
-          <div className="bg-gray-50 px-3 py-3 border-t border-gray-200 text-sm text-gray-600">
-            Showing {destinations.length} destinations
-          </div>
         </div>
       )}
+
+      {/* Mobile Card Layout */}
+      {!isLoading && !error && locations.length > 0 && (
+        <div className="md:hidden space-y-4 mt-5">
+          {locations.map((des, i) => (
+            <div
+              key={des.id || i}
+              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+            >
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="font-bold text-lg">{des?.name || "-"}</h3>
+                  <p className="text-sm text-gray-500">{des?.region || "-"}</p>
+                </div>
+                <button
+                  onClick={() => deleteDestination(des.id)}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                >
+                  <Trash size={18} />
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                  {des?.type || "-"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+        <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+          <span>
+            Showing {(page - 1) * limit + 1} to{" "}
+            {Math.min(page * limit, totalItems)} of {totalItems}
+          </span>
+          <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+        </div>
+
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            disabled={page === 1}
+            onClick={() => updateQuery({ page: (page - 1).toString() })}
+            className="flex-1 sm:flex-none"
+          >
+            Previous
+          </Button>
+
+          <Button
+            variant="outline"
+            disabled={page === totalPages}
+            onClick={() => updateQuery({ page: (page + 1).toString() })}
+            className="flex-1 sm:flex-none"
+          >
+            Next
+          </Button>
+        </div>
+      </div>
 
       {/* Modal */}
       {showModal && (
         <AddDestinationModal
           onClose={() => setShowModal(false)}
           refresh={() => {
-            getAllDestinations();
+            mutate();
             setShowModal(false);
           }}
         />
       )}
+
+      <AdminConfirmDialog
+        isOpen={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title="Delete Destination"
+        description="Are you sure you want to delete this destination? This action cannot be undone."
+        confirmText="Delete Destination"
+        onConfirm={executeDeleteDestination}
+        isLoading={isActionLoading}
+        variant="destructive"
+      />
     </div>
   );
 }
@@ -316,6 +462,7 @@ function Destinations() {
 //////////////////// MODAL ////////////////////
 function AddDestinationModal({ onClose, refresh }) {
   const { toast } = useToast();
+  const { refreshLocations } = useLocations();
 
   const MapPicker = dynamic(() => import("@/app/components/MapPicker"), {
     ssr: false,
@@ -356,9 +503,6 @@ function AddDestinationModal({ onClose, refresh }) {
 
         const data = await res.json().catch(() => null);
 
-        // if (!res.ok || !data?.success) {
-        //   throw new Error("Failed to fetch location types");
-        // }
         if (!res.ok || !data?.success) {
           toast({
             title: "Error",
@@ -449,8 +593,30 @@ function AddDestinationModal({ onClose, refresh }) {
   };
 
   const handleSubmit = async () => {
+    if (!form.name) {
+      toast({
+        title: "Name",
+        description: "Enter the location name!",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!form.region) {
+      toast({
+        title: "Region",
+        description: "Enter the region!",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!form.latitude || !form.longitude) {
-      toast({ title: "Location", description: "Pick a location first!" });
+      toast({
+        title: "Location",
+        description: "Pick a location first!",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -458,6 +624,7 @@ function AddDestinationModal({ onClose, refresh }) {
       toast({
         title: "Type",
         description: "Please select a destination type",
+        variant: "destructive",
       });
       return;
     }
@@ -467,6 +634,8 @@ function AddDestinationModal({ onClose, refresh }) {
 
     const payload = {
       ...form,
+      name: formatName(form.name),
+      region: formatName(form.region),
       latitude: String(form.latitude || ""),
       longitude: String(form.longitude || ""),
     };
@@ -513,7 +682,10 @@ function AddDestinationModal({ onClose, refresh }) {
       toast({
         title: "Success",
         description: "Destination created successfully",
+        variant: "success",
       });
+
+      refreshLocations();
 
       refresh();
       onClose();
@@ -531,8 +703,8 @@ function AddDestinationModal({ onClose, refresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white w-162.5 p-6 rounded-xl space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
+      <div className="bg-white w-[80vw] md:w-[70vw] max-w-6xl h-[70vh] lg:h-[90vh] p-4 rounded-xl shadow-lg flex flex-col">
         <div className="flex justify-between items-center">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-500">
             Add Destination
@@ -549,31 +721,44 @@ function AddDestinationModal({ onClose, refresh }) {
           placeholder="Destination Name"
           className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           value={form.name}
-          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, name: formatName(e.target.value) })
+          }
         />
 
         <input
           placeholder="Region"
           className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500"
           value={form.region}
-          onChange={(e) => setForm({ ...form, region: e.target.value })}
+          onChange={(e) =>
+            setForm({ ...form, region: formatName(e.target.value) })
+          }
         />
 
-        <select
-          className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+        <Select
           value={form.type}
-          onChange={(e) => setForm({ ...form, type: e.target.value })}
+          onValueChange={(value) =>
+            setForm((prev) => ({ ...prev, type: value }))
+          }
           disabled={typesLoading}
         >
-          <option value="">
-            {typesLoading ? "Loading types..." : "Select destination type"}
-          </option>
-          {locationTypes.map((type) => (
-            <option key={type} value={type}>
-              {type.replaceAll("_", " ")}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white">
+            <SelectValue
+              placeholder={
+                typesLoading ? "Loading types..." : "Select destination type"
+              }
+            />
+          </SelectTrigger>
+
+          <SelectContent>
+            {!typesLoading &&
+              locationTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type.replaceAll("_", " ")}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
 
         {/* 🔍 Search */}
         <div className="relative">
@@ -667,70 +852,94 @@ function AddDestinationModal({ onClose, refresh }) {
 //////////////////// CATEGORIES ////////////////////
 
 function Categories() {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { toast } = useToast();
+
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState(null);
 
-  // Simulate API fetch with loading state
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  // Derive from URL
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const sortBy = searchParams.get("sortBy") || "created_at";
+  const order = searchParams.get("order") || "DESC";
+  const isActive = searchParams.get("isActive") || "true";
+  const debouncedSearch = searchParams.get("search") || "";
 
-        const token = Cookies.get("token");
+  // Local state for immediate typing responsiveness
+  const [search, setSearch] = useState(debouncedSearch);
+  const [searchError, setSearchError] = useState("");
 
-        if (!token) {
-          setError("Authentication token missing");
-          return;
+  // Handle URL sync
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
         }
+      });
 
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/trip-types/admin`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        // if (!res.ok) {
-        //   throw new Error("Failed to fetch categories");
-        // }
-        if (!res.ok) {
-          toast({
-            title: "Error",
-            description: "Failed to fetch categories",
-            variant: "destructive",
-          });
-        }
-
-        const data = await res.json();
-
-        const tripTypes = data?.result?.trip_types ?? [];
-
-        const formatted = tripTypes.map((item, index) => ({
-          id: item.id,
-          category: item.name,
-          description: item.description,
-          trips: item.trip_count ?? 0,
-          color: ["green", "pink", "blue", "teal", "yellow"][index % 5],
-        }));
-
-        setCategories(formatted);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load categories");
-      } finally {
-        setLoading(false);
+      if (!updates.page) {
+        params.set("page", "1");
       }
-    };
 
-    fetchCategories();
-  }, []);
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
+
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
+        });
+      }
+    },
+    [searchParams, pathname, router],
+  );
+
+  // Debounce search update to URL
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const value = search.trim();
+      if (value !== debouncedSearch) {
+        updateQuery({ search: value });
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search, debouncedSearch, updateQuery]);
+
+  // Fetch using SWR
+  const {
+    categories: rawCategories,
+    pagination,
+    isLoading,
+    error,
+    mutate,
+  } = useAdminTripTypes({
+    page,
+    limit,
+    sortBy,
+    order,
+    is_active: isActive === "all" ? undefined : isActive,
+    search: debouncedSearch,
+  });
+
+  const categories = useMemo(() => {
+    return (rawCategories || []).map((item, index) => ({
+      id: item.id,
+      category: item.name,
+      description: item.description,
+      is_active: item.is_active,
+      trips: item.trip_count ?? 0,
+      color: ["green", "pink", "blue", "teal", "yellow"][index % 5],
+    }));
+  }, [rawCategories]);
+
+  const totalPages = pagination?.pages || 1;
+  const totalItems = pagination?.total || 0;
 
   const colorMap = {
     green: "bg-green-100 text-green-600",
@@ -743,7 +952,9 @@ function Categories() {
   return (
     <>
       <div className="flex justify-between">
-        <p className="text-[#65758b]">Manage trip categories and tags</p>
+        <p className="text-[#65758b] hidden md:visible">
+          Manage trip categories and tags
+        </p>
 
         <Button onClick={() => setShowModal(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" />
@@ -751,11 +962,67 @@ function Categories() {
         </Button>
       </div>
 
+      <div className="flex flex-col sm:flex-row gap-3 mt-3">
+        {/* 🔍 Search */}
+        <div className="relative w-full sm:w-64">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
+          <input
+            placeholder="Search category..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-3 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-teal-500"
+          />
+        </div>
+
+        <Select
+          value={sortBy}
+          onValueChange={(val) => updateQuery({ sortBy: val })}
+        >
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_at">Created</SelectItem>
+            <SelectItem value="updated_at">Updated</SelectItem>
+            <SelectItem value="name">Name</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={order}
+          onValueChange={(val) => updateQuery({ order: val })}
+        >
+          <SelectTrigger className="w-full sm:w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ASC">Ascending</SelectItem>
+            <SelectItem value="DESC">Descending</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={isActive}
+          onValueChange={(val) => updateQuery({ isActive: val })}
+        >
+          <SelectTrigger className="w-full sm:w-32">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="true">Active</SelectItem>
+            <SelectItem value="false">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Loading State */}
-      {loading && <CategorySkeleton />}
+      {isLoading && <CategorySkeleton />}
 
       {/* Error State */}
-      {error && !loading && (
+      {error && !isLoading && (
         <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200 mt-5">
           <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
           <p className="text-red-600 font-medium">Failed to load categories</p>
@@ -763,14 +1030,15 @@ function Categories() {
         </div>
       )}
 
-      {/* Categories Table */}
-      {!loading && !error && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden mt-5">
+      {/* Categories Desktop Table */}
+      {!isLoading && !error && (
+        <div className="hidden md:block border border-gray-200 rounded-lg overflow-hidden mt-5">
           {/* Header Row */}
-          <div className="grid grid-cols-[1.5fr_2fr_2fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
+          <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr] gap-2 text-[#65758b] bg-gray-100 px-3 py-4 text-sm font-medium tracking-wide">
             <div>Category</div>
             <div>Description</div>
             <div>Trips</div>
+            <div>Status</div>
             <div>Actions</div>
           </div>
 
@@ -779,10 +1047,10 @@ function Categories() {
               No categories found
             </div>
           ) : (
-            categories.map((category, index) => (
+            categories.map((category) => (
               <div
                 key={category.id}
-                className="grid grid-cols-[1.5fr_2fr_2fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
+                className="grid grid-cols-[1.5fr_1fr_1fr_1fr_1fr] gap-5 items-center px-3 py-4 hover:bg-gray-50 transition border-t border-gray-100"
               >
                 {/* Category */}
                 <div>
@@ -795,10 +1063,27 @@ function Categories() {
                   </span>
                 </div>
 
-                <div>{category.description}</div>
+                <div
+                  className="truncate cursor-pointer"
+                  title={category.description}
+                >
+                  {category.description}
+                </div>
 
                 {/* Trips */}
                 <div className="text-gray-600">{category.trips}</div>
+
+                <div>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs ${
+                      category.is_active
+                        ? "bg-green-100 text-green-600"
+                        : "bg-red-100 text-red-600"
+                    }`}
+                  >
+                    {category.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
@@ -825,13 +1110,99 @@ function Categories() {
         </div>
       )}
 
+      {/* Categories Mobile Card Layout */}
+      {!isLoading && !error && categories.length > 0 && (
+        <div className="md:hidden space-y-4 mt-5">
+          {categories.map((category) => (
+            <div
+              key={category.id}
+              className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <span
+                  className={`text-sm tracking-wide px-3 py-1 rounded-full ${
+                    colorMap[category.color]
+                  }`}
+                >
+                  {category.category}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditData(category)}
+                    className="p-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+                  >
+                    <Edit size={18} />
+                  </button>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                {category.description}
+              </p>
+              <div className="flex justify-between items-center text-sm border-t pt-3">
+                <div className="text-gray-500">
+                  Trips:{" "}
+                  <span className="text-gray-900 font-medium">
+                    {category.trips}
+                  </span>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs ${
+                    category.is_active
+                      ? "bg-green-100 text-green-600"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {category.is_active ? "Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {!isLoading && !error && categories.length > 0 && (
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+            <span>
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, totalItems)} of {totalItems}
+            </span>
+            <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
+            <span>
+              Page {page} of {totalPages}
+            </span>
+          </div>
+
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button
+              variant="outline"
+              disabled={page === 1}
+              onClick={() => updateQuery({ page: (page - 1).toString() })}
+              className="flex-1 sm:flex-none"
+            >
+              Previous
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={page === totalPages}
+              onClick={() => updateQuery({ page: (page + 1).toString() })}
+              className="flex-1 sm:flex-none"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Add Category Modal - To be implemented */}
       {showModal && (
         <AddCategoryModal
           onClose={() => setShowModal(false)}
           refresh={() => {
+            mutate();
             setShowModal(false);
-            window.location.reload(); // simple refresh (same pattern as you used elsewhere)
           }}
         />
       )}
@@ -841,8 +1212,8 @@ function Categories() {
           data={editData}
           onClose={() => setEditData(null)}
           refresh={() => {
+            mutate();
             setEditData(null);
-            window.location.reload();
           }}
         />
       )}
@@ -865,6 +1236,7 @@ function AddCategoryModal({ onClose, refresh }) {
       toast({
         title: "Missing Fields",
         description: "Please fill all fields",
+        variant: "destructive",
       });
       return;
     }
@@ -894,18 +1266,26 @@ function AddCategoryModal({ onClose, refresh }) {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to create category");
-      // }
-      if (!res.ok) {
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.success) {
         toast({
           title: "Error",
-          description: "Failed to create category",
+          description: data?.error?.message || "Failed to create category",
           variant: "destructive",
         });
+        return;
       }
 
       refresh();
+
+      toast({
+        title: "Success",
+        description: "Category created successfully",
+        variant: "success",
+      });
+
+      onClose();
     } catch (err) {
       console.error(err);
       toast({
@@ -919,8 +1299,8 @@ function AddCategoryModal({ onClose, refresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+      <div className="bg-white w-full max-w-lg p-6 rounded-xl space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Add Category</h2>
@@ -982,7 +1362,7 @@ function EditCategoryModal({ data, onClose, refresh }) {
   const [form, setForm] = useState({
     name: data.category || "",
     description: data.description || "",
-    is_active: true,
+    is_active: data.is_active ?? false,
   });
 
   const [saving, setSaving] = useState(false);
@@ -1013,18 +1393,22 @@ function EditCategoryModal({ data, onClose, refresh }) {
         },
       );
 
-      // if (!res.ok) {
-      //   throw new Error("Failed to update category");
-      // }
-      if (!res.ok || !data?.success) {
+      const responseData = await res.json().catch(() => null);
+
+      if (!res.ok || !responseData?.success) {
         toast({
           title: "Error",
-          description: "Failed to update category",
+          description:
+            responseData?.error?.message ||
+            responseData?.message ||
+            "Failed to update category",
           variant: "destructive",
         });
+        return;
       }
 
-      refresh();
+      onClose();
+      refresh?.(responseData.result);
     } catch (err) {
       console.error(err);
       toast({
@@ -1038,8 +1422,8 @@ function EditCategoryModal({ data, onClose, refresh }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-      <div className="bg-white w-112.5 p-6 rounded-xl space-y-4">
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 p-4">
+      <div className="bg-white w-full max-w-lg p-6 rounded-xl space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-semibold">Edit Category</h2>
@@ -1071,7 +1455,12 @@ function EditCategoryModal({ data, onClose, refresh }) {
           <input
             type="checkbox"
             checked={form.is_active}
-            onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                is_active: e.target.checked,
+              }))
+            }
           />
           Active
         </label>
@@ -1111,8 +1500,8 @@ export default Page;
 function DestinationSkeleton() {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden mt-5 animate-pulse">
-      {/* Header */}
-      <div className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4">
+      {/* Header - Desktop Only */}
+      <div className="hidden md:grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] bg-gray-100 px-3 py-4">
         <div className="h-4 bg-gray-300 rounded w-24"></div>
         <div className="h-4 bg-gray-300 rounded w-20"></div>
         <div className="h-4 bg-gray-300 rounded w-16"></div>
@@ -1120,15 +1509,16 @@ function DestinationSkeleton() {
         <div className="h-4 bg-gray-300 rounded w-10"></div>
       </div>
 
+      {/* Grid for desktop, stack for mobile */}
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="grid grid-cols-[1.5fr_2fr_2fr_2fr_1fr] px-3 py-4 border-t"
+          className="grid grid-cols-1 md:grid-cols-[1.5fr_2fr_2fr_2fr_1fr] gap-4 px-3 py-4 border-t"
         >
           <div className="h-4 bg-gray-200 rounded w-32"></div>
-          <div className="h-4 bg-gray-200 rounded w-28"></div>
+          <div className="h-4 bg-gray-200 rounded w-28 md:block hidden"></div>
           <div className="h-4 bg-gray-200 rounded w-20"></div>
-          <div className="h-4 bg-gray-200 rounded w-10"></div>
+          <div className="h-4 bg-gray-200 rounded w-10 md:block hidden"></div>
           <div className="flex gap-2">
             <div className="h-4 w-4 bg-gray-200 rounded"></div>
             <div className="h-4 w-4 bg-gray-200 rounded"></div>
@@ -1142,7 +1532,7 @@ function DestinationSkeleton() {
 function CategorySkeleton() {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden mt-5 animate-pulse">
-      <div className="grid grid-cols-[2.5fr_2fr_1fr] bg-gray-100 px-3 py-4">
+      <div className="hidden md:grid grid-cols-[2.5fr_2fr_1fr] bg-gray-100 px-3 py-4">
         <div className="h-4 bg-gray-300 rounded w-24"></div>
         <div className="h-4 bg-gray-300 rounded w-16"></div>
         <div className="h-4 bg-gray-300 rounded w-10"></div>
@@ -1151,7 +1541,7 @@ function CategorySkeleton() {
       {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="grid grid-cols-[2.5fr_2fr_1fr] px-3 py-4 border-t"
+          className="grid grid-cols-1 md:grid-cols-[2.5fr_2fr_1fr] gap-4 px-3 py-4 border-t"
         >
           <div className="h-4 bg-gray-200 rounded w-28"></div>
           <div className="h-4 bg-gray-200 rounded w-12"></div>

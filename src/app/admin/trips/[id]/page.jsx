@@ -11,109 +11,76 @@ import {
   ArrowLeft,
   AlertCircle,
   Loader2,
+  Building2,
   Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { MdChairAlt } from "react-icons/md";
-import Cookies from "js-cookie";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { BiTrip } from "react-icons/bi";
 import { GoTriangleUp } from "react-icons/go";
-import Image from "next/image";
+import { Rating } from "@/app/components/ui/rating";
 import { useToast } from "@/app/hooks/use-toast";
+import useSWR from "swr";
+import { cn } from "@/lib/utils";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export default function TripDetail() {
-  const [trip, setTrip] = useState(null);
-  const [operator, setOperator] = useState(null);
-  const [source, setSource] = useState(null);
-  const [destination, setDestination] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { id } = useParams();
   const { toast } = useToast();
+  const [activeImage, setActiveImage] = useState(null);
+
+  // 1. Core Fetch
+  const {
+    data: tripData,
+    error: tripError,
+    isLoading: loading,
+  } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}` : null,
+    adminFetcher,
+  );
+
+  const trip = tripData?.result || null;
+  const error = tripError?.message || null;
+
+  // 2. Dependent Fetches
+  const { data: operatorData } = useSWR(
+    trip?.operator_id
+      ? `${BASE_URL}/api/${API_VERSION}/operators/admin/${trip.operator_id}`
+      : null,
+    adminFetcher,
+  );
+  const { data: sourceData } = useSWR(
+    trip?.source_id
+      ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.source_id}`
+      : null,
+    adminFetcher,
+  );
+  const { data: destData } = useSWR(
+    trip?.destination_id
+      ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.destination_id}`
+      : null,
+    adminFetcher,
+  );
+
+  const operator = operatorData?.result || null;
+  const source = sourceData?.result || null;
+  const destination = destData?.result || null;
 
   useEffect(() => {
-    const fetchTripAndRelated = async () => {
-      const token = Cookies.get("token");
-      setLoading(true);
-      setError(null);
-
-      try {
-        // Fetch trip
-        const tripRes = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-
-        const tripData = await tripRes.json();
-        if (!tripData.success) {
-          // throw new Error(tripData.message || "Failed to fetch trip");
-          toast({
-            title: "Error",
-            description: "Failed to fetch trip",
-            variant: "destructive",
-          });
-        }
-
-        const tripResult = tripData.result;
-        setTrip(tripResult);
-
-        // Fetch operator + locations in parallel
-        const requests = [];
-
-        if (tripResult.operator_id) {
-          requests.push(
-            fetch(
-              `${BASE_URL}/api/${API_VERSION}/operators/admin/${tripResult.operator_id}`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            ).then((r) => r.json()),
-          );
-        } else requests.push(Promise.resolve(null));
-
-        if (tripResult.source_id) {
-          requests.push(
-            fetch(
-              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.source_id}`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            ).then((r) => r.json()),
-          );
-        } else requests.push(Promise.resolve(null));
-
-        if (tripResult.destination_id) {
-          requests.push(
-            fetch(
-              `${BASE_URL}/api/${API_VERSION}/locations/admin/${tripResult.destination_id}`,
-              { headers: { Authorization: `Bearer ${token}` } },
-            ).then((r) => r.json()),
-          );
-        } else requests.push(Promise.resolve(null));
-
-        const [operatorRes, sourceRes, destRes] = await Promise.all(requests);
-
-        if (operatorRes?.success) setOperator(operatorRes.result);
-        if (sourceRes?.success) setSource(sourceRes.result);
-        if (destRes?.success) setDestination(destRes.result);
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Failed to fetch trip details");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) fetchTripAndRelated();
-  }, [id]);
+    if (trip?.images?.[0] && !activeImage) {
+      setActiveImage(trip.images[0]);
+    }
+  }, [trip, activeImage]);
 
   // Enhanced Loading State
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -137,7 +104,7 @@ export default function TripDetail() {
   // Enhanced Error State
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -166,7 +133,7 @@ export default function TripDetail() {
   // Not Found State
   if (!trip) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
@@ -193,15 +160,8 @@ export default function TripDetail() {
     );
   }
 
-  const statusStyle =
-    trip.status === "ACTIVE"
-      ? "bg-green-100 text-green-700"
-      : trip.status === "DRAFT"
-        ? "bg-yellow-100 text-yellow-700"
-        : "bg-red-100 text-red-700";
-
   return (
-    <div className="p-6 bg-gray-50 min-h-screen space-y-6">
+    <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href="/admin/trips"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -211,13 +171,13 @@ export default function TripDetail() {
       </Link>
 
       {/* Hero Section */}
-      <div className="bg-white mt-3 rounded-lg shadow-sm border px-6 py-4 flex flex-col md:flex-row gap-6 items-start">
-        <div className="grid md:grid-cols-2 gap-0 w-full">
-          {trip.images?.[0] ? (
+      <div className="bg-white mt-3 rounded-lg shadow-sm border px-1 py-4 flex flex-col md:flex-row gap-6 items-start">
+        <div className="grid sm:grid-cols-1 lg:grid-cols-2 w-full">
+          {activeImage ? (
             <img
-              src={trip.images[0]}
+              src={activeImage}
               alt={trip.name}
-              className="w-full h-72 md:h-full object-cover rounded-l-lg"
+              className="w-full h-72 h-full object-cover bg-gray-100 rounded-lg"
               onError={(e) => {
                 e.currentTarget.src = "/vercel.svg";
               }}
@@ -228,7 +188,7 @@ export default function TripDetail() {
             </div>
           )}
 
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-4 sm:p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">{trip.name}</h1>
               <StatusBadge
@@ -242,8 +202,14 @@ export default function TripDetail() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <InfoItem
                 icon={<IndianRupee size={16} />}
-                label="Price"
-                value={`₹${trip.price}`}
+                label="Base Price"
+                value={`₹${
+                  trip.price_categories?.find(
+                    (c) => c.category.toLowerCase() === "base price",
+                  )?.price ||
+                  trip.price ||
+                  "N/A"
+                }`}
               />
               <InfoItem
                 icon={<MapPin size={16} />}
@@ -298,22 +264,80 @@ export default function TripDetail() {
                 value={trip.type?.name}
               />
             </div>
+
+            <div>
+              <InfoItem
+                label="Hotel Category"
+                icon={<Building2 size={16} />}
+                value={
+                  <div className="-ml-1">
+                    <Rating value={trip.hotel_category || 0} />
+                  </div>
+                }
+              />
+            </div>
           </CardContent>
         </div>
       </div>
 
+      {/* Price Categories Breakdown */}
+      {trip.price_categories?.length > 1 && (
+        <Card className="rounded-2xl shadow-sm overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              {/* <IndianRupee className="w-5 h-5 text-teal-600" /> */}
+              Price Categories
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {trip.price_categories.map((cat, i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-xl border bg-slate-50 flex justify-between items-center group hover:border-teal-300 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-bold tracking-wider">
+                      {cat.category}
+                    </p>
+                    <p className="text-lg font-medium text-muted-foreground">
+                      ₹{cat.price.toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      "px-2 py-1 rounded text-[10px] font-bold uppercase",
+                      cat.category.toLowerCase() === "base price"
+                        ? "bg-teal-100 text-teal-700"
+                        : "bg-slate-200 text-slate-600",
+                    )}
+                  >
+                    {cat.category.toLowerCase() === "base price"
+                      ? "Primary"
+                      : "Option"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Gallery */}
       {trip.images?.length > 1 && (
         <Card className="rounded-2xl shadow-sm">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <h2 className="text-lg font-semibold mb-4">Gallery</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {trip.images.slice(1).map((img, i) => (
+              {trip.images.map((img, i) => (
                 <img
                   key={i}
                   src={img}
                   alt={`trip-${i}`}
-                  className="h-32 w-full object-cover rounded-xl border border-gray-200 hover:opacity-90 transition-opacity"
+                  onClick={() => setActiveImage(img)}
+                  className={`h-32 w-full object-cover rounded-xl border cursor-pointer transition-all ${
+                    activeImage === img
+                      ? "border-teal-500 ring-2 ring-teal-300"
+                      : "border-gray-200 hover:opacity-90"
+                  }`}
                   onError={(e) => {
                     e.currentTarget.src = "/vercel.svg";
                   }}
@@ -326,7 +350,7 @@ export default function TripDetail() {
 
       {/* Itinerary */}
       <Card className="rounded-2xl shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <h2 className="text-lg font-semibold mb-4">Itinerary</h2>
           <div className="space-y-4">
             {trip.itinerary?.length > 0 ? (
@@ -354,6 +378,20 @@ export default function TripDetail() {
         <ListCard title="Inclusions" items={trip.inclusions} />
         <ListCard title="Exclusions" items={trip.exclusions} />
       </div>
+
+      {/* Cancellation Policy */}
+      {trip.cancellation_policy && (
+        <Card className="rounded-2xl shadow-sm">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-lg font-semibold mb-4">Cancellation Policy</h2>
+            <div className="p-4 rounded-xl border bg-slate-50">
+              <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-sans leading-relaxed">
+                {trip.cancellation_policy}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
@@ -364,7 +402,7 @@ function InfoItem({ icon, label, value }) {
       <div className="text-teal-600">{icon}</div>
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-medium">{value}</p>
+        <div className="font-medium">{value}</div>
       </div>
     </div>
   );
@@ -373,7 +411,7 @@ function InfoItem({ icon, label, value }) {
 function ListCard({ title, items }) {
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardContent className="p-6">
+      <CardContent className="p-4 sm:p-6">
         <h2 className="text-lg font-semibold mb-4">{title}</h2>
         {items?.length > 0 ? (
           <ul className="space-y-2 text-sm text-muted-foreground list-disc ml-5">

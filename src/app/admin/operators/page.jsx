@@ -1,6 +1,5 @@
 "use client";
 
-import AdminGuard from "@/app/components/AdminGuard";
 import { useState, useEffect, useCallback } from "react";
 import Cookies from "js-cookie";
 import {
@@ -13,6 +12,7 @@ import {
   UserX,
   Trash2,
   Plus,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/app/components/ui/button";
@@ -32,6 +32,14 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/app/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -45,173 +53,191 @@ import {
   DropdownMenuTrigger,
 } from "@/app/components/ui/dropdown-menu";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
-import { IoCloseSharp } from "react-icons/io5";
 import Link from "next/link";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
-import { useToast } from "@/app/hooks/use-toast";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { FaRegUser } from "react-icons/fa";
+import AddOperatorModal from "@/app/components/admin/AddOperatorModal";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
+import { useToast } from "@/app/hooks/use-toast";
+import { AdminConfirmDialog } from "@/app/components/admin/AdminConfirmDialog";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 function OperatorsPage() {
-  const [operators, setOperators] = useState([]);
-  const [regions, setRegions] = useState([]);
-  const [regionFilter, setRegionFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalOperators, setTotalOperators] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sortBy, setSortBy] = useState("created_at");
-  const [sortOrder, setSortOrder] = useState("ASC");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [searchError, setSearchError] = useState("");
-  const [initialLoading, setInitialLoading] = useState(true);
-
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
 
-  // Fetch operators from API
-  const getOperators = useCallback(async () => {
-    const token = Cookies.get("token");
+  // Derive values from URL (Source of Truth)
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = 10;
+  const statusFilter = searchParams.get("status")?.toLowerCase() || "all";
+  const sortBy = searchParams.get("sortBy") || "created_at";
+  const sortOrder = searchParams.get("sortOrder") || "DESC";
+  const sourceFilter = searchParams.get("source")?.toLowerCase() || "all";
+  const debouncedSearch = searchParams.get("search") || "";
 
-    if (!token) {
-      console.log("No token found");
-      return;
-    }
+  // UI state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(debouncedSearch);
+  const [searchError, setSearchError] = useState("");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [selectedOperatorId, setSelectedOperatorId] = useState(null);
+  const [operatorTrips, setOperatorTrips] = useState([]);
+  const [dialogConfig, setDialogConfig] = useState({
+    type: "delete",
+    title: "",
+    description: "",
+  });
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
-    setLoading(true);
-    setError(null);
-
-    try {
-      const params = new URLSearchParams();
-
-      params.append("page", String(page));
-      params.append("limit", String(limit));
-
-      if (sourceFilter && sourceFilter !== "all") {
-        params.append("source", sourceFilter.toUpperCase());
-      }
-
-      if (statusFilter && statusFilter !== "all") {
-        params.append("status", statusFilter.toUpperCase());
-      }
-
-      if (sortBy) {
-        params.append("sortBy", sortBy);
-      }
-
-      if (sortOrder) {
-        params.append("sortOrder", sortOrder);
-      }
-
-      const searchValue = debouncedSearch?.trim();
-
-      if (searchValue && searchValue.length >= 2) {
-        params.append("search", searchValue);
-      }
-
-      const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
-
-      // console.log("Final URL:", url);
-
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  // Handle URL sync
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
       });
 
-      const data = await res.json();
-
-      console.log("Response:", data);
-
-      // if (!res.ok || !data.success) {
-      //   throw new Error(data.message || "Failed to fetch operators");
-      // }
-      if (!res.ok) {
-        toast({
-          title: "Error",
-          description: "Failed to fetch operators",
-          variant: "destructive",
-        });
+      // Always reset page to 1 when filters (other than page itself) change
+      if (!updates.page) {
+        params.set("page", "1");
       }
 
-      const operatorsArray = data?.result?.operators || [];
-      const pagination = data?.result?.pagination || {};
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
 
-      setOperators(operatorsArray);
-      setTotalOperators(pagination.total || 0);
-      setTotalPages(pagination.pages || 1);
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setError(err.message);
-      setOperators([]);
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
-    }
-  }, [
-    page,
-    limit,
-    statusFilter,
-    sourceFilter,
-    sortBy,
-    sortOrder,
-    debouncedSearch,
-  ]);
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
+        });
+      }
+    },
+    [searchParams, pathname, router],
+  );
 
-  useEffect(() => {
-    const searchValue = debouncedSearch?.trim();
+  // Build API params
+  const params = new URLSearchParams({ page, limit, sortBy, sortOrder });
+  if (sourceFilter && sourceFilter !== "all")
+    params.append("source", sourceFilter.toUpperCase());
+  if (statusFilter && statusFilter !== "all")
+    params.append("status", statusFilter.toUpperCase());
+  const searchValue = debouncedSearch?.trim();
+  if (searchValue && searchValue.length >= 2)
+    params.append("search", searchValue);
 
-    if (searchValue && searchValue.length < 2) {
-      setOperators([]);
-      setTotalOperators(0);
-      setTotalPages(1);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+  const url = `${BASE_URL}/api/${API_VERSION}/operators/admin?${params.toString()}`;
 
-    getOperators();
-  }, [getOperators, debouncedSearch]);
+  // Logic previously here moved to derivation and individual event handlers
+
+  // 2. Fetch using SWR
+  const {
+    data,
+    error: fetchError,
+    isLoading,
+    mutate: refreshOperators,
+  } = useSWR(url, adminFetcher, {
+    keepPreviousData: true,
+  });
+
+  const operators = data?.result?.operators || [];
+  const totalOperators = data?.result?.pagination?.total || 0;
+  const totalPages = data?.result?.pagination?.pages || 1;
+  const loading = isLoading;
+  const initialLoading = isLoading && !data;
+  const error = fetchError?.message || null;
 
   useEffect(() => {
     const timer = setTimeout(() => {
       const value = searchQuery.trim();
 
-      if (value.length === 0) {
+      if (value.length === 0 || value.length >= 2) {
         setSearchError("");
-        setDebouncedSearch("");
-        setPage(1);
-      } else if (value.length < 2) {
-        setSearchError("Search must be at least 2 characters");
-        setOperators([]);
-        setTotalOperators(0);
-        setTotalPages(1);
+        if (value !== debouncedSearch) {
+          updateQuery({ search: value });
+        }
       } else {
-        setSearchError("");
-        setDebouncedSearch(value);
-        setPage(1);
+        setSearchError("Search must be at least 2 characters");
       }
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, debouncedSearch, updateQuery]);
 
-  const handleAddModalClose = (value) => {
+  const handleAddModalClose = (value, wasCreated = false) => {
     setShowAddModal(value);
-    if (!value) getOperators();
+    if (!value && wasCreated) refreshOperators();
+  };
+
+  const handleInactivateOperator = async (operatorId) => {
+    const token = Cookies.get("token");
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${operatorId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        return toast({
+          title: "Error",
+          description:
+            data?.error?.message || "Failed to fetch operator details",
+          variant: "destructive",
+        });
+      }
+
+      const trips = data?.result?.trip || [];
+
+      // If trips exist → open dialog
+      if (trips.length > 0) {
+        setSelectedOperatorId(operatorId);
+        setOperatorTrips(trips);
+        setDialogConfig({
+          type: "inactivate",
+          title: "Confirm Inactivation",
+          description: `This operator has ${trips.length} trip(s). Are you sure you want to inactivate?`,
+        });
+        setConfirmDialogOpen(true);
+        return;
+      }
+
+      // No trips → directly update
+      setSelectedOperatorId(operatorId);
+      setDialogConfig({
+        type: "inactivate",
+        title: "Confirm Inactivation",
+        description: "Are you sure you want to inactivate this operator?",
+      });
+      setOperatorTrips([]);
+      setConfirmDialogOpen(true);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleUpdateOperator = async (operatorId, payload) => {
     const token = Cookies.get("token");
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
@@ -231,9 +257,10 @@ function OperatorsPage() {
       if (!res.ok || !data.success) {
         toast({
           title: "Error",
-          description: err.message,
+          description: data?.error?.message,
           variant: "destructive",
         });
+        return;
       }
 
       toast({
@@ -241,28 +268,39 @@ function OperatorsPage() {
         description: "Operator updated successfully!",
         variant: "success",
       });
-      getOperators();
+      refreshOperators();
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
   const handleDeleteOperator = async (operatorId) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this operator? This action cannot be undone.",
-    );
+    setSelectedOperatorId(operatorId);
+    setDialogConfig({
+      type: "delete",
+      title: "Delete Operator",
+      description:
+        "Are you sure you want to delete this operator? This action cannot be undone.",
+    });
+    setConfirmDialogOpen(true);
+  };
 
-    if (!confirmed) return;
+  const executeDeleteOperator = async () => {
+    if (!selectedOperatorId) return;
 
     const token = Cookies.get("token");
+    setIsActionLoading(true);
 
     try {
       const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin/${operatorId}`,
+        `${BASE_URL}/api/${API_VERSION}/operators/admin/${selectedOperatorId}`,
         {
           method: "DELETE",
           headers: {
@@ -273,15 +311,14 @@ function OperatorsPage() {
 
       const data = await res.json();
 
-      // if (!res.ok || !data.success) {
-      //   throw new Error(data.message || "Failed to delete operator");
-      // }
-      if (!res.ok)
+      if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to delete operator",
+          description: data?.error?.message || "Failed to delete operator",
           variant: "destructive",
         });
+        return;
+      }
 
       toast({
         title: "Operator",
@@ -289,15 +326,162 @@ function OperatorsPage() {
         variant: "success",
       });
 
-      getOperators(); // refresh list
+      if (operators.length === 1 && page > 1) {
+        updateQuery({ page: (page - 1).toString() });
+      } else {
+        refreshOperators();
+      }
+      setConfirmDialogOpen(false);
     } catch (err) {
       toast({
         title: "Error",
         description: err.message,
         variant: "destructive",
       });
+    } finally {
+      setIsActionLoading(false);
     }
   };
+
+  const renderActions = (op) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem asChild>
+          <Link href={`/admin/operators/${op.id}`}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Details
+          </Link>
+        </DropdownMenuItem>
+
+        {op.application_status === "PENDING" && (
+          <>
+            <DropdownMenuItem
+              className="text-success"
+              onSelect={() => {
+                handleUpdateOperator(op.id, {
+                  application_status: "APPROVED",
+                });
+              }}
+            >
+              <UserCheck className="h-4 w-4 mr-2" />
+              Approve
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="text-warning"
+              onSelect={() => {
+                handleUpdateOperator(op.id, {
+                  application_status: "REJECTED",
+                });
+              }}
+            >
+              <UserX className="h-4 w-4 mr-2" />
+              Reject
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {op.application_status === "APPROVED" && op.status === "ACTIVE" && (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href={`/admin/operators/edit/${op.id}`}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-warning"
+              onSelect={() => {
+                handleInactivateOperator(op.id);
+              }}
+            >
+              <UserX className="h-4 w-4 mr-2" />
+              Inactivate
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="text-destructive"
+              onSelect={() => {
+                handleUpdateOperator(op.id, {
+                  status: "SUSPENDED",
+                });
+              }}
+            >
+              <UserX className="h-4 w-4 mr-2" />
+              Suspend
+            </DropdownMenuItem>
+          </>
+        )}
+        {op.application_status === "APPROVED" && op.status === "INACTIVE" && (
+          <>
+            <DropdownMenuItem
+              className="text-warning"
+              onSelect={() => {
+                handleUpdateOperator(op.id, {
+                  status: "ACTIVE",
+                });
+              }}
+            >
+              <UserX className="h-4 w-4 mr-2" />
+              Activate
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onSelect={() => {
+                handleDeleteOperator(op.id);
+              }}
+              className="text-error"
+            >
+              <Trash2 className="h-4 w-4 mr-2 text-error" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+
+        {op.application_status === "APPROVED" && op.status === "SUSPENDED" && (
+          <DropdownMenuItem
+            className="text-success"
+            onSelect={() => {
+              handleUpdateOperator(op.id, {
+                status: "ACTIVE",
+              });
+            }}
+          >
+            <UserX className="h-4 w-4 mr-2" />
+            Activate
+          </DropdownMenuItem>
+        )}
+        {op.application_status === "REJECTED" && (
+          <>
+            <DropdownMenuItem
+              className="text-success"
+              onClick={() =>
+                handleUpdateOperator(op.id, {
+                  application_status: "APPROVED",
+                })
+              }
+            >
+              <UserCheck className="h-4 w-4 mr-2" />
+              Approve
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={() => handleDeleteOperator(op.id)}
+              className="text-error"
+            >
+              <Trash2 className="h-4 w-4 mr-2 text-error" />
+              Delete
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 
   const PageSkeleton = () => (
     <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
@@ -313,7 +497,6 @@ function OperatorsPage() {
         <Skeleton className="h-10 w-full sm:w-40" />
       </div>
 
-      {/* Table Skeleton (hidden on mobile, visible on desktop) */}
       <Card className="hidden sm:block border shadow-sm">
         <CardHeader>
           <Skeleton className="h-6 w-40" />
@@ -366,16 +549,15 @@ function OperatorsPage() {
   }
 
   return (
-    <AdminGuard>
+    <>
       <div className="space-y-4 sm:space-y-6 p-3 sm:p-6">
-        {/* Page Header */}
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
               Operators
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1">
               Manage and monitor all trip operators
             </p>
           </div>
@@ -392,22 +574,38 @@ function OperatorsPage() {
         {/* Filters */}
         {/* <Card> */}
         <CardContent className="pt-2">
-          <div className="flex flex-col lg:flex-row gap-3 lg:items-center">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search operators..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full"
-              />
+          <div className="flex flex-col lg:flex-row lg:items-start gap-3 w-full">
+            <div className="w-full lg:flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
+                <Input
+                  placeholder="Search operators..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                  }}
+                  className="pl-10 w-full lg:max-w-110"
+                />
+              </div>
+              {/* Search error */}
+              {searchError && (
+                <p className="text-sm text-admin-error mt-1">{searchError}</p>
+              )}
             </div>
 
-            {/* Filters Right Side */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[140px]">
+            {/* Filters */}
+            <div
+              className="
+              grid grid-cols-2 gap-3
+              lg:flex lg:flex-row lg:items-center
+            "
+            >
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => updateQuery({ status: value })}
+              >
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -418,8 +616,11 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-full sm:w-[150px]">
+              <Select
+                value={sourceFilter}
+                onValueChange={(value) => updateQuery({ source: value })}
+              >
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
                 <SelectContent>
@@ -429,8 +630,11 @@ function OperatorsPage() {
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-[150px]">
+              <Select
+                value={sortBy}
+                onValueChange={(value) => updateQuery({ sortBy: value })}
+              >
+                <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
                 <SelectContent>
@@ -438,16 +642,24 @@ function OperatorsPage() {
                   <SelectItem value="created_at">Create Date</SelectItem>
                 </SelectContent>
               </Select>
+
+              <Select
+                value={sortOrder}
+                onValueChange={(value) => updateQuery({ sortOrder: value })}
+              >
+                <SelectTrigger className="w-full lg:w-40">
+                  <SelectValue placeholder="Sort Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ASC">Ascending</SelectItem>
+                  <SelectItem value="DESC">Descending</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-
-          {/* Search error */}
-          {searchError && (
-            <p className="text-sm text-destructive mt-2">{searchError}</p>
-          )}
         </CardContent>
+
         {/* </Card> */}
-        {/* Desktop View - Table (hidden on mobile, visible on desktop) */}
         <Card className="hidden sm:block border shadow-sm">
           <CardHeader className="px-4 sm:px-6 pb-2">
             <CardTitle>All Operators ({totalOperators})</CardTitle>
@@ -464,10 +676,14 @@ function OperatorsPage() {
                 </p>
               </div>
             ) : error ? (
-              <div className="flex flex-col items-center py-16 text-red-500">
-                <p>{error}</p>
-                <Button onClick={getOperators} className="mt-4">
-                  Retry
+              <div className="flex flex-col items-center justify-center py-16 bg-red-50 rounded-lg border border-red-200">
+                <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+                <p className="text-red-600 font-medium">
+                  Failed to load operators
+                </p>
+                <p className="text-sm text-red-400 mt-1 mb-4">{error}</p>
+                <Button onClick={refreshOperators} variant="destructive">
+                  Try Again
                 </Button>
               </div>
             ) : operators.length === 0 ? (
@@ -488,9 +704,9 @@ function OperatorsPage() {
                       <TableHead className="whitespace-nowrap">
                         Region
                       </TableHead>
-                      <TableHead className="text-center whitespace-nowrap">
+                      {/* <TableHead className="text-center whitespace-nowrap">
                         Trips
-                      </TableHead>
+                      </TableHead> */}
                       <TableHead className="whitespace-nowrap">
                         Status
                       </TableHead>
@@ -527,12 +743,13 @@ function OperatorsPage() {
                               >
                                 {op.name}
                               </p>
-                              <p
+                              <a
+                                href={`mailto:${op.email}`}
                                 className="text-sm text-muted-foreground truncate max-w-37.5 lg:max-w-50"
                                 title={op.email}
                               >
                                 {op.email}
-                              </p>
+                              </a>
                             </div>
                           </div>
                         </TableCell>
@@ -545,27 +762,31 @@ function OperatorsPage() {
                             >
                               {op.contact_name}
                             </p>
-                            <p
+                            <a
+                              href={`tel:${getDialablePhone(op.phone_number)}`}
                               className="text-sm text-muted-foreground truncate max-w-30 lg:max-w-37.5"
                               title={op.phone_number}
                             >
                               {formatPhoneNumber(op.phone_number)}
-                            </p>
+                            </a>
                           </div>
                         </TableCell>
 
-                        <TableCell className="text-muted-foreground max-w-37.5 truncate">
+                        <TableCell
+                          className="text-muted-foreground max-w-37.5 truncate cursor-pointer"
+                          title={op.regions}
+                        >
                           {Array.isArray(op.regions) && op.regions.length > 0
                             ? op.regions.join(", ")
                             : "-"}
                         </TableCell>
 
-                        <TableCell className="text-center">
+                        {/* <TableCell className="text-center">
                           {op.total_trips !== undefined &&
                           op.total_trips !== null
                             ? Number(op.total_trips)
                             : "-"}
-                        </TableCell>
+                        </TableCell> */}
 
                         <TableCell>
                           <StatusBadge
@@ -579,143 +800,7 @@ function OperatorsPage() {
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/operators/${op.id}`}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </Link>
-                              </DropdownMenuItem>
-                              {/* <DropdownMenuItem asChild>
-                                <Link href={`/admin/operators/edit/${op.id}`}>
-                                  <Pencil className="h-4 w-4 mr-2" />
-                                  Edit
-                                </Link>
-                              </DropdownMenuItem> */}
-
-                              {op.application_status === "PENDING" && (
-                                <>
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        application_status: "APPROVED",
-                                      })
-                                    }
-                                  >
-                                    <UserCheck className="h-4 w-4 mr-2" />
-                                    Approve
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuItem
-                                    className="text-warning"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        application_status: "REJECTED",
-                                      })
-                                    }
-                                  >
-                                    <UserX className="h-4 w-4 mr-2" />
-                                    Reject
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-
-                              {op.application_status === "APPROVED" &&
-                                op.status === "ACTIVE" && (
-                                  <>
-                                    <DropdownMenuItem asChild>
-                                      <Link
-                                        href={`/admin/operators/edit/${op.id}`}
-                                      >
-                                        <Pencil className="h-4 w-4 mr-2" />
-                                        Edit
-                                      </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                      className="text-warning"
-                                      onClick={() =>
-                                        handleUpdateOperator(op.id, {
-                                          status: "INACTIVE",
-                                        })
-                                      }
-                                    >
-                                      <UserX className="h-4 w-4 mr-2" />
-                                      Inactivate
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem
-                                      className="text-destructive"
-                                      onClick={() =>
-                                        handleUpdateOperator(op.id, {
-                                          status: "SUSPENDED",
-                                        })
-                                      }
-                                    >
-                                      <UserX className="h-4 w-4 mr-2" />
-                                      Suspend
-                                    </DropdownMenuItem>
-
-                                    <DropdownMenuItem
-                                      onClick={() =>
-                                        handleDeleteOperator(op.id)
-                                      }
-                                      className="text-error"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-2 text-error" />
-                                      Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                              {op.application_status === "APPROVED" &&
-                                op.status === "INACTIVE" && (
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        status: "ACTIVE",
-                                      })
-                                    }
-                                  >
-                                    <UserX className="h-4 w-4 mr-2" />
-                                    Activate
-                                  </DropdownMenuItem>
-                                )}
-                              {op.application_status === "APPROVED" &&
-                                op.status === "SUSPENDED" && (
-                                  <DropdownMenuItem
-                                    className="text-success"
-                                    onClick={() =>
-                                      handleUpdateOperator(op.id, {
-                                        status: "ACTIVE",
-                                      })
-                                    }
-                                  >
-                                    <UserX className="h-4 w-4 mr-2" />
-                                    Activate
-                                  </DropdownMenuItem>
-                                )}
-                              {op.application_status === "REJECTED" && (
-                                <DropdownMenuItem
-                                  className="text-success"
-                                  onClick={() =>
-                                    handleUpdateOperator(op.id, {
-                                      application_status: "APPROVED",
-                                    })
-                                  }
-                                >
-                                  <UserCheck className="h-4 w-4 mr-2" />
-                                  Approve
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {renderActions(op)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -726,23 +811,123 @@ function OperatorsPage() {
           </CardContent>
         </Card>
 
+        {/* Mobile View: Cards */}
+        <div className="sm:hidden space-y-4 pt-2">
+          <div className="px-1 pb-2">
+            <h2 className="text-lg font-semibold">
+              All Operators ({totalOperators})
+            </h2>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="animate-spin text-teal-500 w-8 h-8" />
+            </div>
+          ) : operators.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No operators found
+            </p>
+          ) : (
+            operators.map((op) => (
+              <Card key={op.id} className="border shadow-sm p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex gap-3">
+                    <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                      {op.logo_url ? (
+                        <Image
+                          src={op.logo_url}
+                          alt={op.name}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+                          <FaRegUser className="text-gray-500" size={20} />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">{op.name}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {op.contact_name}
+                      </p>
+                    </div>
+                  </div>
+                  <div>
+                    <StatusBadge
+                      status={
+                        op.application_status === "PENDING" ||
+                        op.application_status === "REJECTED"
+                          ? op.application_status?.toLowerCase()
+                          : op.status?.toLowerCase()
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-sm mt-3 border-t pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Email:</span>
+                    <a
+                      href={`mailto:${op.email}`}
+                      className="text-right truncate max-w-48 text-primary"
+                    >
+                      {op.email}
+                    </a>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Phone:</span>
+                    <a href={`tel:${getDialablePhone(op.phone_number)}`}>
+                      {formatPhoneNumber(op.phone_number)}
+                    </a>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Region:</span>
+                    <span className="text-right truncate max-w-48">
+                      {Array.isArray(op.regions) && op.regions.length > 0
+                        ? op.regions.join(", ")
+                        : "-"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex gap-2 w-full">
+                  <Link href={`/admin/operators/${op.id}`} className="flex-1">
+                    <Button variant="outline" className="w-full text-sm h-9">
+                      <Eye className="h-4 w-4 mr-2" /> View
+                    </Button>
+                  </Link>
+                  {renderActions(op)}
+                </div>
+              </Card>
+            ))
+          )}
+        </div>
+
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t pt-4">
-          <p className="text-sm text-muted-foreground">
-            Showing {(page - 1) * limit + 1} to{" "}
-            {Math.min(page * limit, totalOperators)} of {totalOperators}
-          </p>
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 border-t pt-4">
+          {/* 📄 Info */}
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+            <span>
+              Showing {(page - 1) * limit + 1} to{" "}
+              {Math.min(page * limit, totalOperators)} of {totalOperators}
+            </span>
 
-          <span className="px-3 py-1 text-center text-sm">
-            Page {page} of {totalPages}
-          </span>
+            <span className="hidden sm:inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
 
-          <div className="flex gap-2">
+            <span>
+              Page {page} of {totalPages}
+            </span>
+          </div>
+
+          {/* 🔘 Buttons */}
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button
               variant="outline"
               size="sm"
               disabled={page === 1}
-              onClick={() => setPage(page - 1)}
+              onClick={() => updateQuery({ page: (page - 1).toString() })}
+              className="flex-1 sm:flex-none"
             >
               Previous
             </Button>
@@ -751,7 +936,8 @@ function OperatorsPage() {
               variant="outline"
               size="sm"
               disabled={page === totalPages}
-              onClick={() => setPage(page + 1)}
+              onClick={() => updateQuery({ page: (page + 1).toString() })}
+              className="flex-1 sm:flex-none"
             >
               Next
             </Button>
@@ -762,671 +948,43 @@ function OperatorsPage() {
       {showAddModal && (
         <AddOperatorModal handleModalClose={handleAddModalClose} />
       )}
-    </AdminGuard>
-  );
-}
-
-function AddOperatorModal({ handleModalClose }) {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone_number: "",
-    contact_name: "",
-    regions: "",
-    description: "",
-    website_url: "",
-    logo_url: "",
-    rating: 4.5,
-    status: "inactive",
-    total_trips: 0,
-    trips_per_year: 0,
-    social_links: {
-      instagram: "",
-      facebook: "",
-      twitter: "",
-      linkedin: "",
-      youtube: "",
-    },
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({});
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const { toast } = useToast();
-
-  function handleChange(e) {
-    const { name, value } = e.target;
-
-    if (name.startsWith("social_links.")) {
-      const key = name.split(".")[1];
-
-      setFormData((prev) => ({
-        ...prev,
-        social_links: {
-          ...prev.social_links,
-          [key]: value,
-        },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-  }
-
-  async function handleImageUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setUploadingImage(true);
-    setError("");
-
-    const token = Cookies.get("token");
-
-    const formDataToSend = new FormData();
-    formDataToSend.append("image", file);
-
-    console.log("req", formDataToSend);
-
-    try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/uploads/image`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formDataToSend,
-      });
-
-      const data = await res.json();
-
-      // if (!res.ok || !data.success) {
-      //   throw new Error(data.message || "Image upload failed");
-      // }
-      if (!res.ok)
-        toast({
-          title: "Error",
-          description: "Failed to upload image",
-          variant: "destructive",
-        });
-
-      const imageUrl = data.result?.url;
-
-      // if (!imageUrl) {
-      //   throw new Error("No image URL returned from server");
-      // }
-      if (!res.ok)
-        toast({
-          title: "Error",
-          description: "No Image URL returned from the server",
-          variant: "destructive",
-        });
-
-      setFormData((prev) => ({
-        ...prev,
-        logo_url: imageUrl,
-      }));
-    } catch (err) {
-      console.error("Error uploading image:", err);
-      setError(err.message || "Something went wrong while uploading image");
-    } finally {
-      setUploadingImage(false);
-    }
-  }
-
-  const validateForm = () => {
-    const errors = {};
-
-    const startsWithValidChar = /^[A-Za-z][A-Za-z\s.'-]*$/;
-
-    if (!formData.name || formData.name.trim().length < 2) {
-      errors.name = "Operator name must be at least 2 characters.";
-    }
-
-    if (!formData.contact_name || formData.contact_name.trim().length < 2) {
-      errors.contact_name = "Contact person must be at least 2 characters.";
-    } else if (!startsWithValidChar.test(formData.contact_name.trim())) {
-      errors.contact_name =
-        "Contact person cannot start with a special character.";
-    }
-
-    // Email validation
-    if (!formData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = "Invalid email address";
-    }
-
-    // Phone validation
-    if (!formData.phone_number) {
-      errors.phone_number = "Phone number is required";
-    } else if (!/^[6-9]\d{9}$/.test(formData.phone_number)) {
-      errors.phone_number = "Invalid Indian phone number";
-    }
-
-    // Website validation
-    if (
-      formData.website_url &&
-      !/^https?:\/\/(www\.)?[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)+[/#?]?.*$/.test(
-        formData.website_url,
-      )
-    ) {
-      errors.website_url = "Enter valid website URL";
-    }
-
-    // Social links validation
-    const socialPatterns = {
-      instagram: /^https?:\/\/(www\.)?instagram\.com\/.+$/,
-      facebook: /^https?:\/\/(www\.)?facebook\.com\/.+$/,
-      twitter: /^https?:\/\/(www\.)?(twitter|x)\.com\/.+$/,
-      linkedin: /^https?:\/\/(www\.)?linkedin\.com\/.+$/,
-      youtube: /^https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/.+$/,
-    };
-
-    Object.entries(formData.social_links).forEach(([platform, url]) => {
-      if (url && !socialPatterns[platform].test(url)) {
-        errors[`social_links.${platform}`] = `Enter valid ${platform} URL`;
-      }
-    });
-
-    setFieldErrors(errors);
-
-    return Object.keys(errors).length === 0;
-  };
-
-  const scrollToFirstError = () => {
-    setTimeout(() => {
-      const firstError = document.querySelector(".text-admin-error");
-      if (firstError) {
-        firstError.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      }
-    }, 100);
-  };
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      scrollToFirstError();
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    const token = Cookies.get("token");
-
-    const requestBody = {
-      name: formData.name,
-      description: formData.description,
-      contact_name: formData.contact_name,
-      email: formData.email,
-      phone_number: formData.phone_number,
-      regions: formData.regions
-        ? formData.regions
-            .split(",")
-            .map((r) => r.trim())
-            .filter(Boolean)
-        : [],
-      website_url: formData.website_url || undefined,
-      logo_url: formData.logo_url || undefined,
-      // rating: parseFloat(formData.rating) || 4.5,
-      // status: formData.status,
-
-      total_trips:
-        formData.total_trips !== "" ? Number(formData.total_trips) : undefined,
-
-      trips_per_year:
-        formData.trips_per_year !== ""
-          ? Number(formData.trips_per_year)
-          : undefined,
-
-      social_links: {
-        instagram: formData.social_links.instagram || undefined,
-        facebook: formData.social_links.facebook || undefined,
-        twitter: formData.social_links.twitter || undefined,
-        youtube: formData.social_links.youtube || undefined,
-        linkedin: formData.social_links.linkedin || undefined,
-      },
-    };
-
-    Object.keys(requestBody).forEach(
-      (key) => requestBody[key] === undefined && delete requestBody[key],
-    );
-
-    console.log("add op req", requestBody);
-
-    try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/operators/admin`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(requestBody),
-        },
-      );
-
-      const data = await res.json();
-
-      // if (!res.ok || !data.success) {
-      //   throw new Error(
-      //     data.message || data.error?.message || "Failed to add operator",
-      //   );
-      // }
-      if (!res.ok)
-        toast({
-          title: "Error",
-          description: "Failed to add operator",
-          variant: "destructive",
-        });
-
-      handleModalClose(false);
-    } catch (err) {
-      console.error("Error adding operator:", err);
-      setError(err.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs">
-      <div className="bg-white w-full sm:w-[90vw] md:w-[80vw] lg:w-[70vw] h-[90vh] sm:h-[85vh] rounded-t-xl sm:rounded-xl shadow-lg flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b">
-          <h2 className="text-lg sm:text-xl font-semibold text-[#14181F]">
-            Add Operator
-          </h2>
-          <button
-            onClick={() => handleModalClose(false)}
-            className="text-gray-500 hover:text-black text-xl p-1"
-            disabled={loading || uploadingImage}
-          >
-            <IoCloseSharp />
-          </button>
-        </div>
-
-        {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-admin-error text-sm">{error}</p>
-            </div>
-          )}
-
-          <form
-            onSubmit={handleSubmit}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5"
-          >
-            {/* Logo Upload */}
-            <div className="col-span-1 sm:col-span-2">
-              <label className="text-sm text-gray-600 font-medium">
-                Upload Logo
-              </label>
-              <div className="flex flex-col sm:flex-row items-start gap-4 mt-1">
-                <div className="flex-1 w-full">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:bg-[#4ED0C3]/10 file:text-[#4ED0C3] hover:file:bg-[#4ED0C3]/20"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Upload a logo image (JPG, PNG, SVG)
-                  </p>
-                </div>
-                {formData.logo_url && (
-                  <div className="flex flex-col items-center sm:items-start">
-                    <img
-                      src={formData.logo_url}
-                      alt="Uploaded Logo"
-                      className="h-16 w-16 object-cover rounded-md border"
-                      onError={(e) => {
-                        e.target.src = "/vercel.svg";
-                        e.target.onerror = null;
-                      }}
-                    />
-                    <span className="text-xs text-gray-500 mt-1">Preview</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Operator Name */}
-            <div>
-              <label className="text-sm text-gray-600">Operator Name *</label>
-              <Input
-                type="text"
-                name="name"
-                required
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full mt-1"
-                placeholder="Wanderlust Adventures"
-              />
-              {fieldErrors.name && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.name}
-                </p>
-              )}
-            </div>
-
-            {/* Contact Person Name */}
-            <div>
-              <label className="text-sm text-gray-600">
-                Contact Person Name *
-              </label>
-              <Input
-                type="text"
-                name="contact_name"
-                required
-                value={formData.contact_name}
-                onChange={handleChange}
-                className="w-full mt-1"
-                placeholder="Priya Sharma"
-              />
-              {fieldErrors.contact_name && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.contact_name}
-                </p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="text-sm text-gray-600">Email *</label>
-              <Input
-                type="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={(e) => {
-                  setFormData((prev) => ({
-                    ...prev,
-                    email: e.target.value.toLowerCase(),
-                  }));
-                }}
-                className="w-full mt-1"
-                placeholder="hello@wanders.com"
-              />
-              {fieldErrors.email && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.email}
-                </p>
-              )}
-            </div>
-
-            {/* Phone Number */}
-            <div>
-              <label className="text-sm text-gray-600">Phone Number *</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                  +91
-                </span>
-
-                <Input
-                  type="tel"
-                  placeholder="9876543210"
-                  value={formData.phone_number}
-                  onChange={(e) => {
-                    const digits = e.target.value
-                      .replace(/\D/g, "")
-                      .slice(0, 10);
-
-                    setFormData((prev) => ({
-                      ...prev,
-                      phone_number: digits,
-                    }));
-                  }}
-                  className="pl-12 text-sm mt-1 w-full"
-                  required
-                />
-              </div>
-              {fieldErrors.phone_number && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.phone_number}
-                </p>
-              )}
-            </div>
-
-            {/* Region */}
-            <div>
-              <label className="text-sm text-gray-600">Region *</label>
-              <Input
-                type="text"
-                name="regions"
-                required
-                value={formData.regions}
-                onChange={handleChange}
-                className="w-full mt-1"
-                placeholder="North India, Himalayas"
-              />
-            </div>
-
-            {/* Total Trips */}
-            <div>
-              <label className="text-sm text-gray-600">Total Trips</label>
-              <Input
-                type="number"
-                name="total_trips"
-                value={formData.total_trips}
-                onChange={handleChange}
-                min="0"
-                className="w-full mt-1"
-                placeholder="150"
-              />
-            </div>
-
-            {/* Trips Per Year */}
-            <div>
-              <label className="text-sm text-gray-600">Trips Per Year</label>
-              <Input
-                type="number"
-                name="trips_per_year"
-                value={formData.trips_per_year}
-                onChange={handleChange}
-                min="0"
-                className="w-full mt-1"
-                placeholder="25"
-              />
-            </div>
-
-            {/* Status - Commented out */}
-            {/* <div>
-              <label className="text-sm text-gray-600">Status *</label>
-              <select
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 focus:outline-none"
-                name="status"
-                required
-                value={formData.status}
-                onChange={handleChange}
-              >
-                <option value="" className="placeholder:text-gray-600">
-                  Select Status
-                </option>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-                <option value="SUSPENDED">Suspended</option>
-              </select>
-            </div> */}
-
-            {/* Social Links Section */}
-            <div className="col-span-1 sm:col-span-2">
-              <label className="text-sm text-gray-600">
-                Social Media Links
-              </label>
-            </div>
-
-            {/* Website URL */}
-            <div>
-              <label className="text-sm text-gray-600">Website URL</label>
-              <Input
-                type="url"
-                name="website_url"
-                value={formData.website_url}
-                onChange={handleChange}
-                className="w-full mt-1"
-                placeholder="https://wanderlustadventures.com"
-              />
-              {fieldErrors.website_url && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.website_url}
-                </p>
-              )}
-            </div>
-
-            {/* Instagram */}
-            <div>
-              <label className="text-sm text-gray-600">Instagram URL</label>
-              <Input
-                type="url"
-                name="social_links.instagram"
-                value={formData.social_links.instagram}
-                onChange={handleChange}
-                placeholder="https://instagram.com/operator"
-                className="w-full mt-1"
-              />
-              {fieldErrors["social_links.instagram"] && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors["social_links.instagram"]}
-                </p>
-              )}
-            </div>
-
-            {/* Facebook */}
-            <div>
-              <label className="text-sm text-gray-600">Facebook URL</label>
-              <Input
-                type="url"
-                name="social_links.facebook"
-                value={formData.social_links.facebook}
-                onChange={handleChange}
-                placeholder="https://facebook.com/operator"
-                className="w-full mt-1"
-              />
-              {fieldErrors["social_links.facebook"] && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors["social_links.facebook"]}
-                </p>
-              )}
-            </div>
-
-            {/* LinkedIn */}
-            <div>
-              <label className="text-sm text-gray-600">LinkedIn URL</label>
-              <Input
-                type="url"
-                name="social_links.linkedin"
-                value={formData.social_links.linkedin}
-                onChange={handleChange}
-                placeholder="https://linkedin.com/company/operator"
-                className="w-full mt-1"
-              />
-              {fieldErrors["social_links.linkedin"] && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors["social_links.linkedin"]}
-                </p>
-              )}
-            </div>
-
-            {/* Twitter */}
-            <div>
-              <label className="text-sm text-gray-600">Twitter URL</label>
-              <Input
-                type="url"
-                name="social_links.twitter"
-                value={formData.social_links.twitter}
-                onChange={handleChange}
-                placeholder="https://twitter.com/operator"
-                className="w-full mt-1"
-              />
-              {fieldErrors["social_links.twitter"] && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors["social_links.twitter"]}
-                </p>
-              )}
-            </div>
-
-            {/* YouTube */}
-            <div>
-              <label className="text-sm text-gray-600">YouTube URL</label>
-              <Input
-                type="url"
-                name="social_links.youtube"
-                value={formData.social_links.youtube}
-                onChange={handleChange}
-                placeholder="https://youtube.com/@operator"
-                className="w-full mt-1"
-              />
-              {fieldErrors["social_links.youtube"] && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors["social_links.youtube"]}
-                </p>
-              )}
-            </div>
-
-            {/* Rating - Commented out */}
-            {/* <div>
-              <label className="text-sm text-gray-600">Rating (0-5)</label>
-              <Input
-                type="number"
-                name="rating"
-                step="0.1"
-                min="0"
-                max="5"
-                value={formData.rating}
-                onChange={handleChange}
-                className="w-full mt-1"
-                placeholder="4.5"
-              />
-            </div> */}
-
-            {/* Description */}
-            <div className="col-span-1 sm:col-span-2">
-              <label className="text-sm text-gray-600">Description *</label>
-              <textarea
-                name="description"
-                required
-                value={formData.description}
-                onChange={handleChange}
-                rows="4"
-                className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none"
-                placeholder="Describe the operator's services, specialties, and experience..."
-              ></textarea>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="col-span-1 sm:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 sm:pt-6 mt-2 border-t">
-              <button
-                type="button"
-                onClick={() => handleModalClose(false)}
-                className="w-full sm:w-auto px-6 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                disabled={loading || uploadingImage}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading || uploadingImage}
-                className="w-full sm:w-auto px-6 py-2 bg-[#4ED0C3] text-white rounded-lg text-sm font-medium hover:bg-[#3db8ab] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading
-                  ? "Adding..."
-                  : uploadingImage
-                    ? "Uploading..."
-                    : "Add Operator"}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+      <AdminConfirmDialog
+        isOpen={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title={dialogConfig.title}
+        description={dialogConfig.description}
+        confirmText={
+          dialogConfig.type === "delete" ? "Delete Operator" : "Yes, Inactivate"
+        }
+        onConfirm={() => {
+          if (dialogConfig.type === "delete") {
+            executeDeleteOperator();
+          } else {
+            handleUpdateOperator(selectedOperatorId, { status: "INACTIVE" });
+            setConfirmDialogOpen(false);
+          }
+        }}
+        isLoading={isActionLoading}
+        variant={dialogConfig.type === "delete" ? "destructive" : "default"}
+      >
+        {dialogConfig.type === "inactivate" && operatorTrips.length > 0 && (
+          <div className="max-h-40 overflow-y-auto text-sm text-slate-600 space-y-1">
+            <p className="font-semibold mb-2">Affected Trips:</p>
+            {operatorTrips.slice(0, 5).map((trip) => (
+              <p key={trip.id} className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-slate-400 rounded-full" />
+                {trip.name}
+              </p>
+            ))}
+            {operatorTrips.length > 5 && (
+              <p className="text-slate-400 italic">
+                ...and {operatorTrips.length - 5} others
+              </p>
+            )}
+          </div>
+        )}
+      </AdminConfirmDialog>
+    </>
   );
 }
 

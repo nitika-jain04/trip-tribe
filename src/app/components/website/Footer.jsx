@@ -1,13 +1,15 @@
+"use client";
+
 import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const footerLinks = {
   explore: [
-    { name: "Search Trips", href: "/trips" },
+    { name: "Search Trips", href: "/" },
     { name: "Destinations", href: "/trips" },
     { name: "Compare Trips", href: "/trips" },
-    { name: "Verified Reviews", href: "/trips" },
+    // { name: "Verified Reviews", href: "/trips" },
   ],
   company: [
     { name: "About Us", href: "/about" },
@@ -18,15 +20,26 @@ const footerLinks = {
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Terms of Service", href: "/termsofuse" },
-    // { name: "Cookie Policy", href: "/contact" },
+    { name: "Disclaimer", href: "/disclaimer" },
   ],
 };
 
 export function Footer() {
+  const pathname = usePathname();
+
+  const handleNavClick = (e, href) => {
+    if (pathname === href) {
+      e.preventDefault(); // stop navigation
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <footer className="bg-foreground text-background">
       {/* CTA Section */}
-      <div className="container-premium">
+      <div
+        className={`container-premium ${pathname === "/" || pathname === "/about" || pathname === "/trips" ? "hidden" : ""}`}
+      >
         <div className="py-16 md:py-20 border-b border-background/10">
           <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
             <div className="text-center lg:text-left">
@@ -40,6 +53,8 @@ export function Footer() {
             </div>
             <Link
               href="/trips"
+              prefetch={false}
+              onClick={(e) => handleNavClick(e, "/trips")}
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium text-body-lg transition-all duration-300 hover:bg-primary/90 hover:gap-4"
             >
               Explore Trips
@@ -54,7 +69,11 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand Column */}
           <div className="col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-6">
+            <Link
+              href="/"
+              className="flex items-center gap-2 mb-6"
+              prefetch={false}
+            >
               <img
                 src="/triptribe-logo-final.png"
                 alt="TripTribe"
@@ -100,6 +119,8 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    prefetch={false}
+                    onClick={(e) => handleNavClick(e, link.href)}
                     className="text-body-sm text-background/60 hover:text-primary transition-colors"
                   >
                     {link.name}
@@ -119,6 +140,9 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    prefetch={false}
+                    // onClick={`(e) => handleNavClick(e, ${link.href})`}
+                    onClick={(e) => handleNavClick(e, link.href)}
                     className="text-body-sm text-background/60 hover:text-primary transition-colors"
                   >
                     {link.name}
@@ -138,6 +162,8 @@ export function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
+                    prefetch={false}
+                    onClick={(e) => handleNavClick(e, link.href)}
                     className="text-body-sm text-background/60 hover:text-primary transition-colors"
                   >
                     {link.name}

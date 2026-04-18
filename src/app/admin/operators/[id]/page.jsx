@@ -19,20 +19,21 @@ import {
   Facebook,
   Twitter,
 } from "lucide-react";
-import { Button } from "@/app/components/ui/button";
 import Cookies from "js-cookie";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Image from "next/image";
+import { Rating } from "@/app/components/ui/rating";
 import { useToast } from "@/app/hooks/use-toast";
+import { FaRegUser } from "react-icons/fa";
+import { Button } from "@/app/components/ui/button";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export default function OperatorDetail() {
-  const [operator, setOperator] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const { id } = useParams();
   const router = useRouter();
   const { toast } = useToast();
@@ -45,38 +46,22 @@ export default function OperatorDetail() {
     twitter: Twitter,
   };
 
-  useEffect(() => {
-    const fetchOperator = async () => {
-      const token = Cookies.get("token");
-      setError(null);
-      try {
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          },
-        );
-        const data = await res.json();
-        if (data.success) setOperator(data.result);
-        else
-          toast({
-            title: "Error",
-            description: "Failed to fetch operator",
-            variant: "destructive",
-          });
-      } catch (err) {
-        console.error(err);
-        setError(err.message || "Failed to fetch operator");
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) fetchOperator();
-  }, [id]);
+  // Fetch Operator
+  const {
+    data: operatorData,
+    error: operatorError,
+    isLoading: loading,
+  } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}` : null,
+    adminFetcher,
+  );
+
+  const operator = operatorData?.result || null;
+  const error = operatorError?.message || null;
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -98,7 +83,7 @@ export default function OperatorDetail() {
 
   if (error) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -124,7 +109,7 @@ export default function OperatorDetail() {
 
   if (!operator) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -149,7 +134,7 @@ export default function OperatorDetail() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 min-h-[100dvh]">
       <Link
         href="/admin/operators"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
@@ -158,15 +143,21 @@ export default function OperatorDetail() {
       </Link>
 
       {/* Header Card */}
-      <div className="bg-white mt-3 rounded-lg shadow-sm border px-6 py-4 flex flex-col md:flex-row gap-6 items-start">
-        <Image
-          height={200}
-          width={200}
-          src={operator.logo_url || "/vercel.svg"}
-          alt={operator.name}
-          className="rounded-xl object-cover border"
-          onError={(e) => (e.currentTarget.src = "/vercel.svg")}
-        />
+      <div className="bg-white sm:mt-3 rounded-lg shadow-sm border p-4 sm:px-6 sm:py-4 flex flex-col md:flex-row gap-4 sm:gap-6 items-start">
+        <div className="flex justify-center items-center">
+          {operator.logo_url ? (
+            <Image
+              height={200}
+              width={200}
+              src={operator.logo_url}
+              alt={operator.name}
+              className="rounded-xl object-cover border"
+              onError={(e) => (e.currentTarget.src = "/vercel.svg")}
+            />
+          ) : (
+            <FaRegUser className="text-gray-500" size={30} />
+          )}
+        </div>
 
         <div className="flex-1 space-y-3">
           <div className="flex justify-between items-center gap-3 flex-wrap">
@@ -199,21 +190,26 @@ export default function OperatorDetail() {
           </div>
 
           <div className="text-muted-foreground">
-            {operator.description || "No description provided"}
+            {operator.business_description || "No description provided"}
           </div>
 
           <div className="flex flex-wrap justify-between text-sm text-muted-foreground pt-2 gap-3">
             <span className="flex items-center gap-2">
               <Mail size={17} />
               <p className="text-black/80 font-medium">
-                {operator.email || "N/A"}
+                <a href={`mailto:${operator.email}`}>
+                  {operator.email || "N/A"}
+                </a>
               </p>
             </span>
             <span className="flex items-center gap-2">
               <Phone size={17} />
-              <p className="text-black/80 font-medium">
+              <a
+                href={`tel:${getDialablePhone(operator.phone_number)}`}
+                className="text-black/80 font-medium"
+              >
                 {formatPhoneNumber(operator.phone_number)}
-              </p>
+              </a>
             </span>
             {operator.website_url && (
               <a
@@ -248,8 +244,8 @@ export default function OperatorDetail() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Trips" value={operator.total_trips ?? 0} />
-        <StatCard label="Trips Per Year" value={operator.trips_per_year ?? 0} />
+        <StatCard label="Total Trips" value={operator.trip?.length ?? 0} />
+        {/* <StatCard label="Trips Per Year" value={operator.trips_per_year ?? 0} /> */}
         <StatCard
           label="Member Since"
           value={
@@ -258,6 +254,7 @@ export default function OperatorDetail() {
               : "N/A"
           }
         />
+
         <StatCard
           label="Last Updated"
           value={
@@ -273,18 +270,20 @@ export default function OperatorDetail() {
       </div>
 
       {/* Details Section */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
+      <div className="bg-white rounded-lg shadow-sm border p-4 sm:p-6 space-y-4">
         <h2 className="text-lg font-semibold mb-4">Business Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
           <DetailItem
             label="Contact Person"
             value={operator.contact_name || "N/A"}
           />
-          <DetailItem label="Website" value={operator.website_url || "N/A"} />
-          <DetailItem label="Total Trips" value={operator.total_trips ?? 0} />
+          <DetailItem label="Website" value={operator.website_url ?? "N/A"} />
+          <DetailItem label="Total Trips" value={operator.trip?.length ?? 0} />
           <DetailItem
-            label="Trips Per Year"
-            value={operator.trips_per_year ?? 0}
+            label="Hotel Category"
+            value={
+              <Rating value={operator.hotel_category || 0} className="mt-1" />
+            }
           />
           <DetailItem
             label="Regions"
@@ -329,7 +328,9 @@ function DetailItem({ label, value }) {
   return (
     <div>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="font-medium text-sm wrap-break-word">{value || "N/A"}</p>
+      <div className="font-medium text-sm wrap-break-word">
+        {value || "N/A"}
+      </div>
     </div>
   );
 }

@@ -10,7 +10,7 @@ export function middleware(request) {
   }
 
   if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   try {
@@ -21,10 +21,10 @@ export function middleware(request) {
       decoded.exp * 1000 < Date.now() ||
       !["ADMIN", "SUPER_ADMIN"].includes(decoded.role)
     ) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
   } catch {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   return NextResponse.next();

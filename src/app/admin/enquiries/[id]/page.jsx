@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -32,7 +32,9 @@ import {
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { useToast } from "@/app/hooks/use-toast";
 import Cookies from "js-cookie";
-import { formatPhoneNumber } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
+import useSWR from "swr";
+import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -40,63 +42,43 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 export default function EnquiryDetail() {
   const { toast } = useToast();
   const { id } = useParams();
+  const router = useRouter();
 
   const [enquiry, setEnquiry] = useState(null);
   const [status, setStatus] = useState("new");
   const [adminNotes, setAdminNotes] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const {
+    data: enquiryData,
+    error: enquiryError,
+    isLoading: loading,
+    mutate,
+  } = useSWR(
+    id ? `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}` : null,
+    adminFetcher,
+  );
 
   useEffect(() => {
-    const fetchEnquiry = async () => {
-      const token = Cookies.get("token");
-
-      console.log("id", id);
-
-      try {
-        const res = await fetch(
-          `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${id}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-        const data = await res.json();
-
-        console.log("res", data);
-
-        const fetchedEnquiry =
-          data?.result?.data?.find((e) => e.id === id) || data?.result || null;
-
-        // if (!fetchedEnquiry) throw new Error("Enquiry not found");
-        if (!fetchedEnquiry) {
-          toast({
-            title: "Error",
-            description: "Enquiry not found",
-            variant: "destructive",
-          });
-        }
-
+    if (enquiryData) {
+      const fetchedEnquiry =
+        enquiryData?.result?.data?.find((e) => e.id === id) ||
+        enquiryData?.result ||
+        null;
+      if (fetchedEnquiry) {
         setEnquiry(fetchedEnquiry);
         setStatus(fetchedEnquiry.status?.toLowerCase() || "new");
         setAdminNotes(fetchedEnquiry.admin_notes || "");
-      } catch (err) {
-        console.error("Error fetching enquiry:", err);
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchEnquiry();
-  }, [id]);
+    }
+  }, [enquiryData, id]);
 
   const handleSave = async () => {
     const token = Cookies.get("token");
     if (!enquiry) return;
 
     try {
-      setLoading(true); // optional: disable inputs while saving
+      setSaving(true);
 
       const res = await fetch(
         `${BASE_URL}/api/${API_VERSION}/enquiries/admin/${enquiry.id}`,
@@ -113,43 +95,45 @@ export default function EnquiryDetail() {
         },
       );
 
-      // if (!res.ok) {
-      //   const errData = await res.json();
-      //   throw new Error(errData?.message || "Failed to update enquiry");
-      // }
+      const updatedData = await res.json();
+
       if (!res.ok) {
         toast({
           title: "Error",
-          description: "Failed to update enquiry ",
+          description:
+            updatedData?.error?.message || "Failed to update enquiry ",
           variant: "destructive",
         });
+        return;
       }
-
-      const updatedData = await res.json();
 
       // update local state with latest data from server
       setEnquiry(updatedData.result || updatedData);
 
-      toast({
-        title: "Enquiry Updated",
-        description: "The enquiry has been updated successfully.",
-        variant: "success",
-      });
+      if (res.ok) {
+        toast({
+          title: "Enquiry Updated",
+          description: "The enquiry updated successfully.",
+          variant: "success",
+        });
+
+        mutate(); // Optimistic refresh
+        router.push("/admin/enquiries");
+      }
     } catch (err) {
-      console.error("Error updating enquiry:", err);
       toast({
         title: "Error",
-        description: err.message || "Something went wrong",
+        description: "Error updating enquiry",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
           href="/admin/enquiries"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
@@ -184,7 +168,7 @@ export default function EnquiryDetail() {
   }
 
   return (
-    <div className="space-y-6 p-2 md:p-6">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Back Button */}
       <Button variant="ghost" asChild>
         <Link href="/admin/enquiries">
@@ -252,7 +236,7 @@ export default function EnquiryDetail() {
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="h-4 w-4 text-muted-foreground" />
                 <a
-                  href={`tel:+91${enquiry.phone_number.replace(/\D/g, "").slice(-10)}`}
+                  href={`tel:${getDialablePhone(enquiry.phone_number)}`}
                   className="hover:underline"
                 >
                   {formatPhoneNumber(enquiry.phone_number)}
@@ -361,9 +345,25 @@ export default function EnquiryDetail() {
               disabled={loading}
             />
           </div>
-          <Button onClick={handleSave} disabled={loading}>
-            <Save className="h-4 w-4 mr-2" />
-            {loading ? "Saving..." : "Save Changes"}
+          <Button
+            onClick={handleSave}
+            disabled={
+              saving ||
+              (status === (enquiry.status?.toLowerCase() || "new") &&
+                adminNotes === (enquiry.admin_notes || ""))
+            }
+          >
+            {saving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Save Changes
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>

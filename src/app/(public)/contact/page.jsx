@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import useSWR from "swr";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
+import PhoneInput from "@/app/components/ui/PhoneInput";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Label } from "@/app/components/ui/label";
 import {
@@ -14,6 +16,7 @@ import {
   Clock,
   CheckCircle2,
   HelpCircle,
+  ArrowRight,
 } from "lucide-react";
 import {
   Select,
@@ -23,6 +26,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { useToast } from "@/app/hooks/use-toast";
+import { useOnlineStatus } from "@/app/hooks/use-online-status";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -79,6 +83,52 @@ const faqs = [
   },
 ];
 
+const slowScrollTo = (targetId, duration = 900) => {
+  const target = document.getElementById(targetId);
+  if (!target) return;
+  const targetY = target.getBoundingClientRect().top + window.scrollY;
+  const startY = window.scrollY;
+  const diff = targetY - startY;
+  let startTime = null;
+  // Disable CSS smooth-scroll to prevent browser double-animating our scrollTo calls
+  document.documentElement.style.scrollBehavior = "auto";
+  const step = (timestamp) => {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    window.scrollTo(0, startY + diff * progress);
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    } else {
+      document.documentElement.style.scrollBehavior = "";
+    }
+  };
+  requestAnimationFrame(step);
+};
+
+const safeFetcher = async (url, fallbackKey) => {
+  try {
+    const res = await fetch(url);
+
+    if (!res.ok) {
+      console.error(
+        `Request failed: ${res.status} ${res.statusText} for ${url}`,
+      );
+      return fallbackKey === "trips"
+        ? { success: false, result: { trips: [] } }
+        : { success: false, result: { operators: [] } };
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error) {
+    console.warn(`Background fetch failed for ${url}`);
+    return fallbackKey === "trips"
+      ? { success: false, result: { trips: [] } }
+      : { success: false, result: { operators: [] } };
+  }
+};
+
 export default function Contact() {
   const [formData, setFormData] = useState({
     name: "",
@@ -92,11 +142,44 @@ export default function Contact() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [trips, setTrips] = useState([]);
-  const [operators, setOperators] = useState([]);
 
   const [errors, setErrors] = useState({});
+  const [isPhoneValid, setIsPhoneValid] = useState(false);
+  const handlePhoneValidation = useCallback(
+    (valid) => setIsPhoneValid(valid),
+    [],
+  );
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
+
+  const tripsUrl =
+    BASE_URL && API_VERSION ? `${BASE_URL}/api/${API_VERSION}/trips` : null;
+
+  const operatorsUrl =
+    BASE_URL && API_VERSION ? `${BASE_URL}/api/${API_VERSION}/operators` : null;
+
+  const { data: tripsData } = useSWR(
+    tripsUrl ? [tripsUrl, "trips"] : null,
+    ([url, key]) => safeFetcher(url, key),
+    {
+      shouldRetryOnError: false,
+      revalidateOnFocus: false,
+    },
+  );
+
+  const { data: operatorsData } = useSWR(
+    operatorsUrl ? [operatorsUrl, "operators"] : null,
+    ([url, key]) => safeFetcher(url, key),
+    {
+      shouldRetryOnError: false,
+      revalidateOnFocus: false,
+    },
+  );
+
+  const trips = tripsData?.success ? tripsData?.result?.trips || [] : [];
+  const operators = operatorsData?.success
+    ? operatorsData?.result?.operators || []
+    : [];
 
   const validateForm = () => {
     const newErrors = {};
@@ -111,13 +194,8 @@ export default function Contact() {
       newErrors.email = "Enter a valid email address";
     }
 
-    // accepts +919876543210, 919876543210, 9876543210
-    const phoneRegex = /^(\+91|91)?[6-9]\d{9}$/;
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (!phoneRegex.test(formData.phone.trim())) {
-      newErrors.phone = "Enter valid phone number like 9876543210";
+    if (!isPhoneValid) {
+      newErrors.phone = "Enter a valid phone number";
     }
 
     if (!formData.subject.trim()) {
@@ -153,19 +231,18 @@ export default function Contact() {
 
     try {
       const payload = {
-        full_name: formData.name,
-        email: formData.email.toLowerCase(),
-        phone_number: formData.phone,
-        inquiry_type: formData.inquiryType.toUpperCase(),
-        subject: formData.subject,
-        message: formData.message,
+        full_name: formData.name || "",
+        email: (formData.email || "").toLowerCase(),
+        phone_number: formData.phone || "",
+        inquiry_type: (formData.inquiryType || "").toUpperCase(),
+        subject: formData.subject || "",
+        message: formData.message || "",
       };
 
       if (formData.inquiryType === "trip") {
         payload.trip_id = formData.tripId;
         // payload.operator_id = formData.operatorId;
       }
-      console.log("req", payload);
 
       const response = await fetch(`${BASE_URL}/api/${API_VERSION}/enquiries`, {
         method: "POST",
@@ -216,7 +293,7 @@ export default function Contact() {
 
         toast({
           title: "Error",
-          description: err.message,
+          description: data?.error?.message,
           variant: "destructive",
         });
       }
@@ -224,36 +301,11 @@ export default function Contact() {
       console.error("Error submitting enquiry:", error);
       toast({
         title: "Error",
-        description: err.message,
+        description: error.message,
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrips();
-    fetchOperators();
-  }, []);
-
-  const fetchTrips = async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips`);
-      const data = await res.json();
-      if (data.success) setTrips(data?.result?.trips || []);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchOperators = async () => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/${API_VERSION}/operators`);
-      const data = await res.json();
-      if (data.success) setOperators(data?.result?.operators || []);
-    } catch (err) {
-      console.error(err);
     }
   };
 
@@ -290,6 +342,14 @@ export default function Contact() {
               Have questions about trips, partnerships, or anything else? Our
               team is here to help.
             </p>
+
+            <Button
+              className="btn-primary text-body px-8 py-6 mt-3"
+              onClick={() => slowScrollTo("apply")}
+            >
+              Contact Us
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
           </div>
         </div>
       </section>
@@ -323,7 +383,7 @@ export default function Contact() {
       </section>
 
       {/* Contact Form & FAQ */}
-      <section className="section bg-muted/30">
+      <section className="section bg-muted/30" id="apply">
         <div className="container-premium">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
             {/* Contact Form */}
@@ -332,7 +392,7 @@ export default function Contact() {
                 Send Us a Message
               </h2>
               <p className="text-body text-muted-foreground mb-8">
-                Fill out the form below and we&apos;ll respond within 24 hours.
+                Fill out the form below and we&apos;ll respond shortly.
               </p>
 
               {isSubmitted ? (
@@ -374,11 +434,13 @@ export default function Contact() {
                             });
                           }
                         }}
-                        className={`h-12 rounded-lg ${errors.name ? "border-red-500" : ""}`}
+                        className={`h-10 rounded-lg ${errors.name ? "border-red-500" : ""}`}
                         placeholder="Your name"
                       />
                       {errors.name && (
-                        <p className="text-sm text-red-500">{errors.name}</p>
+                        <p className="text-sm text-admin-error">
+                          {errors.name}
+                        </p>
                       )}
                     </div>
                     <div className="flex flex-col gap-2">
@@ -399,51 +461,40 @@ export default function Contact() {
                             });
                           }
                         }}
-                        className={`h-12 rounded-lg ${errors.email ? "border-red-500" : ""}`}
+                        className={`h-10 rounded-lg ${errors.email ? "border-red-500" : ""}`}
                         placeholder="you@email.com"
                       />
                       {errors.email && (
-                        <p className="text-sm text-red-500">{errors.email}</p>
+                        <p className="text-sm text-admin-error">
+                          {errors.email}
+                        </p>
                       )}
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="phone">Phone Number</Label>
+                    <PhoneInput
+                      className="h-10"
+                      value={formData.phone}
+                      onChange={(phone) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          phone: phone,
+                        }));
 
-                    <div className="relative">
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
-                        +91
-                      </span>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) => {
-                          const digits = e.target.value
-                            .replace(/\D/g, "")
-                            .slice(0, 10);
-
-                          setFormData((prev) => ({
-                            ...prev,
-                            phone: digits,
-                          }));
-
-                          if (errors.phone) {
-                            setErrors((prev) => {
-                              const updated = { ...prev };
-                              delete updated.phone;
-                              return updated;
-                            });
-                          }
-                        }}
-                        className={`h-12 rounded-lg pl-12 text-sm ${errors.phone ? "border-red-500" : ""}`}
-                        placeholder="9876543210"
-                      />
-                    </div>
-                    {errors.phone && (
-                      <p className="text-sm text-red-500">{errors.phone}</p>
-                    )}
+                        if (errors.phone) {
+                          setErrors((prev) => {
+                            const updated = { ...prev };
+                            delete updated.phone;
+                            return updated;
+                          });
+                        }
+                      }}
+                      onValidationChange={handlePhoneValidation}
+                      error={errors.phone}
+                      placeholder="Enter phone number"
+                    />
                   </div>
 
                   <div className="flex flex-col gap-2">
@@ -461,7 +512,7 @@ export default function Contact() {
                         });
                       }}
                     >
-                      <SelectTrigger className="h-12 rounded-lg">
+                      <SelectTrigger className="h-10 rounded-lg">
                         <SelectValue placeholder="Select inquiry type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -490,7 +541,7 @@ export default function Contact() {
                             });
                           }}
                         >
-                          <SelectTrigger className="h-12 rounded-lg">
+                          <SelectTrigger className="h-10 rounded-lg">
                             <SelectValue placeholder="Select Trip" />
                           </SelectTrigger>
 
@@ -509,7 +560,7 @@ export default function Contact() {
                         <Label>Operator</Label>
 
                         <Select value={formData.operatorId} disabled>
-                          <SelectTrigger className="h-12 rounded-lg">
+                          <SelectTrigger className="h-10 rounded-lg">
                             <SelectValue placeholder="Operator auto-selected" />
                           </SelectTrigger>
 
@@ -542,11 +593,13 @@ export default function Contact() {
                           });
                         }
                       }}
-                      className={`h-12 rounded-lg ${errors.subject ? "border-red-500" : ""}`}
+                      className={`h-10 rounded-lg ${errors.subject ? "border-red-500" : ""}`}
                       placeholder="How can we help?"
                     />
                     {errors.subject && (
-                      <p className="text-sm text-red-500">{errors.subject}</p>
+                      <p className="text-sm text-admin-error">
+                        {errors.subject}
+                      </p>
                     )}
                   </div>
 
@@ -567,21 +620,25 @@ export default function Contact() {
                           });
                         }
                       }}
-                      className={`h-12 rounded-lg ${errors.message ? "border-red-500" : ""}`}
+                      className={`h-10 rounded-lg ${errors.message ? "border-red-500" : ""}`}
                       placeholder="Tell us more..."
                       rows={5}
                     />
                     {errors.message && (
-                      <p className="text-sm text-red-500">{errors.message}</p>
+                      <p className="text-sm text-admin-error">
+                        {errors.message}
+                      </p>
                     )}
                   </div>
 
                   <Button
                     type="submit"
                     className="btn-primary w-full h-12"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isOnline}
                   >
-                    {isSubmitting ? (
+                    {!isOnline ? (
+                      "No Internet Connection"
+                    ) : isSubmitting ? (
                       "Sending..."
                     ) : (
                       <>
