@@ -17,14 +17,13 @@ import {
 import { Button } from "@/app/components/ui/button";
 import { Card, CardContent } from "@/app/components/ui/card";
 import { MdChairAlt } from "react-icons/md";
-import Cookies from "js-cookie";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import { BiTrip } from "react-icons/bi";
 import { GoTriangleUp } from "react-icons/go";
-import Image from "next/image";
 import { Rating } from "@/app/components/ui/rating";
 import { useToast } from "@/app/hooks/use-toast";
 import useSWR from "swr";
+import { cn } from "@/lib/utils";
 import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -36,26 +35,36 @@ export default function TripDetail() {
   const [activeImage, setActiveImage] = useState(null);
 
   // 1. Core Fetch
-  const { data: tripData, error: tripError, isLoading: loading } = useSWR(
+  const {
+    data: tripData,
+    error: tripError,
+    isLoading: loading,
+  } = useSWR(
     id ? `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}` : null,
-    adminFetcher
+    adminFetcher,
   );
-  
+
   const trip = tripData?.result || null;
   const error = tripError?.message || null;
 
   // 2. Dependent Fetches
   const { data: operatorData } = useSWR(
-    trip?.operator_id ? `${BASE_URL}/api/${API_VERSION}/operators/admin/${trip.operator_id}` : null,
-    adminFetcher
+    trip?.operator_id
+      ? `${BASE_URL}/api/${API_VERSION}/operators/admin/${trip.operator_id}`
+      : null,
+    adminFetcher,
   );
   const { data: sourceData } = useSWR(
-    trip?.source_id ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.source_id}` : null,
-    adminFetcher
+    trip?.source_id
+      ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.source_id}`
+      : null,
+    adminFetcher,
   );
   const { data: destData } = useSWR(
-    trip?.destination_id ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.destination_id}` : null,
-    adminFetcher
+    trip?.destination_id
+      ? `${BASE_URL}/api/${API_VERSION}/locations/admin/${trip.destination_id}`
+      : null,
+    adminFetcher,
   );
 
   const operator = operatorData?.result || null;
@@ -193,8 +202,14 @@ export default function TripDetail() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <InfoItem
                 icon={<IndianRupee size={16} />}
-                label="Price"
-                value={`₹${trip.price}`}
+                label="Base Price"
+                value={`₹${
+                  trip.price_categories?.find(
+                    (c) => c.category.toLowerCase() === "base price",
+                  )?.price ||
+                  trip.price ||
+                  "N/A"
+                }`}
               />
               <InfoItem
                 icon={<MapPin size={16} />}
@@ -264,6 +279,47 @@ export default function TripDetail() {
           </CardContent>
         </div>
       </div>
+
+      {/* Price Categories Breakdown */}
+      {trip.price_categories?.length > 1 && (
+        <Card className="rounded-2xl shadow-sm overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              {/* <IndianRupee className="w-5 h-5 text-teal-600" /> */}
+              Price Categories
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {trip.price_categories.map((cat, i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-xl border bg-slate-50 flex justify-between items-center group hover:border-teal-300 transition-colors"
+                >
+                  <div>
+                    <p className="text-sm font-bold tracking-wider">
+                      {cat.category}
+                    </p>
+                    <p className="text-lg font-medium text-muted-foreground">
+                      ₹{cat.price.toLocaleString("en-IN")}
+                    </p>
+                  </div>
+                  <div
+                    className={cn(
+                      "px-2 py-1 rounded text-[10px] font-bold uppercase",
+                      cat.category.toLowerCase() === "base price"
+                        ? "bg-teal-100 text-teal-700"
+                        : "bg-slate-200 text-slate-600",
+                    )}
+                  >
+                    {cat.category.toLowerCase() === "base price"
+                      ? "Primary"
+                      : "Option"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Gallery */}
       {trip.images?.length > 1 && (

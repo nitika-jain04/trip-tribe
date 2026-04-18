@@ -47,9 +47,13 @@ export default function OperatorDetail() {
   };
 
   // Fetch Operator
-  const { data: operatorData, error: operatorError, isLoading: loading } = useSWR(
+  const {
+    data: operatorData,
+    error: operatorError,
+    isLoading: loading,
+  } = useSWR(
     id ? `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}` : null,
-    adminFetcher
+    adminFetcher,
   );
 
   const operator = operatorData?.result || null;
@@ -275,7 +279,12 @@ export default function OperatorDetail() {
           />
           <DetailItem label="Website" value={operator.website_url ?? "N/A"} />
           <DetailItem label="Total Trips" value={operator.trip?.length ?? 0} />
-          <DetailItem label="Hotel Category" value={<Rating value={operator.hotel_category || 0} className="mt-1" />} />
+          <DetailItem
+            label="Hotel Category"
+            value={
+              <Rating value={operator.hotel_category || 0} className="mt-1" />
+            }
+          />
           <DetailItem
             label="Regions"
             value={operator.regions?.join(", ") || "N/A"}
@@ -319,7 +328,9 @@ function DetailItem({ label, value }) {
   return (
     <div>
       <p className="text-sm text-muted-foreground">{label}</p>
-      <div className="font-medium text-sm wrap-break-word">{value || "N/A"}</div>
+      <div className="font-medium text-sm wrap-break-word">
+        {value || "N/A"}
+      </div>
     </div>
   );
 }

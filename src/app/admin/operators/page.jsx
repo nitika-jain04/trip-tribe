@@ -362,8 +362,7 @@ function OperatorsPage() {
           <>
             <DropdownMenuItem
               className="text-success"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleUpdateOperator(op.id, {
                   application_status: "APPROVED",
                 });
@@ -375,8 +374,7 @@ function OperatorsPage() {
 
             <DropdownMenuItem
               className="text-warning"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleUpdateOperator(op.id, {
                   application_status: "REJECTED",
                 });
@@ -398,8 +396,7 @@ function OperatorsPage() {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-warning"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleInactivateOperator(op.id);
               }}
             >
@@ -409,8 +406,7 @@ function OperatorsPage() {
 
             <DropdownMenuItem
               className="text-destructive"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleUpdateOperator(op.id, {
                   status: "SUSPENDED",
                 });
@@ -425,8 +421,7 @@ function OperatorsPage() {
           <>
             <DropdownMenuItem
               className="text-warning"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleUpdateOperator(op.id, {
                   status: "ACTIVE",
                 });
@@ -437,8 +432,7 @@ function OperatorsPage() {
             </DropdownMenuItem>
 
             <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleDeleteOperator(op.id);
               }}
               className="text-error"
@@ -452,8 +446,7 @@ function OperatorsPage() {
         {op.application_status === "APPROVED" && op.status === "SUSPENDED" && (
           <DropdownMenuItem
             className="text-success"
-            onSelect={(e) => {
-              e.preventDefault();
+            onSelect={() => {
               handleUpdateOperator(op.id, {
                 status: "ACTIVE",
               });

@@ -35,7 +35,12 @@ const mapServerTripData = (tripDataRaw) => {
       rating: 4.8,
       reviewCount: 0,
     },
-    priceFrom: Number(raw.price) || 0,
+    priceFrom: Number(
+      raw.price_categories?.find(
+        (c) => c.category?.toLowerCase() === "base price",
+      )?.price || raw.price,
+    ),
+    price_categories: raw.price_categories || [],
     duration: `${days}`,
     groupSize: raw.total_seats || 0,
     difficulty: raw.difficulty || "N/A",
@@ -54,7 +59,7 @@ const mapServerTripData = (tripDataRaw) => {
 async function getLocations() {
   try {
     const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations`, {
-      next: { revalidate: 3600 },
+      next: { revalidate: 0 },
     });
     const data = await res.json();
     const map = {};
@@ -72,7 +77,7 @@ async function getLocations() {
 async function getTrip(id) {
   try {
     const res = await fetch(`${BASE_URL}/api/${API_VERSION}/trips/${id}`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 0 },
     });
     const data = await res.json();
     return mapServerTripData(data);

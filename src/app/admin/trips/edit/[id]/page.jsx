@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, AlertCircle, Loader2, Plus, X, ChevronDown } from "lucide-react";
+import {
+  ArrowLeft,
+  AlertCircle,
+  Loader2,
+  Plus,
+  X,
+  ChevronDown,
+  IndianRupee,
+} from "lucide-react";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { FaTrash } from "react-icons/fa";
@@ -24,6 +32,7 @@ import { Rating } from "@/app/components/ui/rating";
 import useSWR from "swr";
 import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 import useTripTypes from "@/app/hooks/use-triptypes";
+import { Button } from "@/app/components/ui/button";
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -39,7 +48,7 @@ export default function TripEditPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    price: "",
+    price_categories: [{ category: "Base Price", price: "" }],
     start_date: "",
     end_date: "",
     difficulty: "",
@@ -60,7 +69,11 @@ export default function TripEditPage() {
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
   const [typePage, setTypePage] = useState(1);
-  const { tripTypes, pagination: typePagination, loadingTripTypes } = useTripTypes({
+  const {
+    tripTypes,
+    pagination: typePagination,
+    loadingTripTypes,
+  } = useTripTypes({
     status: "ACTIVE",
     page: typePage,
     limit: 10,
@@ -111,7 +124,10 @@ export default function TripEditPage() {
       });
       setFormData({
         name: dbTrip.name || "",
-        price: dbTrip.price || "",
+        price_categories:
+          dbTrip.price_categories?.length > 0
+            ? dbTrip.price_categories
+            : [{ category: "Base Price", price: dbTrip.price || "" }],
         start_date: dbTrip.start_date || "",
         end_date: dbTrip.end_date || "",
         difficulty: dbTrip.difficulty || "",
@@ -176,6 +192,29 @@ export default function TripEditPage() {
     updated[dayIndex].activities[activityIndex] = value;
     setFormData((prev) => ({ ...prev, itinerary: updated }));
     if (error) setError("");
+    setIsModified(true);
+  };
+
+  const handlePriceCategoryChange = (index, field, value) => {
+    const categories = [...formData.price_categories];
+    categories[index] = { ...categories[index], [field]: value };
+    setFormData((prev) => ({ ...prev, price_categories: categories }));
+    if (error) setError("");
+    setIsModified(true);
+  };
+
+  const addPriceCategory = () => {
+    setFormData((prev) => ({
+      ...prev,
+      price_categories: [...prev.price_categories, { category: "", price: "" }],
+    }));
+    setIsModified(true);
+  };
+
+  const removePriceCategory = (index) => {
+    if (formData.price_categories.length === 1) return;
+    const categories = formData.price_categories.filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, price_categories: categories }));
     setIsModified(true);
   };
 
@@ -300,8 +339,23 @@ export default function TripEditPage() {
       newErrors.name = "Trip name must be at least 2 characters";
     }
 
-    if (!formData.price || Number(formData.price) <= 0) {
-      newErrors.price = "Valid price is required";
+    if (!formData.price_categories || formData.price_categories.length === 0) {
+      newErrors.price_categories = "At least one price category is required";
+    } else {
+      const basePrices = formData.price_categories.filter(
+        (c) => c.category?.trim().toLowerCase() === "base price",
+      );
+      if (basePrices.length === 0) {
+        newErrors.price_categories = "Base Price category is required";
+      } else if (basePrices.length > 1) {
+        newErrors.price_categories = "Exactly one Base Price required";
+      } else if (
+        formData.price_categories.some((c) => !c.category?.trim() || !c.price)
+      ) {
+        newErrors.price_categories = "Incomplete categories detected";
+      } else if (formData.price_categories.some((c) => Number(c.price) <= 0)) {
+        newErrors.price_categories = "Prices must be greater than 0";
+      }
     }
 
     if (!formData.images || formData.images.length == 0) {
@@ -396,7 +450,18 @@ export default function TripEditPage() {
     const requestBody = {};
     Object.keys(formData).forEach((key) => {
       if (JSON.stringify(formData[key]) !== JSON.stringify(trip[key])) {
-        requestBody[key] = formData[key];
+        if (key === "price_categories") {
+          requestBody[key] = formData[key].map((c) => ({
+            ...c,
+            price: Number(c.price),
+          }));
+        } else if (key === "hotel_category") {
+          if (formData[key] && formData[key] > 0) {
+            requestBody[key] = formData[key];
+          }
+        } else {
+          requestBody[key] = formData[key];
+        }
       }
     });
 
@@ -430,11 +495,20 @@ export default function TripEditPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Failed to update";
+
         toast({
           title: "Error",
-          description: data?.error?.message || "Failed to update",
+          description: errorMessage,
           variant: "destructive",
         });
+
+        return;
       }
 
       toast({
@@ -573,20 +647,74 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700 tracking-wide">
-                  Price*
-                </label>
-                <Input
-                  type="number"
-                  value={formData.price}
-                  required
-                  onChange={(e) => handleChange("price", e.target.value)}
-                  className="w-full text-sm bg-white border-slate-200 focus:ring-teal-500/20"
-                />
-                {errors.price && (
+              <div className="space-y-4 col-span-1 sm:col-span-2">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                    Price Categories*
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPriceCategory}
+                    className="h-8 gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Add Category
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {formData.price_categories.map((cat, idx) => (
+                    <div key={idx} className="flex gap-3 items-start">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Category (e.g. Base Price)"
+                          value={cat.category}
+                          onChange={(e) =>
+                            handlePriceCategoryChange(
+                              idx,
+                              "category",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full text-sm bg-white border-slate-200"
+                        />
+                      </div>
+                      <div className="w-32 sm:w-40">
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                          <Input
+                            type="number"
+                            placeholder="Price"
+                            value={cat.price}
+                            onChange={(e) =>
+                              handlePriceCategoryChange(
+                                idx,
+                                "price",
+                                e.target.value,
+                              )
+                            }
+                            className="pl-9 w-full text-sm bg-white border-slate-200"
+                          />
+                        </div>
+                      </div>
+                      {formData.price_categories.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePriceCategory(idx)}
+                          className="text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-colors"
+                        >
+                          <FaTrash className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {errors.price_categories && (
                   <p className="text-xs text-admin-error mt-1">
-                    {errors.price}
+                    {errors.price_categories}
                   </p>
                 )}
               </div>
@@ -731,20 +859,24 @@ export default function TripEditPage() {
                       </SelectItem>
                     ))}
 
-                    {typePagination?.pages > 1 && typePage < typePagination.pages && (
-                      <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
-                        <div 
-                          className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
-                          onMouseEnter={() => {
-                            if (typePage < typePagination.pages && !loadingTripTypes) {
-                              setTypePage(prev => prev + 1);
-                            }
-                          }}
-                        >
-                          <ChevronDown className="h-4 w-4 text-teal-600" />
+                    {typePagination?.pages > 1 &&
+                      typePage < typePagination.pages && (
+                        <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
+                          <div
+                            className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
+                            onMouseEnter={() => {
+                              if (
+                                typePage < typePagination.pages &&
+                                !loadingTripTypes
+                              ) {
+                                setTypePage((prev) => prev + 1);
+                              }
+                            }}
+                          >
+                            <ChevronDown className="h-4 w-4 text-teal-600" />
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </SelectContent>
                 </Select>
 

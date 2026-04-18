@@ -9,18 +9,22 @@ export const metadata = {
     "Discover and compare group trips from verified community providers across India. Search by destination, type, and difficulty.",
 };
 
-async function fetchData(url, revalidate = 60) {
+async function fetchData(url, revalidate = 0) {
   try {
-    const res = await fetch(url, { next: { revalidate } });
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
-    return await res.json();
+    const data = await res.json();
+    return data;
   } catch (e) {
     return null;
   }
 }
 
 async function getLocationMap() {
-  const data = await fetchData(`${BASE_URL}/api/${API_VERSION}/locations`, 3600);
+  const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations`, {
+    cache: "no-store",
+  });
+  const data = await res.json();
   const map = {};
   if (data?.success && data?.result?.locations) {
     data.result.locations.forEach((loc) => {
@@ -49,7 +53,21 @@ export default async function Page({ searchParams }) {
     fetchData(`${BASE_URL}/api/${API_VERSION}/trip-types`, 3600),
   ]);
 
-  const tripTypesData = ["All Types", ...(tripTypesRaw?.result?.trip_types?.map((t) => t.name) || [])];
+  const tripTypesData = [
+    { id: "all", name: "All Types" },
+    ...(tripTypesRaw?.result?.trip_types?.map((t) => ({
+      id: t.id,
+      name: t.name,
+    })) || []),
+  ];
+
+  // if (initialTrips) {
+  //   console.log("[Server] Trips Page API Response:", {
+  //     success: initialTrips.success,
+  //     total: initialTrips.result?.pagination?.total,
+  //     count: initialTrips.result?.trips?.length,
+  //   });
+  // }
 
   return (
     <TripsClient

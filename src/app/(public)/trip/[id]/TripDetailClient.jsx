@@ -28,6 +28,7 @@ import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 import PhoneInput from "@/app/components/ui/PhoneInput";
 import { useToast } from "@/app/hooks/use-toast";
+import { useOnlineStatus } from "@/app/hooks/use-online-status";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -35,6 +36,7 @@ const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 export default function TripDetailClient({ trip, locationMap }) {
   const { id } = useParams();
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   const [activeImage, setActiveImage] = useState(trip?.images?.[0] || null);
   const [showForm, setShowForm] = useState(false);
@@ -45,6 +47,9 @@ export default function TripDetailClient({ trip, locationMap }) {
     email: "",
     subject: "Book Trip",
   });
+  const [selectedCategory, setSelectedCategory] = useState(
+    trip?.price_categories?.[0] || null,
+  );
   const [isPhoneValid, setIsPhoneValid] = useState(false);
 
   const handlePhoneValidation = useCallback(
@@ -112,6 +117,9 @@ export default function TripDetailClient({ trip, locationMap }) {
 
     const currentUrl = window.location.href;
     const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
+    const categoryInfo = selectedCategory
+      ? `\n• *Option:* ${selectedCategory.category} (₹${selectedCategory.price.toLocaleString("en-IN")})`
+      : "";
 
     const message = `Hi, I wanted to confirm the availability for the following trip:
 
@@ -119,6 +127,7 @@ export default function TripDetailClient({ trip, locationMap }) {
 • *Trip:* ${trip.name}
 • *Operator:* ${trip.provider.name}
 • *Start Date:* ${startDate}
+${categoryInfo}
 
 *View details for ${trip.name}:*
 ${currentUrl}`;
@@ -147,8 +156,7 @@ ${currentUrl}`;
         inquiry_type: "TRIP",
         trip_id: trip.id,
         subject: "Book Trip",
-        message:
-          formData.message?.trim() || `User is interested in ${trip.name}`,
+        message: `${selectedCategory ? `[Selected Option: ${selectedCategory.category}] ` : ""}${formData.message?.trim() || `User is interested in ${trip.name}`}`,
       }),
     };
 
@@ -252,7 +260,8 @@ ${currentUrl}`;
 
               <div className="flex items-center gap-2 text-body text-muted-foreground mb-4">
                 <MapPin className="w-5 h-5" />
-                {locationMap?.[trip.destination_id]?.name || "Destination"},{" "}
+                {locationMap?.[trip.destination_id]?.name ||
+                  "Destination"},{" "}
                 {locationMap?.[trip.destination_id]?.region || ""}
               </div>
 
@@ -309,26 +318,96 @@ ${currentUrl}`;
                 </div>
               </div>
 
-              <div className="card-premium p-6 bg-primary/5 border-primary/20">
-                <div className="flex items-end justify-between mb-4">
+              <div className="card-premium p-6 bg-linear-to-br from-primary/5 via-background to-background border-primary/20 shadow-glow/5">
+                <div className="flex flex-col gap-6 mb-6">
                   <div>
-                    <p className="text-body-sm text-muted-foreground">
-                      Starting from
-                    </p>
-                    <p className="font-display text-display text-primary">
-                      ₹{trip.priceFrom.toLocaleString()}
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-body-sm text-muted-foreground">
+                        Packages
+                      </p>
+                      {trip.price_categories?.length > 1 && (
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider bg-primary/10 px-2 py-0.5 rounded-full">
+                          {trip.price_categories.length} Options Available
+                        </span>
+                      )}
+                    </div>
+                    <p className="font-display text-4xl text-foreground">
+                      ₹
+                      {(
+                        selectedCategory?.price || trip.priceFrom
+                      ).toLocaleString("en-IN")}
                     </p>
                     <p className="text-body-sm text-muted-foreground">
                       per person
                     </p>
                   </div>
+
+                  {trip.price_categories?.length > 0 && (
+                    <div className="space-y-3">
+                      {/* <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                        <span className="w-4 h-[1px] bg-border" />
+                        Select Pricing Plan
+                      </p> */}
+                      <div className="grid gap-2">
+                        {trip.price_categories.map((cat, i) => {
+                          const isSelected =
+                            selectedCategory?.category === cat.category;
+                          const isStarting = cat.price === trip.priceFrom;
+
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => setSelectedCategory(cat)}
+                              className={`group relative text-left p-3 rounded-xl border transition-all duration-300 ${
+                                isSelected
+                                  ? "bg-primary text-primary-foreground border-primary shadow-lg scale-[1.02]"
+                                  : "bg-background text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+                              }`}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className={`text-body-sm font-semibold ${isSelected ? "text-primary-foreground" : "text-foreground"}`}
+                                    >
+                                      {cat.category}
+                                    </span>
+                                    {isStarting && !isSelected && (
+                                      <span className="text-[9px] font-black bg-success/10 text-success uppercase px-1.5 py-0.5 rounded-sm">
+                                        Starting
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span
+                                  className={`font-display text-lg ${isSelected ? "text-primary-foreground" : "text-primary"}`}
+                                >
+                                  ₹{cat.price.toLocaleString("en-IN")}
+                                </span>
+                              </div>
+
+                              {isSelected && (
+                                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-white rounded-full p-0.5 shadow-md">
+                                  <Check className="w-3 h-3 text-primary stroke-[3]" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <Button
-                  className="btn-primary w-full text-body py-6"
+                  className="btn-primary w-full text-body py-7 shadow-glow hover:shadow-glow-lg transition-all active:scale-[0.98]"
                   onClick={() => setShowForm(true)}
                 >
-                  Book Now
+                  Confirm Booking with{" "}
+                  {selectedCategory?.category || "Base Price"}
                 </Button>
+                {/* <p className="text-[10px] text-center text-muted-foreground mt-3">
+                  No immediate payment required • Instant WhatsApp confirmation
+                </p> */}
               </div>
             </div>
           </div>
@@ -570,8 +649,9 @@ ${currentUrl}`;
                 <Button
                   onClick={handleSubmit}
                   className="w-full btn-primary h-11 mt-1 text-sm font-semibold shadow-md shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
+                  disabled={!isOnline}
                 >
-                  Send Request
+                  {!isOnline ? "No Internet (Offline)" : "Send Request"}
                 </Button>
               </div>
             </div>

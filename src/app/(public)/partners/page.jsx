@@ -18,6 +18,7 @@ import {
   Headphones,
 } from "lucide-react";
 import { useToast } from "@/app/hooks/use-toast";
+import { useOnlineStatus } from "@/app/hooks/use-online-status";
 
 const benefits = [
   {
@@ -138,6 +139,7 @@ export default function Partner() {
     [],
   );
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   const validateForm = () => {
     const newErrors = {};
@@ -208,17 +210,17 @@ export default function Partner() {
 
     try {
       const payload = {
-        name: formData.companyName,
-        contact_name: formData.contactName,
-        email: formData.email,
-        phone_number: cleanedPhone,
-        website_url: formData.website,
+        name: formData.companyName || "",
+        contact_name: formData.contactName || "",
+        email: formData.email || "",
+        phone_number: cleanedPhone || "",
+        website_url: formData.website || "",
         trips_per_year: Number(formData.tripCount) || 0,
-        regions: formData.regions
+        regions: (formData.regions || "")
           .split(",")
           .map((r) => r.trim())
           .filter(Boolean),
-        business_description: formData.about,
+        business_description: formData.about || "",
       };
 
       const res = await fetch(
@@ -673,9 +675,13 @@ export default function Partner() {
                 <Button
                   type="submit"
                   className="btn-primary w-full py-6"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !isOnline}
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                  {!isOnline
+                    ? "No Internet Connection"
+                    : isSubmitting
+                      ? "Submitting..."
+                      : "Submit Application"}
                 </Button>
 
                 <p className="text-body-sm text-muted-foreground text-center">

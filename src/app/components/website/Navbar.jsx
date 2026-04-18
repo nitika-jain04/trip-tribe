@@ -132,7 +132,7 @@ export function Navbar() {
             >
               {isMobileMenuOpen ? (
                 <X
-                  className={`w-6 h-6 transition-colors duration-75 ease-in-out ${isTransparentAndHome ? "text-white" : "text-foreground hover:text-white"}`}
+                  className={`w-6 h-6 transition-colors duration-75 ease-in-out ${isTransparentAndHome ? "text-white" : "text-foreground hover:text-primary cursour-pointer"}`}
                 />
               ) : (
                 <Menu

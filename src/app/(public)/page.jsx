@@ -17,11 +17,12 @@ export const metadata = {
   ],
 };
 
-async function fetchData(url, revalidate = 3600) {
+async function fetchData(url, revalidate = 0) {
   try {
-    const res = await fetch(url, { next: { revalidate } });
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
-    return await res.json();
+    const data = await res.json();
+    return data;
   } catch (e) {
     console.error(`Fetch error for ${url}:`, e);
     return null;
@@ -48,10 +49,18 @@ export default async function Page() {
       ),
       fetchData(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=9`),
       fetchData(
-        `${BASE_URL}/api/${API_VERSION}/trips?sortBy=updated_at&order=DESC&page=1&limit=9`,
+        `${BASE_URL}/api/${API_VERSION}/trips?sortBy=created_at&order=DESC`,
       ),
       getLocationMap(),
     ]);
+
+  // if (initialTrips) {
+  //   console.log("[Server] Homepage Trips API Response:", {
+  //     success: initialTrips.success,
+  //     total: initialTrips.result?.pagination?.total,
+  //     count: initialTrips.result?.trips?.length,
+  //   });
+  // }
 
   const totalTrips = initialTrips?.result?.pagination?.total || 100;
   const totalOperators = initialOperators?.result?.pagination?.total || 20;

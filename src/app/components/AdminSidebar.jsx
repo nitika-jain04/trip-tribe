@@ -60,7 +60,6 @@ export default function AdminSidebar({
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // if (!res.ok) throw new Error("Unauthorized");
         if (!res.ok) {
           toast({
             title: "Error",

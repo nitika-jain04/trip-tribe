@@ -298,8 +298,7 @@ function Enquiries() {
 
         {enquiry.status.toLowerCase() !== "closed" && (
           <DropdownMenuItem
-            onSelect={(e) => {
-              e.preventDefault();
+            onSelect={() => {
               handleCloseEnquiry(enquiry.id);
             }}
           >
@@ -309,8 +308,7 @@ function Enquiries() {
         )}
 
         <DropdownMenuItem
-          onSelect={(e) => {
-            e.preventDefault();
+          onSelect={() => {
             handleDelete(enquiry.id);
           }}
           className="text-red-600"
