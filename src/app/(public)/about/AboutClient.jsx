@@ -323,11 +323,11 @@ export default function AboutClient({ operatorCount }) {
                   onClick={(e) => handleNavClick(e, "/trips")}
                 >
                   Explore Trips
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-5 h-5" />
                 </Button>
               </Link>
               <Link href="/partners" prefetch={false}>
-                <Button className="btn-secondary text-body px-8 py-6">
+                <Button className="btn-primary text-body px-8 py-6">
                   Become a Partner
                 </Button>
               </Link>

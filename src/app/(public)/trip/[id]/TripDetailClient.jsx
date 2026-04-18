@@ -417,29 +417,29 @@ ${currentUrl}`;
       <section className="section bg-background">
         <div className="container-premium">
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="w-full justify-start border-b border-border rounded-none h-auto p-0 bg-transparent mb-8">
+            <TabsList className="w-full justify-start border-b border-border rounded-none h-auto p-0 bg-transparent mb-8 overflow-x-auto flex-nowrap scrollbar-hide">
               <TabsTrigger
                 value="overview"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 whitespace-nowrap"
               >
                 Overview
               </TabsTrigger>
               <TabsTrigger
                 value="itinerary"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 whitespace-nowrap"
               >
                 Itinerary
               </TabsTrigger>
               <TabsTrigger
                 value="inclusions"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 whitespace-nowrap"
               >
                 Inclusions
               </TabsTrigger>
               {trip.cancellation_policy && (
                 <TabsTrigger
                   value="policy"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 sm:px-6 py-4 whitespace-nowrap"
                 >
                   Cancellation Policy
                 </TabsTrigger>
@@ -542,10 +542,16 @@ ${currentUrl}`;
             </TabsContent>
 
             <TabsContent value="inclusions" className="mt-0">
-              <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
+              <div
+                className={
+                  trip.exclusions?.length > 0
+                    ? "grid md:grid-cols-2 gap-x-12 gap-y-8"
+                    : "max-w-3xl"
+                }
+              >
                 <div>
-                  <h3 className="font-display text-heading-lg text-foreground mb-8 flex items-center gap-3">
-                    <Check className="w-7 h-7 text-success" strokeWidth={3} />
+                  <h3 className="font-display text-heading-md sm:text-heading-lg text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
+                    <Check className="w-6 h-6 sm:w-7 sm:h-7 text-success" strokeWidth={3} />
                     What&apos;s Included
                   </h3>
                   <ul className="space-y-4">
@@ -565,10 +571,10 @@ ${currentUrl}`;
 
                 {trip.exclusions?.length > 0 && (
                   <div>
-                    <h3 className="font-display text-heading-lg text-foreground mb-8 flex items-center gap-3">
-                      <X className="w-7 h-7 text-error" strokeWidth={3} />
-                      What&apos;s Not Included
-                    </h3>
+                      <h3 className="font-display text-heading-md sm:text-heading-lg text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
+                        <X className="w-6 h-6 sm:w-7 sm:h-7 text-error" strokeWidth={3} />
+                        What&apos;s Not Included
+                      </h3>
                     <ul className="space-y-4">
                       {trip.exclusions?.map((item, i) => (
                         <li key={i} className="flex items-start gap-4 text-body">
@@ -590,12 +596,12 @@ ${currentUrl}`;
             {trip.cancellation_policy && (
               <TabsContent value="policy" className="mt-0">
                 <div className="max-w-3xl">
-                  <h3 className="font-display text-heading-lg text-foreground mb-8 flex items-center gap-3">
-                    <Clock className="w-7 h-7 text-primary" strokeWidth={2.5} />
+                  <h3 className="font-display text-heading-md sm:text-heading-lg text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
+                    <Clock className="w-6 h-6 sm:w-7 sm:h-7 text-primary" strokeWidth={2.5} />
                     Cancellation Policy
                   </h3>
-                  <div className="card-premium p-6">
-                    <pre className="whitespace-pre-wrap text-body text-muted-foreground font-sans leading-relaxed">
+                  <div className="card-premium p-4 sm:p-6 overflow-hidden">
+                    <pre className="whitespace-pre-wrap break-words text-body text-muted-foreground font-sans leading-relaxed text-sm sm:text-base">
                       {trip.cancellation_policy}
                     </pre>
                   </div>

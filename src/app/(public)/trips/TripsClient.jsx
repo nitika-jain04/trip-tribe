@@ -928,22 +928,24 @@ export default function TripsClient({
                       </ul>
                     </div>
 
-                    <div className="space-y-2 border-t border-border/50">
-                      <p className="font-bold text-body-sm text-foreground">
-                        Exclusions:
-                      </p>
-                      <ul className="space-y-1.5">
-                        {trip.exclusions.map((item, i) => (
-                          <li
-                            key={i}
-                            className="text-base leading-relaxed text-muted-foreground flex items-start gap-2"
-                          >
-                            <span className="text-success mt-1">•</span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    {trip.exclusions.length > 0 && (
+                      <div className="space-y-2 border-t border-border/50 pt-4">
+                        <p className="font-bold text-body-sm text-foreground">
+                          Exclusions:
+                        </p>
+                        <ul className="space-y-1.5">
+                          {trip.exclusions.map((item, i) => (
+                            <li
+                              key={i}
+                              className="text-base leading-relaxed text-muted-foreground flex items-start gap-2"
+                            >
+                              <span className="text-success mt-1">•</span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
                     {/* Detailed Itinerary */}
                     <div className="space-y-3 border-t border-border/50">
@@ -1029,16 +1031,6 @@ export default function TripsClient({
 
           <div className="mt-6 flex flex-col gap-3">
             <Button
-              className="btn-primary h-12"
-              onClick={() => {
-                setInterstitialChoiceMade(true);
-                setShowInterstitial(false);
-              }}
-            >
-              Proceed
-            </Button>
-
-            <Button
               variant="outline"
               className="h-12"
               onClick={() => {
@@ -1048,6 +1040,16 @@ export default function TripsClient({
               }}
             >
               Compare
+            </Button>
+
+            <Button
+              className="btn-primary h-12"
+              onClick={() => {
+                setInterstitialChoiceMade(true);
+                setShowInterstitial(false);
+              }}
+            >
+              Proceed
             </Button>
           </div>
         </DialogContent>
