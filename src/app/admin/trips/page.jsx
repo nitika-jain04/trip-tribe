@@ -217,6 +217,16 @@ function Page() {
   const getOperatorName = (id) => operatorMap[id] || "N/A";
   const getTripTypeName = (id) => typeMap[id] || "N/A";
 
+  const getBasePrice = (trip) => {
+    if (trip.price_categories?.length > 0) {
+      const base = trip.price_categories.find(
+        (c) => c.category?.toLowerCase() === "base price",
+      );
+      return base ? base.price : trip.price;
+    }
+    return trip.price;
+  };
+
   const handleModalClose = (value) => {
     setShowModal(value);
     if (value === false) refreshTrips(); // explicit, one-time refetch
@@ -335,7 +345,6 @@ function Page() {
         // ✅ Prepare clean payload
         const payload = {
           name: `Copy of ${trip.name}`,
-          price: trip.price,
           start_date: trip.start_date,
           end_date: trip.end_date,
           difficulty: trip.difficulty,
@@ -344,6 +353,9 @@ function Page() {
           itinerary: trip.itinerary,
           images: trip.images,
           inclusions: trip.inclusions,
+          price_categories: trip.price_categories?.length > 0 
+            ? trip.price_categories 
+            : [{ category: "Base Price", price: trip.price }],
           ...(trip.exclusions &&
           ((Array.isArray(trip.exclusions) && trip.exclusions.length > 0) ||
             (!Array.isArray(trip.exclusions) && trip.exclusions !== ""))
@@ -419,8 +431,7 @@ function Page() {
           <>
             <DropdownMenuItem
               className="text-success"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleUpdateTrip(trip.id, {
                   status: "PUBLISHED",
                 });
@@ -432,8 +443,7 @@ function Page() {
 
             <DropdownMenuItem
               className="text-error"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleDeleteTrip(trip.id);
               }}
             >
@@ -446,8 +456,7 @@ function Page() {
           <>
             <DropdownMenuItem
               className="text-success"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleUpdateTrip(trip.id, {
                   status: "DRAFT",
                 });
@@ -458,8 +467,7 @@ function Page() {
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-error"
-              onSelect={(e) => {
-                e.preventDefault();
+              onSelect={() => {
                 handleDeleteTrip(trip.id);
               }}
             >
@@ -471,8 +479,7 @@ function Page() {
         {trip.status === "PUBLISHED" && (
           <DropdownMenuItem
             className="text-accent"
-            onSelect={(e) => {
-              e.preventDefault();
+            onSelect={() => {
               handleUpdateTrip(trip.id, {
                 status: "ARCHIVED",
               });
@@ -492,7 +499,7 @@ function Page() {
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuItem onClick={() => handleDuplicateTrip(trip)}>
+        <DropdownMenuItem onSelect={() => handleDuplicateTrip(trip)}>
           <FilePen className="h-4 w-4 mr-2" />
           Duplicate
         </DropdownMenuItem>
@@ -827,7 +834,7 @@ function Page() {
                           <TableCell className="font-medium whitespace-nowrap">
                             <div className="flex items-center gap-1">
                               <IndianRupee className="h-3 w-3" />
-                              {trip.price?.toLocaleString("en-IN") || "N/A"}
+                              {getBasePrice(trip)?.toLocaleString("en-IN") || "N/A"}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -933,7 +940,7 @@ function Page() {
                       <span className="text-muted-foreground">Price:</span>
                       <span className="font-medium flex items-center gap-1">
                         <IndianRupee className="h-3 w-3" />
-                        {trip.price?.toLocaleString("en-IN") || "N/A"}
+                        {getBasePrice(trip)?.toLocaleString("en-IN") || "N/A"}
                       </span>
                     </div>
                     <div className="flex justify-between">

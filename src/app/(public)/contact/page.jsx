@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/app/components/ui/select";
 import { useToast } from "@/app/hooks/use-toast";
+import { useOnlineStatus } from "@/app/hooks/use-online-status";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -149,6 +150,7 @@ export default function Contact() {
     [],
   );
   const { toast } = useToast();
+  const isOnline = useOnlineStatus();
 
   const tripsUrl =
     BASE_URL && API_VERSION ? `${BASE_URL}/api/${API_VERSION}/trips` : null;
@@ -229,12 +231,12 @@ export default function Contact() {
 
     try {
       const payload = {
-        full_name: formData.name,
-        email: formData.email.toLowerCase(),
-        phone_number: formData.phone,
-        inquiry_type: formData.inquiryType.toUpperCase(),
-        subject: formData.subject,
-        message: formData.message,
+        full_name: formData.name || "",
+        email: (formData.email || "").toLowerCase(),
+        phone_number: formData.phone || "",
+        inquiry_type: (formData.inquiryType || "").toUpperCase(),
+        subject: formData.subject || "",
+        message: formData.message || "",
       };
 
       if (formData.inquiryType === "trip") {
@@ -632,9 +634,11 @@ export default function Contact() {
                   <Button
                     type="submit"
                     className="btn-primary w-full h-12"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isOnline}
                   >
-                    {isSubmitting ? (
+                    {!isOnline ? (
+                      "No Internet Connection"
+                    ) : isSubmitting ? (
                       "Sending..."
                     ) : (
                       <>

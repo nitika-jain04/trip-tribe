@@ -11,7 +11,7 @@ import {
 } from "../ui/select";
 import { Card, CardContent } from "../ui/card";
 import { useToast } from "@/app/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, IndianRupee } from "lucide-react";
 import { Rating } from "../ui/rating";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
@@ -47,7 +47,11 @@ function AddTripModal({ handleModalClose }) {
 
   // Operator Pagination & Accumulation
   const [opPage, setOpPage] = useState(1);
-  const { operators, pagination: opPagination, loadingOperators } = useAdminOperators({
+  const {
+    operators,
+    pagination: opPagination,
+    loadingOperators,
+  } = useAdminOperators({
     status: "ACTIVE",
     page: opPage,
     limit: 10,
@@ -66,7 +70,11 @@ function AddTripModal({ handleModalClose }) {
 
   // Trip Type Pagination & Accumulation
   const [typePage, setTypePage] = useState(1);
-  const { tripTypes, pagination: typePagination, loadingTripTypes } = useTripTypes({
+  const {
+    tripTypes,
+    pagination: typePagination,
+    loadingTripTypes,
+  } = useTripTypes({
     status: "ACTIVE",
     page: typePage,
     limit: 10,
@@ -86,7 +94,7 @@ function AddTripModal({ handleModalClose }) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    price: "",
+    price_categories: [{ category: "Base Price", price: "" }],
     start_date: "",
     end_date: "",
     difficulty: "",
@@ -277,6 +285,28 @@ function AddTripModal({ handleModalClose }) {
     }));
   };
 
+  const handlePriceCategoryChange = (index, field, value) => {
+    const categories = [...formData.price_categories];
+    categories[index] = { ...categories[index], [field]: value };
+    setFormData((p) => ({ ...p, price_categories: categories }));
+    setFieldErrors((p) => ({ ...p, price_categories: "" }));
+  };
+
+  const addPriceCategory = () => {
+    setFormData((p) => ({
+      ...p,
+      price_categories: [...p.price_categories, { category: "", price: "" }],
+    }));
+  };
+
+  const removePriceCategory = (index) => {
+    if (formData.price_categories.length === 1) return;
+    setFormData((p) => ({
+      ...p,
+      price_categories: formData.price_categories.filter((_, i) => i !== index),
+    }));
+  };
+
   const addDay = () =>
     setFormData((p) => ({
       ...p,
@@ -336,8 +366,25 @@ function AddTripModal({ handleModalClose }) {
       errors.description = "Description must be at least 10 characters.";
     }
 
-    if (!formData.price || Number(formData.price) <= 0) {
-      errors.price = "Enter a valid price greater than 0.";
+    if (!formData.price_categories || formData.price_categories.length === 0) {
+      errors.price_categories = "At least one price category is required.";
+    } else {
+      const basePrices = formData.price_categories.filter(
+        (c) => c.category?.trim().toLowerCase() === "base price",
+      );
+      if (basePrices.length === 0) {
+        errors.price_categories =
+          "At least one price category (Base Price) is required.";
+      } else if (basePrices.length > 1) {
+        errors.price_categories =
+          "Exactly one Base Price category is required.";
+      } else if (
+        formData.price_categories.some((c) => !c.category?.trim() || !c.price)
+      ) {
+        errors.price_categories = "Please fill all category names and prices.";
+      } else if (formData.price_categories.some((c) => Number(c.price) <= 0)) {
+        errors.price_categories = "Prices must be greater than 0.";
+      }
     }
 
     if (!formData.total_seats || Number(formData.total_seats) <= 0) {
@@ -429,13 +476,18 @@ function AddTripModal({ handleModalClose }) {
     const payload = {
       name: formData.name.trim(),
       description: formData.description.trim(),
-      price: Number(formData.price),
+      price_categories: formData.price_categories.map((c) => ({
+        category: c.category.trim(),
+        price: Number(c.price),
+      })),
       start_date: formData.start_date,
       end_date: formData.end_date,
       difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
       type_id: formData.type_id,
-      hotel_category: formData.hotel_category,
+      ...(formData.hotel_category > 0 && {
+        hotel_category: formData.hotel_category,
+      }),
       operator_id: formData.operator_id,
       source: formData.source,
       destination: formData.destination,
@@ -534,20 +586,73 @@ function AddTripModal({ handleModalClose }) {
               )}
             </div>
 
-            <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Price (₹) *
-              </label>
-              <Input
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                // required
-              />
-              {fieldErrors.price && (
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm font-semibold text-gray-700">
+                  Price Categories *
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addPriceCategory}
+                  className="h-8 gap-1"
+                >
+                  <FaPlus className="w-3 h-3" /> Add Category
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {formData.price_categories.map((cat, idx) => (
+                  <div key={idx} className="flex gap-3 items-start">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="e.g. Base Price, Early Bird"
+                        value={cat.category}
+                        onChange={(e) =>
+                          handlePriceCategoryChange(
+                            idx,
+                            "category",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="w-32 sm:w-40">
+                      <div className="relative">
+                        <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="number"
+                          placeholder="Price"
+                          value={cat.price}
+                          className="pl-9"
+                          onChange={(e) =>
+                            handlePriceCategoryChange(
+                              idx,
+                              "price",
+                              e.target.value,
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                    {formData.price_categories.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => removePriceCategory(idx)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <FaTrash />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {fieldErrors.price_categories && (
                 <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.price}
+                  {fieldErrors.price_categories}
                 </p>
               )}
             </div>
@@ -592,50 +697,6 @@ function AddTripModal({ handleModalClose }) {
               {fieldErrors.difficulty && (
                 <p className="text-admin-error text-xs mt-1">
                   {fieldErrors.difficulty}
-                </p>
-              )}
-            </div>
-
-            <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Trip Type *
-              </label>
-              <Select
-                value={formData.type_id}
-                onValueChange={(v) => {
-                  setFormData((p) => ({ ...p, type_id: v }));
-                  setFieldErrors((p) => ({ ...p, type_id: "" }));
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Trip Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {accumulatedTripTypes.map((t) => (
-                    <SelectItem key={t.id} value={t.id.toString()}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-
-                  {typePagination?.pages > 1 && typePage < typePagination.pages && (
-                    <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
-                      <div 
-                        className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
-                        onMouseEnter={() => {
-                          if (typePage < typePagination.pages && !loadingTripTypes) {
-                            setTypePage(prev => prev + 1);
-                          }
-                        }}
-                      >
-                        <ChevronDown className="h-4 w-4 text-teal-600" />
-                      </div>
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
-              {fieldErrors.type_id && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.type_id}
                 </p>
               )}
             </div>
@@ -724,6 +785,54 @@ function AddTripModal({ handleModalClose }) {
 
             <div className="col-span-1">
               <label className="text-sm text-gray-600 mb-1 block">
+                Trip Type *
+              </label>
+              <Select
+                value={formData.type_id}
+                onValueChange={(v) => {
+                  setFormData((p) => ({ ...p, type_id: v }));
+                  setFieldErrors((p) => ({ ...p, type_id: "" }));
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Trip Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accumulatedTripTypes.map((t) => (
+                    <SelectItem key={t.id} value={t.id.toString()}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+
+                  {typePagination?.pages > 1 &&
+                    typePage < typePagination.pages && (
+                      <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
+                        <div
+                          className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
+                          onMouseEnter={() => {
+                            if (
+                              typePage < typePagination.pages &&
+                              !loadingTripTypes
+                            ) {
+                              setTypePage((prev) => prev + 1);
+                            }
+                          }}
+                        >
+                          <ChevronDown className="h-4 w-4 text-teal-600" />
+                        </div>
+                      </div>
+                    )}
+                </SelectContent>
+              </Select>
+              {fieldErrors.type_id && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.type_id}
+                </p>
+              )}
+            </div>
+
+            <div className="col-span-1">
+              <label className="text-sm text-gray-600 mb-1 block">
                 Hotel Category
               </label>
               <div className="flex items-center h-10 mt-1">
@@ -764,11 +873,14 @@ function AddTripModal({ handleModalClose }) {
 
                   {opPagination?.pages > 1 && opPage < opPagination.pages && (
                     <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
-                      <div 
+                      <div
                         className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
                         onMouseEnter={() => {
-                          if (opPage < opPagination.pages && !loadingOperators) {
-                            setOpPage(prev => prev + 1);
+                          if (
+                            opPage < opPagination.pages &&
+                            !loadingOperators
+                          ) {
+                            setOpPage((prev) => prev + 1);
                           }
                         }}
                       >

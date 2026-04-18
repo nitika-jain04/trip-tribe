@@ -83,7 +83,6 @@ export default function HomeClient({
 
   const [searchDestination, setSearchDestination] = useState("");
   const [searchDates, setSearchDates] = useState("");
-  const [imgError, setImgError] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchScrollRef = useRef(null);
 
@@ -94,7 +93,9 @@ export default function HomeClient({
   const processedOperators = initialOperators?.success
     ? initialOperators.result?.operators || []
     : [];
-  const rawTrips = initialTrips?.success ? initialTrips.result?.trips || [] : [];
+  const rawTrips = initialTrips?.success
+    ? initialTrips.result?.trips || []
+    : [];
 
   const processLocations = (groups, lMap) => {
     if (!groups || !groups.length) return [];
@@ -127,7 +128,12 @@ export default function HomeClient({
         destination: destination.name || "Unknown",
         region: destination.region || "Unknown",
         provider: trip.operator?.name || "Unknown",
-        price: Number(trip.price) || 0,
+        price:
+          Number(
+            trip.price_categories?.find(
+              (c) => c.category?.toLowerCase() === "base price",
+            )?.price || trip.price,
+          ) || 0,
         duration: `${durationDays} days`,
         groupSize: `${trip.total_seats} people`,
         difficulty:
@@ -161,6 +167,99 @@ export default function HomeClient({
     if (searchDestination) params.set("search", searchDestination);
     if (searchDates) params.set("dates", searchDates);
     router.push(`/trips?${params.toString()}`);
+  };
+
+  const TripCard = ({ trip }) => {
+    const [cardImgError, setCardImgError] = useState(false);
+
+    return (
+      <Link
+        href={`/trip/${trip.id}`}
+        className="card-premium overflow-hidden group"
+      >
+        <div className="aspect-16/10 relative overflow-hidden bg-gray-100">
+          {trip.images?.[0] && !cardImgError ? (
+            <img
+              src={trip.images[0]}
+              alt={trip.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+              onError={() => setCardImgError(true)}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-100">
+              <ImageIcon className="w-12 h-12 text-gray-400" />
+            </div>
+          )}
+          {trip.verified && (
+            <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
+              <Shield className="w-3 h-3" />
+              Verified
+            </div>
+          )}
+        </div>
+        <div className="p-6">
+          <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
+            <MapPin className="w-4 h-4" />
+            {trip.destination || "Unknown"}
+            {trip.duration && (
+              <>
+                <span className="text-border">•</span>
+                {trip.duration}
+              </>
+            )}
+          </div>
+          <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
+            {trip.name}
+          </h3>
+          <p className="text-body-sm text-muted-foreground mb-4">
+            by {trip.provider || "Unknown"}
+          </p>
+          <div className="flex items-center justify-between">
+            <p className="font-display text-heading-sm text-primary">
+              ₹{(trip.price ?? 0).toLocaleString()}{" "}
+              <span className="text-body-sm text-muted-foreground font-normal">
+                onwards
+              </span>
+            </p>
+          </div>
+        </div>
+      </Link>
+    );
+  };
+
+  const LocationCard = ({ location }) => {
+    const [cardImgError, setCardImgError] = useState(false);
+
+    return (
+      <Link
+        key={location.name}
+        href={`/trips?group_by=location&location_type=destination&search=${location.name}`}
+        className="group relative aspect-4/3 rounded-2xl overflow-hidden"
+      >
+        {location.image && !cardImgError ? (
+          <img
+            src={location.image}
+            alt={location.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={() => setCardImgError(true)}
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+            <ImageIcon className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <h3 className="font-display text-heading-sm text-background mb-1">
+            {location.name}
+            {location.region ? `, ${location.region}` : ""}
+          </h3>
+          <p className="text-body-sm text-background/70">
+            {location.trips} trips available
+          </p>
+        </div>
+      </Link>
+    );
   };
 
   return (
@@ -362,16 +461,24 @@ export default function HomeClient({
         <div className="container-premium">
           <div className="grid grid-cols-2 justify-center items-center md:px-40">
             <div className="flex flex-col items-center justify-center text-center">
-              <p className={`text-display text-primary ${baskerville.className}`}>
+              <p
+                className={`text-display text-primary ${baskerville.className}`}
+              >
                 {serverTotalTrips}+
               </p>
-              <p className="text-body-sm text-muted-foreground">Curated Trips</p>
+              <p className="text-body-sm text-muted-foreground">
+                Curated Trips
+              </p>
             </div>
             <div className="flex flex-col items-center justify-center text-center">
-              <p className={`text-display text-primary ${baskerville.className}`}>
+              <p
+                className={`text-display text-primary ${baskerville.className}`}
+              >
                 {serverTotalOperators}+
               </p>
-              <p className="text-body-sm text-muted-foreground">Verified Providers</p>
+              <p className="text-body-sm text-muted-foreground">
+                Verified Providers
+              </p>
             </div>
           </div>
         </div>
@@ -471,58 +578,7 @@ export default function HomeClient({
           {trips.length > 0 && (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {trips.slice(0, 9).map((trip) => (
-                <Link
-                  key={trip.id}
-                  href={`/trip/${trip.id}`}
-                  className="card-premium overflow-hidden group"
-                >
-                  <div className="aspect-16/10 relative overflow-hidden bg-gray-100">
-                    {trip.images?.[0] && !imgError ? (
-                      <img
-                        src={trip.images[0]}
-                        alt={trip.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        onError={() => setImgError(true)}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <ImageIcon className="w-12 h-12 text-gray-400" />
-                      </div>
-                    )}
-                    {trip.verified && (
-                      <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
-                        <Shield className="w-3 h-3" />
-                        Verified
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
-                      <MapPin className="w-4 h-4" />
-                      {trip.destination || "Unknown"}
-                      {trip.duration && (
-                        <>
-                          <span className="text-border">•</span>
-                          {trip.duration}
-                        </>
-                      )}
-                    </div>
-                    <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
-                      {trip.name}
-                    </h3>
-                    <p className="text-body-sm text-muted-foreground mb-4">
-                      by {trip.provider || "Unknown"}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <p className="font-display text-heading-sm text-primary">
-                        ₹{(trip.price ?? 0).toLocaleString()}{" "}
-                        <span className="text-body-sm text-muted-foreground font-normal">
-                          onwards
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                </Link>
+                <TripCard key={trip.id} trip={trip} />
               ))}
             </div>
           )}
@@ -552,33 +608,7 @@ export default function HomeClient({
           {locations.length > 0 && (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {locations.slice(0, 9).map((location) => (
-                <Link
-                  key={location.name}
-                  href={`/trips?group_by=location&location_type=destination&search=${location.name}`}
-                  className="group relative aspect-4/3 rounded-2xl overflow-hidden"
-                >
-                  {location.image ? (
-                    <img
-                      src={location.image}
-                      alt={location.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-                      <ImageIcon className="w-12 h-12 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-linear-to-t from-foreground/80 via-foreground/20 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <h3 className="font-display text-heading-sm text-background mb-1">
-                      {location.name}
-                      {location.region ? `, ${location.region}` : ""}
-                    </h3>
-                    <p className="text-body-sm text-background/70">
-                      {location.trips} trips available
-                    </p>
-                  </div>
-                </Link>
+                <LocationCard key={location.name} location={location} />
               ))}
             </div>
           )}
