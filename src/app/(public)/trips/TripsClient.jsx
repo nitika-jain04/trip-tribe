@@ -221,7 +221,7 @@ export default function TripsClient({
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = useState(
-    searchParams.get("search") || "",
+    searchParams.get("search") || searchParams.get("location_name") || "",
   );
   const [selectedType, setSelectedType] = useState(tripTypesData[0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
@@ -234,6 +234,10 @@ export default function TripsClient({
   const [currentPage, setCurrentPage] = useState(
     parseInt(searchParams.get("page") || "1"),
   );
+ 
+  const locationName = searchParams.get("location_name") || "";
+  const locationType = searchParams.get("location_type") || "";
+  const groupBy = searchParams.get("group_by") || "";
 
   const tripsContainerRef = useRef(null);
 
@@ -244,7 +248,7 @@ export default function TripsClient({
   const prevPageRef = useRef(currentPage);
 
   useEffect(() => {
-    const s = searchParams.get("search") || "";
+    const s = searchParams.get("search") || searchParams.get("location_name") || "";
     if (s !== searchQuery) {
       setSearchQuery(s);
     }
@@ -297,16 +301,26 @@ export default function TripsClient({
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    const currentUrlSearch = params.get("search") || "";
+    const currentUrlSearch =
+      params.get("search") || params.get("location_name") || "";
+
     if (debouncedSearchQuery !== currentUrlSearch) {
       if (debouncedSearchQuery.trim().length > 0) {
         params.set("search", debouncedSearchQuery.trim());
+        // If the user manually types, we clear the specific location filter to allow a global search
+        params.delete("location_name");
+        params.delete("location_type");
+        params.delete("group_by");
+
         if (debouncedSearchQuery.trim().length >= 2) {
           params.delete("page");
           params.delete("limit");
         }
       } else {
         params.delete("search");
+        params.delete("location_name");
+        params.delete("location_type");
+        params.delete("group_by");
       }
       const queryString = params.toString();
       router.replace(queryString ? `/trips?${queryString}` : "/trips", {
@@ -327,6 +341,10 @@ export default function TripsClient({
   if (selectedDifficulty !== "All") {
     params.set("difficulty", selectedDifficulty.toUpperCase());
   }
+ 
+  if (locationName) params.set("location_name", locationName);
+  if (locationType) params.set("location_type", locationType);
+  if (groupBy) params.set("group_by", groupBy);
 
   const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?sortBy=updated_at&order=DESC&${params.toString()}`;
   const { data: tripsData, isLoading: loadingTrips } = useSWR(
@@ -354,7 +372,11 @@ export default function TripsClient({
   }, [tripsData, currentPage]);
 
   const trips = useMemo(() => {
-    const rawTrips = tripsData?.result?.trips || [];
+    let rawTrips = tripsData?.result?.trips || [];
+    if (tripsData?.result?.groups) {
+      rawTrips = tripsData.result.groups.flatMap((g) => g.trips);
+    }
+ 
     return rawTrips.map((trip) => {
       const start = new Date(trip.start_date);
       const end = new Date(trip.end_date);
@@ -435,6 +457,9 @@ export default function TripsClient({
 
     const params = new URLSearchParams(searchParams.toString());
     params.delete("search");
+    params.delete("location_name");
+    params.delete("location_type");
+    params.delete("group_by");
 
     router.replace(
       params.toString() ? `/trips?${params.toString()}` : "/trips",
@@ -482,7 +507,7 @@ export default function TripsClient({
         <div className="container-premium">
           <div className="max-w-3xl mx-auto text-center mb-8">
             <h1 className="font-display text-display text-foreground mb-4">
-              Explore Community Trips
+              {locationName ? `Trips in ${locationName}` : "Explore Community Trips"}
             </h1>
           </div>
           <div className="max-w-2xl mx-auto">
@@ -652,7 +677,7 @@ export default function TripsClient({
                       </p>
 
                       <div className="flex flex-wrap items-center justify-center gap-3">
-                        {searchQuery && (
+                        {(searchQuery || locationName) && (
                           <Button
                             variant="outline"
                             onClick={() => {
@@ -665,7 +690,7 @@ export default function TripsClient({
                               });
                             }}
                           >
-                            Clear Search
+                            {searchQuery ? "Clear Search" : "Clear Location Filter"}
                           </Button>
                         )}
 

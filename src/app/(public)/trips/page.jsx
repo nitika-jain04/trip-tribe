@@ -35,13 +35,24 @@ async function getLocationMap() {
 }
 
 export default async function Page({ searchParams }) {
-  const { search = "", page = "1" } = await searchParams;
+  const {
+    search = "",
+    page = "1",
+    location_name = "",
+    location_type = "",
+    group_by = "",
+  } = await searchParams;
 
   const params = new URLSearchParams();
   // Align logic with Client: Only search if 2+ chars
   if (search && search.trim().length >= 2) {
     params.set("search", search.trim());
   }
+
+  if (location_name) params.set("location_name", location_name);
+  if (location_type) params.set("location_type", location_type);
+  if (group_by) params.set("group_by", group_by);
+
   params.set("page", page);
   params.set("limit", "10");
 
