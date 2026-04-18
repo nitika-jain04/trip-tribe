@@ -430,7 +430,7 @@ export default function HomeClient({
                 Reviews
               </div>
               <div className="flex items-center gap-2 text-body-sm text-background/80">
-                <CheckCircle2 className="w-5 h-5 text-success" /> Free
+                <CheckCircle2 className="w-5 h-5 text-success" /> Easy
                 Comparison
               </div>
             </div>
