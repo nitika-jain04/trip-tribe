@@ -216,6 +216,8 @@ export default function TripEditPage() {
 
   const removePriceCategory = (index) => {
     if (formData.price_categories.length === 1) return;
+    if (formData.price_categories[index].category?.toLowerCase() === "base price")
+      return;
     const categories = formData.price_categories.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, price_categories: categories }));
     setIsModified(true);
@@ -673,49 +675,57 @@ export default function TripEditPage() {
                 <div className="space-y-3">
                   {formData.price_categories.map((cat, idx) => (
                     <div key={idx} className="flex gap-3 items-start">
-                      <div className="flex-1">
-                        <Input
-                          placeholder="Category (e.g. Base Price)"
-                          value={cat.category}
-                          onChange={(e) =>
-                            handlePriceCategoryChange(
-                              idx,
-                              "category",
-                              e.target.value,
-                            )
-                          }
-                          className="w-full text-sm bg-white border-slate-200"
-                        />
-                      </div>
-                      <div className="w-32 sm:w-40">
-                        <div className="relative">
-                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <div className="flex-1">
                           <Input
-                            type="number"
-                            placeholder="Price"
-                            value={cat.price}
+                            placeholder="Category (e.g. Base Price)"
+                            value={cat.category}
                             onChange={(e) =>
                               handlePriceCategoryChange(
                                 idx,
-                                "price",
+                                "category",
                                 e.target.value,
                               )
                             }
-                            className="pl-9 w-full text-sm bg-white border-slate-200"
+                            readOnly={
+                              cat.category?.toLowerCase() === "base price"
+                            }
+                            className={cn(
+                              "w-full text-sm bg-white border-slate-200",
+                              cat.category?.toLowerCase() === "base price" &&
+                                "bg-slate-50 cursor-not-allowed",
+                            )}
                           />
                         </div>
-                      </div>
-                      {formData.price_categories.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removePriceCategory(idx)}
-                          className="text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-colors"
-                        >
-                          <FaTrash className="w-4 h-4" />
-                        </Button>
-                      )}
+                        <div className="w-32 sm:w-40">
+                          <div className="relative">
+                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                            <Input
+                              type="number"
+                              placeholder="Price"
+                              value={cat.price}
+                              onChange={(e) =>
+                                handlePriceCategoryChange(
+                                  idx,
+                                  "price",
+                                  e.target.value,
+                                )
+                              }
+                              className="pl-9 w-full text-sm bg-white border-slate-200"
+                            />
+                          </div>
+                        </div>
+                        {formData.price_categories.length > 1 &&
+                          cat.category?.toLowerCase() !== "base price" && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removePriceCategory(idx)}
+                              className="text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-colors"
+                            >
+                              <FaTrash className="w-4 h-4" />
+                            </Button>
+                          )}
                     </div>
                   ))}
                 </div>
@@ -1021,14 +1031,16 @@ export default function TripEditPage() {
                     className="flex-1 text-base bg-white border-slate-200 focus:ring-teal-500/20"
                     placeholder="e.g., Accommodation"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeItem("inclusions", i)}
-                    className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                    title="Remove inclusion"
-                  >
-                    <FaTrash size={14} />
-                  </button>
+                  {formData.inclusions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeItem("inclusions", i)}
+                      className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                      title="Remove inclusion"
+                    >
+                      <FaTrash size={14} />
+                    </button>
+                  )}
                 </div>
               ))}
 
@@ -1122,26 +1134,28 @@ export default function TripEditPage() {
                       </h4>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = formData.itinerary.filter(
-                          (_, i) => i !== dayIndex,
-                        );
-                        const reIndexed = updated.map((d, i) => ({
-                          ...d,
-                          day: i + 1,
-                        }));
-                        setFormData((prev) => ({
-                          ...prev,
-                          itinerary: reIndexed,
-                        }));
-                      }}
-                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      title="Remove day"
-                    >
-                      <FaTrash size={14} />
-                    </button>
+                    {formData.itinerary.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const updated = formData.itinerary.filter(
+                            (_, i) => i !== dayIndex,
+                          );
+                          const reIndexed = updated.map((d, i) => ({
+                            ...d,
+                            day: i + 1,
+                          }));
+                          setFormData((prev) => ({
+                            ...prev,
+                            itinerary: reIndexed,
+                          }));
+                        }}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Remove day"
+                      >
+                        <FaTrash size={14} />
+                      </button>
+                    )}
                   </div>
 
                   <div className="space-y-3">
@@ -1157,27 +1171,29 @@ export default function TripEditPage() {
                           placeholder={`Activity ${i + 1}`}
                         />
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const updated = [...formData.itinerary];
-                            updated[dayIndex].activities = updated[
-                              dayIndex
-                            ].activities.filter((_, index) => index !== i);
+                        {day.activities.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const updated = [...formData.itinerary];
+                              updated[dayIndex].activities = updated[
+                                dayIndex
+                              ].activities.filter((_, index) => index !== i);
 
-                            if (updated[dayIndex].activities.length === 0) {
-                              updated[dayIndex].activities = [""];
-                            }
+                              if (updated[dayIndex].activities.length === 0) {
+                                updated[dayIndex].activities = [""];
+                              }
 
-                            setFormData((prev) => ({
-                              ...prev,
-                              itinerary: updated,
-                            }));
-                          }}
-                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                        >
-                          <FaTrash size={12} />
-                        </button>
+                              setFormData((prev) => ({
+                                ...prev,
+                                itinerary: updated,
+                              }));
+                            }}
+                            className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                          >
+                            <FaTrash size={12} />
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

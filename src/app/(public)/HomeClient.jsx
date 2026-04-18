@@ -164,7 +164,7 @@ export default function HomeClient({
   const handleSearch = (e) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (searchDestination) params.set("search", searchDestination);
+    if (searchDestination) params.set("location_name", searchDestination);
     if (searchDates) params.set("dates", searchDates);
     router.push(`/trips?${params.toString()}`);
   };
@@ -233,7 +233,7 @@ export default function HomeClient({
     return (
       <Link
         key={location.name}
-        href={`/trips?group_by=location&location_type=destination&search=${location.name}`}
+        href={`/trips?location_name=${location.name}&location_type=destination&group_by=location`}
         className="group relative aspect-4/3 rounded-2xl overflow-hidden"
       >
         {location.image && !cardImgError ? (
