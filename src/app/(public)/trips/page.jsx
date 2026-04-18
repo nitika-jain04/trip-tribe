@@ -4,7 +4,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
 export const metadata = {
-  title: "Explore Community Trips | TripTribe",
+  title: "Explore Community Trips - TripTribe",
   description:
     "Discover and compare group trips from verified community providers across India. Search by destination, type, and difficulty.",
 };

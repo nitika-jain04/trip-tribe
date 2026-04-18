@@ -78,17 +78,22 @@ function Page() {
   const order = searchParams.get("order") || "DESC";
   const statusFilter = searchParams.get("status")?.toLowerCase() || "all";
   const typeFilter = searchParams.get("type_id") || "all";
-  const difficultyFilter = searchParams.get("difficulty")?.toLowerCase() || "all";
+  const difficultyFilter =
+    searchParams.get("difficulty")?.toLowerCase() || "all";
   const operatorFilter = searchParams.get("operator_id") || "all";
 
   const [showModal, setShowModal] = useState(false);
-  
+
   // Operator Pagination State
   const [opPage, setOpPage] = useState(1);
-  const { operators, pagination: opPagination, loadingOperators } = useAdminOperators({ 
-    status: "ALL", 
-    page: opPage, 
-    limit: 10 
+  const {
+    operators,
+    pagination: opPagination,
+    loadingOperators,
+  } = useAdminOperators({
+    status: "ALL",
+    page: opPage,
+    limit: 10,
   });
   const [accumulatedOperators, setAccumulatedOperators] = useState([]);
 
@@ -104,10 +109,14 @@ function Page() {
 
   // Trip Type Pagination State
   const [typePage, setTypePage] = useState(1);
-  const { tripTypes, pagination: typePagination, loadingTripTypes } = useTripTypes({ 
-    status: "ACTIVE", 
-    page: typePage, 
-    limit: 10 
+  const {
+    tripTypes,
+    pagination: typePagination,
+    loadingTripTypes,
+  } = useTripTypes({
+    status: "ACTIVE",
+    page: typePage,
+    limit: 10,
   });
   const [accumulatedTripTypes, setAccumulatedTripTypes] = useState([]);
 
@@ -121,6 +130,14 @@ function Page() {
     }
   }, [tripTypes]);
 
+  const [operatorInfoMap, setOperatorInfoMap] = useState({});
+
+  const { data: allTypesData } = useSWR(
+    `${BASE_URL}/api/${API_VERSION}/trip-types/admin?limit=100&status=ACTIVE`,
+    adminFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 },
+  );
+
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
@@ -130,28 +147,33 @@ function Page() {
   const [search, setSearch] = useState(debouncedSearch);
   const [searchError, setSearchError] = useState("");
 
-  const updateQuery = useCallback((updates) => {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === "" || value === "all") {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-    
-    // Always reset page to 1 when filters (other than page itself) change
-    if (!updates.page) {
-      params.set("page", "1");
-    }
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
 
-    const currentQuery = searchParams.toString();
-    const newQuery = params.toString();
-    
-    if (currentQuery !== newQuery) {
-      router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, { scroll: false });
-    }
-  }, [searchParams, pathname, router]);
+      // Always reset page to 1 when filters (other than page itself) change
+      if (!updates.page) {
+        params.set("page", "1");
+      }
+
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
+
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
+        });
+      }
+    },
+    [searchParams, pathname, router],
+  );
 
   // Debounce search update to URL
   useEffect(() => {
@@ -172,7 +194,8 @@ function Page() {
   // 1. Build Query String (for API)
   const apiParams = new URLSearchParams({ page, limit, sortBy, order });
 
-  if (statusFilter !== "all") apiParams.set("status", statusFilter.toUpperCase());
+  if (statusFilter !== "all")
+    apiParams.set("status", statusFilter.toUpperCase());
   if (operatorFilter && operatorFilter !== "all")
     apiParams.set("operator_id", operatorFilter);
   if (typeFilter !== "all") apiParams.set("type_id", typeFilter);
@@ -198,24 +221,85 @@ function Page() {
   const trips = data?.result?.trips || [];
   const totalTrips = data?.result?.pagination?.total || 0;
   const totalPages = data?.result?.pagination?.pages || 1;
+
+  useEffect(() => {
+    if (!trips?.length) return;
+    const uniqueIds = [
+      ...new Set(
+        trips
+          .map((t) => t.operator_id)
+          .filter((id) => id && !operatorInfoMap[String(id)]),
+      ),
+    ];
+
+    uniqueIds.forEach(async (id) => {
+      try {
+        const res = await adminFetcher(
+          `${BASE_URL}/api/${API_VERSION}/operators/admin/${id}`,
+        );
+        if (res?.success && res.result?.name) {
+          setOperatorInfoMap((prev) => ({
+            ...prev,
+            [String(id)]: res.result.name,
+          }));
+        }
+      } catch (e) {
+        console.error(`Failed to fetch operator ${id}:`, e);
+      }
+    });
+  }, [trips, operatorInfoMap]);
   const loading = isLoading;
   const initialLoading = isLoading && !data;
   const error = fetchError?.message || null;
 
   // No local state sync effects needed anymore as variables are derived from URL
 
-  const operatorMap = useMemo(
-    () => Object.fromEntries(accumulatedOperators.map((op) => [op.id, op.name])),
-    [accumulatedOperators],
-  );
+  const operatorMap = useMemo(() => {
+    const map = {};
+    // Populate from accumulated dropdown results
+    accumulatedOperators.forEach((op) => {
+      if (op.id) map[String(op.id)] = op.name;
+    });
+    return map;
+  }, [accumulatedOperators]);
 
-  const typeMap = useMemo(
-    () => Object.fromEntries(accumulatedTripTypes.map((t) => [t.id, t.name])),
-    [accumulatedTripTypes],
-  );
+  const combinedOperators = useMemo(() => {
+    const existingIds = new Set(
+      accumulatedOperators.map((op) => String(op.id)),
+    );
+    const additionalOps = Object.entries(operatorInfoMap)
+      .filter(([id]) => !existingIds.has(id))
+      .map(([id, name]) => ({ id: id, name: name }));
+    return [...accumulatedOperators, ...additionalOps];
+  }, [accumulatedOperators, operatorInfoMap]);
 
-  const getOperatorName = (id) => operatorMap[id] || "N/A";
-  const getTripTypeName = (id) => typeMap[id] || "N/A";
+  const typeMap = useMemo(() => {
+    const map = {};
+    // Populate from accumulated dropdown results
+    accumulatedTripTypes.forEach((t) => {
+      if (t.id) map[String(t.id)] = t.name;
+    });
+    // Supplement with background batch data
+    if (allTypesData?.result?.trip_types) {
+      allTypesData.result.trip_types.forEach((t) => {
+        if (t.id) map[String(t.id)] = t.name;
+      });
+    }
+    return map;
+  }, [accumulatedTripTypes, allTypesData]);
+
+  const getOperatorName = (trip) =>
+    trip.operator?.name ||
+    (trip.operator_id
+      ? operatorInfoMap[String(trip.operator_id)] ||
+        operatorMap[String(trip.operator_id)]
+      : null) ||
+    "N/A";
+
+  const getTripTypeName = (trip) =>
+    trip.type?.name ||
+    (trip.type_id ? typeMap[String(trip.type_id)] : null) ||
+    "N/A";
 
   const getBasePrice = (trip) => {
     if (trip.price_categories?.length > 0) {
@@ -278,13 +362,10 @@ function Page() {
     [toast],
   );
 
-  const handleDeleteTrip = useCallback(
-    async (tripId) => {
-      setSelectedTripId(tripId);
-      setConfirmDialogOpen(true);
-    },
-    [],
-  );
+  const handleDeleteTrip = useCallback(async (tripId) => {
+    setSelectedTripId(tripId);
+    setConfirmDialogOpen(true);
+  }, []);
 
   const executeDeleteTrip = async () => {
     if (!selectedTripId) return;
@@ -353,9 +434,10 @@ function Page() {
           itinerary: trip.itinerary,
           images: trip.images,
           inclusions: trip.inclusions,
-          price_categories: trip.price_categories?.length > 0 
-            ? trip.price_categories 
-            : [{ category: "Base Price", price: trip.price }],
+          price_categories:
+            trip.price_categories?.length > 0
+              ? trip.price_categories
+              : [{ category: "Base Price", price: trip.price }],
           ...(trip.exclusions &&
           ((Array.isArray(trip.exclusions) && trip.exclusions.length > 0) ||
             (!Array.isArray(trip.exclusions) && trip.exclusions !== ""))
@@ -609,25 +691,31 @@ function Page() {
         lg:flex lg:flex-wrap lg:items-center lg:w-auto
       "
             >
-              <Select value={operatorFilter} onValueChange={(val) => updateQuery({ operator_id: val })}>
+              <Select
+                value={operatorFilter}
+                onValueChange={(val) => updateQuery({ operator_id: val })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Operator" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Operators</SelectItem>
-                  {accumulatedOperators.map((operator) => (
-                    <SelectItem key={operator.id} value={operator.id}>
+                  {combinedOperators.map((operator) => (
+                    <SelectItem key={operator.id} value={String(operator.id)}>
                       {operator.name}
                     </SelectItem>
                   ))}
-                  
+
                   {opPagination?.pages > 1 && opPage < opPagination.pages && (
                     <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
-                      <div 
+                      <div
                         className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
                         onMouseEnter={() => {
-                          if (opPage < opPagination.pages && !loadingOperators) {
-                            setOpPage(prev => prev + 1);
+                          if (
+                            opPage < opPagination.pages &&
+                            !loadingOperators
+                          ) {
+                            setOpPage((prev) => prev + 1);
                           }
                         }}
                       >
@@ -638,7 +726,10 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={statusFilter} onValueChange={(val) => updateQuery({ status: val })}>
+              <Select
+                value={statusFilter}
+                onValueChange={(val) => updateQuery({ status: val })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -651,7 +742,10 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={typeFilter} onValueChange={(val) => updateQuery({ type_id: val })}>
+              <Select
+                value={typeFilter}
+                onValueChange={(val) => updateQuery({ type_id: val })}
+              >
                 <SelectTrigger className="w-full lg:w-28">
                   <SelectValue placeholder="Trip Type" />
                 </SelectTrigger>
@@ -663,20 +757,24 @@ function Page() {
                     </SelectItem>
                   ))}
 
-                  {typePagination?.pages > 1 && typePage < typePagination.pages && (
-                    <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
-                      <div 
-                        className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
-                        onMouseEnter={() => {
-                          if (typePage < typePagination.pages && !loadingTripTypes) {
-                            setTypePage(prev => prev + 1);
-                          }
-                        }}
-                      >
-                        <ChevronDown className="h-4 w-4 text-teal-600" />
+                  {typePagination?.pages > 1 &&
+                    typePage < typePagination.pages && (
+                      <div className="flex items-center justify-center py-2 absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t cursor-default z-10">
+                        <div
+                          className="p-1 hover:bg-slate-100 rounded-full transition-colors animate-bounce"
+                          onMouseEnter={() => {
+                            if (
+                              typePage < typePagination.pages &&
+                              !loadingTripTypes
+                            ) {
+                              setTypePage((prev) => prev + 1);
+                            }
+                          }}
+                        >
+                          <ChevronDown className="h-4 w-4 text-teal-600" />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                 </SelectContent>
               </Select>
 
@@ -697,7 +795,10 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={sortBy} onValueChange={(val) => updateQuery({ sortBy: val })}>
+              <Select
+                value={sortBy}
+                onValueChange={(val) => updateQuery({ sortBy: val })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort By" />
                 </SelectTrigger>
@@ -709,7 +810,10 @@ function Page() {
                 </SelectContent>
               </Select>
 
-              <Select value={order} onValueChange={(val) => updateQuery({ order: val })}>
+              <Select
+                value={order}
+                onValueChange={(val) => updateQuery({ order: val })}
+              >
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="Sort Order" />
                 </SelectTrigger>
@@ -826,15 +930,16 @@ function Page() {
                           <TableCell className="text-muted-foreground min-w-0">
                             <p
                               className="truncate"
-                              title={getOperatorName(trip.operator_id)}
+                              title={getOperatorName(trip)}
                             >
-                              {getOperatorName(trip.operator_id)}
+                              {getOperatorName(trip)}
                             </p>
                           </TableCell>
                           <TableCell className="font-medium whitespace-nowrap">
                             <div className="flex items-center gap-1">
                               <IndianRupee className="h-3 w-3" />
-                              {getBasePrice(trip)?.toLocaleString("en-IN") || "N/A"}
+                              {getBasePrice(trip)?.toLocaleString("en-IN") ||
+                                "N/A"}
                             </div>
                           </TableCell>
                           <TableCell>
@@ -929,7 +1034,7 @@ function Page() {
                           {trip.name || "N/A"}
                         </h3>
                         <p className="text-sm text-muted-foreground line-clamp-1">
-                          {getOperatorName(trip.operator_id)}
+                          {getOperatorName(trip)}
                         </p>
                       </div>
                     </div>
@@ -1017,7 +1122,15 @@ function Page() {
         </div>
       </div>
 
-      {showModal && <AddTripModal handleModalClose={handleModalClose} />}
+      {showModal && (
+        <AddTripModal
+          handleModalClose={handleModalClose}
+          extraOperators={Object.entries(operatorInfoMap).map(([id, name]) => ({
+            id,
+            name,
+          }))}
+        />
+      )}
 
       <AdminConfirmDialog
         isOpen={confirmDialogOpen}

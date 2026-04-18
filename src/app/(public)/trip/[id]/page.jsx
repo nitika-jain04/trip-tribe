@@ -53,6 +53,7 @@ const mapServerTripData = (tripDataRaw) => {
     highlights: raw.itinerary || [],
     inclusions: raw.inclusions || [],
     exclusions: raw.exclusions || [],
+    cancellation_policy: raw.cancellation_policy || "",
   };
 };
 
@@ -101,12 +102,12 @@ export async function generateMetadata({ params }) {
   const locationName = locationMap[trip.destination_id]?.name || "India";
 
   return {
-    title: `${trip.name} | ${locationName} | TripTribe`,
+    title: `${trip.name} - ${locationName} - TripTribe`,
     description:
       trip.description?.slice(0, 160) ||
       `Join this amazing group trip to ${locationName}. Book now on TripTribe.`,
     openGraph: {
-      title: `${trip.name} | ${locationName}`,
+      title: `${trip.name} - ${locationName}`,
       description: trip.description?.slice(0, 160),
       images: trip.images?.length ? [{ url: trip.images[0] }] : [],
     },
