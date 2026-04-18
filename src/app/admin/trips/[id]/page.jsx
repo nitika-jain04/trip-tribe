@@ -378,6 +378,20 @@ export default function TripDetail() {
         <ListCard title="Inclusions" items={trip.inclusions} />
         <ListCard title="Exclusions" items={trip.exclusions} />
       </div>
+
+      {/* Cancellation Policy */}
+      {trip.cancellation_policy && (
+        <Card className="rounded-2xl shadow-sm">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-lg font-semibold mb-4">Cancellation Policy</h2>
+            <div className="p-4 rounded-xl border bg-slate-50">
+              <pre className="whitespace-pre-wrap text-sm text-muted-foreground font-sans leading-relaxed">
+                {trip.cancellation_policy}
+              </pre>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

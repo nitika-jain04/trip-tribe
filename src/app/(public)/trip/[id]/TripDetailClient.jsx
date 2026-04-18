@@ -118,7 +118,7 @@ export default function TripDetailClient({ trip, locationMap }) {
     const currentUrl = window.location.href;
     const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
     const categoryInfo = selectedCategory
-      ? `\n• *Option:* ${selectedCategory.category} (₹${selectedCategory.price.toLocaleString("en-IN")})`
+      ? `• *Option:* ${selectedCategory.category} (₹${selectedCategory.price.toLocaleString("en-IN")})`
       : "";
 
     const message = `Hi, I wanted to confirm the availability for the following trip:
@@ -436,6 +436,14 @@ ${currentUrl}`;
               >
                 Inclusions
               </TabsTrigger>
+              {trip.cancellation_policy && (
+                <TabsTrigger
+                  value="policy"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-4"
+                >
+                  Cancellation Policy
+                </TabsTrigger>
+              )}
             </TabsList>
 
             <TabsContent value="overview" className="mt-0">
@@ -534,35 +542,43 @@ ${currentUrl}`;
             </TabsContent>
 
             <TabsContent value="inclusions" className="mt-0">
-              <div className="grid md:grid-cols-2 gap-8">
+              <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
                 <div>
-                  <h3 className="font-display text-heading-lg text-foreground mb-6 flex items-center gap-2">
-                    <Check className="w-6 h-6 text-success" />
+                  <h3 className="font-display text-heading-lg text-foreground mb-8 flex items-center gap-3">
+                    <Check className="w-7 h-7 text-success" strokeWidth={3} />
                     What&apos;s Included
                   </h3>
-                  <ul className="space-y-3">
+                  <ul className="space-y-4">
                     {trip.inclusions?.map((item, i) => (
-                      <li key={i} className="flex items-center gap-3 text-body">
-                        <Check className="w-5 h-5 text-success shrink-0" />
-                        {item}
+                      <li key={i} className="flex items-start gap-4 text-body">
+                        <Check
+                          className="w-5 h-5 text-success shrink-0 mt-0.5"
+                          strokeWidth={2.5}
+                        />
+                        <span className="text-muted-foreground leading-relaxed">
+                          {item}
+                        </span>
                       </li>
                     ))}
                   </ul>
                 </div>
+
                 {trip.exclusions?.length > 0 && (
                   <div>
-                    <h3 className="font-display text-heading-lg text-foreground mb-6 flex items-center gap-2">
-                      <X className="w-6 h-6 text-error" />
+                    <h3 className="font-display text-heading-lg text-foreground mb-8 flex items-center gap-3">
+                      <X className="w-7 h-7 text-error" strokeWidth={3} />
                       What&apos;s Not Included
                     </h3>
-                    <ul className="space-y-3">
+                    <ul className="space-y-4">
                       {trip.exclusions?.map((item, i) => (
-                        <li
-                          key={i}
-                          className="flex items-center gap-3 text-body text-muted-foreground"
-                        >
-                          <X className="w-5 h-5 text-error shrink-0" />
-                          {item}
+                        <li key={i} className="flex items-start gap-4 text-body">
+                          <X
+                            className="w-5 h-5 text-error shrink-0 mt-0.5"
+                            strokeWidth={2.5}
+                          />
+                          <span className="text-muted-foreground leading-relaxed">
+                            {item}
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -570,6 +586,22 @@ ${currentUrl}`;
                 )}
               </div>
             </TabsContent>
+
+            {trip.cancellation_policy && (
+              <TabsContent value="policy" className="mt-0">
+                <div className="max-w-3xl">
+                  <h3 className="font-display text-heading-lg text-foreground mb-8 flex items-center gap-3">
+                    <Clock className="w-7 h-7 text-primary" strokeWidth={2.5} />
+                    Cancellation Policy
+                  </h3>
+                  <div className="card-premium p-6">
+                    <pre className="whitespace-pre-wrap text-body text-muted-foreground font-sans leading-relaxed">
+                      {trip.cancellation_policy}
+                    </pre>
+                  </div>
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </section>

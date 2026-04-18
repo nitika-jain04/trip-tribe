@@ -60,6 +60,7 @@ export default function TripEditPage() {
     inclusions: [""],
     exclusions: [""],
     itinerary: [{ day: 1, activities: [""] }],
+    cancellation_policy: "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -121,6 +122,7 @@ export default function TripEditPage() {
         ...dbTrip,
         difficulty: dbTrip.difficulty || "",
         type_id: dbTrip?.type?.id || "",
+        cancellation_policy: dbTrip.cancellation_policy || "",
       });
       setFormData({
         name: dbTrip.name || "",
@@ -140,6 +142,7 @@ export default function TripEditPage() {
         itinerary: dbTrip.itinerary || [],
         status: dbTrip.status || "",
         type_id: dbTrip?.type?.id || "",
+        cancellation_policy: dbTrip.cancellation_policy || "",
       });
       setLoading(false);
     }
@@ -458,6 +461,10 @@ export default function TripEditPage() {
         } else if (key === "hotel_category") {
           if (formData[key] && formData[key] > 0) {
             requestBody[key] = formData[key];
+          }
+        } else if (key === "cancellation_policy") {
+          if (formData[key]?.trim()) {
+            requestBody[key] = formData[key].trim();
           }
         } else {
           requestBody[key] = formData[key];
@@ -915,6 +922,28 @@ export default function TripEditPage() {
                   {errors.description}
                 </p>
               )}
+            </div>
+
+            <div className="space-y-1.5 col-span-1 sm:col-span-2">
+              <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                Cancellation Policy
+              </label>
+              <pre
+                contentEditable
+                onInput={() => setIsModified(true)}
+                onBlur={(e) => {
+                  const value = e.currentTarget.innerText;
+                  setFormData((prev) => ({
+                    ...prev,
+                    cancellation_policy: value,
+                  }));
+                  setIsModified(true);
+                }}
+                className="w-full min-h-[120px] p-4 text-sm border border-slate-200 rounded-lg bg-white overflow-auto whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-sans"
+                suppressContentEditableWarning={true}
+              >
+                {formData.cancellation_policy}
+              </pre>
             </div>
           </section>
 

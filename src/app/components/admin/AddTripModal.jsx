@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { Button } from "../ui/button";
 import { IoCloseSharp } from "react-icons/io5";
 import Input from "../ui/input";
@@ -36,7 +36,7 @@ const MapPicker = dynamic(() => import("@/app/components/MapPickerTrip"), {
   ),
 });
 
-function AddTripModal({ handleModalClose }) {
+function AddTripModal({ handleModalClose, extraOperators = [] }) {
   const [loading, setLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
@@ -67,6 +67,16 @@ function AddTripModal({ handleModalClose }) {
       });
     }
   }, [operators]);
+
+  const combinedOperators = useMemo(() => {
+    const existingIds = new Set(
+      accumulatedOperators.map((op) => String(op.id)),
+    );
+    const uniqueExtras = (extraOperators || [])
+      .filter((op) => op.id && !existingIds.has(String(op.id)))
+      .map((op) => ({ ...op, id: String(op.id) }));
+    return [...accumulatedOperators, ...uniqueExtras];
+  }, [accumulatedOperators, extraOperators]);
 
   // Trip Type Pagination & Accumulation
   const [typePage, setTypePage] = useState(1);
@@ -123,6 +133,7 @@ function AddTripModal({ handleModalClose }) {
     inclusions: [""],
     exclusions: [""],
     itinerary: [{ day: 1, activities: [""] }],
+    cancellation_policy: "",
   });
 
   // Removed manual fetchOperators in favor of useAdminOperators hook
@@ -498,6 +509,9 @@ function AddTripModal({ handleModalClose }) {
       source_id: formData.source.id,
       destination_id: formData.destination.id,
       ...(cleanedExclusions.length > 0 && { exclusions: cleanedExclusions }),
+      ...(formData.cancellation_policy?.trim() && {
+        cancellation_policy: formData.cancellation_policy.trim(),
+      }),
     };
 
     try {
@@ -865,9 +879,9 @@ function AddTripModal({ handleModalClose }) {
                   <SelectValue placeholder="Select Operator" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accumulatedOperators.map((o) => (
-                    <SelectItem key={o.id} value={o.id.toString()}>
-                      {o.name}
+                  {combinedOperators.map((op) => (
+                    <SelectItem key={op.id} value={String(op.id)}>
+                      {op.name}
                     </SelectItem>
                   ))}
 
@@ -1058,42 +1072,44 @@ function AddTripModal({ handleModalClose }) {
               )}
             </div>
 
-            <div className="col-span-1">
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-sm text-gray-600 font-medium">
-                  Exclusions
-                </label>
-                <button
-                  type="button"
-                  onClick={() => addListItem("exclusions")}
-                  className="text-xs text-teal-600"
-                >
-                  + Add
-                </button>
-              </div>
-              {formData.exclusions.map((item, i) => (
-                <div key={i} className="flex gap-2 mb-2">
-                  <Input
-                    value={item}
-                    onChange={(e) =>
-                      handleListChange("exclusions", i, e.target.value)
-                    }
-                  />
+            {formData?.exclusions && (
+              <div className="col-span-1">
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm text-gray-600 font-medium">
+                    Exclusions
+                  </label>
                   <button
                     type="button"
-                    onClick={() => removeListItem("exclusions", i)}
-                    className="text-red-400"
+                    onClick={() => addListItem("exclusions")}
+                    className="text-xs text-teal-600"
                   >
-                    <FaTrash size={12} />
+                    + Add
                   </button>
                 </div>
-              ))}
-              {fieldErrors.exclusions && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.exclusions}
-                </p>
-              )}
-            </div>
+                {formData.exclusions.map((item, i) => (
+                  <div key={i} className="flex gap-2 mb-2">
+                    <Input
+                      value={item}
+                      onChange={(e) =>
+                        handleListChange("exclusions", i, e.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeListItem("exclusions", i)}
+                      className="text-red-400"
+                    >
+                      <FaTrash size={12} />
+                    </button>
+                  </div>
+                ))}
+                {fieldErrors.exclusions && (
+                  <p className="text-admin-error text-xs mt-1">
+                    {fieldErrors.exclusions}
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
               <div className="flex justify-between items-center mb-3">
@@ -1162,6 +1178,26 @@ function AddTripModal({ handleModalClose }) {
                   {fieldErrors.itinerary}
                 </p>
               )}
+            </div>
+
+            <div className="col-span-1 md:col-span-2">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                Cancellation Policy
+              </h3>
+              <pre
+                contentEditable
+                onBlur={(e) => {
+                  const value = e.currentTarget.innerText || "";
+                  setFormData((prev) => ({
+                    ...prev,
+                    cancellation_policy: value,
+                  }));
+                }}
+                className="w-full min-h-[120px] p-4 text-sm border rounded-lg bg-slate-50/50 overflow-auto whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-sans"
+                suppressContentEditableWarning={true}
+              >
+                {formData.cancellation_policy}
+              </pre>
             </div>
 
             {/* Footer Buttons */}
