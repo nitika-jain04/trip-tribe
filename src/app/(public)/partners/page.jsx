@@ -237,28 +237,29 @@ export default function Partner() {
       const data = await res.json();
 
       if (!res.ok) {
-        const message = data?.error?.message || "Application failed";
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Application failed";
 
         if (data?.error?.code === "VALIDATION_ERROR") {
           const apiErrors = {};
-
-          // Smart field detection (you can expand this)
-          if (message.toLowerCase().includes("email")) {
-            apiErrors.email = message;
-          } else if (message.toLowerCase().includes("phone")) {
-            apiErrors.phone = message;
+          if (errorMessage.toLowerCase().includes("email")) {
+            apiErrors.email = errorMessage;
+          } else if (errorMessage.toLowerCase().includes("phone")) {
+            apiErrors.phone = errorMessage;
           }
-
           setErrors((prev) => ({
             ...prev,
             ...apiErrors,
           }));
         }
 
-        // throw new Error(message);
         toast({
           title: "Error",
-          description: message,
+          description: errorMessage,
           variant: "destructive",
         });
         return;

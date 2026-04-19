@@ -319,24 +319,30 @@ export default function HomeClient({
                       onBlur={() => setShowSuggestions(false)}
                       className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
-                    {showSuggestions && locations.length > 0 && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-2xl overflow-y-auto max-h-[300px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
-                        <button
-                          type="button"
-                          onMouseDown={() => router.push("/trips")}
-                          className="w-full flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/60 transition-all text-left group"
-                        >
-                          <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
-                            <Compass className="text-primary" size={15} />
-                          </div>
-                          <div className="text-left">
-                            <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">
-                              Take me anywhere
-                            </p>
-                          </div>
-                        </button>
+                    {showSuggestions && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-2xl overflow-y-auto max-h-[350px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="p-1.5 border-b border-border/50">
+                          <button
+                            type="button"
+                            onMouseDown={() => router.push("/trips")}
+                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-muted transition-all text-left group"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 transition-colors group-hover:bg-primary/20">
+                              <Compass className="text-primary" size={18} />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                                Take me anywhere
+                              </p>
+                              <p className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors">
+                                Explore all group trips across India
+                              </p>
+                            </div>
+                          </button>
+                        </div>
+                        
                         <div className="relative">
-                          <div className="max-h-33 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50">
+                          <div className="max-h-56 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50">
                             {filteredLocations.length > 0 ? (
                               filteredLocations.map((loc) => (
                                 <button

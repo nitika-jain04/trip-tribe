@@ -69,14 +69,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
   }, [operators]);
 
   const combinedOperators = useMemo(() => {
-    const existingIds = new Set(
-      accumulatedOperators.map((op) => String(op.id)),
-    );
-    const uniqueExtras = (extraOperators || [])
-      .filter((op) => op.id && !existingIds.has(String(op.id)))
-      .map((op) => ({ ...op, id: String(op.id) }));
-    return [...accumulatedOperators, ...uniqueExtras];
-  }, [accumulatedOperators, extraOperators]);
+    return accumulatedOperators;
+  }, [accumulatedOperators]);
 
   // Trip Type Pagination & Accumulation
   const [typePage, setTypePage] = useState(1);
@@ -535,9 +529,16 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
         });
         handleModalClose(false);
       } else {
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Failed to create trip.";
+
         toast({
           title: "Error",
-          description: data?.error?.message || "Failed to create trip.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -623,6 +624,12 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                       <Input
                         placeholder="e.g. Base Price, Early Bird"
                         value={cat.category}
+                        readOnly={cat.category?.toLowerCase() === "base price"}
+                        className={
+                          cat.category?.toLowerCase() === "base price"
+                            ? "bg-gray-50 cursor-not-allowed"
+                            : ""
+                        }
                         onChange={(e) =>
                           handlePriceCategoryChange(
                             idx,
@@ -650,17 +657,18 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                         />
                       </div>
                     </div>
-                    {formData.price_categories.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removePriceCategory(idx)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <FaTrash />
-                      </Button>
-                    )}
+                    {formData.price_categories.length > 1 &&
+                      cat.category?.toLowerCase() !== "base price" && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePriceCategory(idx)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <FaTrash />
+                        </Button>
+                      )}
                   </div>
                 ))}
               </div>
@@ -1056,13 +1064,15 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                       handleListChange("inclusions", i, e.target.value)
                     }
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeListItem("inclusions", i)}
-                    className="text-red-400"
-                  >
-                    <FaTrash size={12} />
-                  </button>
+                  {formData.inclusions.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeListItem("inclusions", i)}
+                      className="text-red-400 p-1 hover:bg-red-50 rounded"
+                    >
+                      <FaTrash size={12} />
+                    </button>
+                  )}
                 </div>
               ))}
               {fieldErrors.inclusions && (
@@ -1097,7 +1107,7 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                     <button
                       type="button"
                       onClick={() => removeListItem("exclusions", i)}
-                      className="text-red-400"
+                      className="text-red-400 p-1 hover:bg-red-50 rounded"
                     >
                       <FaTrash size={12} />
                     </button>
@@ -1133,14 +1143,16 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                         <span className="font-semibold text-sm">
                           Day {day.day}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => removeDay(dIdx)}
-                          className="text-red-500 text-xs"
-                        >
-                          <FaTrash size={10} className="inline mr-1" /> Delete
-                          Day
-                        </button>
+                        {formData.itinerary.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeDay(dIdx)}
+                            className="text-red-500 text-xs hover:underline bg-red-50 px-2 py-1 rounded"
+                          >
+                            <FaTrash size={10} className="inline mr-1" /> Delete
+                            Day
+                          </button>
+                        )}
                       </div>
                       <div className="space-y-2 border-l-2 border-teal-500 pl-3">
                         {day.activities.map((act, aIdx) => (
@@ -1152,13 +1164,15 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                               }
                               className="bg-white"
                             />
-                            <button
-                              type="button"
-                              onClick={() => removeActivity(dIdx, aIdx)}
-                              className="text-gray-400"
-                            >
-                              <FaTrash size={10} />
-                            </button>
+                            {day.activities.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeActivity(dIdx, aIdx)}
+                                className="text-gray-400 hover:text-red-500 p-1 hover:bg-red-50 rounded transition-colors"
+                              >
+                                <FaTrash size={10} />
+                              </button>
+                            )}
                           </div>
                         ))}
                         <button

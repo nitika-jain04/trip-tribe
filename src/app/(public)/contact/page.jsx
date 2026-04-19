@@ -273,18 +273,20 @@ export default function Contact() {
           message: "",
         });
       } else {
-        const message = data?.error?.message || "Application failed";
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Failed to send message";
 
         if (data?.error?.code === "VALIDATION_ERROR") {
           const apiErrors = {};
-
-          // Smart field detection (you can expand this)
-          if (message.toLowerCase().includes("email")) {
-            apiErrors.email = message;
-          } else if (message.toLowerCase().includes("phone")) {
-            apiErrors.phone = message;
+          if (errorMessage.toLowerCase().includes("email")) {
+            apiErrors.email = errorMessage;
+          } else if (errorMessage.toLowerCase().includes("phone")) {
+            apiErrors.phone = errorMessage;
           }
-
           setErrors((prev) => ({
             ...prev,
             ...apiErrors,
@@ -293,7 +295,7 @@ export default function Contact() {
 
         toast({
           title: "Error",
-          description: data?.error?.message,
+          description: errorMessage,
           variant: "destructive",
         });
       }
