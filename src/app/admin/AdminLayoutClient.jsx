@@ -64,7 +64,7 @@ export default function AdminLayoutClient({ children }) {
             {/* Mobile Header */}
             {isMobile && (
               <header className="h-16 border-b border-gray-200 bg-white flex items-center px-4 shrink-0 justify-between">
-                <Link href="/admin/dashboard">
+                <Link href="/admin/dashboard" prefetch={false}>
                   <div className="flex items-center gap-2">
                     <img
                       src="/triptribe-logo-final.png"
