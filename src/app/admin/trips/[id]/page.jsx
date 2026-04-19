@@ -82,6 +82,7 @@ export default function TripDetail() {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
+          prefetch={false}
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
         >
@@ -106,6 +107,7 @@ export default function TripDetail() {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
+          prefetch={false}
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
         >
@@ -135,6 +137,7 @@ export default function TripDetail() {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
+          prefetch={false}
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6 hover:text-teal-600 transition-colors"
         >
@@ -149,7 +152,7 @@ export default function TripDetail() {
               The trip you&apos;re looking for doesn&apos;t exist or has been
               removed
             </p>
-            <Link href="/admin/trips">
+            <Link href="/admin/trips" prefetch={false}>
               <Button className="bg-teal-500 hover:bg-teal-600 text-white">
                 Back to Trips
               </Button>
@@ -164,6 +167,7 @@ export default function TripDetail() {
     <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
         href="/admin/trips"
+        prefetch={false}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
       >
         <ArrowLeft size={25} />

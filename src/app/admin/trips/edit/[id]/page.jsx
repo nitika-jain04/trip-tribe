@@ -216,7 +216,9 @@ export default function TripEditPage() {
 
   const removePriceCategory = (index) => {
     if (formData.price_categories.length === 1) return;
-    if (formData.price_categories[index].category?.toLowerCase() === "base price")
+    if (
+      formData.price_categories[index].category?.toLowerCase() === "base price"
+    )
       return;
     const categories = formData.price_categories.filter((_, i) => i !== index);
     setFormData((prev) => ({ ...prev, price_categories: categories }));
@@ -546,6 +548,7 @@ export default function TripEditPage() {
       <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
+          prefetch={false}
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
           <ArrowLeft size={16} /> Back to Trips
@@ -569,6 +572,7 @@ export default function TripEditPage() {
       <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
           href="/admin/trips"
+          prefetch={false}
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
           <ArrowLeft size={16} /> Back to Trips
@@ -596,6 +600,7 @@ export default function TripEditPage() {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-screen">
         <Link
+          prefetch={false}
           href="/admin/trips"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
@@ -618,6 +623,7 @@ export default function TripEditPage() {
   return (
     <div className="p-3 sm:p-6 bg-gray-50 min-h-screen space-y-4 sm:space-y-6">
       <Link
+        prefetch={false}
         href={`/admin/trips/${id}`}
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
       >
@@ -682,57 +688,57 @@ export default function TripEditPage() {
                 <div className="space-y-3">
                   {formData.price_categories.map((cat, idx) => (
                     <div key={idx} className="flex gap-3 items-start">
-                        <div className="flex-1">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Category (e.g. Base Price)"
+                          value={cat.category}
+                          onChange={(e) =>
+                            handlePriceCategoryChange(
+                              idx,
+                              "category",
+                              e.target.value,
+                            )
+                          }
+                          readOnly={
+                            cat.category?.toLowerCase() === "base price"
+                          }
+                          className={cn(
+                            "w-full text-sm bg-white border-slate-200",
+                            cat.category?.toLowerCase() === "base price" &&
+                              "bg-slate-50 cursor-not-allowed",
+                          )}
+                        />
+                      </div>
+                      <div className="w-32 sm:w-40">
+                        <div className="relative">
+                          <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                           <Input
-                            placeholder="Category (e.g. Base Price)"
-                            value={cat.category}
+                            type="number"
+                            placeholder="Price"
+                            value={cat.price}
                             onChange={(e) =>
                               handlePriceCategoryChange(
                                 idx,
-                                "category",
+                                "price",
                                 e.target.value,
                               )
                             }
-                            readOnly={
-                              cat.category?.toLowerCase() === "base price"
-                            }
-                            className={cn(
-                              "w-full text-sm bg-white border-slate-200",
-                              cat.category?.toLowerCase() === "base price" &&
-                                "bg-slate-50 cursor-not-allowed",
-                            )}
+                            className="pl-9 w-full text-sm bg-white border-slate-200"
                           />
                         </div>
-                        <div className="w-32 sm:w-40">
-                          <div className="relative">
-                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input
-                              type="number"
-                              placeholder="Price"
-                              value={cat.price}
-                              onChange={(e) =>
-                                handlePriceCategoryChange(
-                                  idx,
-                                  "price",
-                                  e.target.value,
-                                )
-                              }
-                              className="pl-9 w-full text-sm bg-white border-slate-200"
-                            />
-                          </div>
-                        </div>
-                        {formData.price_categories.length > 1 &&
-                          cat.category?.toLowerCase() !== "base price" && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removePriceCategory(idx)}
-                              className="text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-colors"
-                            >
-                              <FaTrash className="w-4 h-4" />
-                            </Button>
-                          )}
+                      </div>
+                      {formData.price_categories.length > 1 &&
+                        cat.category?.toLowerCase() !== "base price" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removePriceCategory(idx)}
+                            className="text-slate-400 hover:text-red-500 hover:bg-slate-50 transition-colors"
+                          >
+                            <FaTrash className="w-4 h-4" />
+                          </Button>
+                        )}
                     </div>
                   ))}
                 </div>

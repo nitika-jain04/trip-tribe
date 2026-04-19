@@ -223,6 +223,7 @@ function SidebarLink({ href, icon, label, collapsed, isActive, onClick }) {
   return (
     <Link
       href={href}
+      prefetch={false}
       onClick={onClick}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl min-h-13
       transition-colors duration-200 relative group
