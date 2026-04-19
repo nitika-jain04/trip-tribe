@@ -247,7 +247,9 @@ function AddOperatorModal({ handleModalClose }) {
             .filter(Boolean)
         : [],
       website_url: formData.website_url || undefined,
-      hotel_category: formData.hotel_category || 0,
+      ...(formData.hotel_category > 0 && {
+        hotel_category: formData.hotel_category,
+      }),
       logo_url: formData.logo_url || undefined,
       // rating: parseFloat(formData.rating) || 4.5,
       // status: formData.status,
@@ -293,9 +295,16 @@ function AddOperatorModal({ handleModalClose }) {
       const data = await res.json();
 
       if (!res.ok) {
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Failed to add operator";
+
         toast({
           title: "Error",
-          description: data?.error?.message || "Failed to add operator",
+          description: errorMessage,
           variant: "destructive",
         });
         return;

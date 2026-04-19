@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -67,7 +68,7 @@ const FiltersContent = ({
   <div className="space-y-6">
     <div>
       <h4 className="font-medium text-foreground mb-3">Trip Type</h4>
-      <div className="space-y-2">
+      <div className="space-y-1">
         {tripTypesData.map((type) => (
           <button
             key={type.id}
@@ -75,13 +76,20 @@ const FiltersContent = ({
               setSelectedType(type);
               setTimeout(() => setIsSheetOpen?.(false), 500);
             }}
-            className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
+            className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
               selectedType.id === type.id
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted"
+                ? "text-primary-foreground"
+                : "text-foreground hover:bg-muted"
             }`}
           >
-            {type.name}
+            {selectedType.id === type.id && (
+              <motion.div
+                layoutId="activeType"
+                className="absolute inset-0 bg-primary rounded-lg z-0"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">{type.name}</span>
           </button>
         ))}
       </div>
@@ -89,7 +97,7 @@ const FiltersContent = ({
 
     <div>
       <h4 className="font-medium text-foreground mb-3">Difficulty</h4>
-      <div className="space-y-2">
+      <div className="space-y-1">
         {["All", "Easy", "Moderate", "Hard"].map((diff) => (
           <button
             key={diff}
@@ -97,13 +105,20 @@ const FiltersContent = ({
               setSelectedDifficulty(diff);
               setTimeout(() => setIsSheetOpen?.(false), 500);
             }}
-            className={`block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors ${
+            className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
               selectedDifficulty === diff
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-muted"
+                ? "text-primary-foreground"
+                : "text-foreground hover:bg-muted"
             }`}
           >
-            {diff}
+            {selectedDifficulty === diff && (
+              <motion.div
+                layoutId="activeDifficulty"
+                className="absolute inset-0 bg-primary rounded-lg z-0"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">{diff}</span>
           </button>
         ))}
       </div>
@@ -115,7 +130,14 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div className="card-premium overflow-hidden group">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="card-premium overflow-hidden group h-full"
+    >
       <Link href={`/trip/${trip.id}`}>
         <div className="aspect-16/10 relative overflow-hidden bg-muted">
           {trip.image && !imgError ? (
@@ -208,7 +230,7 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
           </Link>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -650,55 +672,80 @@ export default function TripsClient({
               )} */}
 
               <div className="grid md:grid-cols-2 gap-6 mt-5">
-                {!loadingTrips && filteredTrips.length > 0 ? (
-                  filteredTrips.map((trip) => (
-                    <PublicTripCard
-                      key={trip.id}
-                      trip={trip}
-                      isCompared={compareList.includes(trip.id)}
-                      onToggleCompare={() => toggleCompare(trip.id)}
-                    />
-                  ))
-                ) : !loadingTrips ? (
-                  <div className="col-span-full">
-                    <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-muted/20 px-6 py-14 text-center">
-                      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-background shadow-sm border border-border">
-                        <Search className="h-7 w-7 text-muted-foreground" />
-                      </div>
+                <AnimatePresence mode="popLayout" initial={false}>
+                  {!loadingTrips && filteredTrips.length > 0 ? (
+                    filteredTrips.map((trip) => (
+                      <PublicTripCard
+                        key={trip.id}
+                        trip={trip}
+                        isCompared={compareList.includes(trip.id)}
+                        onToggleCompare={() => toggleCompare(trip.id)}
+                      />
+                    ))
+                    ) : !loadingTrips ? (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="col-span-full"
+                    >
+                      <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-muted/20 px-6 py-14 text-center">
+                        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-background shadow-sm border border-border">
+                          <Search className="h-7 w-7 text-muted-foreground" />
+                        </div>
 
-                      <h3 className="font-display text-heading-md text-foreground mb-2">
-                        No trips found
-                      </h3>
+                        <h3 className="font-display text-heading-md text-foreground mb-2">
+                          No trips found
+                        </h3>
 
-                      <p className="max-w-md text-body-sm text-muted-foreground mb-6">
-                        We couldn’t find any trips matching your current search
-                        or filters. Try changing your keywords or clearing
-                        filters to explore more trips.
-                      </p>
+                        <p className="max-w-md text-body-sm text-muted-foreground mb-6">
+                          We couldn’t find any trips matching your current search
+                          or filters. Try changing your keywords or clearing
+                          filters to explore more trips.
+                        </p>
 
-                      <div className="flex flex-wrap items-center justify-center gap-3">
-                        {(searchQuery || locationName) && (
+                        <div className="flex flex-wrap items-center justify-center gap-3">
+                          {(searchQuery || locationName) && (
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                handleClearSearch();
+                                requestAnimationFrame(() => {
+                                  tripsContainerRef.current?.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "start",
+                                  });
+                                });
+                              }}
+                            >
+                              {searchQuery ? "Clear Search" : "Clear Location Filter"}
+                            </Button>
+                          )}
+
+                          {(selectedType.id !== "all" ||
+                            selectedDifficulty !== "All") && (
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedType(tripTypesData[0]);
+                                setSelectedDifficulty("All");
+                                setCurrentPage(1);
+                                requestAnimationFrame(() => {
+                                  tripsContainerRef.current?.scrollIntoView({
+                                    behavior: "smooth",
+                                    block: "start",
+                                  });
+                                });
+                              }}
+                            >
+                              Reset Filters
+                            </Button>
+                          )}
+
                           <Button
-                            variant="outline"
+                            className="btn-primary"
                             onClick={() => {
                               handleClearSearch();
-                              requestAnimationFrame(() => {
-                                tripsContainerRef.current?.scrollIntoView({
-                                  behavior: "smooth",
-                                  block: "start",
-                                });
-                              });
-                            }}
-                          >
-                            {searchQuery ? "Clear Search" : "Clear Location Filter"}
-                          </Button>
-                        )}
-
-                        {(selectedType.id !== "all" ||
-                          selectedDifficulty !== "All") && (
-                          <Button
-                            variant="outline"
-                            onClick={() => {
                               setSelectedType(tripTypesData[0]);
                               setSelectedDifficulty("All");
                               setCurrentPage(1);
@@ -710,31 +757,13 @@ export default function TripsClient({
                               });
                             }}
                           >
-                            Reset Filters
+                            Explore All Trips
                           </Button>
-                        )}
-
-                        <Button
-                          className="btn-primary"
-                          onClick={() => {
-                            handleClearSearch();
-                            setSelectedType(tripTypesData[0]);
-                            setSelectedDifficulty("All");
-                            setCurrentPage(1);
-                            requestAnimationFrame(() => {
-                              tripsContainerRef.current?.scrollIntoView({
-                                behavior: "smooth",
-                                block: "start",
-                              });
-                            });
-                          }}
-                        >
-                          Explore All Trips
-                        </Button>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ) : null}
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </div>
 
               {loadingTrips && (

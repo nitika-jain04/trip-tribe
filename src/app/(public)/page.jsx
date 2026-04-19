@@ -62,8 +62,8 @@ export default async function Page() {
   //   });
   // }
 
-  const totalTrips = initialTrips?.result?.pagination?.total || 100;
-  const totalOperators = initialOperators?.result?.pagination?.total || 20;
+  const totalTrips = initialTrips?.result?.pagination?.total;
+  const totalOperators = initialOperators?.result?.pagination?.total;
 
   return (
     <HomeClient

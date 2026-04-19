@@ -4,19 +4,31 @@ import { adminFetcher } from "./use-admin-fetcher";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-const useAdminOperators = (params = "APPROVED") => {
-  // Handle both string (deprecated) and object parameters
-  const isObject = typeof params === "object" && params !== null;
-  const status = isObject ? params.status : params;
-  const page = isObject ? params.page : 1;
-  const limit = isObject ? params.limit : 10;
-
+const useAdminOperators = (filters = "APPROVED") => {
   const query = new URLSearchParams();
-  if (status && status !== "ALL") {
-    query.set("application_status", status);
+
+  if (typeof filters === "object" && filters !== null) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== "" &&
+        value !== "ALL" &&
+        value !== "all"
+      ) {
+        query.set(key, value);
+      }
+    });
+  } else {
+    // Legacy support for string input (deprecated)
+    if (filters && filters !== "ALL" && filters !== "all") {
+      query.set("application_status", filters);
+    }
   }
-  query.set("page", page);
-  query.set("limit", limit);
+
+  // Set defaults if not present
+  if (!query.has("page")) query.set("page", "1");
+  if (!query.has("limit")) query.set("limit", "10");
 
   const { data, error, isLoading, mutate } = useSWR(
     `${BASE_URL}/api/${API_VERSION}/operators/admin?${query.toString()}`,

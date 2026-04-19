@@ -336,9 +336,16 @@ function Page() {
         const data = await res.json();
 
         if (!res.ok || !data.success) {
+          const errorMessage =
+            Array.isArray(data?.error?.details) && data.error.details.length > 0
+              ? data.error.details.map((detail) => detail.message).join(", ")
+              : data?.error?.message === "Validation failed"
+                ? data?.error?.details?.message || "Validation failed"
+                : data?.error?.message || "Failed to update trip";
+
           toast({
             title: "Error",
-            description: data?.error?.message || "Failed to update trip",
+            description: errorMessage,
             variant: "destructive",
           });
           return;
@@ -387,9 +394,16 @@ function Page() {
       const data = await res.json();
 
       if (!res.ok) {
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Failed to delete trip";
+
         toast({
           title: "Error",
-          description: data?.error?.message || "Failed to delete trip",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
@@ -462,9 +476,16 @@ function Page() {
         const data = await res.json();
 
         if (!res.ok || !data.success) {
+          const errorMessage =
+            Array.isArray(data?.error?.details) && data.error.details.length > 0
+              ? data.error.details.map((detail) => detail.message).join(", ")
+              : data?.error?.message === "Validation failed"
+                ? data?.error?.details?.message || "Validation failed"
+                : data?.error?.message || "Failed to duplicate trip";
+
           return toast({
             title: "Error",
-            description: data?.error?.message || "Failed to duplicate trip",
+            description: errorMessage,
             variant: "destructive",
           });
         }

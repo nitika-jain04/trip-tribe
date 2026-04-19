@@ -290,9 +290,16 @@ export default function TripEditPage() {
       const data = await res.json();
 
       if (!res.ok) {
+        const errorMessage =
+          Array.isArray(data?.error?.details) && data.error.details.length > 0
+            ? data.error.details.map((detail) => detail.message).join(", ")
+            : data?.error?.message === "Validation failed"
+              ? data?.error?.details?.message || "Validation failed"
+              : data?.error?.message || "Upload failed";
+
         toast({
           title: "Error",
-          description: data?.error?.message || "Upload failed",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
