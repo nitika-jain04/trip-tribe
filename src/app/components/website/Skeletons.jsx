@@ -1,7 +1,18 @@
-import { MapPin, Calendar, Search, ArrowRight, Shield, ChevronDown } from "lucide-react";
+import {
+  MapPin,
+  Calendar,
+  Search,
+  ArrowRight,
+  Shield,
+  ChevronDown,
+} from "lucide-react";
 
 export function SkeletonBox({ className = "" }) {
-  return <div className={`animate-pulse rounded-xl bg-muted-foreground/8 ${className}`} />;
+  return (
+    <div
+      className={`animate-pulse rounded-xl bg-muted-foreground/8 ${className}`}
+    />
+  );
 }
 
 export function TripPageSkeleton() {
@@ -109,7 +120,7 @@ export function TripsDestinationsSkeleton() {
           key={index}
           className="rounded-2xl overflow-hidden bg-muted-foreground/5 animate-pulse"
         >
-          <div className="aspect-16/10 bg-muted-foreground/8" />
+          <div className="aspect-14/10 bg-muted-foreground/8" />
           <div className="p-6">
             <div className="h-4 w-28 bg-muted-foreground/8 rounded mb-3" />
             <div className="h-6 w-3/4 bg-muted-foreground/8 rounded mb-3" />

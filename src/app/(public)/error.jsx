@@ -21,7 +21,7 @@ export default function Error({ error, reset }) {
       </div>
 
       {/* Offline Overlay */}
-      <div className="absolute inset-0 flex items-center justify-center z-10 p-6 bg-background/20 backdrop-blur-[2px]">
+      {/* <div className="fixed inset-0 flex items-center justify-center z-10 p-6 bg-background/20 backdrop-blur-[2px]">
         <div className="max-w-md w-full bg-background/95 backdrop-blur-md rounded-3xl p-8 text-center shadow-2xl border border-border space-y-6 animate-in fade-in zoom-in-95 duration-300">
           <div className="mx-auto w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center">
             <WifiOff className="w-8 h-8 text-red-600" />
@@ -58,7 +58,7 @@ export default function Error({ error, reset }) {
             </Link>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

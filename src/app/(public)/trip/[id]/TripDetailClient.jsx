@@ -197,6 +197,7 @@ ${currentUrl}`;
         <div className="container-premium">
           <Link
             href="/trips"
+            prefetch={false}
             className="inline-flex items-center gap-2 text-body-sm text-muted-foreground hover:text-foreground mb-4"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -205,7 +206,7 @@ ${currentUrl}`;
 
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="space-y-4">
-              <div className="aspect-4/3 rounded-2xl overflow-hidden">
+              <div className="aspect-14/10 rounded-2xl overflow-hidden">
                 {activeImage ? (
                   <img
                     src={activeImage}
@@ -267,8 +268,16 @@ ${currentUrl}`;
 
               <div className="card-premium p-4 mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Shield className="w-6 h-6 text-primary" />
+                  <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+                    {trip.provider?.logo ? (
+                      <img
+                        src={trip.provider.logo}
+                        alt={trip.provider.name || "Provider logo"}
+                        className="max-w-full max-h-full object-cover"
+                      />
+                    ) : (
+                      <Shield className="w-6 h-6 text-primary" />
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="text-body-sm text-muted-foreground">
@@ -344,11 +353,7 @@ ${currentUrl}`;
 
                   {trip.price_categories?.length > 0 && (
                     <div className="space-y-3">
-                      {/* <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-4 h-[1px] bg-border" />
-                        Select Pricing Plan
-                      </p> */}
-                      <div className="grid gap-2">
+                      {/* <div className="grid gap-2">
                         {trip.price_categories.map((cat, i) => {
                           const isSelected =
                             selectedCategory?.category === cat.category;
@@ -394,17 +399,81 @@ ${currentUrl}`;
                             </button>
                           );
                         })}
+                      </div> */}
+                      <div className="grid gap-2">
+                        {trip.price_categories.map((cat, i) => {
+                          const isSelected =
+                            selectedCategory?.category === cat.category;
+                          const isStarting = cat.price === trip.priceFrom;
+
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => setSelectedCategory(cat)}
+                              className={`group relative w-full max-w-full overflow-hidden text-left p-3 rounded-xl border transition-all duration-300 ${
+                                isSelected
+                                  ? "bg-primary text-primary-foreground border-primary shadow-lg"
+                                  : "bg-background text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3 min-w-0">
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                      className={`text-body-sm font-semibold break-words whitespace-normal ${
+                                        isSelected
+                                          ? "text-primary-foreground"
+                                          : "text-foreground"
+                                      }`}
+                                    >
+                                      {cat.category}
+                                    </span>
+
+                                    {isStarting && !isSelected && (
+                                      <span className="shrink-0 text-[9px] font-black bg-success/10 text-success uppercase px-1.5 py-0.5 rounded-sm">
+                                        Starting
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <span
+                                  className={`shrink-0 text-right font-display text-base sm:text-lg ${
+                                    isSelected
+                                      ? "text-primary-foreground"
+                                      : "text-primary"
+                                  }`}
+                                >
+                                  ₹{cat.price.toLocaleString("en-IN")}
+                                </span>
+                              </div>
+
+                              {isSelected && (
+                                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 bg-white rounded-full p-0.5 shadow-md">
+                                  <Check className="w-3 h-3 text-primary stroke-[3]" />
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
                 </div>
                 <Button
-                  className="btn-primary w-full text-body py-7 shadow-glow hover:shadow-glow-lg transition-all active:scale-[0.98]"
+                  className="btn-primary w-full text-body py-9 md:py-6 shadow-glow hover:shadow-glow-lg transition-all active:scale-[0.98] whitespace-normal break-words text-center"
                   onClick={() => setShowForm(true)}
                 >
                   Confirm Booking with{" "}
                   {selectedCategory?.category || "Base Price"}
                 </Button>
+                {/* <Button
+                  className="btn-primary w-full text-body py-7 shadow-glow hover:shadow-glow-lg transition-all active:scale-[0.98]"
+                  onClick={() => setShowForm(true)}
+                >
+                  Confirm Booking with{" "}
+                  {selectedCategory?.category || "Base Price"}
+                </Button> */}
                 {/* <p className="text-[10px] text-center text-muted-foreground mt-3">
                   No immediate payment required • Instant WhatsApp confirmation
                 </p> */}
@@ -495,7 +564,7 @@ ${currentUrl}`;
                         <dt className="text-muted-foreground">Group Size</dt>
                         <dd className="font-medium">{trip.groupSize}</dd>
                       </div>
-                      {trip.hotelCategory !== null && (
+                      {trip.hotelCategory > 0 && (
                         <div className="flex justify-between">
                           <dt className="text-muted-foreground mt-1">
                             Hotel Category
@@ -551,7 +620,10 @@ ${currentUrl}`;
               >
                 <div>
                   <h3 className="font-display text-heading-md sm:text-heading-lg text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
-                    <Check className="w-6 h-6 sm:w-7 sm:h-7 text-success" strokeWidth={3} />
+                    <Check
+                      className="w-6 h-6 sm:w-7 sm:h-7 text-success"
+                      strokeWidth={3}
+                    />
                     What&apos;s Included
                   </h3>
                   <ul className="space-y-4">
@@ -571,13 +643,19 @@ ${currentUrl}`;
 
                 {trip.exclusions?.length > 0 && (
                   <div>
-                      <h3 className="font-display text-heading-md sm:text-heading-lg text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
-                        <X className="w-6 h-6 sm:w-7 sm:h-7 text-error" strokeWidth={3} />
-                        What&apos;s Not Included
-                      </h3>
+                    <h3 className="font-display text-heading-md sm:text-heading-lg text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
+                      <X
+                        className="w-6 h-6 sm:w-7 sm:h-7 text-error"
+                        strokeWidth={3}
+                      />
+                      What&apos;s Not Included
+                    </h3>
                     <ul className="space-y-4">
                       {trip.exclusions?.map((item, i) => (
-                        <li key={i} className="flex items-start gap-4 text-body">
+                        <li
+                          key={i}
+                          className="flex items-start gap-4 text-body"
+                        >
                           <X
                             className="w-5 h-5 text-error shrink-0 mt-0.5"
                             strokeWidth={2.5}
@@ -597,7 +675,10 @@ ${currentUrl}`;
               <TabsContent value="policy" className="mt-0">
                 <div className="max-w-3xl">
                   <h3 className="font-display text-heading-md sm:text-heading-lg text-foreground mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
-                    <Clock className="w-6 h-6 sm:w-7 sm:h-7 text-primary" strokeWidth={2.5} />
+                    <Clock
+                      className="w-6 h-6 sm:w-7 sm:h-7 text-primary"
+                      strokeWidth={2.5}
+                    />
                     Cancellation Policy
                   </h3>
                   <div className="card-premium p-4 sm:p-6 overflow-hidden">

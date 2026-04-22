@@ -366,7 +366,7 @@ function OperatorsPage() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
-          <Link href={`/admin/operators/${op.id}`}>
+          <Link prefetch={false} href={`/admin/operators/${op.id}`}>
             <Eye className="h-4 w-4 mr-2" />
             View Details
           </Link>
@@ -403,7 +403,7 @@ function OperatorsPage() {
         {op.application_status === "APPROVED" && op.status === "ACTIVE" && (
           <>
             <DropdownMenuItem asChild>
-              <Link href={`/admin/operators/edit/${op.id}`}>
+              <Link prefetch={false} href={`/admin/operators/edit/${op.id}`}>
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
               </Link>
@@ -906,7 +906,11 @@ function OperatorsPage() {
                 </div>
 
                 <div className="mt-4 flex gap-2 w-full">
-                  <Link href={`/admin/operators/${op.id}`} className="flex-1">
+                  <Link
+                    prefetch={false}
+                    href={`/admin/operators/${op.id}`}
+                    className="flex-1"
+                  >
                     <Button variant="outline" className="w-full text-sm h-9">
                       <Eye className="h-4 w-4 mr-2" /> View
                     </Button>

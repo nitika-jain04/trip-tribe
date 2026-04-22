@@ -83,28 +83,33 @@ function Enquiries() {
   });
 
   // Handle URL sync
-  const updateQuery = useCallback((updates) => {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === "" || value === "all") {
-        params.delete(key);
-      } else {
-        params.set(key, value);
+  const updateQuery = useCallback(
+    (updates) => {
+      const params = new URLSearchParams(searchParams.toString());
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === "" || value === "all") {
+          params.delete(key);
+        } else {
+          params.set(key, value);
+        }
+      });
+
+      // Always reset page to 1 when filters (other than page itself) change
+      if (!updates.page) {
+        params.set("page", "1");
       }
-    });
 
-    // Always reset page to 1 when filters (other than page itself) change
-    if (!updates.page) {
-      params.set("page", "1");
-    }
+      const currentQuery = searchParams.toString();
+      const newQuery = params.toString();
 
-    const currentQuery = searchParams.toString();
-    const newQuery = params.toString();
-
-    if (currentQuery !== newQuery) {
-      router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, { scroll: false });
-    }
-  }, [searchParams, pathname, router]);
+      if (currentQuery !== newQuery) {
+        router.replace(`${pathname}${newQuery ? `?${newQuery}` : ""}`, {
+          scroll: false,
+        });
+      }
+    },
+    [searchParams, pathname, router],
+  );
 
   // Debounce search update to URL
   useEffect(() => {
@@ -125,7 +130,8 @@ function Enquiries() {
   // 1. Build Query String
   const params = new URLSearchParams();
   if (debouncedSearch) params.append("search", debouncedSearch);
-  if (statusFilter !== "all") params.append("status", statusFilter.toUpperCase());
+  if (statusFilter !== "all")
+    params.append("status", statusFilter.toUpperCase());
   if (enquiryFilter !== "all") params.append("inquiry_type", enquiryFilter);
   if (fromDate) params.append("from_date", fromDate);
   if (toDate) params.append("to_date", toDate);
@@ -135,8 +141,13 @@ function Enquiries() {
   const url = `${BASE_URL}/api/${API_VERSION}/enquiries/admin?${params.toString()}`;
 
   // 2. Fetch using SWR
-  const { data, error: fetchError, isLoading, mutate: refreshEnquiries } = useSWR(url, adminFetcher, {
-    keepPreviousData: true
+  const {
+    data,
+    error: fetchError,
+    isLoading,
+    mutate: refreshEnquiries,
+  } = useSWR(url, adminFetcher, {
+    keepPreviousData: true,
   });
 
   const enquiries = data?.result?.data || [];
@@ -153,7 +164,8 @@ function Enquiries() {
     setDialogConfig({
       type: "delete",
       title: "Delete Enquiry",
-      description: "Are you sure you want to delete this enquiry? This action cannot be undone.",
+      description:
+        "Are you sure you want to delete this enquiry? This action cannot be undone.",
     });
     setConfirmDialogOpen(true);
   };
@@ -290,7 +302,7 @@ function Enquiries() {
 
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
-          <Link href={`/admin/enquiries/${enquiry.id}`}>
+          <Link href={`/admin/enquiries/${enquiry.id}`} prefetch={false}>
             <Eye className="mr-2 h-4 w-4" />
             View Details
           </Link>
@@ -544,7 +556,9 @@ function Enquiries() {
                               {enquiry.full_name}
                             </span>
                             <span className="text-sm text-muted-foreground">
-                              <a href={`tel:${getDialablePhone(enquiry.phone_number)}`}>
+                              <a
+                                href={`tel:${getDialablePhone(enquiry.phone_number)}`}
+                              >
                                 {formatPhoneNumber(enquiry.phone_number)}
                               </a>
                             </span>
@@ -725,9 +739,13 @@ function Enquiries() {
         onOpenChange={setConfirmDialogOpen}
         title={dialogConfig.title}
         description={dialogConfig.description}
-        confirmText={dialogConfig.type === "delete" ? "Delete Enquiry" : "Close Enquiry"}
+        confirmText={
+          dialogConfig.type === "delete" ? "Delete Enquiry" : "Close Enquiry"
+        }
         cancelText="Cancel"
-        onConfirm={dialogConfig.type === "delete" ? executeDelete : executeCloseEnquiry}
+        onConfirm={
+          dialogConfig.type === "delete" ? executeDelete : executeCloseEnquiry
+        }
         variant={dialogConfig.type === "delete" ? "destructive" : "default"}
         isLoading={isActionLoading}
       />

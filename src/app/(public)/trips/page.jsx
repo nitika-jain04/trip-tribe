@@ -72,14 +72,6 @@ export default async function Page({ searchParams }) {
     })) || []),
   ];
 
-  // if (initialTrips) {
-  //   console.log("[Server] Trips Page API Response:", {
-  //     success: initialTrips.success,
-  //     total: initialTrips.result?.pagination?.total,
-  //     count: initialTrips.result?.trips?.length,
-  //   });
-  // }
-
   return (
     <TripsClient
       initialTrips={initialTrips}

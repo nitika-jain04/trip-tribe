@@ -85,6 +85,20 @@ export default function HomeClient({
   const [searchDates, setSearchDates] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchScrollRef = useRef(null);
+  const [shouldRestoreScroll, setShouldRestoreScroll] = useState(false);
+
+  useEffect(() => {
+    if (!showSuggestions && shouldRestoreScroll && window.innerWidth < 640) {
+      const previousScroll = searchScrollRef.current;
+
+      if (typeof previousScroll === "number") {
+        setTimeout(() => {
+          animatedScrollTo(previousScroll);
+          setShouldRestoreScroll(false);
+        }, 300);
+      }
+    }
+  }, [showSuggestions, shouldRestoreScroll]);
 
   // Fallback to empty if not provided
   const rawLocationsGroups = initialLocations?.success
@@ -174,10 +188,11 @@ export default function HomeClient({
 
     return (
       <Link
+        prefetch={false}
         href={`/trip/${trip.id}`}
         className="card-premium overflow-hidden group"
       >
-        <div className="aspect-16/10 relative overflow-hidden bg-gray-100">
+        <div className="aspect-14/10 relative overflow-hidden bg-gray-100">
           {trip.images?.[0] && !cardImgError ? (
             <img
               src={trip.images[0]}
@@ -208,7 +223,10 @@ export default function HomeClient({
               </>
             )}
           </div>
-          <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
+          <h3
+            className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1"
+            title={trip.name}
+          >
             {trip.name}
           </h3>
           <p className="text-body-sm text-muted-foreground mb-4">
@@ -232,6 +250,7 @@ export default function HomeClient({
 
     return (
       <Link
+        prefetch={false}
         key={location.name}
         href={`/trips?location_name=${location.name}&location_type=destination&group_by=location`}
         className="group relative aspect-4/3 rounded-2xl overflow-hidden"
@@ -307,76 +326,115 @@ export default function HomeClient({
                       onChange={(e) => setSearchDestination(e.target.value)}
                       onFocus={(e) => {
                         setShowSuggestions(true);
+                        setShouldRestoreScroll(false);
+
                         if (window.innerWidth < 640) {
                           searchScrollRef.current = window.scrollY;
                           setTimeout(() => {
                             const rect = e.target.getBoundingClientRect();
-                            const targetY = window.scrollY + rect.top - 80;
+                            const targetY = window.scrollY + rect.top - 120;
                             animatedScrollTo(Math.max(0, targetY));
                           }, 300);
                         }
                       }}
-                      onBlur={() => setShowSuggestions(false)}
+                      onBlur={() => {
+                        setShouldRestoreScroll(true);
+                        setShowSuggestions(false);
+                      }} // onBlur={() => setShowSuggestions(false)}
                       className="pl-10 h-14 rounded-xl border-border bg-muted/50 text-body text-foreground"
                     />
                     {showSuggestions && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-background border border-border rounded-xl shadow-2xl overflow-y-auto max-h-[350px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="p-1.5 border-b border-border/50">
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.18)] overflow-hidden max-h-[350px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
+                        {/* <div className="px-4 py-1 border-b border-gray-100 bg-white">
                           <button
                             type="button"
                             onMouseDown={() => router.push("/trips")}
-                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer hover:bg-muted transition-all text-left group"
+                            className="w-full flex items-center gap-1.5 px-4 py-1 cursor-pointer hover:bg-gray-50 transition-all text-left border-b border-gray-50 last:border-b-0 group"
                           >
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 transition-colors group-hover:bg-primary/20">
-                              <Compass className="text-primary" size={18} />
+                            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                              <Compass className="text-emerald-600" size={16} />
                             </div>
-                            <div className="text-left">
-                              <p className="text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+                            <div
+                              className="min-w-0"
+                              onMouseDown={() => {
+                                setShouldRestoreScroll(false);
+                                router.push("/trips");
+                              }}
+                            >
+                              <p className="text-[15px] font-medium text-gray-900 group-hover:text-emerald-700 transition-colors truncate">
                                 Take me anywhere
                               </p>
-                              <p className="text-xs text-muted-foreground group-hover:text-primary/70 transition-colors">
-                                Explore all group trips across India
+                            </div>
+                          </button>
+                        </div> */}
+                        <div className="bg-white border-b border-gray-100">
+                          <button
+                            type="button"
+                            onMouseDown={() => {
+                              setShouldRestoreScroll(false);
+                              setShowSuggestions(false);
+                              router.push("/trips");
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-1.5 cursor-pointer hover:bg-gray-50 transition-all text-left group"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                              <Compass className="text-emerald-600" size={16} />
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="text-[15px] font-medium text-gray-900 group-hover:text-emerald-700 transition-colors truncate">
+                                Take me anywhere
                               </p>
                             </div>
                           </button>
                         </div>
-                        
-                        <div className="relative">
-                          <div className="max-h-56 overflow-y-auto scrollbar-thin scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50">
-                            {filteredLocations.length > 0 ? (
-                              filteredLocations.map((loc) => (
-                                <button
-                                  key={loc.id}
-                                  type="button"
+
+                        <div className="max-h-52 lg:max-h-32 overflow-y-auto bg-white">
+                          {filteredLocations.length > 0 ? (
+                            filteredLocations.map((loc) => (
+                              <button
+                                key={loc.id}
+                                type="button"
+                                onMouseDown={() => {
+                                  setSearchDestination(loc.name);
+                                  setShowSuggestions(false);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-1.5 cursor-pointer hover:bg-gray-50 transition-all text-left border-b border-gray-50 last:border-b-0 group"
+                              >
+                                <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                                  <MapPin
+                                    className="text-emerald-600"
+                                    size={16}
+                                  />
+                                </div>
+                                <div
+                                  className="min-w-0"
                                   onMouseDown={() => {
                                     setSearchDestination(loc.name);
+                                    setShouldRestoreScroll(false);
                                     setShowSuggestions(false);
                                   }}
-                                  className="w-full flex items-center gap-2.5 px-3 py-1.5 cursor-pointer hover:bg-muted/60 transition-all text-left group"
                                 >
-                                  <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center shrink-0">
-                                    <MapPin
-                                      className="text-primary"
-                                      size={15}
-                                    />
-                                  </div>
-                                  <div>
-                                    <p className="text-base font-medium text-foreground group-hover:text-primary transition-colors">
-                                      {loc.name}
+                                  <p
+                                    className="text-[15px] font-medium text-gray-900 group-hover:text-emerald-700 transition-colors truncate"
+                                    title={loc.name}
+                                  >
+                                    {loc.name}
+                                  </p>
+                                  {loc.region ? (
+                                    <p className="text-sm text-gray-500 truncate">
+                                      {loc.region}
                                     </p>
-                                  </div>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="px-4 py-8 text-center">
-                                <p className="text-sm text-muted-foreground">
-                                  No destinations found
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                          {filteredLocations.length > 4 && (
-                            <div className="absolute bottom-0 left-0 right-0 h-8 bg-linear-to-t from-background to-transparent pointer-events-none rounded-b-xl" />
+                                  ) : null}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="px-4 py-8 text-center bg-white">
+                              <p className="text-sm text-gray-500">
+                                No destinations found
+                              </p>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -404,7 +462,7 @@ export default function HomeClient({
                               searchScrollRef.current = window.scrollY;
                               setTimeout(() => {
                                 const rect = e.target.getBoundingClientRect();
-                                const targetY = window.scrollY + rect.top - 80;
+                                const targetY = window.scrollY + rect.top - 120;
                                 animatedScrollTo(Math.max(0, targetY));
                               }, 300);
                             }
@@ -573,7 +631,7 @@ export default function HomeClient({
                 Popular Group Trips
               </h2>
             </div>
-            <Link href="/trips">
+            <Link prefetch={false} href="/trips">
               <Button className="btn-secondary">
                 View All Trips
                 <ChevronRight className="w-5 h-5 ml-1" />
@@ -603,7 +661,7 @@ export default function HomeClient({
                 Explore Incredible India
               </h2>
             </div>
-            <Link href="/trips">
+            <Link prefetch={false} href="/trips">
               <Button className="btn-secondary">
                 View All Destinations
                 <ChevronRight className="w-5 h-5 ml-1" />
@@ -647,7 +705,7 @@ export default function HomeClient({
                   <img
                     src={provider.logo_url}
                     alt="Logo"
-                    className="h-16 w-16 object-cover rounded-full"
+                    className="h-18 w-18 md:w-20 md:h-20 object-cover rounded-full"
                   />
                 ) : (
                   <Shield className="w-5 h-5 text-success" />
@@ -660,7 +718,7 @@ export default function HomeClient({
           </div>
 
           <div className="text-center mt-10">
-            <Link href="/partners">
+            <Link prefetch={false} href="/partners">
               <Button className="btn-secondary">
                 Become a Partner
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -682,7 +740,7 @@ export default function HomeClient({
               Search, compare, and book with confidence.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/trips">
+              <Link prefetch={false} href="/trips">
                 <Button className="btn-primary text-body px-8 py-6">
                   Explore Trips
                   <ArrowRight className="w-5 h-5 ml-2" />

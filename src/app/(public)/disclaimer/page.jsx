@@ -106,22 +106,6 @@ const DisclaimerPage = () => {
               </div>
             </section>
           ))}
-
-          {/* Footer Note */}
-          {/* <div className="pt-12 border-t border-border mt-20">
-            <p className="text-sm text-overlay-muted italic" id="footer-note">
-              Thank you for choosing Triptribe. For further legal information,
-              please refer to our
-              <span>
-                <Link href="/termsofuse">Terms of Service</Link>
-              </span>{" "}
-              and{" "}
-              <span>
-                <Link href="/privacy">Privacy Policy</Link>
-              </span>
-              .
-            </p>
-          </div> */}
         </main>
       </div>
     </div>
