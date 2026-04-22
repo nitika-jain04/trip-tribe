@@ -62,7 +62,7 @@ export default function OperatorDetail() {
   if (loading) {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
-        <Link
+        <Link prefetch={false} 
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
@@ -84,7 +84,7 @@ export default function OperatorDetail() {
   if (error) {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
-        <Link
+        <Link prefetch={false} 
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
@@ -110,7 +110,7 @@ export default function OperatorDetail() {
   if (!operator) {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
-        <Link
+        <Link prefetch={false} 
           href="/admin/operators"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
@@ -124,7 +124,7 @@ export default function OperatorDetail() {
               The operator you&apos;re looking for doesn&apos;t exist or has
               been removed
             </p>
-            <Link href="/admin/operators">
+            <Link prefetch={false}  href="/admin/operators">
               <Button className="mt-2">Back to Operators</Button>
             </Link>
           </div>
@@ -135,7 +135,7 @@ export default function OperatorDetail() {
 
   return (
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 bg-gray-50 min-h-[100dvh]">
-      <Link
+      <Link prefetch={false} 
         href="/admin/operators"
         className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
       >

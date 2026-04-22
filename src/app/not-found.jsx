@@ -36,6 +36,7 @@ export default function NotFound() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Link
             href="/"
+            prefetch={false}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground shadow-md transition-all hover:scale-105 hover:shadow-lg"
           >
             Back To Home

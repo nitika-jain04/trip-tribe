@@ -397,6 +397,7 @@ export default function OperatorEditPage() {
       <div className="p-3 sm:p-6 bg-gray-50">
         <Link
           href="/admin/operators"
+          prefetch={false}
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
           <ArrowLeft size={25} />
@@ -452,6 +453,7 @@ export default function OperatorEditPage() {
     <div className="">
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 last:pb-0">
         <Link
+          prefetch={false}
           href={`/admin/operators/${id}`}
           className="inline-flex items-center gap-2 text-sm font-medium hover:text-teal-600 transition-colors"
         >
@@ -880,6 +882,7 @@ export default function OperatorEditPage() {
             <div className="col-span-full flex flex-col sm:flex-row gap-4 pt-4 border-t">
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                 <Link
+                  prefetch={false}
                   href={`/admin/operators`}
                   className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-center text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-100 transition-all duration-200"
                 >

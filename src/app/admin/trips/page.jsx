@@ -519,13 +519,13 @@ function Page() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem asChild>
-          <Link href={`/admin/trips/${trip.id}`}>
+          <Link href={`/admin/trips/${trip.id}`} prefetch={false}>
             <Eye className="h-4 w-4 mr-2" />
             View Details
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href={`/admin/trips/edit/${trip.id}`}>
+          <Link href={`/admin/trips/edit/${trip.id}`} prefetch={false}>
             <Pencil className="h-4 w-4 mr-2" />
             Edit
           </Link>
@@ -1093,7 +1093,11 @@ function Page() {
                   </div>
 
                   <div className="mt-4 flex gap-2 w-full items-center">
-                    <Link href={`/admin/trips/${trip.id}`} className="flex-1">
+                    <Link
+                      href={`/admin/trips/${trip.id}`}
+                      className="flex-1"
+                      prefetch={false}
+                    >
                       <Button variant="outline" className="w-full text-sm h-9">
                         <Eye className="h-4 w-4 mr-2" /> View
                       </Button>

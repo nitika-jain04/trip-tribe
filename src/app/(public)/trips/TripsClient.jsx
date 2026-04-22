@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -64,6 +64,7 @@ const FiltersContent = ({
   setSelectedDifficulty,
   setIsSheetOpen,
   tripTypesData,
+  setCurrentPage,
 }) => (
   <div className="space-y-6">
     <div>
@@ -74,7 +75,13 @@ const FiltersContent = ({
             key={type.id}
             onClick={() => {
               setSelectedType(type);
-              setTimeout(() => setIsSheetOpen?.(false), 500);
+              setCurrentPage(1);
+              setIsSheetOpen?.(false);
+
+              const el = document.getElementById("filters");
+              if (el) {
+                el.scrollIntoView({ behavior: "auto", block: "start" });
+              }
             }}
             className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
               selectedType.id === type.id
@@ -103,7 +110,13 @@ const FiltersContent = ({
             key={diff}
             onClick={() => {
               setSelectedDifficulty(diff);
-              setTimeout(() => setIsSheetOpen?.(false), 500);
+              setCurrentPage(1);
+              setIsSheetOpen?.(false);
+
+              const el = document.getElementById("filters");
+              if (el) {
+                el.scrollIntoView({ behavior: "auto", block: "start" });
+              }
             }}
             className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
               selectedDifficulty === diff
@@ -130,16 +143,9 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
   const [imgError, setImgError] = useState(false);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="card-premium overflow-hidden group h-full"
-    >
-      <Link href={`/trip/${trip.id}`}>
-        <div className="aspect-16/10 relative overflow-hidden bg-muted">
+    <div className="card-premium overflow-hidden group h-full">
+      <Link href={`/trip/${trip.id}`} prefetch={false}>
+        <div className="aspect-14/10 relative overflow-hidden bg-muted">
           {trip.image && !imgError ? (
             <img
               src={trip.image}
@@ -171,8 +177,11 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
             `, ${trip.destination_region}`}
         </div>
 
-        <Link href={`/trip/${trip.id}`}>
-          <h3 className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1">
+        <Link href={`/trip/${trip.id}`} prefetch={false}>
+          <h3
+            className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1 truncate"
+            title={trip.name}
+          >
             {trip.name}
           </h3>
         </Link>
@@ -225,12 +234,12 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
             </label>
           </div>
 
-          <Link href={`/trip/${trip.id}`} className="flex-1">
+          <Link href={`/trip/${trip.id}`} className="flex-1" prefetch={false}>
             <Button className="btn-primary w-full">View Details</Button>
           </Link>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 
@@ -245,18 +254,18 @@ export default function TripsClient({
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || searchParams.get("location_name") || "",
   );
-  const [selectedType, setSelectedType] = useState(tripTypesData[0]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+
   const [sortBy, setSortBy] = useState("recommended");
   const [compareList, setCompareList] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [showInterstitial, setShowInterstitial] = useState(false);
   const [interstitialChoiceMade, setInterstitialChoiceMade] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(
-    parseInt(searchParams.get("page") || "1"),
-  );
- 
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedType, setSelectedType] = useState(tripTypesData[0]);
+  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+
   const locationName = searchParams.get("location_name") || "";
   const locationType = searchParams.get("location_type") || "";
   const groupBy = searchParams.get("group_by") || "";
@@ -265,54 +274,53 @@ export default function TripsClient({
 
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const searchScrollRef = useRef(null);
-  const isFirstLoad = useRef(true);
-  const isFirstPageLoad = useRef(true);
-  const prevPageRef = useRef(currentPage);
+
+  const scrollToFilters = () => {
+    requestAnimationFrame(() => {
+      const el = document.getElementById("filters");
+      if (el) {
+        el.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+    });
+  };
 
   useEffect(() => {
-    const s = searchParams.get("search") || searchParams.get("location_name") || "";
-    if (s !== searchQuery) {
-      setSearchQuery(s);
-    }
-    const p = parseInt(searchParams.get("page") || "1");
-    if (p !== currentPage) {
-      setCurrentPage(p);
-    }
+    const s =
+      searchParams.get("search") || searchParams.get("location_name") || "";
+
+    setSearchQuery((prev) => (prev !== s ? s : prev));
+    setDebouncedSearchQuery((prev) => (prev !== s ? s : prev));
   }, [searchParams]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    if (currentPage > 1) {
-      params.set("page", currentPage.toString());
+    const currentUrlSearch =
+      params.get("search") || params.get("location_name") || "";
+
+    if (debouncedSearchQuery.trim().length >= 2) {
+      params.set("search", debouncedSearchQuery.trim());
+      params.delete("location_name");
+      params.delete("location_type");
+      params.delete("group_by");
     } else {
-      params.delete("page");
-    }
-    const queryString = params.toString();
-    const newUrl = queryString ? `/trips?${queryString}` : "/trips";
-
-    if (
-      window.location.search !== `?${queryString}` &&
-      window.location.pathname + window.location.search !== newUrl
-    ) {
-      router.push(newUrl, { scroll: false });
+      params.delete("search");
+      params.delete("location_name");
+      params.delete("location_type");
+      params.delete("group_by");
     }
 
-    // Only scroll to filters if this is NOT the first load AND the page has actually changed
-    // This prevents the scroll when the page is first opened or when the URL is being synced/normalized
-    if (
-      !isFirstPageLoad.current &&
-      currentPage !== prevPageRef.current &&
-      tripsContainerRef.current
-    ) {
-      tripsContainerRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }
+    const nextUrl = params.toString()
+      ? `/trips?${params.toString()}`
+      : "/trips";
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
 
-    prevPageRef.current = currentPage;
-    isFirstPageLoad.current = false;
-  }, [currentPage, router, searchParams]);
+    if (currentUrl !== nextUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [debouncedSearchQuery, searchParams, router]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -321,54 +329,40 @@ export default function TripsClient({
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const currentUrlSearch =
-      params.get("search") || params.get("location_name") || "";
-
-    if (debouncedSearchQuery !== currentUrlSearch) {
-      if (debouncedSearchQuery.trim().length > 0) {
-        params.set("search", debouncedSearchQuery.trim());
-        // If the user manually types, we clear the specific location filter to allow a global search
-        params.delete("location_name");
-        params.delete("location_type");
-        params.delete("group_by");
-
-        if (debouncedSearchQuery.trim().length >= 2) {
-          params.delete("page");
-          params.delete("limit");
-        }
-      } else {
-        params.delete("search");
-        params.delete("location_name");
-        params.delete("location_type");
-        params.delete("group_by");
-      }
-      const queryString = params.toString();
-      router.replace(queryString ? `/trips?${queryString}` : "/trips", {
-        scroll: false,
-      });
-    }
-  }, [debouncedSearchQuery, searchParams, router]);
-
   const params = new URLSearchParams();
   if (debouncedSearchQuery.trim().length >= 2) {
     params.set("search", debouncedSearchQuery.trim());
   }
   params.set("page", currentPage.toString());
   params.set("limit", "10");
+
   if (selectedType.id !== "all") {
     params.set("type_id", selectedType.id);
   }
+
   if (selectedDifficulty !== "All") {
     params.set("difficulty", selectedDifficulty.toUpperCase());
   }
- 
-  if (locationName) params.set("location_name", locationName);
-  if (locationType) params.set("location_type", locationType);
-  if (groupBy) params.set("group_by", groupBy);
 
-  const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?sortBy=updated_at&order=DESC&${params.toString()}`;
+  let apiSortBy = "updated_at";
+  let apiOrder = "DESC";
+
+  if (sortBy === "price-low") {
+    apiSortBy = "price";
+    apiOrder = "ASC";
+  } else if (sortBy === "price-high") {
+    apiSortBy = "price";
+    apiOrder = "DESC";
+  } else if (sortBy === "duration") {
+    apiSortBy = "updated_at";
+    apiOrder = "DESC";
+  } else if (sortBy === "start-date") {
+    apiSortBy = "start_date";
+    apiOrder = "ASC";
+  }
+
+  const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?sortBy=${apiSortBy}&order=${apiOrder}&${params.toString()}`;
+
   const { data: tripsData, isLoading: loadingTrips } = useSWR(
     tripsUrl,
     fetcher,
@@ -376,7 +370,8 @@ export default function TripsClient({
       fallbackData: initialTrips,
       revalidateOnFocus: true,
       revalidateIfStale: true,
-      revalidateOnMount: true,
+      revalidateOnMount: false,
+      keepPreviousData: true,
     },
   );
 
@@ -398,7 +393,7 @@ export default function TripsClient({
     if (tripsData?.result?.groups) {
       rawTrips = tripsData.result.groups.flatMap((g) => g.trips);
     }
- 
+
     return rawTrips.map((trip) => {
       const start = new Date(trip.start_date);
       const end = new Date(trip.end_date);
@@ -445,8 +440,8 @@ export default function TripsClient({
         description: trip.description || "",
         priceCategories: trip.price_categories || [],
         hotelCategory: trip.hotel_category || 0,
-        destination_full: `${destination.name}${destination.region !== "Unknown" ? `, ${destination.region}` : ""}`,
-        source_full: `${source.name}${source.region !== "Unknown" ? `, ${source.region}` : ""}`,
+        destination_full: `${destination.name}${destination.region !== "" ? `, ${destination.region}` : ""}`,
+        source_full: `${source.name}${source.region !== "" ? `, ${source.region}` : ""}`,
         cancellation_policy: trip.cancellation_policy || "",
       };
     });
@@ -460,10 +455,9 @@ export default function TripsClient({
       result.sort((a, b) => b.priceFrom - a.priceFrom);
     } else if (sortBy === "duration") {
       result.sort((a, b) => parseInt(a.duration) - parseInt(b.duration));
+    } else if (sortBy === "start-date") {
+      result.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
     }
-    // else if (sortBy === "start date") {
-    //   result.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-    // }
     return result;
   }, [trips, sortBy]);
 
@@ -529,7 +523,9 @@ export default function TripsClient({
         <div className="container-premium">
           <div className="max-w-3xl mx-auto text-center mb-8">
             <h1 className="font-display text-display text-foreground mb-4">
-              {locationName ? `Trips in ${locationName}` : "Explore Community Trips"}
+              {locationName
+                ? `Trips in ${locationName}`
+                : "Explore Community Trips"}
             </h1>
           </div>
           <div className="max-w-2xl mx-auto">
@@ -583,6 +579,7 @@ export default function TripsClient({
                   selectedDifficulty={selectedDifficulty}
                   setSelectedDifficulty={setSelectedDifficulty}
                   tripTypesData={tripTypesData}
+                  setCurrentPage={setCurrentPage}
                 />
               </div>
             </div>
@@ -609,6 +606,7 @@ export default function TripsClient({
                           setSelectedDifficulty={setSelectedDifficulty}
                           setIsSheetOpen={setIsSheetOpen}
                           tripTypesData={tripTypesData}
+                          setCurrentPage={setCurrentPage}
                         />
                       </div>
                     </SheetContent>
@@ -626,7 +624,14 @@ export default function TripsClient({
                     </Button>
                   )}
 
-                  <Select value={sortBy} onValueChange={setSortBy}>
+                  <Select
+                    value={sortBy}
+                    onValueChange={(value) => {
+                      setSortBy(value);
+                      setCurrentPage(1);
+                      scrollToFilters();
+                    }}
+                  >
                     <SelectTrigger className="w-45">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
@@ -638,13 +643,13 @@ export default function TripsClient({
                       <SelectItem value="price-high">
                         Price: High to Low
                       </SelectItem>
-                      <SelectItem value="duration">Duration</SelectItem>
-                      {/* <SelectItem value="start date">Start Date</SelectItem> */}
+                      {/* <SelectItem value="duration">Duration</SelectItem> */}
+                      <SelectItem value="start-date">Start Date</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              {/* 
+
               {!loadingTrips && pagination.total > 0 && (
                 <div className="mt-6 mb-2">
                   <p className="text-body-sm text-muted-foreground">
@@ -669,83 +674,66 @@ export default function TripsClient({
                     trips
                   </p>
                 </div>
-              )} */}
+              )}
 
               <div className="grid md:grid-cols-2 gap-6 mt-5">
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {!loadingTrips && filteredTrips.length > 0 ? (
-                    filteredTrips.map((trip) => (
-                      <PublicTripCard
-                        key={trip.id}
-                        trip={trip}
-                        isCompared={compareList.includes(trip.id)}
-                        onToggleCompare={() => toggleCompare(trip.id)}
-                      />
-                    ))
-                    ) : !loadingTrips ? (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="col-span-full"
-                    >
-                      <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-muted/20 px-6 py-14 text-center">
-                        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-background shadow-sm border border-border">
-                          <Search className="h-7 w-7 text-muted-foreground" />
-                        </div>
+                {/* <AnimatePresence initial={false}> */}
+                {!loadingTrips && filteredTrips.length > 0 ? (
+                  filteredTrips.map((trip) => (
+                    <PublicTripCard
+                      key={trip.id}
+                      trip={trip}
+                      isCompared={compareList.includes(trip.id)}
+                      onToggleCompare={() => toggleCompare(trip.id)}
+                    />
+                  ))
+                ) : !loadingTrips ? (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="col-span-full"
+                  >
+                    <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-muted/20 px-6 py-14 text-center">
+                      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-background shadow-sm border border-border">
+                        <Search className="h-7 w-7 text-muted-foreground" />
+                      </div>
 
-                        <h3 className="font-display text-heading-md text-foreground mb-2">
-                          No trips found
-                        </h3>
+                      <h3 className="font-display text-heading-md text-foreground mb-2">
+                        No trips found
+                      </h3>
 
-                        <p className="max-w-md text-body-sm text-muted-foreground mb-6">
-                          We couldn’t find any trips matching your current search
-                          or filters. Try changing your keywords or clearing
-                          filters to explore more trips.
-                        </p>
+                      <p className="max-w-md text-body-sm text-muted-foreground mb-6">
+                        We couldn’t find any trips matching your current search
+                        or filters. Try changing your keywords or clearing
+                        filters to explore more trips.
+                      </p>
 
-                        <div className="flex flex-wrap items-center justify-center gap-3">
-                          {(searchQuery || locationName) && (
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                handleClearSearch();
-                                requestAnimationFrame(() => {
-                                  tripsContainerRef.current?.scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "start",
-                                  });
-                                });
-                              }}
-                            >
-                              {searchQuery ? "Clear Search" : "Clear Location Filter"}
-                            </Button>
-                          )}
-
-                          {(selectedType.id !== "all" ||
-                            selectedDifficulty !== "All") && (
-                            <Button
-                              variant="outline"
-                              onClick={() => {
-                                setSelectedType(tripTypesData[0]);
-                                setSelectedDifficulty("All");
-                                setCurrentPage(1);
-                                requestAnimationFrame(() => {
-                                  tripsContainerRef.current?.scrollIntoView({
-                                    behavior: "smooth",
-                                    block: "start",
-                                  });
-                                });
-                              }}
-                            >
-                              Reset Filters
-                            </Button>
-                          )}
-
+                      <div className="flex flex-wrap items-center justify-center gap-3">
+                        {(searchQuery || locationName) && (
                           <Button
-                            className="btn-primary"
+                            variant="outline"
                             onClick={() => {
                               handleClearSearch();
+                              requestAnimationFrame(() => {
+                                tripsContainerRef.current?.scrollIntoView({
+                                  behavior: "smooth",
+                                  block: "start",
+                                });
+                              });
+                            }}
+                          >
+                            {searchQuery
+                              ? "Clear Search"
+                              : "Clear Location Filter"}
+                          </Button>
+                        )}
+
+                        {(selectedType.id !== "all" ||
+                          selectedDifficulty !== "All") && (
+                          <Button
+                            variant="outline"
+                            onClick={() => {
                               setSelectedType(tripTypesData[0]);
                               setSelectedDifficulty("All");
                               setCurrentPage(1);
@@ -757,13 +745,32 @@ export default function TripsClient({
                               });
                             }}
                           >
-                            Explore All Trips
+                            Reset Filters
                           </Button>
-                        </div>
+                        )}
+
+                        <Button
+                          className="btn-primary"
+                          onClick={() => {
+                            handleClearSearch();
+                            setSelectedType(tripTypesData[0]);
+                            setSelectedDifficulty("All");
+                            setCurrentPage(1);
+                            requestAnimationFrame(() => {
+                              tripsContainerRef.current?.scrollIntoView({
+                                behavior: "smooth",
+                                block: "start",
+                              });
+                            });
+                          }}
+                        >
+                          Explore All Trips
+                        </Button>
                       </div>
-                    </motion.div>
-                  ) : null}
-                </AnimatePresence>
+                    </div>
+                  </motion.div>
+                ) : null}
+                {/* </AnimatePresence> */}
               </div>
 
               {loadingTrips && (
@@ -779,10 +786,13 @@ export default function TripsClient({
                   <PaginationContent>
                     <PaginationItem>
                       <PaginationPrevious
-                        href="#"
+                        href="#trips"
                         onClick={(e) => {
                           e.preventDefault();
-                          if (currentPage > 1) setCurrentPage(currentPage - 1);
+                          if (currentPage > 1) {
+                            setCurrentPage(currentPage - 1);
+                            scrollToFilters();
+                          }
                         }}
                         className={
                           currentPage <= 1
@@ -809,11 +819,12 @@ export default function TripsClient({
                       return (
                         <PaginationItem key={pageNum}>
                           <PaginationLink
-                            href="#"
+                            href="#trips"
                             isActive={currentPage === pageNum}
                             onClick={(e) => {
                               e.preventDefault();
                               setCurrentPage(pageNum);
+                              scrollToFilters();
                             }}
                           >
                             {pageNum}
@@ -824,11 +835,12 @@ export default function TripsClient({
 
                     <PaginationItem>
                       <PaginationNext
-                        href="#"
+                        href="#trips"
                         onClick={(e) => {
                           e.preventDefault();
                           if (currentPage < pagination.pages) {
                             setCurrentPage(currentPage + 1);
+                            scrollToFilters();
                           }
                         }}
                         className={
@@ -864,7 +876,7 @@ export default function TripsClient({
               <Button
                 variant="ghost"
                 size="icon"
-                className="rounded-full w-10 h-10 hover:bg-muted transition-colors"
+                className="rounded-full w-10 h-10 hover:bg-primary transition-colors"
                 id="close-compare-modal"
               >
                 <X className="w-5 h-5" />
@@ -931,13 +943,13 @@ export default function TripsClient({
                           {trip.groupSize}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-body-sm">
+                      {/* <div className="flex justify-between items-center text-body-sm">
                         <span className="text-muted-foreground">Rating</span>
                         <div className="flex items-center gap-1.5 font-bold text-foreground">
                           <Star className="w-3.5 h-3.5 fill-warning text-warning" />
                           4.5
                         </div>
-                      </div>
+                      </div> */}
                       <div className="flex justify-between items-center text-body-sm">
                         <span className="text-muted-foreground">
                           Difficulty
@@ -965,8 +977,8 @@ export default function TripsClient({
                     </div>
 
                     {/* Inclusions */}
-                    <div className="space-y-2 border-t border-border/50">
-                      <p className="font-bold text-body-sm text-foreground">
+                    <div className="space-y-2 border-t border-border/50 pt-4">
+                      <p className="font-bold text-body-sm text-foreground font-display">
                         Inclusions:
                       </p>
                       <ul className="space-y-1.5">
@@ -984,7 +996,7 @@ export default function TripsClient({
 
                     {trip.exclusions.length > 0 && (
                       <div className="space-y-2 border-t border-border/50 pt-4">
-                        <p className="font-bold text-body-sm text-foreground">
+                        <p className="font-bold text-body-sm text-foreground font-display">
                           Exclusions:
                         </p>
                         <ul className="space-y-1.5">
@@ -1002,8 +1014,8 @@ export default function TripsClient({
                     )}
 
                     {/* Detailed Itinerary */}
-                    <div className="space-y-3 border-t border-border/50">
-                      <p className="font-bold text-body-sm text-foreground">
+                    <div className="space-y-3 border-t border-border/50 pt-4">
+                      <p className="font-bold text-body-sm text-foreground font-display">
                         Detailed Itinerary
                       </p>
                       <div className="space-y-3">
@@ -1034,11 +1046,11 @@ export default function TripsClient({
                     {/* Cancellation Policy */}
                     {trip.cancellation_policy && (
                       <div className="space-y-2">
-                        <p className="font-bold text-body-sm text-foreground">
+                        <p className="font-bold text-body-sm text-foreground font-display">
                           Cancellation Policy:
                         </p>
                         <div className="bg-muted/10 rounded-xl p-4 overflow-hidden border border-border/50">
-                          <pre className="text-[11px] leading-relaxed text-muted-foreground whitespace-pre-wrap font-sans">
+                          <pre className="text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap font-sans">
                             {trip.cancellation_policy}
                           </pre>
                         </div>

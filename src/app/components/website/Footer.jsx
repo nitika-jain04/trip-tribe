@@ -141,7 +141,6 @@ export function Footer() {
                   <Link
                     href={link.href}
                     prefetch={false}
-                    // onClick={`(e) => handleNavClick(e, ${link.href})`}
                     onClick={(e) => handleNavClick(e, link.href)}
                     className="text-body-sm text-background/60 hover:text-primary transition-colors"
                   >

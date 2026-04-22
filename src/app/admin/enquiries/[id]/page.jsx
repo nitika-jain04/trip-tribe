@@ -135,6 +135,7 @@ export default function EnquiryDetail() {
     return (
       <div className="p-3 sm:p-6 bg-gray-50 min-h-[100dvh]">
         <Link
+          prefetch={false}
           href="/admin/enquiries"
           className="inline-flex items-center gap-2 text-sm font-medium mb-6"
         >
@@ -161,7 +162,9 @@ export default function EnquiryDetail() {
       <div className="text-center py-12">
         <p className="text-muted-foreground">Enquiry not found</p>
         <Button asChild className="mt-4">
-          <Link href="/admin/enquiries">Back to Enquiries</Link>
+          <Link prefetch={false} href="/admin/enquiries">
+            Back to Enquiries
+          </Link>
         </Button>
       </div>
     );
@@ -171,7 +174,7 @@ export default function EnquiryDetail() {
     <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
       {/* Back Button */}
       <Button variant="ghost" asChild>
-        <Link href="/admin/enquiries">
+        <Link prefetch={false} href="/admin/enquiries">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Enquiries
         </Link>
@@ -270,6 +273,7 @@ export default function EnquiryDetail() {
                 <p className="text-sm text-muted-foreground">Trip Name</p>
 
                 <Link
+                  prefetch={false}
                   href={`/admin/trips/${enquiry.trip.id}`}
                   className="font-semibold text-primary hover:underline"
                 >
@@ -280,6 +284,7 @@ export default function EnquiryDetail() {
               {/* Quick Action */}
               <div>
                 <Link
+                  prefetch={false}
                   href={`/admin/trips/${enquiry.trip.id}`}
                   className="text-sm font-medium text-primary hover:underline"
                 >
