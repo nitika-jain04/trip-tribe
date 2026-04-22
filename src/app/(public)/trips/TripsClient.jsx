@@ -254,6 +254,8 @@ export default function TripsClient({
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || searchParams.get("location_name") || "",
   );
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const searchScrollRef = useRef(null);
 
   const [sortBy, setSortBy] = useState("recommended");
   const [compareList, setCompareList] = useState([]);
@@ -267,13 +269,8 @@ export default function TripsClient({
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
 
   const locationName = searchParams.get("location_name") || "";
-  const locationType = searchParams.get("location_type") || "";
-  const groupBy = searchParams.get("group_by") || "";
 
   const tripsContainerRef = useRef(null);
-
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
-  const searchScrollRef = useRef(null);
 
   const scrollToFilters = () => {
     requestAnimationFrame(() => {
@@ -288,17 +285,7 @@ export default function TripsClient({
   };
 
   useEffect(() => {
-    const s =
-      searchParams.get("search") || searchParams.get("location_name") || "";
-
-    setSearchQuery((prev) => (prev !== s ? s : prev));
-    setDebouncedSearchQuery((prev) => (prev !== s ? s : prev));
-  }, [searchParams]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const currentUrlSearch =
-      params.get("search") || params.get("location_name") || "";
+    const params = new URLSearchParams(window.location.search);
 
     if (debouncedSearchQuery.trim().length >= 2) {
       params.set("search", debouncedSearchQuery.trim());
@@ -320,7 +307,7 @@ export default function TripsClient({
     if (currentUrl !== nextUrl) {
       router.replace(nextUrl, { scroll: false });
     }
-  }, [debouncedSearchQuery, searchParams, router]);
+  }, [debouncedSearchQuery, router]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
