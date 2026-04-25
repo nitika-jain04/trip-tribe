@@ -164,6 +164,7 @@ export default function Contact() {
     {
       shouldRetryOnError: false,
       revalidateOnFocus: false,
+      revalidateIfStale: false,
     },
   );
 
@@ -173,6 +174,7 @@ export default function Contact() {
     {
       shouldRetryOnError: false,
       revalidateOnFocus: false,
+      revalidateIfStale: false,
     },
   );
 

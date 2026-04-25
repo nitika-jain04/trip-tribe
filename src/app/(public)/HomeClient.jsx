@@ -24,17 +24,10 @@ import {
   ImageIcon,
   ChevronDown,
   Compass,
-  X,
-  Star,
-  RotateCcw,
 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/app/components/ui/dialog";
+import ComparePortal from "@/app/components/website/ComparePortal";
+import CompareCheckbox from "@/app/components/website/CompareCheckbox";
+import { useCompare } from "@/app/hooks/use-compare";
 import { Libre_Baskerville } from "next/font/google";
 import { MdOutlineVerified } from "react-icons/md";
 
@@ -140,59 +133,6 @@ export default function HomeClient({
       );
   }, [initialTrips, initialLocations]);
 
-  // Fallback to empty if not provided
-  const activeLocations = initialLocations?.success
-    ? initialLocations
-    : offlineLocations;
-  const rawLocationsGroups = activeLocations?.result?.groups || [];
-
-  const processedOperators = initialOperators?.success
-    ? initialOperators.result?.operators || []
-    : [];
-  const rawTrips = initialTrips?.success
-    ? initialTrips.result?.trips || []
-    : [];
-
-  const [compareList, setCompareList] = useState([]);
-  const [showCompare, setShowCompare] = useState(false);
-  const [showInterstitial, setShowInterstitial] = useState(false);
-  const [interstitialChoiceMade, setInterstitialChoiceMade] = useState(false);
-  const [showLandscapeAlert, setShowLandscapeAlert] = useState(false);
-
-  const triggerCompare = useCallback(() => {
-    if (window.innerWidth < 768) {
-      setShowLandscapeAlert(true);
-      setTimeout(() => {
-        setShowLandscapeAlert(false);
-        setShowCompare(true);
-      }, 5000);
-    } else {
-      setShowCompare(true);
-    }
-  }, []);
-
-  const toggleCompare = useCallback(
-    (tripId) => {
-      setCompareList((prev) => {
-        const isAdding = !prev.includes(tripId);
-        if (isAdding && prev.length < 3) {
-          if (prev.length + 1 === 3) {
-            triggerCompare();
-          } else if (prev.length + 1 === 2) {
-            setInterstitialChoiceMade(false);
-            setShowInterstitial(true);
-          }
-        }
-        return isAdding
-          ? prev.length < 3
-            ? [...prev, tripId]
-            : prev
-          : prev.filter((id) => id !== tripId);
-      });
-    },
-    [triggerCompare],
-  );
-
   const processLocations = (groups, lMap) => {
     if (!groups || !groups.length) return [];
     return groups.map((group) => {
@@ -269,9 +209,17 @@ export default function HomeClient({
     });
   };
 
-  const locations = useMemo(() => {
-    return processLocations(rawLocationsGroups, serverLocationMap);
-  }, [rawLocationsGroups, serverLocationMap]);
+  const activeLocations = initialLocations?.success
+    ? initialLocations
+    : offlineLocations;
+  const rawLocationsGroups = activeLocations?.result?.groups || [];
+
+  const processedOperators = initialOperators?.success
+    ? initialOperators.result?.operators || []
+    : [];
+  const rawTrips = initialTrips?.success
+    ? initialTrips.result?.trips || []
+    : [];
 
   const trips = useMemo(() => {
     const activeTrips = initialTrips?.success ? initialTrips : offlineTrips;
@@ -279,10 +227,23 @@ export default function HomeClient({
     return enrichTripsWithDetails(rawTrips, serverLocationMap);
   }, [initialTrips, offlineTrips, serverLocationMap]);
 
-  const compareTrips = useMemo(
-    () => trips.filter((t) => compareList.includes(t.id)),
-    [trips, compareList],
-  );
+  const {
+    compareList,
+    setCompareList,
+    showCompare,
+    setShowCompare,
+    showInterstitial,
+    setShowInterstitial,
+    interstitialChoiceMade,
+    showLandscapeAlert,
+    triggerCompare,
+    toggleCompare,
+    compareTrips,
+  } = useCompare(trips);
+
+  const locations = useMemo(() => {
+    return processLocations(rawLocationsGroups, serverLocationMap);
+  }, [rawLocationsGroups, serverLocationMap]);
 
   const filteredLocations = useMemo(() => {
     if (!searchDestination) return locations;
@@ -416,8 +377,8 @@ export default function HomeClient({
             )}
           </div>
         </Link>
-        <Link prefetch={false} href={`/trip/${trip.id}`} className="block">
-          <div className="p-6">
+        <div className="p-5">
+          <Link prefetch={false} href={`/trip/${trip.id}`} className="block">
             <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
               <MapPin className="w-4 h-4" />
               {trip.destination || "Unknown"}
@@ -437,38 +398,22 @@ export default function HomeClient({
             <p className="text-body-sm text-muted-foreground mb-4">
               by {trip.provider || "Unknown"}
             </p>
-            <div className="flex items-center justify-between">
-              <div
-                className="flex items-center gap-2 cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onToggleCompare();
-                }}
-              >
-                <Checkbox
-                  id={`compare-${trip.id}`}
-                  checked={isCompared}
-                  onCheckedChange={onToggleCompare}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <label
-                  htmlFor={`compare-${trip.id}`}
-                  className="text-body-sm text-muted-foreground cursor-pointer"
-                >
-                  Compare
-                </label>
-              </div>
+          </Link>
+          <div className="flex items-center justify-between">
+            <CompareCheckbox
+              tripId={trip.id}
+              isCompared={isCompared}
+              onToggleCompare={onToggleCompare}
+            />
 
-              <p className="font-display text-heading-sm text-primary">
-                ₹{Number(trip.price ?? 0).toLocaleString("en-IN")}{" "}
-                <span className="text-body-sm text-muted-foreground font-normal">
-                  onwards
-                </span>
-              </p>
-            </div>
+            <p className="font-display text-heading-sm text-primary">
+              ₹{Number(trip.price ?? 0).toLocaleString("en-IN")}{" "}
+              <span className="text-body-sm text-muted-foreground font-normal">
+                onwards
+              </span>
+            </p>
           </div>
-        </Link>
+        </div>
       </div>
     );
   };
@@ -573,28 +518,6 @@ export default function HomeClient({
                     />
                     {showSuggestions && (
                       <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.18)] overflow-hidden max-h-[350px] z-[1000] animate-in fade-in slide-in-from-top-2 duration-200">
-                        {/* <div className="px-4 py-1 border-b border-gray-100 bg-white">
-                          <button
-                            type="button"
-                            onMouseDown={() => router.push("/trips")}
-                            className="w-full flex items-center gap-1.5 px-4 py-1 cursor-pointer hover:bg-gray-50 transition-all text-left border-b border-gray-50 last:border-b-0 group"
-                          >
-                            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                              <Compass className="text-emerald-600" size={16} />
-                            </div>
-                            <div
-                              className="min-w-0"
-                              onMouseDown={() => {
-                                setShouldRestoreScroll(false);
-                                router.push("/trips");
-                              }}
-                            >
-                              <p className="text-[15px] font-medium text-gray-900 group-hover:text-emerald-700 transition-colors truncate">
-                                Take me anywhere
-                              </p>
-                            </div>
-                          </button>
-                        </div> */}
                         <div className="bg-white border-b border-gray-100">
                           <button
                             type="button"
@@ -984,7 +907,7 @@ export default function HomeClient({
         </div>
       </section>
 
-      <CompareUI
+      <ComparePortal
         compareList={compareList}
         triggerCompare={triggerCompare}
         showCompare={showCompare}
@@ -996,304 +919,6 @@ export default function HomeClient({
         interstitialChoiceMade={interstitialChoiceMade}
         showLandscapeAlert={showLandscapeAlert}
       />
-    </>
-  );
-}
-
-function CompareUI({
-  compareList,
-  triggerCompare,
-  showCompare,
-  setShowCompare,
-  compareTrips,
-  setCompareList,
-  showInterstitial,
-  setShowInterstitial,
-  interstitialChoiceMade,
-  showLandscapeAlert,
-}) {
-  return (
-    <>
-      {showLandscapeAlert && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm md:hidden">
-          <div className="p-8 text-center text-white">
-            <RotateCcw className="w-12 h-12 mx-auto mb-4 animate-spin" />
-            <h2 className="text-xl font-bold mb-2">Rotate your device</h2>
-            <p className="text-sm opacity-80">
-              For the best comparison experience, please rotate your device to
-              landscape mode.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {compareList.length > 1 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-fade-up">
-          <Button
-            onClick={triggerCompare}
-            className="btn-secondary shadow-2xl px-8 py-6 rounded-full border-2 border-primary/20 bg-background/80 backdrop-blur-md hover:bg-background transition-all active:scale-95 flex items-center gap-3"
-          >
-            <GitCompare className="w-5 h-5 text-primary" />
-            <span className="font-display font-bold text-foreground">
-              Compare {compareList.length} Trips
-            </span>
-          </Button>
-        </div>
-      )}
-
-      <Dialog
-        open={showCompare}
-        onOpenChange={(open) => {
-          setShowCompare(open);
-          if (!open) setCompareList([]);
-        }}
-      >
-        <DialogContent className="max-w-6xl w-[calc(95%-2rem)] max-h-[90vh] overflow-y-auto p-0 border-none bg-white rounded-lg">
-          <div className="sticky top-0 z-20 bg-background border-b border-border p-6 flex items-center justify-between">
-            <DialogHeader className="p-0">
-              <DialogTitle className="font-display text-heading-lg">
-                Compare Trips
-              </DialogTitle>
-            </DialogHeader>
-            <DialogClose asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full w-10 h-10 hover:bg-primary transition-colors"
-                id="close-compare-modal"
-              >
-                <X className="w-5 h-5" />
-                <span className="sr-only">Close</span>
-              </Button>
-            </DialogClose>
-          </div>
-
-          <div className="p-4 sm:p-8">
-            <div
-              className={`grid gap-8  ${
-                compareTrips.length === 3
-                  ? "sm:grid-cols-3"
-                  : compareTrips.length === 2
-                    ? "sm:grid-cols-2"
-                    : "grid-cols-1"
-              }`}
-            >
-              {compareTrips.map((trip) => (
-                <div
-                  key={trip.id}
-                  className="bg-background rounded-2xl shadow-sm border border-border/50 overflow-hidden flex flex-col"
-                >
-                  {/* Image */}
-                  <div className="aspect-16/9 relative overflow-hidden">
-                    <img
-                      src={trip.image || trip.images?.[0]}
-                      alt={trip.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  {/* Body */}
-                  <div className="p-6 flex-1 flex flex-col space-y-6">
-                    {/* Title & Provider */}
-                    <div>
-                      <h4 className="font-display text-heading-sm mb-1 line-clamp-2">
-                        {trip.name}
-                      </h4>
-                      <p className="text-body-sm text-muted-foreground uppercase tracking-wider">
-                        {trip.provider}
-                      </p>
-                    </div>
-
-                    {/* Stats List */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center text-body-sm">
-                        <span className="text-muted-foreground">Price</span>
-                        <span className="font-bold text-success text-base">
-                          ₹{Number(trip.priceFrom).toLocaleString("en-IN")}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-body-sm">
-                        <span className="text-muted-foreground">Duration</span>
-                        <span className="font-medium text-foreground">
-                          {trip.duration}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-body-sm">
-                        <span className="text-muted-foreground">
-                          Group Size
-                        </span>
-                        <span className="font-medium text-foreground">
-                          {trip.groupSize}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center text-body-sm">
-                        <span className="text-muted-foreground">
-                          Difficulty
-                        </span>
-                        <span className="font-medium text-foreground">
-                          {trip.difficulty}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Location & Dates (Minimal) */}
-                    <div className="pt-4 border-t border-border/50 space-y-3">
-                      <div className="flex justify-between text-body-xs">
-                        <span className="text-muted-foreground">From</span>
-                        <span className="font-medium text-right">
-                          {trip.source_full}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-body-xs">
-                        <span className="text-muted-foreground">To</span>
-                        <span className="font-medium text-right">
-                          {trip.destination_full}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Inclusions */}
-                    <div className="space-y-2 border-t border-border/50 pt-4">
-                      <p className="font-bold text-body-sm text-foreground font-display">
-                        Inclusions:
-                      </p>
-                      <ul className="space-y-1.5">
-                        {trip.inclusions.map((item, i) => (
-                          <li
-                            key={i}
-                            className="text-base leading-relaxed text-muted-foreground flex items-start gap-2"
-                          >
-                            <span className="text-success mt-1">•</span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {trip.exclusions.length > 0 && (
-                      <div className="space-y-2 border-t border-border/50 pt-4">
-                        <p className="font-bold text-body-sm text-foreground font-display">
-                          Exclusions:
-                        </p>
-                        <ul className="space-y-1.5">
-                          {trip.exclusions.map((item, i) => (
-                            <li
-                              key={i}
-                              className="text-base leading-relaxed text-muted-foreground flex items-start gap-2"
-                            >
-                              <span className="text-success mt-1">•</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Detailed Itinerary */}
-                    <div className="space-y-3 border-t border-border/50 pt-4">
-                      <p className="font-bold text-body-sm text-foreground font-display">
-                        Detailed Itinerary
-                      </p>
-                      <div className="space-y-3">
-                        {trip.itinerary.map((dayItem, i) => (
-                          <details
-                            key={i}
-                            className="bg-muted/30 rounded-xl px-4 py-2 border border-border/30"
-                          >
-                            <summary className="text-base font-bold text-primary tracking-wider cursor-pointer">
-                              Day {dayItem.day || i + 1}
-                            </summary>
-                            <ul className="space-y-1.5">
-                              {dayItem.activities?.map((activity, j) => (
-                                <li
-                                  key={j}
-                                  className="text-base leading-relaxed text-muted-foreground flex items-start gap-2"
-                                >
-                                  <span className="text-primary mt-1.5 w-1 h-1 rounded-full bg-primary shrink-0" />
-                                  <span>{activity}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </details>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Cancellation Policy */}
-                    {trip.cancellation_policy && (
-                      <div className="space-y-2">
-                        <p className="font-bold text-body-sm text-foreground font-display">
-                          Cancellation Policy:
-                        </p>
-                        <div className="bg-muted/10 rounded-xl p-4 overflow-hidden border border-border/50">
-                          <pre className="text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap font-sans">
-                            {trip.cancellation_policy}
-                          </pre>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Action Button */}
-                    <div className="pt-4 sticky bottom-0 bg-background pb-2 mt-auto">
-                      <Link
-                        href={`/trip/${trip.id}`}
-                        prefetch={false}
-                        className="block"
-                      >
-                        <Button className="btn-primary w-full h-11 text-sm font-semibold shadow-md active:scale-[0.98] transition-all">
-                          View Trip
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={showInterstitial}
-        onOpenChange={(open) => {
-          setShowInterstitial(open);
-          if (!open && !interstitialChoiceMade) setCompareList([]);
-        }}
-      >
-        <DialogContent className="max-w-sm w-[calc(90%-2rem)] p-6 rounded-2xl">
-          <DialogHeader>
-            <GitCompare className="w-12 h-12 text-primary mb-4" />
-            <DialogTitle className="font-display text-heading-md">
-              Add to Compare
-            </DialogTitle>
-            <p className="text-body-sm text-muted-foreground mt-2">
-              You can compare up to 3 trips side-by-side.
-            </p>
-          </DialogHeader>
-          <div className="flex flex-col gap-3 mt-6">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => {
-                setShowInterstitial(false);
-              }}
-            >
-              <p>
-                Add 3<sup>rd</sup> trip
-              </p>
-            </Button>
-            <Button
-              className="btn-primary w-full"
-              onClick={() => {
-                triggerCompare();
-                setShowInterstitial(false);
-              }}
-            >
-              Compare
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }
