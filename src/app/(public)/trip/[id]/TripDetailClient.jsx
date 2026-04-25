@@ -32,10 +32,12 @@ import { MdOutlineVerified } from "react-icons/md";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
-export default function TripDetailClient({ trip, locationMap }) {
+export default function TripDetailClient({ trip: serverTrip, locationMap }) {
   const { id } = useParams();
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
+  const [offlineTrip, setOfflineTrip] = useState(null);
+  const trip = serverTrip || offlineTrip;
 
   const [activeImage, setActiveImage] = useState(trip?.images?.[0] || null);
   const [showForm, setShowForm] = useState(false);
@@ -50,6 +52,40 @@ export default function TripDetailClient({ trip, locationMap }) {
     trip?.price_categories?.[0] || null,
   );
   const [isPhoneValid, setIsPhoneValid] = useState(false);
+
+  // Load from cache on mount
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const cached = localStorage.getItem("tt_trip_details_cache");
+      if (cached) {
+        const cacheObj = JSON.parse(cached);
+        if (cacheObj[id]) setOfflineTrip(cacheObj[id]);
+      }
+    } catch (e) { console.error("Detail cache load failed", e); }
+  }, [id]);
+
+  // Save to cache on success
+  useEffect(() => {
+    if (serverTrip?.id) {
+      try {
+        const cached = localStorage.getItem("tt_trip_details_cache");
+        const cacheObj = cached ? JSON.parse(cached) : {};
+        cacheObj[serverTrip.id] = serverTrip;
+        const keys = Object.keys(cacheObj);
+        if (keys.length > 20) delete cacheObj[keys[0]];
+        localStorage.setItem("tt_trip_details_cache", JSON.stringify(cacheObj));
+      } catch (e) { console.error("Detail cache save failed", e); }
+    }
+  }, [serverTrip]);
+
+  // Sync state when trip loads (for offline mode)
+  useEffect(() => {
+    if (trip) {
+      if (!activeImage && trip.images?.length > 0) setActiveImage(trip.images[0]);
+      if (!selectedCategory && trip.price_categories?.length > 0) setSelectedCategory(trip.price_categories[0]);
+    }
+  }, [trip, activeImage, selectedCategory]);
 
   const handlePhoneValidation = useCallback(
     (valid) => setIsPhoneValid(valid),
