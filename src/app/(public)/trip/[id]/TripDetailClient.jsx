@@ -14,8 +14,6 @@ import {
   ImageIcon,
   Check,
   X,
-  Heart,
-  Share2,
 } from "lucide-react";
 import { Rating } from "@/app/components/ui/rating";
 import {
@@ -29,6 +27,7 @@ import Input from "@/app/components/ui/input";
 import PhoneInput from "@/app/components/ui/PhoneInput";
 import { useToast } from "@/app/hooks/use-toast";
 import { useOnlineStatus } from "@/app/hooks/use-online-status";
+import { MdOutlineVerified } from "react-icons/md";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -118,7 +117,7 @@ export default function TripDetailClient({ trip, locationMap }) {
     const currentUrl = window.location.href;
     const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
     const categoryInfo = selectedCategory
-      ? `• *Option:* ${selectedCategory.category} (₹${selectedCategory.price.toLocaleString("en-IN")})`
+      ? `• *Option:* ${selectedCategory.category} (₹${Number(selectedCategory.price).toLocaleString("en-IN")})`
       : "";
 
     const message = `Hi, I wanted to confirm the availability for the following trip:
@@ -246,7 +245,8 @@ ${currentUrl}`;
               <div className="flex items-center gap-3 mb-4">
                 {trip.verified && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-success/10 text-success text-body-sm font-medium">
-                    <Shield className="w-4 h-4" />
+                    {/* <Shield className="w-4 h-4" /> */}
+                    <MdOutlineVerified className="w-4 h-4" />
                     Verified Trip
                   </span>
                 )}
@@ -268,7 +268,7 @@ ${currentUrl}`;
 
               <div className="card-premium p-4 mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
+                  <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center overflow-hidden">
                     {trip.provider?.logo ? (
                       <img
                         src={trip.provider.logo}
@@ -342,8 +342,8 @@ ${currentUrl}`;
                     </div>
                     <p className="font-display text-4xl text-foreground">
                       ₹
-                      {(
-                        selectedCategory?.price || trip.priceFrom
+                      {Number(
+                        selectedCategory?.price || trip.priceFrom,
                       ).toLocaleString("en-IN")}
                     </p>
                     <p className="text-body-sm text-muted-foreground">
@@ -444,7 +444,7 @@ ${currentUrl}`;
                                       : "text-primary"
                                   }`}
                                 >
-                                  ₹{cat.price.toLocaleString("en-IN")}
+                                  ₹{Number(cat.price).toLocaleString("en-IN")}
                                 </span>
                               </div>
 

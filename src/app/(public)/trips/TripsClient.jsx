@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -19,6 +19,7 @@ import {
   SlidersHorizontal,
   ImageIcon,
   Star,
+  RotateCcw,
 } from "lucide-react";
 import Input from "@/app/components/ui/input";
 import { animatedScrollTo } from "@/lib/utils";
@@ -53,6 +54,7 @@ import {
 } from "@/app/components/ui/pagination";
 import { TripCardSkeleton } from "@/app/components/website/Skeletons";
 import { Rating } from "@/app/components/ui/rating";
+import { MdOutlineVerified } from "react-icons/md";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -160,7 +162,8 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
           )}
           {trip.verified && (
             <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
-              <Shield className="w-3 h-3" /> Verified
+              {/* <Shield className="w-3 h-3" /> */}
+              <MdOutlineVerified className="w-4 h-4" /> Verified
             </div>
           )}
           <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
@@ -215,7 +218,7 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
 
         <div className="flex items-center justify-between pt-4 border-t border-border">
           <p className="font-display text-heading-sm text-primary">
-            ₹{trip.priceFrom.toLocaleString()}
+            ₹{Number(trip.priceFrom).toLocaleString("en-IN")}
           </p>
         </div>
 
@@ -267,6 +270,19 @@ export default function TripsClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedType, setSelectedType] = useState(tripTypesData[0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+  const [showLandscapeAlert, setShowLandscapeAlert] = useState(false);
+
+  const triggerCompare = useCallback(() => {
+    if (window.innerWidth < 768) {
+      setShowLandscapeAlert(true);
+      setTimeout(() => {
+        setShowLandscapeAlert(false);
+        setShowCompare(true);
+      }, 5000);
+    } else {
+      setShowCompare(true);
+    }
+  }, []);
 
   const locationName = searchParams.get("location_name") || "";
 
@@ -482,7 +498,7 @@ export default function TripsClient({
       const isAdding = !prev.includes(tripId);
       if (isAdding && prev.length < 3) {
         if (prev.length + 1 === 3) {
-          setShowCompare(true);
+          triggerCompare();
         } else if (prev.length + 1 === 2) {
           setInterstitialChoiceMade(false);
           setShowInterstitial(true);
@@ -602,10 +618,7 @@ export default function TripsClient({
 
                 <div className="flex items-center gap-3">
                   {compareList.length > 1 && (
-                    <Button
-                      onClick={() => setShowCompare(true)}
-                      className="btn-secondary"
-                    >
+                    <Button onClick={triggerCompare} className="btn-secondary">
                       <GitCompare className="w-4 h-4 mr-2" />
                       Compare ({compareList.length})
                     </Button>
@@ -852,7 +865,7 @@ export default function TripsClient({
           if (!open) setCompareList([]);
         }}
       >
-        <DialogContent className="max-w-6xl w-[calc(95%-2rem)] max-h-[90vh] overflow-y-auto p-0 border-none bg-white">
+        <DialogContent className="max-w-6xl w-[calc(95%-2rem)] max-h-[90vh] overflow-y-auto p-0 border-none bg-white rounded-lg">
           <div className="sticky top-0 z-20 bg-background border-b border-border p-6 flex items-center justify-between">
             <DialogHeader className="p-0">
               <DialogTitle className="font-display text-heading-lg">
@@ -874,7 +887,7 @@ export default function TripsClient({
 
           <div className="p-4 sm:p-8">
             <div
-              className={`grid gap-8 ${
+              className={`grid gap-8  ${
                 compareTrips.length === 3
                   ? "sm:grid-cols-3"
                   : compareTrips.length === 2
@@ -913,7 +926,7 @@ export default function TripsClient({
                       <div className="flex justify-between items-center text-body-sm">
                         <span className="text-muted-foreground">Price</span>
                         <span className="font-bold text-success text-base">
-                          ₹{trip.priceFrom.toLocaleString()}
+                          ₹{Number(trip.priceFrom).toLocaleString("en-IN")}
                         </span>
                       </div>
                       <div className="flex justify-between items-center text-body-sm">
@@ -1007,13 +1020,13 @@ export default function TripsClient({
                       </p>
                       <div className="space-y-3">
                         {trip.itinerary.map((dayItem, i) => (
-                          <div
+                          <details
                             key={i}
                             className="bg-muted/30 rounded-xl p-4 border border-border/30"
                           >
-                            <p className="text-base font-bold text-primary mb-1.5 uppercase tracking-wider">
+                            <summary className="text-base font-bold text-primary mb-1.5 uppercase tracking-wider">
                               Day {dayItem.day || i + 1}
-                            </p>
+                            </summary>
                             <ul className="space-y-1.5">
                               {dayItem.activities?.map((activity, j) => (
                                 <li
@@ -1025,7 +1038,7 @@ export default function TripsClient({
                                 </li>
                               ))}
                             </ul>
-                          </div>
+                          </details>
                         ))}
                       </div>
                     </div>
@@ -1089,24 +1102,71 @@ export default function TripsClient({
               onClick={() => {
                 setInterstitialChoiceMade(true);
                 setShowInterstitial(false);
-                setShowCompare(true);
               }}
             >
-              Compare
+              <p>
+                Add 3<sup>rd</sup> trip
+              </p>
             </Button>
-
             <Button
               className="btn-primary h-12"
               onClick={() => {
                 setInterstitialChoiceMade(true);
                 setShowInterstitial(false);
+                triggerCompare();
               }}
             >
-              Proceed
+              Compare
             </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      <AnimatePresence>
+        {showLandscapeAlert && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-[2rem] p-8 max-w-[280px] w-full text-center shadow-2xl relative overflow-hidden"
+            >
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                >
+                  <RotateCcw className="w-10 h-10 text-primary" />
+                </motion.div>
+              </div>
+              <h3 className="font-display text-xl font-bold text-foreground mb-3">
+                Rotate Your Screen
+              </h3>
+              <p className="text-body-sm text-muted-foreground leading-relaxed">
+                Landscape mode provides the{" "}
+                <span className="font-bold text-foreground">
+                  best view for comparison
+                </span>
+                .
+              </p>
+              <div className="mt-8 flex justify-center">
+                <div className="w-16 h-1 bg-slate-100 rounded-full overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 3, ease: "linear" }}
+                    className="h-full bg-primary"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
