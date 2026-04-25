@@ -33,6 +33,18 @@ import useSWR from "swr";
 import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 import useTripTypes from "@/app/hooks/use-triptypes";
 import { Button } from "@/app/components/ui/button";
+import dynamic from "next/dynamic";
+import { Card, CardContent } from "@/app/components/ui/card";
+import { IoCloseSharp } from "react-icons/io5";
+
+const MapPicker = dynamic(() => import("@/app/components/MapPickerTrip"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+      <Loader2 className="w-8 h-8 text-teal-500 animate-spin" />
+    </div>
+  ),
+});
 
 export default function TripEditPage() {
   const { id } = useParams();
@@ -65,6 +77,8 @@ export default function TripEditPage() {
 
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showSourceMap, setShowSourceMap] = useState(false);
+  const [showDestinationMap, setShowDestinationMap] = useState(false);
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -123,6 +137,8 @@ export default function TripEditPage() {
         difficulty: dbTrip.difficulty || "",
         type_id: dbTrip?.type?.id || "",
         cancellation_policy: dbTrip.cancellation_policy || "",
+        source: dbTrip.source || {},
+        destination: dbTrip.destination || {},
       });
       setFormData({
         name: dbTrip.name || "",
@@ -143,6 +159,22 @@ export default function TripEditPage() {
         status: dbTrip.status || "",
         type_id: dbTrip?.type?.id || "",
         cancellation_policy: dbTrip.cancellation_policy || "",
+        source: dbTrip.source || {
+          name: "",
+          region: "",
+          latitude: "",
+          longitude: "",
+          type: "CITY",
+          id: "",
+        },
+        destination: dbTrip.destination || {
+          name: "",
+          region: "",
+          latitude: "",
+          longitude: "",
+          type: "CITY",
+          id: "",
+        },
       });
       setLoading(false);
     }
@@ -241,6 +273,58 @@ export default function TripEditPage() {
       ],
     }));
     setIsModified(true);
+  };
+
+  const handleLocationSelect = async (type, locationData) => {
+    const token = Cookies.get("token");
+    const payload = {
+      name: locationData.name || locationData.address || "Unknown",
+      region: locationData.region || "",
+      latitude: String(locationData.lat ?? locationData.latitude),
+      longitude: String(locationData.lng ?? locationData.longitude),
+      type: "CITY",
+    };
+
+    try {
+      const res = await fetch(
+        `${BASE_URL}/api/${API_VERSION}/locations/admin`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setFormData((prev) => ({ ...prev, [type]: data.result }));
+        setErrors((p) => ({ ...p, [type]: "" }));
+        setIsModified(true);
+      } else if (data?.error?.message?.includes("already exists")) {
+        const searchRes = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/locations/admin?search=${encodeURIComponent(payload.name)}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+        const searchData = await searchRes.json();
+        const existing = searchData.result.locations?.find(
+          (loc) => loc.name.toLowerCase() === payload.name.toLowerCase(),
+        );
+        if (existing) {
+          setFormData((prev) => ({ ...prev, [type]: existing }));
+          setErrors((p) => ({ ...p, [type]: "" }));
+          setIsModified(true);
+        }
+      }
+
+      if (type === "source") setShowSourceMap(false);
+      else setShowDestinationMap(false);
+    } catch (err) {
+      console.error("Location error:", err);
+    }
   };
 
   const handleImageUpload = async (e) => {
@@ -462,7 +546,20 @@ export default function TripEditPage() {
     const token = Cookies.get("token");
 
     const requestBody = {};
+
+    // Always include source and destination if they exist
+    if (formData.source?.id) {
+      requestBody.source = formData.source;
+      requestBody.source_id = formData.source.id;
+    }
+    if (formData.destination?.id) {
+      requestBody.destination = formData.destination;
+      requestBody.destination_id = formData.destination.id;
+    }
+
     Object.keys(formData).forEach((key) => {
+      if (key === "source" || key === "destination") return; // Already handled above
+
       if (JSON.stringify(formData[key]) !== JSON.stringify(trip[key])) {
         if (key === "price_categories") {
           requestBody[key] = formData[key].map((c) => ({
@@ -928,6 +1025,58 @@ export default function TripEditPage() {
                   />
                 </div>
               </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Source Location
+                </label>
+                <Card className="border border-slate-200 shadow-none">
+                  <CardContent className="p-3 flex justify-between items-center">
+                    <span className="text-sm truncate mr-2">
+                      {formData.source?.name || "None selected"}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSourceMap(true)}
+                    >
+                      Map
+                    </Button>
+                  </CardContent>
+                </Card>
+                {errors.source && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.source}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                  Destination Location
+                </label>
+                <Card className="border border-slate-200 shadow-none">
+                  <CardContent className="p-3 flex justify-between items-center">
+                    <span className="text-sm truncate mr-2">
+                      {formData.destination?.name || "None selected"}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDestinationMap(true)}
+                    >
+                      Map
+                    </Button>
+                  </CardContent>
+                </Card>
+                {errors.destination && (
+                  <p className="text-xs text-admin-error mt-1">
+                    {errors.destination}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="mt-4 space-y-1.5">
@@ -945,28 +1094,6 @@ export default function TripEditPage() {
                   {errors.description}
                 </p>
               )}
-            </div>
-
-            <div className="space-y-1.5 col-span-1 sm:col-span-2">
-              <label className="text-sm font-semibold text-slate-700 tracking-wide">
-                Cancellation Policy
-              </label>
-              <pre
-                contentEditable
-                onInput={() => setIsModified(true)}
-                onBlur={(e) => {
-                  const value = e.currentTarget.innerText;
-                  setFormData((prev) => ({
-                    ...prev,
-                    cancellation_policy: value,
-                  }));
-                  setIsModified(true);
-                }}
-                className="w-full min-h-[120px] p-4 text-sm border border-slate-200 rounded-lg bg-white overflow-auto whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-sans"
-                suppressContentEditableWarning={true}
-              >
-                {formData.cancellation_policy}
-              </pre>
             </div>
           </section>
 
@@ -1234,6 +1361,28 @@ export default function TripEditPage() {
             )}
           </section>
 
+          <div className="space-y-1.5 col-span-1 sm:col-span-2">
+            <label className="text-sm font-semibold text-slate-700 tracking-wide">
+              Cancellation Policy
+            </label>
+            <pre
+              contentEditable
+              onInput={() => setIsModified(true)}
+              onBlur={(e) => {
+                const value = e.currentTarget.innerText;
+                setFormData((prev) => ({
+                  ...prev,
+                  cancellation_policy: value,
+                }));
+                setIsModified(true);
+              }}
+              className="w-full min-h-[120px] p-4 text-sm border border-slate-200 rounded-lg bg-white overflow-auto whitespace-pre-wrap focus:outline-none focus:ring-2 focus:ring-teal-500/20 transition-all font-sans"
+              suppressContentEditableWarning={true}
+            >
+              {formData.cancellation_policy}
+            </pre>
+          </div>
+
           {/* SUBMIT */}
           <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-slate-200">
             <button
@@ -1257,6 +1406,53 @@ export default function TripEditPage() {
           </div>
         </form>
       </div>
+
+      {/* Map Popups */}
+      {showSourceMap && (
+        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-[80vw] md:w-[60vw] h-[40vh] md:h-[65vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+              <span className="font-semibold text-gray-800">
+                Select Source Location
+              </span>
+              <button onClick={() => setShowSourceMap(false)}>
+                <IoCloseSharp size={24} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-white">
+              <MapPicker
+                onLocationSelect={(loc) => handleLocationSelect("source", loc)}
+                initialCenter={[20.5937, 78.9629]}
+                initialZoom={5}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDestinationMap && (
+        <div className="fixed inset-0 z-60 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white w-[80vw] md:w-[60vw] h-[40vh] md:h-[65vh] rounded-xl flex flex-col shadow-2xl overflow-hidden">
+            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+              <span className="font-semibold text-gray-800">
+                Select Destination Location
+              </span>
+              <button onClick={() => setShowDestinationMap(false)}>
+                <IoCloseSharp size={24} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-white">
+              <MapPicker
+                onLocationSelect={(loc) =>
+                  handleLocationSelect("destination", loc)
+                }
+                initialCenter={[20.5937, 78.9629]}
+                initialZoom={5}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

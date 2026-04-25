@@ -624,12 +624,6 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                       <Input
                         placeholder="e.g. Base Price, Early Bird"
                         value={cat.category}
-                        readOnly={cat.category?.toLowerCase() === "base price"}
-                        className={
-                          cat.category?.toLowerCase() === "base price"
-                            ? "bg-gray-50 cursor-not-allowed"
-                            : ""
-                        }
                         onChange={(e) =>
                           handlePriceCategoryChange(
                             idx,

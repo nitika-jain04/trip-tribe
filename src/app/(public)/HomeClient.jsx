@@ -23,6 +23,7 @@ import {
   Compass,
 } from "lucide-react";
 import { Libre_Baskerville } from "next/font/google";
+import { MdOutlineVerified } from "react-icons/md";
 
 const baskerville = Libre_Baskerville({
   weight: ["400", "700"],
@@ -207,7 +208,8 @@ export default function HomeClient({
           )}
           {trip.verified && (
             <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
-              <Shield className="w-3 h-3" />
+              {/* <Shield className="w-3 h-3" /> */}
+              <MdOutlineVerified className="w-4 h-4" />
               Verified
             </div>
           )}
@@ -234,7 +236,7 @@ export default function HomeClient({
           </p>
           <div className="flex items-center justify-between">
             <p className="font-display text-heading-sm text-primary">
-              ₹{(trip.price ?? 0).toLocaleString()}{" "}
+              ₹{Number(trip.price ?? 0).toLocaleString("en-IN")}{" "}
               <span className="text-body-sm text-muted-foreground font-normal">
                 onwards
               </span>
@@ -705,7 +707,7 @@ export default function HomeClient({
                   <img
                     src={provider.logo_url}
                     alt="Logo"
-                    className="h-18 w-18 md:w-20 md:h-20 object-cover rounded-full"
+                    className="h-18 w-18 object-cover rounded-full"
                   />
                 ) : (
                   <Shield className="w-5 h-5 text-success" />
