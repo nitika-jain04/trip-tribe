@@ -364,6 +364,17 @@ export default function TripsClient({
   const [selectedType, setSelectedType] = useState(tripTypesData[0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [showLandscapeAlert, setShowLandscapeAlert] = useState(false);
+  const [offlineData, setOfflineData] = useState(null);
+
+  // Load from cache on mount
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem("tt_trips_cache");
+      if (cached) setOfflineData(JSON.parse(cached));
+    } catch (e) { console.error("Cache load failed", e); }
+  }, []);
+
+ 
 
   const triggerCompare = useCallback(() => {
     if (window.innerWidth < 768) {
@@ -484,10 +495,20 @@ export default function TripsClient({
     };
   }, [tripsData, currentPage]);
 
+   // Save to cache on success
+  useEffect(() => {
+    if (tripsData?.success && tripsData?.result?.trips?.length > 0) {
+      try {
+        localStorage.setItem("tt_trips_cache", JSON.stringify(tripsData));
+      } catch (e) { console.error("Cache save failed", e); }
+    }
+  }, [tripsData]);
+
   const trips = useMemo(() => {
-    let rawTrips = tripsData?.result?.trips || [];
-    if (tripsData?.result?.groups) {
-      rawTrips = tripsData.result.groups.flatMap((g) => g.trips);
+    const activeData = tripsData || offlineData;
+    let rawTrips = activeData?.result?.trips || [];
+    if (activeData?.result?.groups) {
+      rawTrips = activeData.result.groups.flatMap((g) => g.trips);
     }
 
     return rawTrips.map((trip) => {

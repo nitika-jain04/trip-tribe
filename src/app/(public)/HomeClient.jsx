@@ -103,10 +103,29 @@ export default function HomeClient({
     }
   }, [showSuggestions, shouldRestoreScroll]);
 
+  const [offlineTrips, setOfflineTrips] = useState(null);
+  const [offlineLocations, setOfflineLocations] = useState(null);
+
+  // Load from cache on mount
+  useEffect(() => {
+    try {
+      const cachedTrips = localStorage.getItem("tt_home_trips");
+      const cachedLocs = localStorage.getItem("tt_home_locations");
+      if (cachedTrips) setOfflineTrips(JSON.parse(cachedTrips));
+      if (cachedLocs) setOfflineLocations(JSON.parse(cachedLocs));
+    } catch (e) { console.error("Home cache load failed", e); }
+  }, []);
+
+  // Save to cache on success
+  useEffect(() => {
+    if (initialTrips?.success) localStorage.setItem("tt_home_trips", JSON.stringify(initialTrips));
+    if (initialLocations?.success) localStorage.setItem("tt_home_locations", JSON.stringify(initialLocations));
+  }, [initialTrips, initialLocations]);
+
   // Fallback to empty if not provided
-  const rawLocationsGroups = initialLocations?.success
-    ? initialLocations.result?.groups || []
-    : [];
+  const activeLocations = initialLocations?.success ? initialLocations : offlineLocations;
+  const rawLocationsGroups = activeLocations?.result?.groups || [];
+
   const processedOperators = initialOperators?.success
     ? initialOperators.result?.operators || []
     : [];
@@ -173,8 +192,10 @@ export default function HomeClient({
   }, [rawLocationsGroups, serverLocationMap]);
 
   const trips = useMemo(() => {
+    const activeTrips = initialTrips?.success ? initialTrips : offlineTrips;
+    const rawTrips = activeTrips?.result?.trips || [];
     return enrichTripsWithDetails(rawTrips, serverLocationMap);
-  }, [rawTrips, serverLocationMap]);
+  }, [initialTrips, offlineTrips, serverLocationMap]);
 
   const filteredLocations = useMemo(() => {
     if (!searchDestination) return locations;
