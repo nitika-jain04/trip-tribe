@@ -371,10 +371,10 @@ export default function TripsClient({
     try {
       const cached = localStorage.getItem("tt_trips_cache");
       if (cached) setOfflineData(JSON.parse(cached));
-    } catch (e) { console.error("Cache load failed", e); }
+    } catch (e) {
+      console.error("Cache load failed", e);
+    }
   }, []);
-
- 
 
   const triggerCompare = useCallback(() => {
     if (window.innerWidth < 768) {
@@ -495,12 +495,14 @@ export default function TripsClient({
     };
   }, [tripsData, currentPage]);
 
-   // Save to cache on success
+  // Save to cache on success
   useEffect(() => {
     if (tripsData?.success && tripsData?.result?.trips?.length > 0) {
       try {
         localStorage.setItem("tt_trips_cache", JSON.stringify(tripsData));
-      } catch (e) { console.error("Cache save failed", e); }
+      } catch (e) {
+        console.error("Cache save failed", e);
+      }
     }
   }, [tripsData]);
 
@@ -1141,9 +1143,9 @@ export default function TripsClient({
                         {trip.itinerary.map((dayItem, i) => (
                           <details
                             key={i}
-                            className="bg-muted/30 rounded-xl p-4 border border-border/30"
+                            className="bg-muted/30 rounded-xl px-4 py-2 border border-border/30"
                           >
-                            <summary className="text-base font-bold text-primary mb-1.5 tracking-wider cursor-pointer">
+                            <summary className="text-base font-bold text-primary tracking-wider cursor-pointer">
                               Day {dayItem.day || i + 1}
                             </summary>
                             <ul className="space-y-1.5">
