@@ -9,13 +9,16 @@ export const metadata = {
     "Discover and compare group trips from verified community providers across India. Search by destination, type, and difficulty.",
 };
 
-async function fetchData(url, revalidate = 0) {
+async function fetchData(url) {
+  if (!url || typeof url !== "string" || !url.startsWith("http")) {
+    return null;
+  }
   try {
     const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return null;
-    const data = await res.json();
-    return data;
+    return await res.json();
   } catch (e) {
+    // Silently handle network/fetch failures to prevent console noise
     return null;
   }
 }
