@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
@@ -15,6 +16,7 @@ import {
   Shield,
   MapPin,
   ChevronRight,
+  ChevronLeft,
   Calendar,
   GitCompare,
   CheckCircle2,
@@ -116,14 +118,14 @@ export default function HomeClient({
     if (!groups || !groups.length) return [];
     return groups.map((group) => {
       const firstTrip = group.trips?.[0];
-      const locationData = lMap[firstTrip?.destination_id] || {};
+      const locationData = (lMap && lMap[firstTrip?.destination_id]) || {};
       return {
         id: firstTrip?.destination_id || group.location_name,
         name: locationData?.name || group.location_name,
         region: locationData?.region || "",
         type: "destination",
         trips: group.total_trips,
-        image: firstTrip?.images?.[0] || null,
+        image: firstTrip?.images?.[0] || firstTrip?.image || null,
       };
     });
   };
@@ -131,7 +133,7 @@ export default function HomeClient({
   const enrichTripsWithDetails = (tripsList, lMap) => {
     if (!tripsList.length) return [];
     return tripsList.map((trip) => {
-      const destination = lMap[trip.destination_id] || {};
+      const destination = (lMap && lMap[trip.destination_id]) || {};
       const start = new Date(trip.start_date);
       const end = new Date(trip.end_date);
       const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
@@ -139,7 +141,11 @@ export default function HomeClient({
       return {
         id: trip.id,
         name: trip.name,
-        images: trip.images?.length ? trip.images : [],
+        images: trip.images?.length
+          ? trip.images
+          : trip.image
+            ? [trip.image]
+            : [],
         destination: destination.name || "Unknown",
         region: destination.region || "Unknown",
         provider: trip.operator?.name || "Unknown",
@@ -151,9 +157,10 @@ export default function HomeClient({
           ) || 0,
         duration: `${durationDays} days`,
         groupSize: `${trip.total_seats} people`,
-        difficulty:
-          trip.difficulty?.charAt(0) +
-            trip.difficulty?.slice(1).toLowerCase() || "Moderate",
+        difficulty: trip.difficulty
+          ? trip.difficulty.charAt(0).toUpperCase() +
+            trip.difficulty.slice(1).toLowerCase()
+          : "Moderate",
         rating: trip.operator?.rating || 4.5,
         reviewCount: 0,
         verified: true,
@@ -186,64 +193,153 @@ export default function HomeClient({
 
   const TripCard = ({ trip }) => {
     const [cardImgError, setCardImgError] = useState(false);
+    const [[currentImgIndex, direction], setPage] = useState([0, 0]);
+    const [isHovered, setIsHovered] = useState(false);
+
+    const images =
+      trip.images?.length > 0 ? trip.images : ["/placeholder-trip.jpg"];
+
+    const paginate = (newDirection) => {
+      const nextIndex =
+        (currentImgIndex + newDirection + images.length) % images.length;
+      setPage([nextIndex, newDirection]);
+    };
+
+    const handleNext = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      paginate(1);
+    };
+
+    const handlePrev = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      paginate(-1);
+    };
+
+    const variants = {
+      enter: (direction) => ({
+        x: direction > 0 ? "100%" : direction < 0 ? "-100%" : 0,
+      }),
+      center: {
+        zIndex: 1,
+        x: 0,
+      },
+      exit: (direction) => ({
+        zIndex: 0,
+        x: direction < 0 ? "100%" : direction > 0 ? "-100%" : 0,
+      }),
+    };
 
     return (
-      <Link
-        prefetch={false}
-        href={`/trip/${trip.id}`}
-        className="card-premium overflow-hidden group"
+      <div
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="card-premium overflow-hidden group relative"
       >
-        <div className="aspect-14/10 relative overflow-hidden bg-gray-100">
-          {trip.images?.[0] && !cardImgError ? (
-            <img
-              src={trip.images[0]}
-              alt={trip.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              onError={() => setCardImgError(true)}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <ImageIcon className="w-12 h-12 text-gray-400" />
-            </div>
-          )}
-          {trip.verified && (
-            <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
-              {/* <Shield className="w-3 h-3" /> */}
-              <MdOutlineVerified className="w-4 h-4" />
-              Verified
-            </div>
-          )}
-        </div>
-        <div className="p-6">
-          <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
-            <MapPin className="w-4 h-4" />
-            {trip.destination || "Unknown"}
-            {trip.duration && (
+        <Link prefetch={false} href={`/trip/${trip.id}`} className="block">
+          <div className="aspect-14/10 relative overflow-hidden bg-gray-100">
+            <AnimatePresence initial={false} custom={direction}>
+              <motion.img
+                key={currentImgIndex}
+                src={images[currentImgIndex]}
+                custom={direction}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.2}
+                onDragEnd={(e, info) => {
+                  if (info.offset.x < -50) {
+                    handleNext(e);
+                  } else if (info.offset.x > 50) {
+                    handlePrev(e);
+                  }
+                }}
+                transition={{
+                  x: { type: "spring", stiffness: 300, damping: 30 },
+                }}
+                className="absolute inset-0 w-full h-full object-cover cursor-grab active:cursor-grabbing"
+                onError={() => setCardImgError(true)}
+              />
+            </AnimatePresence>
+
+            {/* Navigation Buttons */}
+            {images.length > 1 && isHovered && (
               <>
-                <span className="text-border">•</span>
-                {trip.duration}
+                <button
+                  onClick={handlePrev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={handleNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </>
             )}
+
+            {/* Dots */}
+            {images.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+                {images.map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                      idx === currentImgIndex
+                        ? "bg-white scale-110"
+                        : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {trip.verified && (
+              <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium z-10">
+                <MdOutlineVerified className="w-4 h-4" />
+                Verified
+              </div>
+            )}
           </div>
-          <h3
-            className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1"
-            title={trip.name}
-          >
-            {trip.name}
-          </h3>
-          <p className="text-body-sm text-muted-foreground mb-4">
-            by {trip.provider || "Unknown"}
-          </p>
-          <div className="flex items-center justify-between">
-            <p className="font-display text-heading-sm text-primary">
-              ₹{Number(trip.price ?? 0).toLocaleString("en-IN")}{" "}
-              <span className="text-body-sm text-muted-foreground font-normal">
-                onwards
-              </span>
+        </Link>
+        <Link prefetch={false} href={`/trip/${trip.id}`} className="block">
+          <div className="p-6">
+            <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
+              <MapPin className="w-4 h-4" />
+              {trip.destination || "Unknown"}
+              {trip.duration && (
+                <>
+                  <span className="text-border">•</span>
+                  {trip.duration}
+                </>
+              )}
+            </div>
+            <h3
+              className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1"
+              title={trip.name}
+            >
+              {trip.name}
+            </h3>
+            <p className="text-body-sm text-muted-foreground mb-4">
+              by {trip.provider || "Unknown"}
             </p>
+            <div className="flex items-center justify-between">
+              <p className="font-display text-heading-sm text-primary">
+                ₹{Number(trip.price ?? 0).toLocaleString("en-IN")}{" "}
+                <span className="text-body-sm text-muted-foreground font-normal">
+                  onwards
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
     );
   };
 
