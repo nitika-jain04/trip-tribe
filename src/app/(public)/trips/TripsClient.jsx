@@ -12,6 +12,8 @@ import {
   Search,
   MapPin,
   Shield,
+  ChevronRight,
+  ChevronLeft,
   Calendar,
   Users,
   X,
@@ -143,44 +145,133 @@ const FiltersContent = ({
 
 const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
   const [imgError, setImgError] = useState(false);
+  const [[currentImgIndex, direction], setPage] = useState([0, 0]);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const images =
+    trip.images?.length > 0 ? trip.images : ["/placeholder-trip.jpg"];
+
+  const paginate = (newDirection) => {
+    const nextIndex =
+      (currentImgIndex + newDirection + images.length) % images.length;
+    setPage([nextIndex, newDirection]);
+  };
+
+  const handleNext = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    paginate(1);
+  };
+
+  const handlePrev = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    paginate(-1);
+  };
+
+  const variants = {
+    enter: (direction) => ({
+      x: direction > 0 ? "100%" : direction < 0 ? "-100%" : 0,
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+    },
+    exit: (direction) => ({
+      zIndex: 0,
+      x: direction < 0 ? "100%" : direction > 0 ? "-100%" : 0,
+    }),
+  };
 
   return (
-    <div className="card-premium overflow-hidden group h-full">
-      <Link href={`/trip/${trip.id}`} prefetch={false}>
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="card-premium overflow-hidden group h-full relative"
+    >
+      <Link href={`/trip/${trip.id}`} prefetch={false} className="block">
         <div className="aspect-14/10 relative overflow-hidden bg-muted">
-          {trip.image && !imgError ? (
-            <img
-              src={trip.image}
-              alt={trip.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          <AnimatePresence initial={false} custom={direction}>
+            <motion.img
+              key={currentImgIndex}
+              src={images[currentImgIndex]}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(e, info) => {
+                if (info.offset.x < -50) {
+                  handleNext(e);
+                } else if (info.offset.x > 50) {
+                  handlePrev(e);
+                }
+              }}
+              transition={{
+                x: { type: "spring", stiffness: 300, damping: 30 },
+              }}
+              className="absolute inset-0 w-full h-full object-cover cursor-grab active:cursor-grabbing"
               onError={() => setImgError(true)}
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <ImageIcon className="w-12 h-12 text-muted-foreground/40" />
+          </AnimatePresence>
+
+          {/* Navigation Buttons */}
+          {images.length > 1 && isHovered && (
+            <>
+              <button
+                onClick={handlePrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button
+                onClick={handleNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </>
+          )}
+
+          {/* Dots */}
+          {images.length > 1 && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
+              {images.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                    idx === currentImgIndex
+                      ? "bg-white scale-110"
+                      : "bg-white/50"
+                  }`}
+                />
+              ))}
             </div>
           )}
+
           {trip.verified && (
-            <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium">
-              {/* <Shield className="w-3 h-3" /> */}
+            <div className="absolute top-4 left-4 flex items-center gap-1 px-3 py-1 rounded-full bg-success/90 text-background text-xs font-medium z-10">
               <MdOutlineVerified className="w-4 h-4" /> Verified
             </div>
           )}
-          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-background/90 text-foreground text-xs font-medium">
+          <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-background/90 text-foreground text-xs font-medium z-10">
             {trip.type}
           </div>
         </div>
       </Link>
 
-      <div className="p-6">
-        <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
-          <MapPin className="w-4 h-4" />
-          {trip.destination_name}
-          {trip.destination_region !== "Unknown" &&
-            `, ${trip.destination_region}`}
-        </div>
+      <div className="p-6 flex flex-col h-[calc(100%-aspect-14/10)]">
+        <Link href={`/trip/${trip.id}`} prefetch={false} className="block">
+          <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
+            <MapPin className="w-4 h-4" />
+            {trip.destination_name}
+            {trip.destination_region !== "Unknown" &&
+              `, ${trip.destination_region}`}
+          </div>
 
-        <Link href={`/trip/${trip.id}`} prefetch={false}>
           <h3
             className="font-display text-heading-sm text-foreground mb-2 group-hover:text-primary transition-colors line-clamp-1 truncate"
             title={trip.name}
@@ -216,30 +307,32 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
           <span className="text-foreground font-medium">{trip.provider}</span>
         </p>
 
-        <div className="flex items-center justify-between pt-4 border-t border-border">
-          <p className="font-display text-heading-sm text-primary">
-            ₹{Number(trip.priceFrom).toLocaleString("en-IN")}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 mt-4">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id={`compare-${trip.id}`}
-              checked={isCompared}
-              onCheckedChange={onToggleCompare}
-            />
-            <label
-              htmlFor={`compare-${trip.id}`}
-              className="text-body-sm text-muted-foreground cursor-pointer"
-            >
-              Compare
-            </label>
+        <div className="mt-auto">
+          <div className="flex items-center justify-between pt-4 border-t border-border">
+            <p className="font-display text-heading-sm text-primary">
+              ₹{Number(trip.priceFrom).toLocaleString("en-IN")}
+            </p>
           </div>
 
-          <Link href={`/trip/${trip.id}`} className="flex-1" prefetch={false}>
-            <Button className="btn-primary w-full">View Details</Button>
-          </Link>
+          <div className="flex items-center gap-3 mt-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`compare-${trip.id}`}
+                checked={isCompared}
+                onCheckedChange={onToggleCompare}
+              />
+              <label
+                htmlFor={`compare-${trip.id}`}
+                className="text-body-sm text-muted-foreground cursor-pointer"
+              >
+                Compare
+              </label>
+            </div>
+
+            <Link href={`/trip/${trip.id}`} className="flex-1" prefetch={false}>
+              <Button className="btn-primary w-full">View Details</Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -400,14 +493,17 @@ export default function TripsClient({
     return rawTrips.map((trip) => {
       const start = new Date(trip.start_date);
       const end = new Date(trip.end_date);
-      const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      let durationDays = 0;
+      if (!isNaN(start) && !isNaN(end)) {
+        durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      }
 
-      const destination = locationMap[trip.destination_id] || {
+      const destination = (locationMap && locationMap[trip.destination_id]) || {
         name: "Unknown",
         region: "",
       };
 
-      const source = locationMap[trip.source_id] || {
+      const source = (locationMap && locationMap[trip.source_id]) || {
         name: "Unknown",
         region: "",
       };
@@ -415,7 +511,8 @@ export default function TripsClient({
       return {
         id: trip.id,
         name: trip.name,
-        image: trip.images ? trip.images[0] : null,
+        images: trip.images || (trip.image ? [trip.image] : []),
+        image: trip.images?.[0] || trip.image || null,
         destination_name: destination.name,
         destination_region: destination.region,
         source_name: source.name,
@@ -430,9 +527,10 @@ export default function TripsClient({
         endDate: trip.end_date,
         duration: `${durationDays} days`,
         groupSize: `${trip.total_seats} people`,
-        difficulty:
-          trip.difficulty?.charAt(0) +
-            trip.difficulty?.slice(1).toLowerCase() || "Moderate",
+        difficulty: trip.difficulty
+          ? trip.difficulty.charAt(0).toUpperCase() +
+            trip.difficulty.slice(1).toLowerCase()
+          : "Moderate",
         rating: 4.5,
         reviewCount: 0,
         verified: true,
@@ -526,8 +624,8 @@ export default function TripsClient({
         <div className="container-premium">
           <div className="max-w-3xl mx-auto text-center mb-8">
             <h1 className="font-display text-display text-foreground mb-4">
-              {locationName
-                ? `Trips in ${locationName}`
+              {locationName || debouncedSearchQuery
+                ? `Trips in ${locationName || debouncedSearchQuery}`
                 : "Explore Community Trips"}
             </h1>
           </div>
@@ -903,7 +1001,7 @@ export default function TripsClient({
                   {/* Image */}
                   <div className="aspect-16/9 relative overflow-hidden">
                     <img
-                      src={trip.image}
+                      src={trip.image || trip.images?.[0]}
                       alt={trip.name}
                       className="w-full h-full object-cover"
                     />
@@ -1024,7 +1122,7 @@ export default function TripsClient({
                             key={i}
                             className="bg-muted/30 rounded-xl p-4 border border-border/30"
                           >
-                            <summary className="text-base font-bold text-primary mb-1.5 uppercase tracking-wider">
+                            <summary className="text-base font-bold text-primary mb-1.5 tracking-wider cursor-pointer">
                               Day {dayItem.day || i + 1}
                             </summary>
                             <ul className="space-y-1.5">

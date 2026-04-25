@@ -152,7 +152,11 @@ const mapServerTripData = (tripDataRaw) => {
     id: raw.id,
     name: raw.name,
     description: raw.description || "",
-    images: Array.isArray(raw.images) ? raw.images : [],
+    images: Array.isArray(raw.images)
+      ? raw.images
+      : raw.image
+        ? [raw.image]
+        : [],
     source_id: raw.source_id,
     destination_id: raw.destination_id,
     operator_id: raw.operator_id || raw.operator?.id || null,

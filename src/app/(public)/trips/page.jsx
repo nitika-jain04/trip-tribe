@@ -21,10 +21,7 @@ async function fetchData(url, revalidate = 0) {
 }
 
 async function getLocationMap() {
-  const res = await fetch(`${BASE_URL}/api/${API_VERSION}/locations`, {
-    cache: "no-store",
-  });
-  const data = await res.json();
+  const data = await fetchData(`${BASE_URL}/api/${API_VERSION}/locations`);
   const map = {};
   if (data?.success && data?.result?.locations) {
     data.result.locations.forEach((loc) => {
