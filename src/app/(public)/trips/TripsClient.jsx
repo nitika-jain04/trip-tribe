@@ -525,7 +525,7 @@ export default function TripsClient({
       fallbackData: initialTrips,
       revalidateOnFocus: true,
       revalidateIfStale: true,
-      revalidateOnMount: false,
+      revalidateOnMount: true,
       keepPreviousData: true,
     },
   );
