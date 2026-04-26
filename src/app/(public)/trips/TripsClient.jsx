@@ -617,7 +617,7 @@ export default function TripsClient({
         cancellation_policy: trip.cancellation_policy || "",
       };
     });
-  }, [tripsData, offlineData, locationMap]);
+  }, [tripsData, locationMap]);
 
   const {
     compareList,
