@@ -511,26 +511,22 @@ export default function TripsClient({
 
   const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?sortBy=${apiSortBy}&order=${apiOrder}&${params.toString()}`;
 
-  // Only use server-rendered initialTrips as fallback when no filters are active.
-  // SWR's fallbackData is per-hook (not per-key), so when the key changes due to
-  // filters, SWR would still use initialTrips and skip fetching the filtered data.
-  const hasActiveFilters =
-    selectedType.id !== "all" ||
-    selectedDifficulty !== "All" ||
-    selectedOperator !== "All" ||
-    debouncedSearchQuery.trim().length >= 2 ||
-    sortBy !== "recommended" ||
-    currentPage !== 1;
+  // Capture the initial (unfiltered) URL once so we can match against it.
+  const initialUrlRef = useRef(tripsUrl);
 
-  const { data: tripsData, isLoading: loadingTrips } = useSWR(
-    tripsUrl,
-    fetcher,
-    {
-      fallbackData: hasActiveFilters ? undefined : initialTrips,
-      revalidateOnFocus: true,
-      keepPreviousData: true,
-    },
-  );
+  // SWR's fallbackData is per-hook, not per-key. When the key changes due to
+  // filters, SWR reuses fallbackData (unfiltered initialTrips) for the new key
+  // and can skip fetching. To avoid this, we NEVER use fallbackData.
+  // Instead, we merge initialTrips manually only when the URL matches the initial one.
+  const { data: swrData, isLoading: swrLoading } = useSWR(tripsUrl, fetcher, {
+    revalidateOnFocus: true,
+    keepPreviousData: true,
+  });
+
+  // Use server-rendered data only for the initial unfiltered URL
+  const tripsData =
+    swrData || (tripsUrl === initialUrlRef.current ? initialTrips : undefined);
+  const loadingTrips = swrLoading && !tripsData;
 
   const pagination = useMemo(() => {
     const rawPagination = tripsData?.result?.pagination;
