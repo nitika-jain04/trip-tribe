@@ -56,12 +56,13 @@ export default async function Page({ searchParams }) {
   params.set("page", page);
   params.set("limit", "10");
 
-  const [initialTrips, locationMap, tripTypesRaw] = await Promise.all([
+  const [initialTrips, locationMap, tripTypesRaw, operatorsRaw] = await Promise.all([
     fetchData(
       `${BASE_URL}/api/${API_VERSION}/trips?sortBy=updated_at&order=DESC&${params.toString()}`,
     ),
     getLocationMap(),
-    fetchData(`${BASE_URL}/api/${API_VERSION}/trip-types`, 3600),
+    fetchData(`${BASE_URL}/api/${API_VERSION}/trip-types`),
+    fetchData(`${BASE_URL}/api/${API_VERSION}/operators`),
   ]);
 
   const tripTypesData = [
@@ -72,11 +73,19 @@ export default async function Page({ searchParams }) {
     })) || []),
   ];
 
+  const operatorsData = operatorsRaw?.result?.operators
+    ?.filter((op) => op.total_trips >= 1)
+    ?.map((op) => ({
+      id: op.id,
+      name: op.name,
+    })) || [];
+
   return (
     <TripsClient
       initialTrips={initialTrips}
       locationMap={locationMap}
       tripTypesData={tripTypesData}
+      operatorsData={operatorsData}
     />
   );
 }

@@ -19,9 +19,6 @@ import {
   X,
   GitCompare,
   SlidersHorizontal,
-  ImageIcon,
-  Star,
-  RotateCcw,
 } from "lucide-react";
 import Input from "@/app/components/ui/input";
 import { animatedScrollTo } from "@/lib/utils";
@@ -69,6 +66,9 @@ const FiltersContent = ({
   setSelectedType,
   selectedDifficulty,
   setSelectedDifficulty,
+  selectedOperator,
+  setSelectedOperator,
+  operators,
   setIsSheetOpen,
   tripTypesData,
   setCurrentPage,
@@ -143,6 +143,69 @@ const FiltersContent = ({
         ))}
       </div>
     </div>
+
+    {operators?.length > 0 && (
+      <div>
+        <h4 className="font-medium text-foreground mb-3">Operator</h4>
+        <div className="space-y-1">
+          <button
+            onClick={() => {
+              setSelectedOperator("All");
+              setCurrentPage(1);
+              setIsSheetOpen?.(false);
+
+              const el = document.getElementById("filters");
+              if (el) {
+                el.scrollIntoView({ behavior: "auto", block: "start" });
+              }
+            }}
+            className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
+              selectedOperator === "All"
+                ? "text-primary-foreground"
+                : "text-foreground hover:bg-muted"
+            }`}
+          >
+            {selectedOperator === "All" && (
+              <motion.div
+                layoutId="activeOperator"
+                className="absolute inset-0 bg-primary rounded-lg z-0"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+            <span className="relative z-10">All Operators</span>
+          </button>
+          {operators.map((op) => (
+            <button
+              key={op.id}
+              onClick={() => {
+                setSelectedOperator(op.id);
+                setCurrentPage(1);
+                setIsSheetOpen?.(false);
+
+                const el = document.getElementById("filters");
+                if (el) {
+                  el.scrollIntoView({ behavior: "auto", block: "start" });
+                }
+              }}
+              className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
+                selectedOperator === op.id
+                  ? "text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              {selectedOperator === op.id && (
+                <motion.div
+                  layoutId="activeOperator"
+                  className="absolute inset-0 bg-primary rounded-lg z-0"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{op.name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
   </div>
 );
 
@@ -226,13 +289,13 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
             <>
               <button
                 onClick={handlePrev}
-                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm hidden md:flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
                 onClick={handleNext}
-                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/40 backdrop-blur-sm hidden md:flex items-center justify-center text-foreground hover:bg-white transition-all shadow-md z-20"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -338,6 +401,7 @@ export default function TripsClient({
   initialTrips,
   locationMap,
   tripTypesData,
+  operatorsData,
 }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -354,6 +418,8 @@ export default function TripsClient({
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedType, setSelectedType] = useState(tripTypesData[0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
+  const [selectedOperator, setSelectedOperator] = useState("All");
+  const operators = operatorsData || [];
   const [offlineData, setOfflineData] = useState(null);
 
   // Load from cache on mount
@@ -429,6 +495,10 @@ export default function TripsClient({
     params.set("difficulty", selectedDifficulty.toUpperCase());
   }
 
+  if (selectedOperator !== "All") {
+    params.set("operator_id", selectedOperator);
+  }
+
   let apiSortBy = "updated_at";
   let apiOrder = "DESC";
 
@@ -454,7 +524,7 @@ export default function TripsClient({
     {
       fallbackData: initialTrips,
       revalidateOnFocus: true,
-      revalidateIfStale: false,
+      revalidateIfStale: true,
       revalidateOnMount: false,
       keepPreviousData: true,
     },
@@ -671,6 +741,9 @@ export default function TripsClient({
                   setSelectedType={setSelectedType}
                   selectedDifficulty={selectedDifficulty}
                   setSelectedDifficulty={setSelectedDifficulty}
+                  selectedOperator={selectedOperator}
+                  setSelectedOperator={setSelectedOperator}
+                  operators={operators}
                   tripTypesData={tripTypesData}
                   setCurrentPage={setCurrentPage}
                 />
@@ -697,6 +770,9 @@ export default function TripsClient({
                           setSelectedType={setSelectedType}
                           selectedDifficulty={selectedDifficulty}
                           setSelectedDifficulty={setSelectedDifficulty}
+                          selectedOperator={selectedOperator}
+                          setSelectedOperator={setSelectedOperator}
+                          operators={operators}
                           setIsSheetOpen={setIsSheetOpen}
                           tripTypesData={tripTypesData}
                           setCurrentPage={setCurrentPage}
