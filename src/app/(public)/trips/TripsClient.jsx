@@ -526,7 +526,7 @@ export default function TripsClient({
       revalidateOnFocus: true,
       revalidateIfStale: true,
       revalidateOnMount: true,
-      keepPreviousData: true,
+      keepPreviousData: false,
     },
   );
 
@@ -617,7 +617,7 @@ export default function TripsClient({
         cancellation_policy: trip.cancellation_policy || "",
       };
     });
-  }, [tripsData, locationMap]);
+  }, [tripsData, offlineData, locationMap]);
 
   const {
     compareList,
