@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
-import { Checkbox } from "@/app/components/ui/checkbox";
 import Input from "@/app/components/ui/input";
 import { format } from "date-fns";
 import DatePicker from "react-datepicker";
