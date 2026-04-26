@@ -511,11 +511,22 @@ export default function TripsClient({
 
   const tripsUrl = `${BASE_URL}/api/${API_VERSION}/trips?sortBy=${apiSortBy}&order=${apiOrder}&${params.toString()}`;
 
+  // Only use server-rendered initialTrips as fallback when no filters are active.
+  // SWR's fallbackData is per-hook (not per-key), so when the key changes due to
+  // filters, SWR would still use initialTrips and skip fetching the filtered data.
+  const hasActiveFilters =
+    selectedType.id !== "all" ||
+    selectedDifficulty !== "All" ||
+    selectedOperator !== "All" ||
+    debouncedSearchQuery.trim().length >= 2 ||
+    sortBy !== "recommended" ||
+    currentPage !== 1;
+
   const { data: tripsData, isLoading: loadingTrips } = useSWR(
     tripsUrl,
     fetcher,
     {
-      fallbackData: initialTrips,
+      fallbackData: hasActiveFilters ? undefined : initialTrips,
       revalidateOnFocus: true,
       keepPreviousData: true,
     },
