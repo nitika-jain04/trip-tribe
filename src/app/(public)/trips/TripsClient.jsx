@@ -526,7 +526,7 @@ export default function TripsClient({
       revalidateOnFocus: true,
       revalidateIfStale: true,
       revalidateOnMount: true,
-      keepPreviousData: true,
+      keepPreviousData: false,
     },
   );
 
