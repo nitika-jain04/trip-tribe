@@ -653,7 +653,8 @@ export default function TripsClient({
     setCurrentPage(1);
   };
 
-  const handleClearSearch = () => {
+  const handleClearSearch = (e) => {
+    e?.preventDefault();
     setSearchQuery("");
     setDebouncedSearchQuery("");
     setCurrentPage(1);
@@ -713,8 +714,9 @@ export default function TripsClient({
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={handleClearSearch}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 z-10"
                 >
                   <X className="w-5 h-5 text-muted-foreground hover:text-foreground" />
                 </button>
