@@ -37,13 +37,6 @@ import {
   SheetTrigger,
 } from "@/app/components/ui/sheet";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogClose,
-} from "@/app/components/ui/dialog";
-import {
   Pagination,
   PaginationContent,
   PaginationItem,
@@ -524,9 +517,7 @@ export default function TripsClient({
     {
       fallbackData: initialTrips,
       revalidateOnFocus: true,
-      revalidateIfStale: false,
-      revalidateOnMount: true,
-      keepPreviousData: false,
+      keepPreviousData: true,
     },
   );
 
