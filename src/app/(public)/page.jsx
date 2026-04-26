@@ -56,14 +56,6 @@ export default async function Page() {
       getLocationMap(),
     ]);
 
-  // if (initialTrips) {
-  //   console.log("[Server] Homepage Trips API Response:", {
-  //     success: initialTrips.success,
-  //     total: initialTrips.result?.pagination?.total,
-  //     count: initialTrips.result?.trips?.length,
-  //   });
-  // }
-
   const totalTrips = initialTrips?.result?.pagination?.total;
   const totalOperators = initialOperators?.result?.pagination?.total;
 
