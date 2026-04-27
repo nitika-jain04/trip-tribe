@@ -62,7 +62,9 @@ export default function TripDetailClient({ trip: serverTrip, locationMap }) {
         const cacheObj = JSON.parse(cached);
         if (cacheObj[id]) setOfflineTrip(cacheObj[id]);
       }
-    } catch (e) { console.error("Detail cache load failed", e); }
+    } catch (e) {
+      console.error("Detail cache load failed", e);
+    }
   }, [id]);
 
   // Save to cache on success
@@ -75,15 +77,19 @@ export default function TripDetailClient({ trip: serverTrip, locationMap }) {
         const keys = Object.keys(cacheObj);
         if (keys.length > 20) delete cacheObj[keys[0]];
         localStorage.setItem("tt_trip_details_cache", JSON.stringify(cacheObj));
-      } catch (e) { console.error("Detail cache save failed", e); }
+      } catch (e) {
+        console.error("Detail cache save failed", e);
+      }
     }
   }, [serverTrip]);
 
   // Sync state when trip loads (for offline mode)
   useEffect(() => {
     if (trip) {
-      if (!activeImage && trip.images?.length > 0) setActiveImage(trip.images[0]);
-      if (!selectedCategory && trip.price_categories?.length > 0) setSelectedCategory(trip.price_categories[0]);
+      if (!activeImage && trip.images?.length > 0)
+        setActiveImage(trip.images[0]);
+      if (!selectedCategory && trip.price_categories?.length > 0)
+        setSelectedCategory(trip.price_categories[0]);
     }
   }, [trip, activeImage, selectedCategory]);
 
@@ -297,9 +303,10 @@ ${currentUrl}`;
 
               <div className="flex items-center gap-2 text-body text-muted-foreground mb-4">
                 <MapPin className="w-5 h-5" />
-                {locationMap?.[trip.destination_id]?.name ||
-                  "Destination"},{" "}
-                {locationMap?.[trip.destination_id]?.region || ""}
+                {locationMap?.[trip.destination_id]?.name || ""}
+                {locationMap?.[trip.destination_id]?.region
+                  ? `, ${locationMap?.[trip.destination_id]?.region}`
+                  : ""}
               </div>
 
               <div className="card-premium p-4 mb-6">

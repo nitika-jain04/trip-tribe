@@ -801,8 +801,7 @@ export default function TripsClient({
         <div className="container-premium">
           <div className="flex gap-8">
             <div className="hidden lg:block w-64 shrink-0">
-              {/* <div className="sticky top-24 card-premium p-6 max-h-[calc(200vh-8rem)] overflow-y-auto scrollbar-hide"> */}
-              <div className="card-premium p-6 max-h-[calc(200vh-8rem)] overflow-y-auto">
+              <div className="sticky top-24 card-premium p-6 max-h-[calc(100vh-8rem)] overflow-y-auto">
                 <h3 className="font-display text-heading-sm text-foreground mb-6">
                   Filters
                 </h3>
