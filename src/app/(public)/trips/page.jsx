@@ -74,7 +74,7 @@ export default async function Page({ searchParams }) {
   ];
 
   const operatorsData = operatorsRaw?.result?.operators
-    ?.filter((op) => op.total_trips >= 1)
+    ?.filter((op) => op.status === "ACTIVE" && op.application_status === "APPROVED")
     ?.map((op) => ({
       id: op.id,
       name: op.name,
