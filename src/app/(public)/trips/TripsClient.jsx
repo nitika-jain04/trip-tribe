@@ -7,11 +7,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetcher } from "@/app/hooks/use-fetcher";
 import { Button } from "@/app/components/ui/button";
-import { Checkbox } from "@/app/components/ui/checkbox";
 import {
   Search,
   MapPin,
-  Shield,
   ChevronRight,
   ChevronLeft,
   Calendar,
@@ -22,6 +20,7 @@ import {
 } from "lucide-react";
 import Input from "@/app/components/ui/input";
 import { animatedScrollTo } from "@/lib/utils";
+import { Slider } from "@/app/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -45,7 +44,6 @@ import {
   PaginationPrevious,
 } from "@/app/components/ui/pagination";
 import { TripCardSkeleton } from "@/app/components/website/Skeletons";
-import { Rating } from "@/app/components/ui/rating";
 import { MdOutlineVerified } from "react-icons/md";
 import { useCompare } from "@/app/hooks/use-compare";
 import ComparePortal from "@/app/components/website/ComparePortal";
@@ -65,10 +63,29 @@ const FiltersContent = ({
   setIsSheetOpen,
   tripTypesData,
   setCurrentPage,
-}) => (
-  <div className="space-y-6">
+  priceRange,
+  setPriceRange,
+  appliedPriceRange,
+  setAppliedPriceRange,
+  scrollToFilters,
+}) => {
+  const p0 = priceRange[0] === "" ? "" : Number(priceRange[0]);
+  const p1 = priceRange[1] === "" ? "" : Number(priceRange[1]);
+
+  const isApplyDisabled =
+    p0 === "" ||
+    p1 === "" ||
+    (p0 === appliedPriceRange[0] && p1 === appliedPriceRange[1]) ||
+    p0 < 0 ||
+    p1 < 0 ||
+    p1 < p0;
+
+  return (
+    <div className="space-y-6">
+     
+
     <div>
-      <h4 className="font-medium text-foreground mb-3">Trip Type</h4>
+      <h4 className="font-semibold text-foreground mb-3">Trip Type</h4>
       <div className="space-y-1">
         {tripTypesData.map((type) => (
           <button
@@ -77,11 +94,7 @@ const FiltersContent = ({
               setSelectedType(type);
               setCurrentPage(1);
               setIsSheetOpen?.(false);
-
-              const el = document.getElementById("filters");
-              if (el) {
-                el.scrollIntoView({ behavior: "auto", block: "start" });
-              }
+              scrollToFilters?.();
             }}
             className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
               selectedType.id === type.id
@@ -102,8 +115,67 @@ const FiltersContent = ({
       </div>
     </div>
 
+     <div>
+        <h4 className="font-semibold text-foreground mb-3">Select Price Range</h4>
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 relative mt-2">
+              <span className="absolute -top-2 left-3 bg-background px-1 text-[10px] text-muted-foreground z-10">
+                Min. Amount
+              </span>
+              <Input
+                type="number"
+                value={priceRange[0]}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPriceRange([val === "" ? "" : Number(val), priceRange[1]]);
+                }}
+                className="w-full h-12 rounded-lg border-muted-foreground/30 bg-transparent px-3 text-body-md"
+              />
+            </div>
+            <div className="flex-1 relative mt-2">
+              <span className="absolute -top-2 left-3 bg-background px-1 text-[10px] text-muted-foreground z-10">
+                Max. Amount
+              </span>
+              <Input
+                type="number"
+                value={priceRange[1]}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setPriceRange([priceRange[0], val === "" ? "" : Number(val)]);
+                }}
+                className="w-full h-12 rounded-lg border-muted-foreground/30 bg-transparent px-3 text-body-md"
+              />
+            </div>
+          </div>
+          <div className="px-2 pt-2 pb-1">
+            <Slider
+              max={100000}
+              step={100}
+              value={[p0 || 0, p1 || 0]}
+              onValueChange={setPriceRange}
+              className="w-full"
+            />
+          </div>
+          <Button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              setAppliedPriceRange([p0 || 0, p1 || 0]);
+              setCurrentPage(1);
+              setIsSheetOpen?.(false);
+              scrollToFilters?.();
+            }}
+            disabled={isApplyDisabled}
+            className="w-full mt-4 btn-primary"
+          >
+            Apply
+          </Button>
+        </div>
+      </div>
+
     <div>
-      <h4 className="font-medium text-foreground mb-3">Difficulty</h4>
+      <h4 className="font-semibold text-foreground mb-3">Difficulty</h4>
       <div className="space-y-1">
         {["All", "Easy", "Moderate", "Hard"].map((diff) => (
           <button
@@ -112,11 +184,7 @@ const FiltersContent = ({
               setSelectedDifficulty(diff);
               setCurrentPage(1);
               setIsSheetOpen?.(false);
-
-              const el = document.getElementById("filters");
-              if (el) {
-                el.scrollIntoView({ behavior: "auto", block: "start" });
-              }
+              scrollToFilters?.();
             }}
             className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
               selectedDifficulty === diff
@@ -139,18 +207,14 @@ const FiltersContent = ({
 
     {operators?.length > 0 && (
       <div>
-        <h4 className="font-medium text-foreground mb-3">Operator</h4>
+        <h4 className="font-semibold text-foreground mb-3">Operator</h4>
         <div className="space-y-1">
           <button
             onClick={() => {
               setSelectedOperator("All");
               setCurrentPage(1);
               setIsSheetOpen?.(false);
-
-              const el = document.getElementById("filters");
-              if (el) {
-                el.scrollIntoView({ behavior: "auto", block: "start" });
-              }
+              scrollToFilters?.();
             }}
             className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
               selectedOperator === "All"
@@ -174,11 +238,7 @@ const FiltersContent = ({
                 setSelectedOperator(op.id);
                 setCurrentPage(1);
                 setIsSheetOpen?.(false);
-
-                const el = document.getElementById("filters");
-                if (el) {
-                  el.scrollIntoView({ behavior: "auto", block: "start" });
-                }
+                scrollToFilters?.();
               }}
               className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
                 selectedOperator === op.id
@@ -200,7 +260,8 @@ const FiltersContent = ({
       </div>
     )}
   </div>
-);
+  );
+};
 
 const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
   const [imgError, setImgError] = useState(false);
@@ -412,6 +473,8 @@ export default function TripsClient({
   const [selectedType, setSelectedType] = useState(tripTypesData[0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [selectedOperator, setSelectedOperator] = useState("All");
+  const [priceRange, setPriceRange] = useState([0, 100000]);
+  const [appliedPriceRange, setAppliedPriceRange] = useState([0, 100000]);
   const operators = operatorsData || [];
   const [offlineData, setOfflineData] = useState(null);
 
@@ -477,8 +540,6 @@ export default function TripsClient({
   if (debouncedSearchQuery.trim().length >= 2) {
     params.set("search", debouncedSearchQuery.trim());
   }
-  params.set("page", currentPage.toString());
-  params.set("limit", "10");
 
   if (selectedType.id !== "all") {
     params.set("type_id", selectedType.id);
@@ -514,10 +575,6 @@ export default function TripsClient({
   // Capture the initial (unfiltered) URL once so we can match against it.
   const initialUrlRef = useRef(tripsUrl);
 
-  // SWR's fallbackData is per-hook, not per-key. When the key changes due to
-  // filters, SWR reuses fallbackData (unfiltered initialTrips) for the new key
-  // and can skip fetching. To avoid this, we NEVER use fallbackData.
-  // Instead, we merge initialTrips manually only when the URL matches the initial one.
   const { data: swrData, isLoading: swrLoading } = useSWR(tripsUrl, fetcher, {
     revalidateOnFocus: true,
     keepPreviousData: true,
@@ -528,18 +585,7 @@ export default function TripsClient({
     swrData || (tripsUrl === initialUrlRef.current ? initialTrips : undefined);
   const loadingTrips = swrLoading && !tripsData;
 
-  const pagination = useMemo(() => {
-    const rawPagination = tripsData?.result?.pagination;
-    const total = rawPagination?.total ?? 0;
-    const limit = 10;
-    const pages = (rawPagination?.pages ?? Math.ceil(total / limit)) || 1;
-    return {
-      page: currentPage,
-      limit,
-      total,
-      pages,
-    };
-  }, [tripsData, currentPage]);
+  // Pagination is now calculated after filteredTrips
 
   // Save to cache on success
   useEffect(() => {
@@ -633,7 +679,12 @@ export default function TripsClient({
   } = useCompare(trips);
 
   const filteredTrips = useMemo(() => {
-    let result = [...trips];
+    let result = trips.filter(
+      (trip) =>
+        trip.priceFrom >= appliedPriceRange[0] &&
+        trip.priceFrom <= appliedPriceRange[1],
+    );
+
     if (sortBy === "price-low") {
       result.sort((a, b) => a.priceFrom - b.priceFrom);
     } else if (sortBy === "price-high") {
@@ -644,7 +695,24 @@ export default function TripsClient({
       result.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
     }
     return result;
-  }, [trips, sortBy]);
+  }, [trips, sortBy, appliedPriceRange]);
+
+  const pagination = useMemo(() => {
+    const limit = 10;
+    const total = filteredTrips.length;
+    const pages = Math.ceil(total / limit) || 1;
+    return {
+      page: currentPage,
+      limit,
+      total,
+      pages,
+    };
+  }, [filteredTrips.length, currentPage]);
+
+  const paginatedTrips = useMemo(() => {
+    const startIndex = (currentPage - 1) * 10;
+    return filteredTrips.slice(startIndex, startIndex + 10);
+  }, [filteredTrips, currentPage]);
 
   const handleSearchChange = (value) => {
     setSearchQuery(value);
@@ -655,6 +723,8 @@ export default function TripsClient({
     e?.preventDefault();
     setSearchQuery("");
     setDebouncedSearchQuery("");
+    setPriceRange([0, 100000]);
+    setAppliedPriceRange([0, 100000]);
     setCurrentPage(1);
 
     const params = new URLSearchParams(searchParams.toString());
@@ -725,14 +795,14 @@ export default function TripsClient({
       </section>
 
       <section
-        className="section bg-background"
+        className="section bg-background scroll-mt-28"
         id="filters"
         ref={tripsContainerRef}
       >
         <div className="container-premium">
           <div className="flex gap-8">
             <div className="hidden lg:block w-64 shrink-0">
-              <div className="sticky top-24 card-premium p-6 max-h-[calc(100vh-8rem)] overflow-y-auto scrollbar-hide">
+              <div className="sticky top-24 card-premium p-6 max-h-[calc(200vh-8rem)] overflow-y-auto scrollbar-hide">
                 <h3 className="font-display text-heading-sm text-foreground mb-6">
                   Filters
                 </h3>
@@ -746,6 +816,11 @@ export default function TripsClient({
                   operators={operators}
                   tripTypesData={tripTypesData}
                   setCurrentPage={setCurrentPage}
+                  priceRange={priceRange}
+                  setPriceRange={setPriceRange}
+                  appliedPriceRange={appliedPriceRange}
+                  setAppliedPriceRange={setAppliedPriceRange}
+                  scrollToFilters={scrollToFilters}
                 />
               </div>
             </div>
@@ -776,6 +851,11 @@ export default function TripsClient({
                           setIsSheetOpen={setIsSheetOpen}
                           tripTypesData={tripTypesData}
                           setCurrentPage={setCurrentPage}
+                          priceRange={priceRange}
+                          setPriceRange={setPriceRange}
+                          appliedPriceRange={appliedPriceRange}
+                          setAppliedPriceRange={setAppliedPriceRange}
+                          scrollToFilters={scrollToFilters}
                         />
                       </div>
                     </SheetContent>
@@ -844,8 +924,8 @@ export default function TripsClient({
 
               <div className="grid md:grid-cols-2 gap-6 mt-5">
                 {/* <AnimatePresence initial={false}> */}
-                {!loadingTrips && filteredTrips.length > 0 ? (
-                  filteredTrips.map((trip) => (
+                {!loadingTrips && paginatedTrips.length > 0 ? (
+                  paginatedTrips.map((trip) => (
                     <PublicTripCard
                       key={trip.id}
                       trip={trip}
@@ -902,6 +982,7 @@ export default function TripsClient({
                             onClick={() => {
                               setSelectedType(tripTypesData[0]);
                               setSelectedDifficulty("All");
+                              setPriceRange([0, 100000]);
                               setCurrentPage(1);
                               requestAnimationFrame(() => {
                                 tripsContainerRef.current?.scrollIntoView({
@@ -921,6 +1002,7 @@ export default function TripsClient({
                             handleClearSearch();
                             setSelectedType(tripTypesData[0]);
                             setSelectedDifficulty("All");
+                            setPriceRange([0, 100000]);
                             setCurrentPage(1);
                             requestAnimationFrame(() => {
                               tripsContainerRef.current?.scrollIntoView({
