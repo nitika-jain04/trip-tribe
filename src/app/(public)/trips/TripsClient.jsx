@@ -388,8 +388,7 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
           <div className="flex items-center gap-2 text-body-sm text-muted-foreground mb-2">
             <MapPin className="w-4 h-4" />
             {trip.destination_name}
-            {trip.destination_region !== "Unknown" &&
-              `, ${trip.destination_region}`}
+            {trip.destination_region && `, ${trip.destination_region}`}
           </div>
 
           <h3
