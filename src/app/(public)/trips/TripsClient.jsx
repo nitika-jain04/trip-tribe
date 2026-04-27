@@ -82,41 +82,41 @@ const FiltersContent = ({
 
   return (
     <div className="space-y-6">
-     
-
-    <div>
-      <h4 className="font-semibold text-foreground mb-3">Trip Type</h4>
-      <div className="space-y-1">
-        {tripTypesData.map((type) => (
-          <button
-            key={type.id}
-            onClick={() => {
-              setSelectedType(type);
-              setCurrentPage(1);
-              setIsSheetOpen?.(false);
-              scrollToFilters?.();
-            }}
-            className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
-              selectedType.id === type.id
-                ? "text-primary-foreground"
-                : "text-foreground hover:bg-muted"
-            }`}
-          >
-            {selectedType.id === type.id && (
-              <motion.div
-                layoutId="activeType"
-                className="absolute inset-0 bg-primary rounded-lg z-0"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <span className="relative z-10">{type.name}</span>
-          </button>
-        ))}
+      <div>
+        <h4 className="font-semibold text-foreground mb-3">Trip Type</h4>
+        <div className="space-y-1">
+          {tripTypesData.map((type) => (
+            <button
+              key={type.id}
+              onClick={() => {
+                setSelectedType(type);
+                setCurrentPage(1);
+                setIsSheetOpen?.(false);
+                scrollToFilters?.();
+              }}
+              className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
+                selectedType.id === type.id
+                  ? "text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              {selectedType.id === type.id && (
+                <motion.div
+                  layoutId="activeType"
+                  className="absolute inset-0 bg-primary rounded-lg z-0"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{type.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
 
-     <div>
-        <h4 className="font-semibold text-foreground mb-3">Select Price Range</h4>
+      <div>
+        <h4 className="font-semibold text-foreground mb-3">
+          Select Price Range
+        </h4>
         <div className="space-y-4 mb-6">
           <div className="flex items-center gap-4">
             <div className="flex-1 relative mt-2">
@@ -174,92 +174,92 @@ const FiltersContent = ({
         </div>
       </div>
 
-    <div>
-      <h4 className="font-semibold text-foreground mb-3">Difficulty</h4>
-      <div className="space-y-1">
-        {["All", "Easy", "Moderate", "Hard"].map((diff) => (
-          <button
-            key={diff}
-            onClick={() => {
-              setSelectedDifficulty(diff);
-              setCurrentPage(1);
-              setIsSheetOpen?.(false);
-              scrollToFilters?.();
-            }}
-            className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
-              selectedDifficulty === diff
-                ? "text-primary-foreground"
-                : "text-foreground hover:bg-muted"
-            }`}
-          >
-            {selectedDifficulty === diff && (
-              <motion.div
-                layoutId="activeDifficulty"
-                className="absolute inset-0 bg-primary rounded-lg z-0"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <span className="relative z-10">{diff}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-
-    {operators?.length > 0 && (
       <div>
-        <h4 className="font-semibold text-foreground mb-3">Operator</h4>
+        <h4 className="font-semibold text-foreground mb-3">Difficulty</h4>
         <div className="space-y-1">
-          <button
-            onClick={() => {
-              setSelectedOperator("All");
-              setCurrentPage(1);
-              setIsSheetOpen?.(false);
-              scrollToFilters?.();
-            }}
-            className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
-              selectedOperator === "All"
-                ? "text-primary-foreground"
-                : "text-foreground hover:bg-muted"
-            }`}
-          >
-            {selectedOperator === "All" && (
-              <motion.div
-                layoutId="activeOperator"
-                className="absolute inset-0 bg-primary rounded-lg z-0"
-                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-              />
-            )}
-            <span className="relative z-10">All Operators</span>
-          </button>
-          {operators.map((op) => (
+          {["All", "Easy", "Moderate", "Hard"].map((diff) => (
             <button
-              key={op.id}
+              key={diff}
               onClick={() => {
-                setSelectedOperator(op.id);
+                setSelectedDifficulty(diff);
                 setCurrentPage(1);
                 setIsSheetOpen?.(false);
                 scrollToFilters?.();
               }}
               className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
-                selectedOperator === op.id
+                selectedDifficulty === diff
                   ? "text-primary-foreground"
                   : "text-foreground hover:bg-muted"
               }`}
             >
-              {selectedOperator === op.id && (
+              {selectedDifficulty === diff && (
+                <motion.div
+                  layoutId="activeDifficulty"
+                  className="absolute inset-0 bg-primary rounded-lg z-0"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                />
+              )}
+              <span className="relative z-10">{diff}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {operators?.length > 0 && (
+        <div>
+          <h4 className="font-semibold text-foreground mb-3">Operator</h4>
+          <div className="space-y-1">
+            <button
+              onClick={() => {
+                setSelectedOperator("All");
+                setCurrentPage(1);
+                setIsSheetOpen?.(false);
+                scrollToFilters?.();
+              }}
+              className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
+                selectedOperator === "All"
+                  ? "text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
+              }`}
+            >
+              {selectedOperator === "All" && (
                 <motion.div
                   layoutId="activeOperator"
                   className="absolute inset-0 bg-primary rounded-lg z-0"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
-              <span className="relative z-10">{op.name}</span>
+              <span className="relative z-10">All Operators</span>
             </button>
-          ))}
+            {operators.map((op) => (
+              <button
+                key={op.id}
+                onClick={() => {
+                  setSelectedOperator(op.id);
+                  setCurrentPage(1);
+                  setIsSheetOpen?.(false);
+                  scrollToFilters?.();
+                }}
+                className={`relative block w-full text-left px-3 py-2 rounded-lg text-body-sm transition-colors duration-300 ${
+                  selectedOperator === op.id
+                    ? "text-primary-foreground"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                {selectedOperator === op.id && (
+                  <motion.div
+                    layoutId="activeOperator"
+                    className="absolute inset-0 bg-primary rounded-lg z-0"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10">{op.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-    )}
-  </div>
+      )}
+    </div>
   );
 };
 
@@ -802,7 +802,8 @@ export default function TripsClient({
         <div className="container-premium">
           <div className="flex gap-8">
             <div className="hidden lg:block w-64 shrink-0">
-              <div className="sticky top-24 card-premium p-6 max-h-[calc(200vh-8rem)] overflow-y-auto scrollbar-hide">
+              {/* <div className="sticky top-24 card-premium p-6 max-h-[calc(200vh-8rem)] overflow-y-auto scrollbar-hide"> */}
+              <div className="card-premium p-6 max-h-[calc(200vh-8rem)] overflow-y-auto">
                 <h3 className="font-display text-heading-sm text-foreground mb-6">
                   Filters
                 </h3>
