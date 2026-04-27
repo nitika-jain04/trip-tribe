@@ -552,6 +552,11 @@ export default function TripsClient({
     params.set("operator_id", selectedOperator);
   }
 
+  const startDateParam = searchParams.get("start_date");
+  if (startDateParam) {
+    params.set("start_date", startDateParam);
+  }
+
   let apiSortBy = "updated_at";
   let apiOrder = "DESC";
 
@@ -731,6 +736,7 @@ export default function TripsClient({
     params.delete("location_name");
     params.delete("location_type");
     params.delete("group_by");
+    params.delete("start_date");
 
     router.replace(
       params.toString() ? `/trips?${params.toString()}` : "/trips",

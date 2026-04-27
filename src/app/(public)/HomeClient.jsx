@@ -255,7 +255,7 @@ export default function HomeClient({
     e.preventDefault();
     const params = new URLSearchParams();
     if (searchDestination) params.set("location_name", searchDestination);
-    if (searchDates) params.set("dates", searchDates);
+    if (searchDates) params.set("start_date", searchDates);
     router.push(`/trips?${params.toString()}`);
   };
 
