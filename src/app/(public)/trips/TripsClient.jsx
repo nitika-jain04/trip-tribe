@@ -68,6 +68,7 @@ const FiltersContent = ({
   appliedPriceRange,
   setAppliedPriceRange,
   scrollToFilters,
+  maxPrice = infinity,
 }) => {
   const p0 = priceRange[0] === "" ? "" : Number(priceRange[0]);
   const p1 = priceRange[1] === "" ? "" : Number(priceRange[1]);
@@ -78,7 +79,7 @@ const FiltersContent = ({
     (p0 === appliedPriceRange[0] && p1 === appliedPriceRange[1]) ||
     p0 < 0 ||
     p1 < 0 ||
-    p1 < p0;
+    p1 <= p0;
 
   return (
     <div className="space-y-6">
@@ -118,7 +119,7 @@ const FiltersContent = ({
           Select Price Range
         </h4>
         <div className="space-y-4 mb-6">
-          <div className="flex items-center gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <div className="flex-1 relative mt-2">
               <span className="absolute -top-2 left-3 bg-background px-1 text-[10px] text-muted-foreground z-10">
                 Min. Amount
@@ -150,7 +151,7 @@ const FiltersContent = ({
           </div>
           <div className="px-2 pt-2 pb-1">
             <Slider
-              max={100000}
+              max={Math.max(maxPrice, p1 || 0)}
               step={100}
               value={[p0 || 0, p1 || 0]}
               onValueChange={setPriceRange}
@@ -472,8 +473,8 @@ export default function TripsClient({
   const [selectedType, setSelectedType] = useState(tripTypesData[0]);
   const [selectedDifficulty, setSelectedDifficulty] = useState("All");
   const [selectedOperator, setSelectedOperator] = useState("All");
-  const [priceRange, setPriceRange] = useState([0, 100000]);
-  const [appliedPriceRange, setAppliedPriceRange] = useState([0, 100000]);
+  const [priceRange, setPriceRange] = useState([0, 5000000]);
+  const [appliedPriceRange, setAppliedPriceRange] = useState([0, 5000000]);
   const operators = operatorsData || [];
   const [offlineData, setOfflineData] = useState(null);
 
@@ -552,10 +553,6 @@ export default function TripsClient({
     params.set("operator_id", selectedOperator);
   }
 
-  const startDateParam = searchParams.get("start_date");
-  if (startDateParam) {
-    params.set("start_date", startDateParam);
-  }
 
   let apiSortBy = "updated_at";
   let apiOrder = "DESC";
@@ -610,12 +607,7 @@ export default function TripsClient({
     }
 
     return rawTrips.map((trip) => {
-      const start = new Date(trip.start_date);
-      const end = new Date(trip.end_date);
-      let durationDays = 0;
-      if (!isNaN(start) && !isNaN(end)) {
-        durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-      }
+
 
       const destination = (locationMap && locationMap[trip.destination_id]) || {
         name: "Unknown",
@@ -644,7 +636,7 @@ export default function TripsClient({
         ),
         startDate: trip.start_date,
         endDate: trip.end_date,
-        duration: `${durationDays} days`,
+        duration: trip.duration || "",
         groupSize: `${trip.total_seats} people`,
         difficulty: trip.difficulty
           ? trip.difficulty.charAt(0).toUpperCase() +
@@ -666,6 +658,27 @@ export default function TripsClient({
       };
     });
   }, [tripsData, locationMap]);
+
+  const maxTripPrice = useMemo(() => {
+    if (!trips || trips.length === 0) return 500000;
+    const highest = Math.max(...trips.map((t) => t.priceFrom));
+    return Math.max(100000, Math.ceil(highest / 50000) * 50000);
+  }, [trips]);
+
+  useEffect(() => {
+    setPriceRange((prev) => {
+      if (prev[1] === 100000 || prev[1] === 5000000) {
+        return [prev[0], maxTripPrice];
+      }
+      return prev;
+    });
+    setAppliedPriceRange((prev) => {
+      if (prev[1] === 100000 || prev[1] === 5000000) {
+        return [prev[0], maxTripPrice];
+      }
+      return prev;
+    });
+  }, [maxTripPrice]);
 
   const {
     compareList,
@@ -727,8 +740,8 @@ export default function TripsClient({
     e?.preventDefault();
     setSearchQuery("");
     setDebouncedSearchQuery("");
-    setPriceRange([0, 100000]);
-    setAppliedPriceRange([0, 100000]);
+    setPriceRange([0, maxTripPrice]);
+    setAppliedPriceRange([0, maxTripPrice]);
     setCurrentPage(1);
 
     const params = new URLSearchParams(searchParams.toString());
@@ -736,7 +749,6 @@ export default function TripsClient({
     params.delete("location_name");
     params.delete("location_type");
     params.delete("group_by");
-    params.delete("start_date");
 
     router.replace(
       params.toString() ? `/trips?${params.toString()}` : "/trips",
@@ -826,6 +838,7 @@ export default function TripsClient({
                   appliedPriceRange={appliedPriceRange}
                   setAppliedPriceRange={setAppliedPriceRange}
                   scrollToFilters={scrollToFilters}
+                  maxPrice={maxTripPrice}
                 />
               </div>
             </div>
@@ -861,6 +874,7 @@ export default function TripsClient({
                           appliedPriceRange={appliedPriceRange}
                           setAppliedPriceRange={setAppliedPriceRange}
                           scrollToFilters={scrollToFilters}
+                          maxPrice={maxTripPrice}
                         />
                       </div>
                     </SheetContent>
@@ -987,7 +1001,7 @@ export default function TripsClient({
                             onClick={() => {
                               setSelectedType(tripTypesData[0]);
                               setSelectedDifficulty("All");
-                              setPriceRange([0, 100000]);
+                              setPriceRange([0, maxTripPrice]);
                               setCurrentPage(1);
                               requestAnimationFrame(() => {
                                 tripsContainerRef.current?.scrollIntoView({
@@ -1007,7 +1021,7 @@ export default function TripsClient({
                             handleClearSearch();
                             setSelectedType(tripTypesData[0]);
                             setSelectedDifficulty("All");
-                            setPriceRange([0, 100000]);
+                            setPriceRange([0, maxTripPrice]);
                             setCurrentPage(1);
                             requestAnimationFrame(() => {
                               tripsContainerRef.current?.scrollIntoView({
