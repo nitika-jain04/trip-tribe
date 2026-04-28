@@ -236,14 +236,14 @@ ${currentUrl}`;
     <>
       <section className="relative pt-24">
         <div className="container-premium">
-          <Link
+          {/* <Link
             href="/trips"
             prefetch={false}
             className="inline-flex items-center gap-2 text-body-sm text-muted-foreground hover:text-foreground mb-4"
           >
             <ChevronLeft className="w-4 h-4" />
             Back to Trips
-          </Link>
+          </Link> */}
 
           <div className="grid lg:grid-cols-2 gap-8">
             <div className="space-y-4">

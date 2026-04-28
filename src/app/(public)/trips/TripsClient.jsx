@@ -466,15 +466,37 @@ export default function TripsClient({
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const searchScrollRef = useRef(null);
 
-  const [sortBy, setSortBy] = useState("recommended");
+  const [sortBy, setSortBy] = useState(
+    searchParams.get("sort_by") || "recommended",
+  );
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedType, setSelectedType] = useState(tripTypesData[0]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState("All");
-  const [selectedOperator, setSelectedOperator] = useState("All");
-  const [priceRange, setPriceRange] = useState([0, 5000000]);
-  const [appliedPriceRange, setAppliedPriceRange] = useState([0, 5000000]);
+  const initialTypeId = searchParams.get("type_id");
+  const [selectedType, setSelectedType] = useState(
+    tripTypesData?.find((t) => t.id === initialTypeId) || tripTypesData[0],
+  );
+  const [selectedDifficulty, setSelectedDifficulty] = useState(
+    searchParams.get("difficulty") || "All",
+  );
+  const [selectedOperator, setSelectedOperator] = useState(
+    searchParams.get("operator_id") || "All",
+  );
+
+  const initialMinPrice = searchParams.get("min_price")
+    ? Number(searchParams.get("min_price"))
+    : 0;
+  const initialMaxPrice = searchParams.get("max_price")
+    ? Number(searchParams.get("max_price"))
+    : 5000000;
+  const [priceRange, setPriceRange] = useState([
+    initialMinPrice,
+    initialMaxPrice,
+  ]);
+  const [appliedPriceRange, setAppliedPriceRange] = useState([
+    initialMinPrice,
+    initialMaxPrice,
+  ]);
   const operators = operatorsData || [];
   const [offlineData, setOfflineData] = useState(null);
 
@@ -488,7 +510,7 @@ export default function TripsClient({
     }
   }, []);
 
-  const locationName = searchParams.get("location_name") || "";
+  const locationName = searchParams.get("search") || "";
 
   const tripsContainerRef = useRef(null);
 
@@ -504,30 +526,7 @@ export default function TripsClient({
     });
   };
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-
-    if (debouncedSearchQuery.trim().length >= 2) {
-      params.set("search", debouncedSearchQuery.trim());
-      params.delete("location_name");
-      params.delete("location_type");
-      params.delete("group_by");
-    } else {
-      params.delete("search");
-      params.delete("location_name");
-      params.delete("location_type");
-      params.delete("group_by");
-    }
-
-    const nextUrl = params.toString()
-      ? `/trips?${params.toString()}`
-      : "/trips";
-    const currentUrl = `${window.location.pathname}${window.location.search}`;
-
-    if (currentUrl !== nextUrl) {
-      router.replace(nextUrl, { scroll: false });
-    }
-  }, [debouncedSearchQuery, router]);
+  // URL sync moved below maxTripPrice
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -552,7 +551,6 @@ export default function TripsClient({
   if (selectedOperator !== "All") {
     params.set("operator_id", selectedOperator);
   }
-
 
   let apiSortBy = "updated_at";
   let apiOrder = "DESC";
@@ -607,8 +605,6 @@ export default function TripsClient({
     }
 
     return rawTrips.map((trip) => {
-
-
       const destination = (locationMap && locationMap[trip.destination_id]) || {
         name: "Unknown",
         region: "",
@@ -679,6 +675,74 @@ export default function TripsClient({
       return prev;
     });
   }, [maxTripPrice]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (debouncedSearchQuery.trim().length >= 2) {
+      params.set("search", debouncedSearchQuery.trim());
+      params.delete("search");
+      params.delete("location_type");
+      params.delete("group_by");
+    } else {
+      params.delete("search");
+    }
+
+    if (selectedType.id !== "all" && selectedType.id !== tripTypesData[0]?.id) {
+      params.set("type_id", selectedType.id);
+    } else {
+      params.delete("type_id");
+    }
+
+    if (selectedDifficulty !== "All") {
+      params.set("difficulty", selectedDifficulty);
+    } else {
+      params.delete("difficulty");
+    }
+
+    if (selectedOperator !== "All") {
+      params.set("operator_id", selectedOperator);
+    } else {
+      params.delete("operator_id");
+    }
+
+    if (sortBy !== "recommended") {
+      params.set("sort_by", sortBy);
+    } else {
+      params.delete("sort_by");
+    }
+
+    if (appliedPriceRange[0] > 0) {
+      params.set("min_price", appliedPriceRange[0]);
+    } else {
+      params.delete("min_price");
+    }
+
+    if (appliedPriceRange[1] < maxTripPrice && appliedPriceRange[1] < 5000000) {
+      params.set("max_price", appliedPriceRange[1]);
+    } else {
+      params.delete("max_price");
+    }
+
+    const nextUrl = params.toString()
+      ? `/trips?${params.toString()}`
+      : "/trips";
+    const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+    if (currentUrl !== nextUrl) {
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [
+    debouncedSearchQuery,
+    selectedType,
+    selectedDifficulty,
+    selectedOperator,
+    sortBy,
+    appliedPriceRange,
+    maxTripPrice,
+    router,
+    tripTypesData,
+  ]);
 
   const {
     compareList,
