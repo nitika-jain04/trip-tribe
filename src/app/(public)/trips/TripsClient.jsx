@@ -836,7 +836,7 @@ export default function TripsClient({
   return (
     <>
       <section
-        className="relative pt-28 pb-12 bg-linear-to-br from-primary-light via-background to-background"
+        className="relative pt-28 pb-10 bg-linear-to-br from-primary-light via-background to-background"
         id="trips"
       >
         <div className="container-premium">
@@ -882,7 +882,7 @@ export default function TripsClient({
       </section>
 
       <section
-        className="section bg-background scroll-mt-28"
+        className="section bg-background"
         id="filters"
         ref={tripsContainerRef}
       >
@@ -914,7 +914,7 @@ export default function TripsClient({
             </div>
 
             <div className="flex-1">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="sticky top-20 z-20 bg-background/95 backdrop-blur-sm py-4 -my-4 mb-4 flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                     <SheetTrigger asChild>
@@ -950,7 +950,6 @@ export default function TripsClient({
                     </SheetContent>
                   </Sheet>
                 </div>
-
                 <div className="flex items-center gap-3">
                   {compareList.length > 1 && (
                     <Button onClick={triggerCompare} className="btn-secondary">
@@ -986,7 +985,7 @@ export default function TripsClient({
               </div>
 
               {!loadingTrips && pagination.total > 0 && (
-                <div className="mt-6 mb-2">
+                <div className="mt-5 mb-2">
                   <p className="text-body-sm text-muted-foreground">
                     Showing{" "}
                     <span className="font-medium text-foreground">
