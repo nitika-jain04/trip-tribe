@@ -8,15 +8,8 @@ import {
   CardTitle,
 } from "@/app/components/ui/card";
 import { StatCard } from "@/app/components/admin/StatCard";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import dynamic from "next/dynamic";
+const LineChart = dynamic(() => import("@/app/components/admin/LineChart"), { ssr: false });
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { ActivityFeed } from "@/app/components/admin/ActivityFeed";
@@ -235,34 +228,68 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={enquiryChart}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis
-                  dataKey="name"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="enquiries"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="h-[250px] w-full">
+              <LineChart
+                data={{
+                  labels: enquiryChart.map((d) => d.name),
+                  datasets: [
+                    {
+                      label: "Enquiries",
+                      data: enquiryChart.map((d) => d.enquiries),
+                      borderColor: "#3b82f6", // Primary color (approximate, should ideally use CSS var if possible)
+                      backgroundColor: "rgba(59, 130, 246, 0.1)",
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: "#3b82f6",
+                      pointBorderColor: "#fff",
+                      pointHoverBackgroundColor: "#fff",
+                      pointHoverBorderColor: "#3b82f6",
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    tooltip: {
+                      mode: "index",
+                      intersect: false,
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      titleColor: "#1e293b",
+                      bodyColor: "#1e293b",
+                      borderColor: "#e2e8f0",
+                      borderWidth: 1,
+                      padding: 12,
+                      displayColors: false,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        display: false,
+                      },
+                      ticks: {
+                        color: "#64748b",
+                        font: { size: 12 },
+                      },
+                    },
+                    y: {
+                      beginAtZero: true,
+                      grid: {
+                        color: "#f1f5f9",
+                      },
+                      ticks: {
+                        color: "#64748b",
+                        font: { size: 12 },
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
           </CardContent>
         </Card>
 
@@ -274,34 +301,68 @@ export default function DashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={tripChart}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="hsl(var(--border))"
-                />
-                <XAxis
-                  dataKey="name"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="trips"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--primary))" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="h-[250px] w-full">
+              <LineChart
+                data={{
+                  labels: tripChart.map((d) => d.name),
+                  datasets: [
+                    {
+                      label: "Trips",
+                      data: tripChart.map((d) => d.trips),
+                      borderColor: "#10b981", // Success color (approximate)
+                      backgroundColor: "rgba(16, 185, 129, 0.1)",
+                      fill: true,
+                      tension: 0.4,
+                      pointBackgroundColor: "#10b981",
+                      pointBorderColor: "#fff",
+                      pointHoverBackgroundColor: "#fff",
+                      pointHoverBorderColor: "#10b981",
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                    },
+                    tooltip: {
+                      mode: "index",
+                      intersect: false,
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      titleColor: "#1e293b",
+                      bodyColor: "#1e293b",
+                      borderColor: "#e2e8f0",
+                      borderWidth: 1,
+                      padding: 12,
+                      displayColors: false,
+                    },
+                  },
+                  scales: {
+                    x: {
+                      grid: {
+                        display: false,
+                      },
+                      ticks: {
+                        color: "#64748b",
+                        font: { size: 12 },
+                      },
+                    },
+                    y: {
+                      beginAtZero: true,
+                      grid: {
+                        color: "#f1f5f9",
+                      },
+                      ticks: {
+                        color: "#64748b",
+                        font: { size: 12 },
+                      },
+                    },
+                  },
+                }}
+              />
+            </div>
           </CardContent>
         </Card>
 

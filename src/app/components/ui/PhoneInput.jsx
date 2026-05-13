@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { PhoneInput as ReactPhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { cn } from "@/lib/utils";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
+import { parsePhoneNumberFromString } from "libphonenumber-js/min";
 
 const PhoneInput = ({
   value,

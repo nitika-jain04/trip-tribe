@@ -14,7 +14,8 @@ import { useToast } from "@/app/hooks/use-toast";
 import { Loader2, IndianRupee } from "lucide-react";
 import { Rating } from "../ui/rating";
 import { format } from "date-fns";
-import DatePicker from "react-datepicker";
+
+const DatePicker = dynamic(() => import("react-datepicker"), { ssr: false });
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar as CalendarIcon } from "lucide-react";
 import useTripTypes from "@/app/hooks/use-triptypes";

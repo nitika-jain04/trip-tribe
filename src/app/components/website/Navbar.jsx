@@ -73,7 +73,7 @@ export function Navbar() {
               onClick={(e) => handleNavClick(e, "/")}
             >
               <img
-                src="/triptribe-logo-final.png"
+                src="/triptribe-logo-final.webp"
                 alt="TripTribe"
                 className="h-12 w-12 rounded-lg transition-transform duration-300 group-hover:scale-105"
               />

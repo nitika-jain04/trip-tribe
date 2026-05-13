@@ -45,7 +45,7 @@ import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { BiComment } from "react-icons/bi";
-import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/phone-utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import AdminGuard from "@/app/components/AdminGuard";
 import useSWR from "swr";

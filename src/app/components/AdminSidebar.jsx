@@ -98,7 +98,7 @@ export default function AdminSidebar({
       <div className="flex items-center justify-between px-4 py-6">
         <div className="flex items-center gap-3 overflow-hidden">
           <img
-            src="/triptribe-logo-final.png"
+            src="/triptribe-logo-final.webp"
             alt=""
             className={`h-12 w-12 rounded-md ${sidebarCollapsed ? "hidden" : "visible"}`}
           />

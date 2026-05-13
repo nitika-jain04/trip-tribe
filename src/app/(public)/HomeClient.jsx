@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { m, LazyMotion, domAnimation, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/app/components/ui/button";
 import Input from "@/app/components/ui/input";
 import { format } from "date-fns";
-import DatePicker from "react-datepicker";
+
+const DatePicker = dynamic(() => import("react-datepicker"), { ssr: false });
 import "react-datepicker/dist/react-datepicker.css";
-import { animatedScrollTo } from "@/lib/utils";
+import { animatedScrollTo } from "@/lib/scroll-utils";
 import {
   ArrowRight,
   Search,
@@ -24,7 +25,8 @@ import {
   ChevronDown,
   Compass,
 } from "lucide-react";
-import ComparePortal from "@/app/components/website/ComparePortal";
+import dynamic from "next/dynamic";
+const ComparePortal = dynamic(() => import("@/app/components/website/ComparePortal"), { ssr: false });
 import CompareCheckbox from "@/app/components/website/CompareCheckbox";
 import { useCompare } from "@/app/hooks/use-compare";
 import { Libre_Baskerville } from "next/font/google";
@@ -300,7 +302,8 @@ export default function HomeClient({
     };
 
     return (
-      <div
+      <LazyMotion features={domAnimation}>
+        <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         className="card-premium overflow-hidden group relative"
@@ -308,7 +311,7 @@ export default function HomeClient({
         <Link prefetch={false} href={`/trip/${trip.id}`} className="block">
           <div className="aspect-14/10 relative overflow-hidden bg-gray-100">
             <AnimatePresence initial={false} custom={direction}>
-              <motion.img
+              <m.img
                 key={currentImgIndex}
                 src={images[currentImgIndex]}
                 custom={direction}
@@ -414,6 +417,7 @@ export default function HomeClient({
           </div>
         </div>
       </div>
+      </LazyMotion>
     );
   };
 
@@ -424,7 +428,8 @@ export default function HomeClient({
       <Link
         prefetch={false}
         key={location.name}
-        href={`/trips?location_name=${location.name}&location_type=destination&group_by=location`}
+        href={`/trips?location_name=${location.name}`}
+        // href={`/trips?location_name=${location.name}&location_type=destination&group_by=location`}
         className="group relative aspect-4/3 rounded-2xl overflow-hidden"
       >
         {location.image && !cardImgError ? (
@@ -860,7 +865,7 @@ export default function HomeClient({
                   <img
                     src={provider.logo_url}
                     alt="Logo"
-                    className="h-18 w-18 object-cover rounded-full"
+                    className="h-20 w-20 object-cover rounded-full"
                   />
                 ) : (
                   <Shield className="w-5 h-5 text-success" />

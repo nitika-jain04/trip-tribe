@@ -75,7 +75,7 @@ export function Footer() {
               prefetch={false}
             >
               <img
-                src="/triptribe-logo-final.png"
+                src="/triptribe-logo-final.webp"
                 alt="TripTribe"
                 className="h-10 w-10 rounded-xl object-cover"
               />

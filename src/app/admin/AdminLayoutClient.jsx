@@ -67,7 +67,7 @@ export default function AdminLayoutClient({ children }) {
                 <Link href="/admin/dashboard" prefetch={false}>
                   <div className="flex items-center gap-2">
                     <img
-                      src="/triptribe-logo-final.png"
+                      src="/triptribe-logo-final.webp"
                       alt="TripTribe"
                       className="h-8 w-8 rounded-md"
                     />

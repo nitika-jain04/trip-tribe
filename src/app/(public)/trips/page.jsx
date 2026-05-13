@@ -1,3 +1,4 @@
+import { fetchOperators } from "@/app/utils/operators";
 import TripsClient from "./TripsClient";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -62,7 +63,7 @@ export default async function Page({ searchParams }) {
     ),
     getLocationMap(),
     fetchData(`${BASE_URL}/api/${API_VERSION}/trip-types`),
-    fetchData(`${BASE_URL}/api/${API_VERSION}/operators`),
+    fetchOperators(),
   ]);
 
   const tripTypesData = [

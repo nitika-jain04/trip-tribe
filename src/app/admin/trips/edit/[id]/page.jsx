@@ -17,7 +17,8 @@ import { useToast } from "@/app/hooks/use-toast";
 import { FaTrash } from "react-icons/fa";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import DatePicker from "react-datepicker";
+
+const DatePicker = dynamic(() => import("react-datepicker"), { ssr: false });
 import "react-datepicker/dist/react-datepicker.css";
 import { Calendar as CalendarIcon } from "lucide-react";
 import {

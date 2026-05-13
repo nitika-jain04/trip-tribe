@@ -54,7 +54,7 @@ import {
 } from "@/app/components/ui/dropdown-menu";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";
 import Link from "next/link";
-import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/phone-utils";
 import { Skeleton } from "@/app/components/ui/skeleton";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { FaRegUser } from "react-icons/fa";

@@ -29,7 +29,7 @@ export const metadata = {
     siteName: "TripTribe",
     images: [
       {
-        url: "https://triptribe.in/triptribe-logo-final.png",
+        url: "https://triptribe.in/triptribe-logo-final.webp",
         width: 1200,
         height: 630,
         alt: "TripTribe Home",
@@ -43,6 +43,9 @@ export const metadata = {
     title: "TripTribe – India's First Community Trip Aggregator",
     description:
       "Explore curated group trips, adventures & travel communities across India.",
+  },
+  icons: {
+    icon: "/icon.png",
   },
 };
 

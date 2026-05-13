@@ -20,7 +20,7 @@ import {
   Twitter,
 } from "lucide-react";
 import Cookies from "js-cookie";
-import { formatPhoneNumber, getDialablePhone } from "@/lib/utils";
+import { formatPhoneNumber, getDialablePhone } from "@/lib/phone-utils";
 import useSWR from "swr";
 import { adminFetcher } from "@/app/hooks/use-admin-fetcher";
 import { StatusBadge } from "@/app/components/admin/StatusBadge";

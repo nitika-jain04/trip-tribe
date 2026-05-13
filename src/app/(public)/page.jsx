@@ -1,3 +1,4 @@
+import { fetchOperators } from "@/app/utils/operators";
 import HomeClient from "./HomeClient";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
@@ -49,7 +50,7 @@ export default async function Page() {
       fetchData(
         `${BASE_URL}/api/${API_VERSION}/trips?group_by=location&sortBy=updated_at&order=DESC`,
       ),
-      fetchData(`${BASE_URL}/api/${API_VERSION}/operators?page=1&limit=9`),
+      fetchOperators({ page: 1, limit: 9 }),
       fetchData(
         `${BASE_URL}/api/${API_VERSION}/trips?sortBy=created_at&order=DESC`,
       ),
