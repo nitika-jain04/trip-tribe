@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
+import Cookies from "js-cookie";
 
 const navigation = [
   { name: "Home", href: "/" },
@@ -12,12 +13,65 @@ const navigation = [
   // { name: "Blog", href: "/blog" },
   { name: "Become a Partner", href: "/partners" },
   { name: "Contact", href: "/contact" },
+  { name: "Explore Trips", href: "/trips" },
 ];
+
+function getUserDisplayName(user) {
+  if (!user) return "User";
+  if (user.name) return user.name;
+  if (user.first_name) {
+    return user.last_name
+      ? `${user.first_name} ${user.last_name}`
+      : user.first_name;
+  }
+  if (user.email) return user.email.split("@")[0];
+  if (user.phone_number) return user.phone_number;
+  return "User";
+}
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [user, setUser] = useState(null);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  const router = useRouter();
+
+  const displayName = getUserDisplayName(user);
+
+  useEffect(() => {
+    const userCookie = Cookies.get("user");
+    if (userCookie) {
+      try {
+        setUser(JSON.parse(userCookie));
+      } catch (e) {
+        console.error("Failed to parse user cookie:", e);
+      }
+    }
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!event.target.closest(".profile-dropdown-container")) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    if (isProfileDropdownOpen) {
+      document.addEventListener("mousedown", handleOutsideClick);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [isProfileDropdownOpen]);
+
+  const handleLogout = () => {
+    Cookies.remove("token", { path: "/" });
+    Cookies.remove("user", { path: "/" });
+    setUser(null);
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -113,11 +167,85 @@ export function Navbar() {
               ))}
             </div>
 
+            {/* <Link href="/trips" prefetch={false}>
+              <Button className="btn-primary">Explore Trips</Button>
+            </Link> */}
+
             {/* CTA Button */}
             <div className="hidden md:flex items-center gap-3">
-              <Link href="/trips" prefetch={false}>
-                <Button className="btn-primary">Explore Trips</Button>
-              </Link>
+              {!isMounted ? (
+                <div className="h-10 w-[78px]" />
+              ) : user ? (
+                <div className="relative profile-dropdown-container">
+                  <button
+                    onClick={() =>
+                      setIsProfileDropdownOpen(!isProfileDropdownOpen)
+                    }
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-body-sm font-medium border transition-all duration-300 ${
+                      isTransparentAndHome
+                        ? "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                        : "bg-background text-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-semibold">
+                      {displayName[0].toUpperCase()}
+                    </div>
+                    <span>Hi, {displayName.split(" ")[0]}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 opacity-70 transition-transform duration-300 ${isProfileDropdownOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {/* Dropdown Menu Card */}
+                  {isProfileDropdownOpen && (
+                    <div
+                      className="absolute right-0 mt-2 w-40 rounded-2xl bg-card border border-border shadow-xl py-2 z-50 animate-scale-in"
+                      style={{ animationDuration: "150ms" }}
+                    >
+                      {/* <div className="px-4 py-2 border-b border-border/60">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                          Signed in as
+                        </p>
+                        <p className="text-sm font-medium text-foreground truncate mt-0.5">
+                          {user.name}
+                        </p>
+                      </div> */}
+                      <Link
+                        href="/profile"
+                        prefetch={false}
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        View Profile
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setIsProfileDropdownOpen(false);
+                          handleLogout();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 text-left transition-colors border-t border-border/60"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Link href="/login" prefetch={false}>
+                  <Button
+                    variant="outline"
+                    className={
+                      isTransparentAndHome
+                        ? "bg-white/10 text-white border-white/20 hover:bg-white/20"
+                        : ""
+                    }
+                  >
+                    Login
+                  </Button>
+                </Link>
+              )}
             </div>
 
             {/* Mobile Menu Button */}
@@ -165,14 +293,57 @@ export function Navbar() {
                 </Link>
               ))}
 
-              <Link
+              {!isMounted ? (
+                <div className="h-12" />
+              ) : user ? (
+                <>
+                  <div className="px-4 py-2 border-t border-b border-border/60 my-1 bg-muted/30 rounded-lg">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Signed in as
+                    </p>
+                    <p className="text-sm font-medium text-foreground truncate mt-0.5">
+                      {displayName}
+                    </p>
+                  </div>
+                  <Link
+                    href="/profile"
+                    prefetch={false}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-3 text-body font-medium rounded-lg transition-colors duration-200 text-foreground hover:text-primary hover:bg-muted"
+                  >
+                    <User className="w-5 h-5 text-muted-foreground" />
+                    View Profile
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="flex items-center gap-2.5 px-4 py-3 text-body font-medium rounded-lg transition-colors duration-200 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 text-left w-full cursor-pointer"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href="/login"
+                  prefetch={false}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="px-4 py-3 text-body font-medium rounded-lg transition-colors duration-200 text-foreground hover:text-primary hover:bg-muted"
+                >
+                  Login
+                </Link>
+              )}
+
+              {/* <Link
                 href="/trips"
                 prefetch={false}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="mt-4"
+                className="mt-2"
               >
                 <Button className="btn-primary w-full">Explore Trips</Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </nav>

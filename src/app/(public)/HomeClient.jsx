@@ -269,6 +269,16 @@ export default function HomeClient({
     const images =
       trip.images?.length > 0 ? trip.images : ["/placeholder-trip.jpg"];
 
+    // Preload all images for this card to prevent gray background flash on slide transition
+    useEffect(() => {
+      if (typeof window !== "undefined" && images && images.length > 1) {
+        images.forEach((src) => {
+          const img = new Image();
+          img.src = src;
+        });
+      }
+    }, [images]);
+
     const paginate = (newDirection) => {
       const nextIndex =
         (currentImgIndex + newDirection + images.length) % images.length;
