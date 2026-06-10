@@ -437,11 +437,29 @@ function Page() {
       const token = Cookies.get("token");
 
       try {
+        const basePrice =
+          trip.price_categories?.find(
+            (c) => c.category?.toLowerCase() === "base price",
+          )?.price ||
+          trip.price ||
+          0;
+
+        const dupStartDate = trip.batches?.[0]?.start_date || trip.start_date;
+        const dupEndDate = trip.batches?.[0]?.end_date || trip.end_date;
+
         // ✅ Prepare clean payload
         const payload = {
           name: `Copy of ${trip.name}`,
-          start_date: trip.start_date,
-          end_date: trip.end_date,
+          start_date: dupStartDate,
+          end_date: dupEndDate,
+          batches:
+            trip.batches?.length > 0
+              ? trip.batches.map((b) => ({
+                  start_date: b.start_date,
+                  end_date: b.end_date,
+                }))
+              : [{ start_date: dupStartDate, end_date: dupEndDate }],
+          price: Number(basePrice),
           difficulty: trip.difficulty,
           total_seats: trip.total_seats,
           description: trip.description,
@@ -460,7 +478,7 @@ function Page() {
           operator_id: trip.operator_id,
           source_id: trip.source_id,
           destination_id: trip.destination_id,
-          type_id: trip.type_id,
+          trip_type_id: trip.type_id || trip.type?.id,
           status: "DRAFT",
         };
 
@@ -913,9 +931,11 @@ function Page() {
                   </TableHeader>
                   <TableBody>
                     {trips.map((trip) => {
+                      const startDate = trip.batches?.[0]?.start_date || trip.start_date;
+                      const endDate = trip.batches?.[0]?.end_date || trip.end_date;
                       const isExpired =
-                        trip.start_date &&
-                        new Date(trip.start_date) < new Date();
+                        startDate &&
+                        new Date(startDate) < new Date();
                       return (
                         <TableRow
                           key={trip.id}
@@ -965,16 +985,29 @@ function Page() {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {trip.start_date && trip.end_date
-                                ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
-                                : "N/A"}
+                              {trip.batches && trip.batches.length > 1 ? (
+                                <div className="flex flex-col gap-1">
+                                  <span>
+                                    {startDate ? new Date(startDate).toLocaleDateString("en-IN") : "N/A"}{" "}
+                                    -{" "}
+                                    {endDate ? new Date(endDate).toLocaleDateString("en-IN") : "N/A"}
+                                  </span>
+                                  <span className="text-[10px] font-semibold bg-teal-50 text-teal-700 px-1.5 py-0.5 rounded w-max">
+                                    +{trip.batches.length - 1} more batches
+                                  </span>
+                                </div>
+                              ) : startDate && endDate ? (
+                                `${new Date(startDate).toLocaleDateString("en-IN")} - ${new Date(endDate).toLocaleDateString("en-IN")}`
+                              ) : (
+                                "N/A"
+                              )}
                             </div>
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {trip.start_date && trip.end_date
+                            {startDate && endDate
                               ? `${Math.ceil(
-                                  (new Date(trip.end_date) -
-                                    new Date(trip.start_date)) /
+                                  (new Date(endDate) -
+                                    new Date(startDate)) /
                                     (1000 * 60 * 60 * 24),
                                 )} days`
                               : "N/A"}
@@ -1025,8 +1058,10 @@ function Page() {
             </p>
           ) : (
             trips.map((trip) => {
+              const startDate = trip.batches?.[0]?.start_date || trip.start_date;
+              const endDate = trip.batches?.[0]?.end_date || trip.end_date;
               const isExpired =
-                trip.start_date && new Date(trip.start_date) < new Date();
+                startDate && new Date(startDate) < new Date();
               return (
                 <Card
                   key={trip.id}
@@ -1072,9 +1107,22 @@ function Page() {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Dates:</span>
                       <span>
-                        {trip.start_date && trip.end_date
-                          ? `${new Date(trip.start_date).toLocaleDateString("en-IN")} - ${new Date(trip.end_date).toLocaleDateString("en-IN")}`
-                          : "N/A"}
+                        {trip.batches && trip.batches.length > 1 ? (
+                          <span className="flex flex-col items-end gap-0.5">
+                            <span>
+                              {startDate ? new Date(startDate).toLocaleDateString("en-IN") : "N/A"}{" "}
+                              -{" "}
+                              {endDate ? new Date(endDate).toLocaleDateString("en-IN") : "N/A"}
+                            </span>
+                            <span className="text-[9px] font-semibold bg-teal-50 text-teal-700 px-1.5 py-0.2 rounded w-max">
+                              +{trip.batches.length - 1} more batches
+                            </span>
+                          </span>
+                        ) : startDate && endDate ? (
+                          `${new Date(startDate).toLocaleDateString("en-IN")} - ${new Date(endDate).toLocaleDateString("en-IN")}`
+                        ) : (
+                          "N/A"
+                        )}
                       </span>
                     </div>
                     <div className="flex justify-between items-center">

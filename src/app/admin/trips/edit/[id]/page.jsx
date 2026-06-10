@@ -11,6 +11,8 @@ import {
   X,
   ChevronDown,
   IndianRupee,
+  CheckCircle,
+  Power,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/hooks/use-toast";
@@ -62,8 +64,7 @@ export default function TripEditPage() {
     name: "",
     description: "",
     price_categories: [{ category: "Base Price", price: "" }],
-    start_date: "",
-    end_date: "",
+    batches: [{ start_date: "", end_date: "", id: null, status: "SCHEDULED" }],
     difficulty: "",
     total_seats: "",
     hotel_category: null,
@@ -80,6 +81,7 @@ export default function TripEditPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [showSourceMap, setShowSourceMap] = useState(false);
   const [showDestinationMap, setShowDestinationMap] = useState(false);
+  const [deletedBatchIds, setDeletedBatchIds] = useState([]);
 
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
   const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
@@ -117,6 +119,31 @@ export default function TripEditPage() {
     { revalidateOnFocus: false },
   );
 
+  // Fetch the trip's specific type by ID so dropdown always shows correct name
+  const tripTypeId =
+    tripData?.result?.trip_type?.id ||
+    tripData?.result?.trip_type_id ||
+    tripData?.result?.type?.id ||
+    tripData?.result?.type_id;
+  const { data: tripTypeData } = useSWR(
+    tripTypeId
+      ? `${BASE_URL}/api/${API_VERSION}/trip-types/admin/${tripTypeId}`
+      : null,
+    adminFetcher,
+    { revalidateOnFocus: false },
+  );
+
+  // Inject the trip's type into accumulatedTripTypes if not already present
+  useEffect(() => {
+    if (tripTypeData?.result) {
+      const tt = tripTypeData.result;
+      setAccumulatedTripTypes((prev) => {
+        if (prev.some((t) => t.id === tt.id)) return prev;
+        return [tt, ...prev];
+      });
+    }
+  }, [tripTypeData]);
+
   // Synchronize error states
   useEffect(() => {
     if (tripFetchError) {
@@ -133,13 +160,23 @@ export default function TripEditPage() {
   useEffect(() => {
     if (tripData?.success) {
       const dbTrip = tripData.result;
+      const initialBatches = dbTrip.batches?.length > 0
+        ? dbTrip.batches.map(b => ({
+            id: b.id || null,
+            start_date: b.start_date,
+            end_date: b.end_date,
+            status: b.status || "SCHEDULED",
+          }))
+        : [{ id: null, start_date: dbTrip.start_date || "", end_date: dbTrip.end_date || "", status: "SCHEDULED" }];
+
       setTrip({
         ...dbTrip,
         difficulty: dbTrip.difficulty || "",
-        type_id: dbTrip?.type?.id || "",
+        type_id: dbTrip?.trip_type?.id || dbTrip?.trip_type_id || dbTrip?.type?.id || dbTrip?.type_id || "",
         cancellation_policy: dbTrip.cancellation_policy || "",
         source: dbTrip.source || {},
         destination: dbTrip.destination || {},
+        batches: initialBatches,
       });
       setFormData({
         name: dbTrip.name || "",
@@ -147,8 +184,7 @@ export default function TripEditPage() {
           dbTrip.price_categories?.length > 0
             ? dbTrip.price_categories
             : [{ category: "Base Price", price: dbTrip.price || "" }],
-        start_date: dbTrip.start_date || "",
-        end_date: dbTrip.end_date || "",
+        batches: initialBatches,
         difficulty: dbTrip.difficulty || "",
         total_seats: dbTrip.total_seats || "",
         hotel_category: dbTrip.hotel_category || 0,
@@ -158,7 +194,7 @@ export default function TripEditPage() {
         exclusions: dbTrip.exclusions || [],
         itinerary: dbTrip.itinerary || [],
         status: dbTrip.status || "",
-        type_id: dbTrip?.type?.id || "",
+        type_id: dbTrip?.trip_type?.id || dbTrip?.trip_type_id || dbTrip?.type?.id || dbTrip?.type_id || "",
         cancellation_policy: dbTrip.cancellation_policy || "",
         source: dbTrip.source || {
           name: "",
@@ -177,6 +213,7 @@ export default function TripEditPage() {
           id: "",
         },
       });
+      setDeletedBatchIds([]);
       setLoading(false);
     }
   }, [tripData]);
@@ -186,6 +223,52 @@ export default function TripEditPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
     if (error) setError("");
+    setIsModified(true);
+  };
+
+  const handleBatchChange = (index, field, value) => {
+    const updated = [...formData.batches];
+    updated[index] = { ...updated[index], [field]: value };
+    setFormData((prev) => ({ ...prev, batches: updated }));
+    setErrors((prev) => ({
+      ...prev,
+      [`batch_${index}_${field}`]: "",
+      batches: "",
+    }));
+    if (error) setError("");
+    setIsModified(true);
+  };
+
+  const addBatch = () => {
+    setFormData((prev) => ({
+      ...prev,
+      batches: [...prev.batches, { id: null, start_date: "", end_date: "", status: "SCHEDULED" }],
+    }));
+    setIsModified(true);
+  };
+
+  const removeBatch = (index) => {
+    if (formData.batches.length === 1) return;
+    const batchToRemove = formData.batches[index];
+    // Track existing batches for deletion via API
+    if (batchToRemove?.id) {
+      setDeletedBatchIds((prev) => [...prev, batchToRemove.id]);
+    }
+    setFormData((prev) => ({
+      ...prev,
+      batches: formData.batches.filter((_, i) => i !== index),
+    }));
+    setIsModified(true);
+  };
+
+  const handleBatchStatusToggle = (batchIndex) => {
+    const batch = formData.batches[batchIndex];
+    if (!batch?.id) return;
+
+    const newStatus = batch.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    const updated = [...formData.batches];
+    updated[batchIndex] = { ...updated[batchIndex], status: newStatus };
+    setFormData((prev) => ({ ...prev, batches: updated }));
     setIsModified(true);
   };
 
@@ -469,20 +552,22 @@ export default function TripEditPage() {
       newErrors.difficulty = "Please select difficulty";
     }
 
-    if (!formData.start_date) {
-      newErrors.start_date = "Start date is required";
-    }
-
-    if (!formData.end_date) {
-      newErrors.end_date = "End date is required";
-    }
-
-    if (
-      formData.start_date &&
-      formData.end_date &&
-      new Date(formData.end_date) <= new Date(formData.start_date)
-    ) {
-      newErrors.end_date = "End date must be after start date";
+    if (!formData.batches || formData.batches.length === 0) {
+      newErrors.batches = "At least one batch is required";
+    } else {
+      formData.batches.forEach((batch, idx) => {
+        if (!batch.start_date) {
+          newErrors[`batch_${idx}_start_date`] = "Start date is required";
+        }
+        if (!batch.end_date) {
+          newErrors[`batch_${idx}_end_date`] = "End date is required";
+        }
+        if (batch.start_date && batch.end_date) {
+          if (new Date(batch.end_date) <= new Date(batch.start_date)) {
+            newErrors[`batch_${idx}_end_date`] = "End date must be after start date";
+          }
+        }
+      });
     }
 
     if (!formData.type_id) {
@@ -546,9 +631,9 @@ export default function TripEditPage() {
 
     const token = Cookies.get("token");
 
+    // --- 1. Build trip update payload (excluding batches) ---
     const requestBody = {};
 
-    // Always include source and destination if they exist
     if (formData.source?.id) {
       requestBody.source = formData.source;
       requestBody.source_id = formData.source.id;
@@ -559,7 +644,8 @@ export default function TripEditPage() {
     }
 
     Object.keys(formData).forEach((key) => {
-      if (key === "source" || key === "destination") return; // Already handled above
+      if (key === "source" || key === "destination") return;
+      if (key === "batches") return; // Batches handled separately via batch APIs
 
       if (JSON.stringify(formData[key]) !== JSON.stringify(trip[key])) {
         if (key === "price_categories") {
@@ -567,6 +653,12 @@ export default function TripEditPage() {
             ...c,
             price: Number(c.price),
           }));
+          const basePrice = formData.price_categories.find(
+            (c) => c.category?.trim().toLowerCase() === "base price"
+          )?.price || 0;
+          requestBody.price = Number(basePrice);
+        } else if (key === "type_id") {
+          requestBody.trip_type_id = formData.type_id;
         } else if (key === "hotel_category") {
           if (formData[key] && formData[key] > 0) {
             requestBody[key] = formData[key];
@@ -581,7 +673,25 @@ export default function TripEditPage() {
       }
     });
 
-    if (Object.keys(requestBody).length === 0) {
+    // Check if there are any trip-level or batch-level changes
+    const hasTripChanges = Object.keys(requestBody).length > 0;
+    const newBatches = formData.batches.filter((b) => !b.id);
+    const existingBatches = formData.batches.filter((b) => b.id);
+    const modifiedBatches = existingBatches.filter((b) => {
+      const original = trip.batches?.find((ob) => ob.id === b.id);
+      if (!original) return false;
+      return (
+        b.start_date !== original.start_date ||
+        b.end_date !== original.end_date ||
+        b.status !== original.status
+      );
+    });
+    const hasBatchChanges =
+      newBatches.length > 0 ||
+      modifiedBatches.length > 0 ||
+      deletedBatchIds.length > 0;
+
+    if (!hasTripChanges && !hasBatchChanges) {
       toast({
         title: "No Changes",
         description: "No Changes Detected",
@@ -589,49 +699,131 @@ export default function TripEditPage() {
       setSaving(false);
       setIsModified(false);
       router.push(`/admin/trips/${id}`);
-      ``;
       return;
     }
 
     try {
-      const res = await fetch(
-        `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+      // --- 2. Update trip (non-batch fields) ---
+      if (hasTripChanges) {
+        const res = await fetch(
+          `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(requestBody),
           },
-          body: JSON.stringify(requestBody),
-        },
-      );
+        );
 
-      // console.log("req body", requestBody);
+        const data = await res.json();
 
-      const data = await res.json();
+        if (!res.ok) {
+          const errorMessage =
+            Array.isArray(data?.error?.details) && data.error.details.length > 0
+              ? data.error.details.map((detail) => detail.message).join(", ")
+              : data?.error?.message === "Validation failed"
+                ? data?.error?.details?.message || "Validation failed"
+                : data?.error?.message || "Failed to update trip";
 
-      if (!res.ok) {
-        const errorMessage =
-          Array.isArray(data?.error?.details) && data.error.details.length > 0
-            ? data.error.details.map((detail) => detail.message).join(", ")
-            : data?.error?.message === "Validation failed"
-              ? data?.error?.details?.message || "Validation failed"
-              : data?.error?.message || "Failed to update";
-
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
-
-        return;
+          toast({
+            title: "Error",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          return;
+        }
       }
 
-      toast({
-        title: "Trip Update",
-        description: "Trip Updated Successfully!",
-        variant: "success",
-      });
+      // --- 3. Handle batch operations ---
+      let batchErrors = [];
+
+      // Delete removed batches
+      for (const batchId of deletedBatchIds) {
+        try {
+          const res = await fetch(
+            `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}/batches/${batchId}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          if (!res.ok) {
+            const data = await res.json();
+            batchErrors.push(data?.error?.message || `Failed to delete batch ${batchId}`);
+          }
+        } catch (err) {
+          batchErrors.push(err.message || `Failed to delete batch ${batchId}`);
+        }
+      }
+
+      // Add new batches
+      for (const batch of newBatches) {
+        try {
+          const res = await fetch(
+            `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}/batches`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                start_date: batch.start_date,
+                end_date: batch.end_date,
+              }),
+            },
+          );
+          if (!res.ok) {
+            const data = await res.json();
+            batchErrors.push(data?.error?.message || "Failed to add new batch");
+          }
+        } catch (err) {
+          batchErrors.push(err.message || "Failed to add new batch");
+        }
+      }
+
+      // Update modified existing batches
+      for (const batch of modifiedBatches) {
+        try {
+          const res = await fetch(
+            `${BASE_URL}/api/${API_VERSION}/trips/admin/${id}/batches/${batch.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                start_date: batch.start_date,
+                end_date: batch.end_date,
+                status: batch.status,
+              }),
+            },
+          );
+          if (!res.ok) {
+            const data = await res.json();
+            batchErrors.push(data?.error?.message || `Failed to update batch ${batch.id}`);
+          }
+        } catch (err) {
+          batchErrors.push(err.message || `Failed to update batch ${batch.id}`);
+        }
+      }
+
+      if (batchErrors.length > 0) {
+        toast({
+          title: "Partial Success",
+          description: `Trip saved but some batch operations failed: ${batchErrors.join(", ")}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Trip Update",
+          description: "Trip Updated Successfully!",
+          variant: "success",
+        });
+      }
       router.push(`/admin/trips/${id}`);
     } catch (err) {
       setError(err.message);
@@ -847,80 +1039,141 @@ export default function TripEditPage() {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700 tracking-wide">
-                  Start Date*
-                </label>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
-                  <DatePicker
-                    selected={
-                      formData.start_date ? new Date(formData.start_date) : null
-                    }
-                    onChange={(date) =>
-                      handleChange(
-                        "start_date",
-                        date ? format(date, "yyyy-MM-dd") : "",
-                      )
-                    }
-                    minDate={new Date()}
-                    placeholderText="Pick a date"
-                    dateFormat="MMM d, yyyy"
-                    wrapperClassName="w-full"
-                    customInput={
-                      <Input
-                        readOnly
-                        inputMode="none"
-                        className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
-                      />
-                    }
-                  />
+              <div className="col-span-1 sm:col-span-2 border-t pt-6 mt-2">
+                <div className="flex justify-between items-center mb-4">
+                  <label className="text-sm font-semibold text-slate-700 tracking-wide">
+                    Trip Batches*
+                  </label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addBatch}
+                    className="h-8 gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Add Batch
+                  </Button>
                 </div>
-                {errors.start_date && (
-                  <p className="text-xs text-admin-error mt-1">
-                    {errors.start_date}
-                  </p>
-                )}
-              </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700 tracking-wide">
-                  End Date*
-                </label>
-                <div className="relative">
-                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
-                  <DatePicker
-                    selected={
-                      formData.end_date ? new Date(formData.end_date) : null
-                    }
-                    onChange={(date) =>
-                      handleChange(
-                        "end_date",
-                        date ? format(date, "yyyy-MM-dd") : "",
-                      )
-                    }
-                    minDate={
-                      formData.start_date
-                        ? new Date(
-                            Math.max(new Date(), new Date(formData.start_date)),
-                          )
-                        : new Date()
-                    }
-                    placeholderText="Pick a date"
-                    dateFormat="MMM d, yyyy"
-                    wrapperClassName="w-full"
-                    customInput={
-                      <Input
-                        readOnly
-                        inputMode="none"
-                        className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
-                      />
-                    }
-                  />
+                <div className="space-y-4">
+                  {formData.batches.map((batch, idx) => (
+                    <div key={batch.id || `new-${idx}`} className="p-4 border border-slate-200 rounded-xl bg-slate-50/50 space-y-3 relative">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-sm text-slate-600">Batch #{idx + 1}</span>
+                          <span
+                            className={cn(
+                              "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                              batch.status === "ACTIVE" && "bg-emerald-100 text-emerald-700",
+                              batch.status === "INACTIVE" && "bg-red-100 text-red-700",
+                              batch.status === "SCHEDULED" && "bg-amber-100 text-amber-700",
+                              !batch.status && "bg-amber-100 text-amber-700",
+                            )}
+                          >
+                            {batch.status || "SCHEDULED"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {batch.id && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleBatchStatusToggle(idx)}
+                              className={cn(
+                                "h-8 gap-1 text-xs font-medium",
+                                batch.status === "ACTIVE"
+                                  ? "text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50",
+                              )}
+                            >
+                              {batch.status === "ACTIVE" ? (
+                                <Power className="w-3 h-3" />
+                              ) : (
+                                <CheckCircle className="w-3 h-3" />
+                              )}
+                              {batch.status === "ACTIVE" ? "Deactivate" : "Activate"}
+                            </Button>
+                          )}
+                          {formData.batches.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeBatch(idx)}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
+                            >
+                              <FaTrash size={12} />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600">Start Date *</label>
+                          <div className="relative">
+                            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                            <DatePicker
+                              selected={batch.start_date ? new Date(batch.start_date) : null}
+                              onChange={(date) => handleBatchChange(idx, "start_date", date ? format(date, "yyyy-MM-dd") : "")}
+                              minDate={new Date()}
+                              placeholderText="Pick a date"
+                              dateFormat="MMM d, yyyy"
+                              wrapperClassName="w-full"
+                              customInput={
+                                <Input
+                                  readOnly
+                                  inputMode="none"
+                                  className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                                />
+                              }
+                            />
+                          </div>
+                          {errors[`batch_${idx}_start_date`] && (
+                            <p className="text-xs text-admin-error mt-1">
+                              {errors[`batch_${idx}_start_date`]}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-slate-600">End Date *</label>
+                          <div className="relative">
+                            <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                            <DatePicker
+                              selected={batch.end_date ? new Date(batch.end_date) : null}
+                              onChange={(date) => handleBatchChange(idx, "end_date", date ? format(date, "yyyy-MM-dd") : "")}
+                              minDate={
+                                batch.start_date
+                                  ? new Date(Math.max(new Date().getTime(), new Date(batch.start_date).getTime()))
+                                  : new Date()
+                              }
+                              placeholderText="Pick a date"
+                              dateFormat="MMM d, yyyy"
+                              wrapperClassName="w-full"
+                              customInput={
+                                <Input
+                                  readOnly
+                                  inputMode="none"
+                                  className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                                />
+                              }
+                            />
+                          </div>
+                          {errors[`batch_${idx}_end_date`] && (
+                            <p className="text-xs text-admin-error mt-1">
+                              {errors[`batch_${idx}_end_date`]}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                {errors.end_date && (
+                {errors.batches && (
                   <p className="text-xs text-admin-error mt-1">
-                    {errors.end_date}
+                    {errors.batches}
                   </p>
                 )}
               </div>

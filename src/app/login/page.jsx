@@ -364,7 +364,7 @@ export default function Login() {
                 <label className="text-xs font-medium text-white/60 uppercase tracking-wider ml-1">
                   Phone Number
                 </label>
-                <div className="mt-2 h-[52px]">
+                <div className="mt-2 h-[52px] auth-phone-container">
                   <PhoneInput
                     value={phoneNumber}
                     onChange={(val) => setPhoneNumber(val)}
@@ -376,41 +376,6 @@ export default function Login() {
                     }}
                   />
                 </div>
-                <style jsx global>{`
-                  .react-international-phone-input {
-                    background: transparent !important;
-                    color: white !important;
-                    border-color: rgba(255, 255, 255, 0.1) !important;
-                    border-left-color: transparent !important;
-                    border-top-right-radius: 0.75rem !important;
-                    border-bottom-right-radius: 0.75rem !important;
-                    height: 52px !important;
-                    font-size: 1rem !important;
-                  }
-                  .react-international-phone-country-selector-button {
-                    background: transparent !important;
-                    color: white !important;
-                    border-color: rgba(255, 255, 255, 0.1) !important;
-                    border-top-left-radius: 0.75rem !important;
-                    border-bottom-left-radius: 0.75rem !important;
-                    height: 52px !important;
-                  }
-                  .react-international-phone-country-selector-button__dropdown-arrow {
-                    border-top-color: rgba(255, 255, 255, 0.6) !important;
-                  }
-                  .react-international-phone-country-selector-dropdown {
-                    background-color: #1a1a1a !important;
-                    border-color: rgba(255, 255, 255, 0.1) !important;
-                    border-radius: 0.75rem !important;
-                  }
-                  .react-international-phone-country-selector-dropdown__list-item {
-                    color: white !important;
-                  }
-                  .react-international-phone-country-selector-dropdown__list-item:hover,
-                  .react-international-phone-country-selector-dropdown__list-item--selected {
-                    background-color: rgba(255, 255, 255, 0.1) !important;
-                  }
-                `}</style>
               </div>
 
               <button
@@ -522,7 +487,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@triptribe.com"
+                  // placeholder="Enter your email"
                   className="w-full mt-2 rounded-xl bg-white/5 border border-white/10 px-4 py-3 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 focus:bg-white/10 text-white transition-all placeholder:text-white/30"
                 />
               </div>

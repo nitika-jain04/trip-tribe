@@ -100,8 +100,7 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
     name: "",
     description: "",
     price_categories: [{ category: "Base Price", price: "" }],
-    start_date: "",
-    end_date: "",
+    batches: [{ start_date: "", end_date: "" }],
     difficulty: "",
     total_seats: "",
     type_id: "",
@@ -130,6 +129,32 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
     itinerary: [{ day: 1, activities: [""] }],
     cancellation_policy: "",
   });
+
+  const handleBatchChange = (index, field, value) => {
+    const updated = [...formData.batches];
+    updated[index] = { ...updated[index], [field]: value };
+    setFormData((p) => ({ ...p, batches: updated }));
+    setFieldErrors((p) => ({
+      ...p,
+      [`batch_${index}_${field}`]: "",
+      batches: "",
+    }));
+  };
+
+  const addBatch = () => {
+    setFormData((p) => ({
+      ...p,
+      batches: [...p.batches, { start_date: "", end_date: "" }],
+    }));
+  };
+
+  const removeBatch = (index) => {
+    if (formData.batches.length === 1) return;
+    setFormData((p) => ({
+      ...p,
+      batches: formData.batches.filter((_, i) => i !== index),
+    }));
+  };
 
   // Removed manual fetchOperators in favor of useAdminOperators hook
 
@@ -409,18 +434,22 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
       errors.operator_id = "Please select an operator.";
     }
 
-    if (!formData.start_date) {
-      errors.start_date = "Start date is required.";
-    }
-
-    if (!formData.end_date) {
-      errors.end_date = "End date is required.";
-    }
-
-    if (formData.start_date && formData.end_date) {
-      if (new Date(formData.end_date) < new Date(formData.start_date)) {
-        errors.end_date = "End date cannot be before start date.";
-      }
+    if (!formData.batches || formData.batches.length === 0) {
+      errors.batches = "At least one batch is required.";
+    } else {
+      formData.batches.forEach((batch, idx) => {
+        if (!batch.start_date) {
+          errors[`batch_${idx}_start_date`] = "Start date is required.";
+        }
+        if (!batch.end_date) {
+          errors[`batch_${idx}_end_date`] = "End date is required.";
+        }
+        if (batch.start_date && batch.end_date) {
+          if (new Date(batch.end_date) < new Date(batch.start_date)) {
+            errors[`batch_${idx}_end_date`] = "End date cannot be before start date.";
+          }
+        }
+      });
     }
 
     if (!formData.source.id) {
@@ -479,18 +508,27 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
       activities: day.activities.map((activity) => activity.trim()),
     }));
 
+    const basePrice = formData.price_categories.find(
+      (c) => c.category?.trim().toLowerCase() === "base price"
+    )?.price || 0;
+
     const payload = {
       name: formData.name.trim(),
       description: formData.description.trim(),
+      price: Number(basePrice),
       price_categories: formData.price_categories.map((c) => ({
         category: c.category.trim(),
         price: Number(c.price),
       })),
-      start_date: formData.start_date,
-      end_date: formData.end_date,
+      start_date: formData.batches[0]?.start_date || "",
+      end_date: formData.batches[0]?.end_date || "",
+      batches: formData.batches.map((b) => ({
+        start_date: b.start_date,
+        end_date: b.end_date,
+      })),
       difficulty: formData.difficulty,
       total_seats: Number(formData.total_seats),
-      type_id: formData.type_id,
+      trip_type_id: formData.type_id,
       ...(formData.hotel_category > 0 && {
         hotel_category: formData.hotel_category,
       }),
@@ -575,24 +613,27 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 py-4 sm:py-6">
           <form
             onSubmit={handleSubmit}
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+            className="space-y-6"
           >
-            {/* Sections */}
-            <div className="col-span-1 md:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Basic Information
-              </h3>
-            </div>
+            {/* ── Section 1: Basic Information ── */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-slate-50/60 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b border-gray-200">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-teal-500 text-white text-xs font-bold shrink-0">1</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800">Basic Information</h3>
+                  <p className="text-xs text-gray-400">Trip name, pricing, seats &amp; difficulty</p>
+                </div>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
 
             <div className="col-span-1 md:col-span-2">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Trip Name *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Trip Name <span className="text-red-400">*</span>
               </label>
               <Input
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                // required
                 placeholder="E.g., Himalayan Base Camp"
               />
               {fieldErrors.name && (
@@ -604,8 +645,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
 
             <div className="col-span-1 md:col-span-2">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm font-semibold text-gray-700">
-                  Price Categories *
+                <label className="text-sm font-medium text-gray-600">
+                  Price Categories <span className="text-red-400">*</span>
                 </label>
                 <Button
                   type="button"
@@ -675,15 +716,14 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Total Seats *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Total Seats <span className="text-red-400">*</span>
               </label>
               <Input
                 name="total_seats"
                 type="number"
                 value={formData.total_seats}
                 onChange={handleChange}
-                // required
               />
               {fieldErrors.total_seats && (
                 <p className="text-admin-error text-xs mt-1">
@@ -693,8 +733,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Difficulty *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Difficulty <span className="text-red-400">*</span>
               </label>
               <Select
                 value={formData.difficulty}
@@ -719,90 +759,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Start Date *
-              </label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
-                <DatePicker
-                  selected={
-                    formData.start_date ? new Date(formData.start_date) : null
-                  }
-                  onChange={(date) =>
-                    handleChange({
-                      target: {
-                        name: "start_date",
-                        value: date ? format(date, "yyyy-MM-dd") : "",
-                      },
-                    })
-                  }
-                  minDate={new Date()}
-                  placeholderText="Pick a date"
-                  dateFormat="MMM d, yyyy"
-                  wrapperClassName="w-full"
-                  customInput={
-                    <Input
-                      readOnly
-                      inputMode="none"
-                      className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
-                    />
-                  }
-                />
-              </div>
-              {fieldErrors.start_date && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.start_date}
-                </p>
-              )}
-            </div>
-
-            <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                End Date *
-              </label>
-              <div className="relative">
-                <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
-                <DatePicker
-                  selected={
-                    formData.end_date ? new Date(formData.end_date) : null
-                  }
-                  onChange={(date) =>
-                    handleChange({
-                      target: {
-                        name: "end_date",
-                        value: date ? format(date, "yyyy-MM-dd") : "",
-                      },
-                    })
-                  }
-                  minDate={
-                    formData.start_date
-                      ? new Date(
-                          Math.max(new Date(), new Date(formData.start_date)),
-                        )
-                      : new Date()
-                  }
-                  placeholderText="Pick a date"
-                  dateFormat="MMM d, yyyy"
-                  wrapperClassName="w-full"
-                  customInput={
-                    <Input
-                      readOnly
-                      inputMode="none"
-                      className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
-                    />
-                  }
-                />
-              </div>
-              {fieldErrors.end_date && (
-                <p className="text-admin-error text-xs mt-1">
-                  {fieldErrors.end_date}
-                </p>
-              )}
-            </div>
-
-            <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Trip Type *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Trip Type <span className="text-red-400">*</span>
               </label>
               <Select
                 value={formData.type_id}
@@ -849,7 +807,7 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
                 Hotel Category
               </label>
               <div className="flex items-center h-10 mt-1">
@@ -862,15 +820,136 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
               </div>
             </div>
 
-            <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Operator & Locations
-              </h3>
-            </div>
+              </div>{/* end .p-5 grid */}
+            </div>{/* end Section 1 card */}
+
+            {/* ── Section 2: Trip Batches ── */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-slate-50/60 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b border-gray-200">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-teal-500 text-white text-xs font-bold shrink-0">2</span>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-800">Trip Batches</h3>
+                  <p className="text-xs text-gray-400">Schedule one or more date batches</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={addBatch}
+                  className="h-8 gap-1"
+                >
+                  <FaPlus className="w-3 h-3" /> Add Batch
+                </Button>
+              </div>
+              <div className="p-5">
+
+              <div className="space-y-4">
+                {formData.batches.map((batch, idx) => (
+                  <div key={idx} className="p-4 border border-gray-200 rounded-xl bg-gray-50/30 space-y-3 relative">
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-gray-600">Batch #{idx + 1}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700">
+                          SCHEDULED
+                        </span>
+                      </div>
+                      {formData.batches.length > 1 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeBatch(idx)}
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8"
+                        >
+                          <FaTrash size={12} />
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-500 font-medium">Start Date *</label>
+                        <div className="relative">
+                          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                          <DatePicker
+                            selected={batch.start_date ? new Date(batch.start_date) : null}
+                            onChange={(date) => handleBatchChange(idx, "start_date", date ? format(date, "yyyy-MM-dd") : "")}
+                            minDate={new Date()}
+                            placeholderText="Pick a date"
+                            dateFormat="MMM d, yyyy"
+                            wrapperClassName="w-full"
+                            customInput={
+                              <Input
+                                readOnly
+                                inputMode="none"
+                                className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                              />
+                            }
+                          />
+                        </div>
+                        {fieldErrors[`batch_${idx}_start_date`] && (
+                          <p className="text-admin-error text-xs mt-1">
+                            {fieldErrors[`batch_${idx}_start_date`]}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-500 font-medium">End Date *</label>
+                        <div className="relative">
+                          <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 z-10 pointer-events-none" />
+                          <DatePicker
+                            selected={batch.end_date ? new Date(batch.end_date) : null}
+                            onChange={(date) => handleBatchChange(idx, "end_date", date ? format(date, "yyyy-MM-dd") : "")}
+                            minDate={
+                              batch.start_date
+                                ? new Date(Math.max(new Date().getTime(), new Date(batch.start_date).getTime()))
+                                : new Date()
+                            }
+                            placeholderText="Pick a date"
+                            dateFormat="MMM d, yyyy"
+                            wrapperClassName="w-full"
+                            customInput={
+                              <Input
+                                readOnly
+                                inputMode="none"
+                                className="pl-9 w-full text-sm bg-white border-slate-200 h-10"
+                              />
+                            }
+                          />
+                        </div>
+                        {fieldErrors[`batch_${idx}_end_date`] && (
+                          <p className="text-admin-error text-xs mt-1">
+                            {fieldErrors[`batch_${idx}_end_date`]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {fieldErrors.batches && (
+                <p className="text-admin-error text-xs mt-1">
+                  {fieldErrors.batches}
+                </p>
+              )}
+              </div>{/* end .p-5 */}
+            </div>{/* end Section 2 card */}
+
+            {/* ── Section 3: Operator & Locations ── */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-slate-50/60 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b border-gray-200">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-teal-500 text-white text-xs font-bold shrink-0">3</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800">Operator & Locations</h3>
+                  <p className="text-xs text-gray-400">Assign operator, source &amp; destination</p>
+                </div>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
 
             <div className="col-span-1 md:col-span-2">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Operator *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Operator <span className="text-red-400">*</span>
               </label>
               <Select
                 value={formData.operator_id}
@@ -915,8 +994,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Source Location *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Source Location <span className="text-red-400">*</span>
               </label>
               <Card className="border shadow-none">
                 <CardContent className="p-3 flex justify-between items-center">
@@ -941,8 +1020,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
             </div>
 
             <div className="col-span-1">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Destination Location *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Destination Location <span className="text-red-400">*</span>
               </label>
               <Card className="border shadow-none">
                 <CardContent className="p-3 flex justify-between items-center">
@@ -966,16 +1045,23 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
               )}
             </div>
 
-            {/* Content & Details */}
-            <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
-              <h3 className="text-lg font-semibold text-gray-800">
-                Experience Details
-              </h3>
-            </div>
+              </div>{/* end .p-5 grid */}
+            </div>{/* end Section 3 card */}
+
+            {/* ── Section 4: Experience Details ── */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-slate-50/60 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b border-gray-200">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-teal-500 text-white text-xs font-bold shrink-0">4</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800">Experience Details</h3>
+                  <p className="text-xs text-gray-400">Description, images, inclusions &amp; exclusions</p>
+                </div>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
 
             <div className="col-span-1 md:col-span-2">
-              <label className="text-sm text-gray-600 mb-1 block">
-                Description *
+              <label className="text-sm font-medium text-gray-600 mb-1 block">
+                Description <span className="text-red-400">*</span>
               </label>
               <textarea
                 name="description"
@@ -994,8 +1080,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
 
             <div className="col-span-1 md:col-span-2">
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm text-gray-600 font-medium">
-                  Images *
+                <label className="text-sm font-medium text-gray-600">
+                  Images <span className="text-red-400">*</span>
                 </label>
                 <Button
                   type="button"
@@ -1040,8 +1126,8 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
 
             <div className="col-span-1">
               <div className="flex justify-between items-center mb-1">
-                <label className="text-sm text-gray-600 font-medium">
-                  Inclusions *
+                <label className="text-sm font-medium text-gray-600">
+                  Inclusions <span className="text-red-400">*</span>
                 </label>
                 <button
                   type="button"
@@ -1080,7 +1166,7 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
             {formData?.exclusions && (
               <div className="col-span-1">
                 <div className="flex justify-between items-center mb-1">
-                  <label className="text-sm text-gray-600 font-medium">
+                  <label className="text-sm font-medium text-gray-600">
                     Exclusions
                   </label>
                   <button
@@ -1116,11 +1202,17 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
               </div>
             )}
 
-            <div className="col-span-1 md:col-span-2 pt-2 border-t mt-2">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Itinerary
-                </h3>
+              </div>{/* end .p-5 grid */}
+            </div>{/* end Section 4 card */}
+
+            {/* ── Section 5: Itinerary ── */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-slate-50/60 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b border-gray-200">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-teal-500 text-white text-xs font-bold shrink-0">5</span>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-800">Itinerary</h3>
+                  <p className="text-xs text-gray-400">Day-by-day plan with activities</p>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -1130,6 +1222,7 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                   <FaPlus className="mr-2 h-3 w-3" /> New Day
                 </Button>
               </div>
+              <div className="p-5">
               <div className="space-y-4">
                 {formData.itinerary.map((day, dIdx) => (
                   <Card key={dIdx} className="bg-gray-50/50">
@@ -1187,12 +1280,20 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
                   {fieldErrors.itinerary}
                 </p>
               )}
-            </div>
 
-            <div className="col-span-1 md:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                Cancellation Policy
-              </h3>
+              </div>{/* end .p-5 */}
+            </div>{/* end Section 5 card */}
+
+            {/* ── Section 6: Cancellation Policy ── */}
+            <div className="rounded-xl border border-gray-200 bg-gradient-to-br from-white to-slate-50/60 overflow-hidden">
+              <div className="flex items-center gap-3 px-5 py-3.5 bg-slate-50 border-b border-gray-200">
+                <span className="flex items-center justify-center w-7 h-7 rounded-full bg-teal-500 text-white text-xs font-bold shrink-0">6</span>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800">Cancellation Policy</h3>
+                  <p className="text-xs text-gray-400">Optional refund / cancellation terms</p>
+                </div>
+              </div>
+              <div className="p-5">
               <pre
                 contentEditable
                 onBlur={(e) => {
@@ -1207,10 +1308,11 @@ function AddTripModal({ handleModalClose, extraOperators = [] }) {
               >
                 {formData.cancellation_policy}
               </pre>
-            </div>
+              </div>
+            </div>{/* end Section 6 card */}
 
             {/* Footer Buttons */}
-            <div className="col-span-1 md:col-span-2 flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 mt-4 border-t">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 mt-2">
               <button
                 type="button"
                 onClick={() => handleModalClose(false)}

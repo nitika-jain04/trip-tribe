@@ -2,7 +2,7 @@
 
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense, useMemo } from "react";
 import {
   MapPin,
@@ -11,6 +11,7 @@ import {
   Users,
   Clock,
   ChevronLeft,
+  ChevronDown,
   ImageIcon,
   Check,
   X,
@@ -32,12 +33,46 @@ import { MdOutlineVerified } from "react-icons/md";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 export default function TripDetailClient({ trip: serverTrip, locationMap }) {
   const { id } = useParams();
   const { toast } = useToast();
   const isOnline = useOnlineStatus();
   const [offlineTrip, setOfflineTrip] = useState(null);
   const trip = serverTrip || offlineTrip;
+
+  const searchParams = useSearchParams();
+  const initialBatchParam = searchParams.get("batch");
+  const initialBatchIndex = initialBatchParam ? Number(initialBatchParam) : 0;
+
+  const [selectedBatchIndex, setSelectedBatchIndex] =
+    useState(initialBatchIndex);
+  const batches = trip?.batches || [];
+  const selectedBatch = batches[selectedBatchIndex];
+
+  const getSelectedDuration = useCallback(() => {
+    const batch = batches[selectedBatchIndex];
+    if (batch?.start_date && batch?.end_date) {
+      const start = new Date(batch.start_date);
+      const end = new Date(batch.end_date);
+      return Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
+    }
+    return Number(trip?.duration) || 0;
+  }, [batches, selectedBatchIndex, trip?.duration]);
 
   const [activeImage, setActiveImage] = useState(trip?.images?.[0] || null);
   const [showForm, setShowForm] = useState(false);
@@ -52,6 +87,21 @@ export default function TripDetailClient({ trip: serverTrip, locationMap }) {
     trip?.price_categories?.[0] || null,
   );
   const [isPhoneValid, setIsPhoneValid] = useState(false);
+
+  const getDisplayPrice = useCallback(() => {
+    if (
+      selectedCategory?.category?.toLowerCase() === "base price" &&
+      selectedBatch?.price_override
+    ) {
+      return Number(selectedBatch.price_override);
+    }
+    return Number(
+      selectedCategory?.price ||
+        selectedBatch?.price_override ||
+        trip?.priceFrom ||
+        0,
+    );
+  }, [selectedCategory, selectedBatch, trip?.priceFrom]);
 
   // Load from cache on mount
   useEffect(() => {
@@ -157,9 +207,13 @@ export default function TripDetailClient({ trip: serverTrip, locationMap }) {
     }
 
     const currentUrl = window.location.href;
-    const startDate = new Date(trip.startDate).toLocaleDateString("en-IN");
+    const targetStartDate = selectedBatch
+      ? new Date(selectedBatch.start_date)
+      : new Date(trip.startDate);
+    const startDateStr = targetStartDate.toLocaleDateString("en-IN");
+    const displayPriceVal = getDisplayPrice();
     const categoryInfo = selectedCategory
-      ? `• *Option:* ${selectedCategory.category} (₹${Number(selectedCategory.price).toLocaleString("en-IN")})`
+      ? `• *Option:* ${selectedCategory.category} (₹${displayPriceVal.toLocaleString("en-IN")})`
       : "";
 
     const message = `Hi, I wanted to confirm the availability for the following trip:
@@ -167,7 +221,7 @@ export default function TripDetailClient({ trip: serverTrip, locationMap }) {
 *Trip Details*
 • *Trip:* ${trip.name}
 • *Operator:* ${trip.provider.name}
-• *Start Date:* ${startDate}
+• *Start Date:* ${startDateStr}
 ${categoryInfo}
 
 *View details for ${trip.name}:*
@@ -197,7 +251,7 @@ ${currentUrl}`;
         inquiry_type: "TRIP",
         trip_id: trip.id,
         subject: "Book Trip",
-        message: `${selectedCategory ? `[Selected Option: ${selectedCategory.category}] ` : ""}${formData.message?.trim() || `User is interested in ${trip.name}`}`,
+        message: `${selectedCategory ? `[Selected Option: ${selectedCategory.category} - Price: ₹${displayPriceVal}] ` : ""}${formData.message?.trim() || `User is interested in ${trip.name}`}`,
       }),
     };
 
@@ -293,7 +347,7 @@ ${currentUrl}`;
                   </span>
                 )}
                 <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-body-sm font-medium">
-                  {trip.type}
+                  {trip.type_name}
                 </span>
               </div>
 
@@ -338,7 +392,7 @@ ${currentUrl}`;
                   <Calendar className="w-5 h-5 text-primary mb-2" />
                   <p className="text-body-sm text-muted-foreground">Duration</p>
                   <p className="font-semibold text-foreground">
-                    {trip.duration} days
+                    {getSelectedDuration()} days
                   </p>
                 </div>
                 <div className="card-premium p-4">
@@ -356,7 +410,9 @@ ${currentUrl}`;
                     Start Date
                   </p>
                   <p className="font-semibold text-foreground">
-                    {new Date(trip.startDate).toLocaleDateString("en-IN")}
+                    {new Date(
+                      selectedBatch ? selectedBatch.start_date : trip.startDate,
+                    ).toLocaleDateString("en-IN")}
                   </p>
                 </div>
                 <div className="card-premium p-4">
@@ -384,10 +440,7 @@ ${currentUrl}`;
                       )}
                     </div>
                     <p className="font-display text-4xl text-foreground">
-                      ₹
-                      {Number(
-                        selectedCategory?.price || trip.priceFrom,
-                      ).toLocaleString("en-IN")}
+                      ₹{getDisplayPrice().toLocaleString("en-IN")}
                     </p>
                     <p className="text-body-sm text-muted-foreground">
                       per person
@@ -448,6 +501,11 @@ ${currentUrl}`;
                           const isSelected =
                             selectedCategory?.category === cat.category;
                           const isStarting = cat.price === trip.priceFrom;
+                          const priceVal =
+                            cat.category?.toLowerCase() === "base price" &&
+                            selectedBatch?.price_override
+                              ? Number(selectedBatch.price_override)
+                              : Number(cat.price);
 
                           return (
                             <button
@@ -487,7 +545,7 @@ ${currentUrl}`;
                                       : "text-primary"
                                   }`}
                                 >
-                                  ₹{Number(cat.price).toLocaleString("en-IN")}
+                                  ₹{priceVal.toLocaleString("en-IN")}
                                 </span>
                               </div>
 
@@ -503,6 +561,69 @@ ${currentUrl}`;
                     </div>
                   )}
                 </div>
+                {batches.length > 1 && (
+                  <div className="mb-4 text-left">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block mb-2">
+                      Choose Batch
+                    </label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {batches.map((batch, index) => {
+                        const isSelected = selectedBatchIndex === index;
+                        const start = formatDate(batch.start_date);
+                        const end = formatDate(batch.end_date);
+
+                        // Calculate duration for this batch
+                        const bStart = new Date(batch.start_date);
+                        const bEnd = new Date(batch.end_date);
+                        const bDays = Math.max(
+                          1,
+                          Math.ceil((bEnd - bStart) / (1000 * 60 * 60 * 24)) +
+                            1,
+                        );
+
+                        return (
+                          <button
+                            key={index}
+                            type="button"
+                            onClick={() => setSelectedBatchIndex(index)}
+                            className={`group relative text-left p-3 rounded-xl border transition-all duration-300 flex justify-between items-center ${
+                              isSelected
+                                ? "bg-primary/5 text-foreground border-primary shadow-xs ring-1 ring-primary"
+                                : "bg-background text-foreground border-border hover:border-primary/50 hover:bg-primary/5"
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <span
+                                className={`text-sm font-semibold ${isSelected ? "text-primary animate-pulse" : "text-foreground"}`}
+                              >
+                                {start} - {end}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground mt-0.5">
+                                {bDays} Days{" "}
+                                {batch.available_seats
+                                  ? `• ${batch.available_seats} seats remaining`
+                                  : ""}
+                              </span>
+                            </div>
+                            {batch.price_override && (
+                              <div className="text-right pl-2">
+                                <span
+                                  className={`font-display font-semibold text-sm ${isSelected ? "text-primary" : "text-foreground"}`}
+                                >
+                                  ₹
+                                  {Number(batch.price_override).toLocaleString(
+                                    "en-IN",
+                                  )}
+                                </span>
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <Button
                   className="btn-primary w-full text-body py-9 md:py-6 shadow-glow hover:shadow-glow-lg transition-all active:scale-[0.98] whitespace-normal break-words text-center"
                   onClick={() => setShowForm(true)}
@@ -597,7 +718,9 @@ ${currentUrl}`;
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Duration</dt>
-                        <dd className="font-medium">{trip.duration} days</dd>
+                        <dd className="font-medium">
+                          {getSelectedDuration()} days
+                        </dd>
                       </div>
                       <div className="flex justify-between">
                         <dt className="text-muted-foreground">Difficulty</dt>

@@ -184,12 +184,14 @@ const mapServerTripData = (tripDataRaw) => {
     rating: 4.7,
     reviewCount: 0,
     verified: true,
-    type: "Adventure",
+    type: raw.trip_type?.name || raw.type?.name || "Adventure",
+    type_name: raw.trip_type?.name || raw.type?.name || "Adventure",
     startDate: raw.start_date,
     highlights: raw.itinerary || [],
     inclusions: raw.inclusions || [],
     exclusions: raw.exclusions || [],
     cancellation_policy: raw.cancellation_policy || "",
+    batches: raw.batches || [],
   };
 };
 

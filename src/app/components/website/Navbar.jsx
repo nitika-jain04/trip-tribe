@@ -242,7 +242,7 @@ export function Navbar() {
                         : ""
                     }
                   >
-                    Login
+                    Login/Signup
                   </Button>
                 </Link>
               )}

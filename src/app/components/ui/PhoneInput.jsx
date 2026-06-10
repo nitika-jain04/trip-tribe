@@ -80,51 +80,6 @@ const PhoneInput = ({
       {hasError && typeof error === "string" && (
         <p className="text-xs text-error mt-1">{error}</p>
       )}
-
-      <style jsx global>{`
-        .react-international-phone-input {
-          width: 100% !important;
-          font-family: inherit !important;
-          font-size: 1rem !important;
-          color: var(--foreground) !important;
-        }
-        @media (min-width: 768px) {
-          .react-international-phone-input {
-            font-size: 0.875rem !important;
-          }
-        }
-        .react-international-phone-country-selector-button {
-          background-color: var(--background) !important;
-          border-color: var(--input) !important;
-          width: 60px !important;
-        }
-        .react-international-phone-country-selector-button:hover {
-          background-color: var(--muted) !important;
-        }
-        .react-international-phone-country-selector-button__dropdown-arrow {
-          border-top-color: var(--muted-foreground) !important;
-        }
-        .react-international-phone-country-selector-dropdown {
-          background-color: var(--background) !important;
-          border: 1px solid var(--border) !important;
-          border-radius: 0.75rem !important;
-          box-shadow: var(--shadow-lg) !important;
-          padding: 0.5rem !important;
-        }
-        .react-international-phone-country-selector-dropdown__list-item {
-          color: var(--foreground) !important;
-          padding: 0.5rem !important;
-          border-radius: 0.5rem !important;
-          transition: background-color 0.2s !important;
-        }
-        .react-international-phone-country-selector-dropdown__list-item:hover {
-          background-color: var(--muted) !important;
-        }
-        .react-international-phone-country-selector-dropdown__list-item--selected {
-          background-color: var(--primary-soft) !important;
-          color: var(--primary) !important;
-        }
-      `}</style>
     </div>
   );
 };

@@ -66,10 +66,20 @@ export default function TripDetail() {
       : null,
     adminFetcher,
   );
+  const { data: tripTypeData } = useSWR(
+    trip?.trip_type_id || trip?.trip_type?.id || trip?.type_id || trip?.type?.id
+      ? `${BASE_URL}/api/${API_VERSION}/trip-types/admin/${trip.trip_type_id || trip.trip_type?.id || trip.type_id || trip.type?.id}`
+      : null,
+    adminFetcher,
+  );
 
   const operator = operatorData?.result || null;
   const source = sourceData?.result || null;
   const destination = destData?.result || null;
+  const tripTypeName = trip?.trip_type?.name || trip?.type?.name || tripTypeData?.result?.name || "N/A";
+
+  const displayStartDate = trip?.batches?.[0]?.start_date || trip?.start_date;
+  const displayEndDate = trip?.batches?.[0]?.end_date || trip?.end_date;
 
   useEffect(() => {
     if (trip?.images?.[0] && !activeImage) {
@@ -223,20 +233,20 @@ export default function TripDetail() {
               <InfoItem
                 icon={<Calendar size={16} />}
                 label="Start"
-                value={new Date(trip.start_date).toLocaleDateString("en-IN", {
+                value={displayStartDate ? new Date(displayStartDate).toLocaleDateString("en-IN", {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
-                })}
+                }) : "N/A"}
               />
               <InfoItem
                 icon={<Calendar size={16} />}
                 label="End"
-                value={new Date(trip.end_date).toLocaleDateString("en-IN", {
+                value={displayEndDate ? new Date(displayEndDate).toLocaleDateString("en-IN", {
                   day: "numeric",
                   month: "short",
                   year: "numeric",
-                })}
+                }) : "N/A"}
               />
             </div>
 
@@ -265,7 +275,7 @@ export default function TripDetail() {
               <InfoItem
                 label="Trip Type"
                 icon={<GoTriangleUp size={16} />}
-                value={trip.type?.name}
+                value={tripTypeName}
               />
             </div>
 
@@ -317,6 +327,55 @@ export default function TripDetail() {
                     {cat.category.toLowerCase() === "base price"
                       ? "Primary"
                       : "Option"}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Batches Breakdown */}
+      {trip.batches?.length > 0 && (
+        <Card className="rounded-2xl shadow-sm overflow-hidden">
+          <CardContent className="p-4 sm:p-6">
+            <h2 className="text-lg font-semibold mb-4">
+              Trip Batches
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {trip.batches.map((batch, i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-xl border bg-slate-50 flex justify-between items-center group hover:border-teal-300 transition-colors"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold tracking-wider">
+                        Batch #{i + 1}
+                      </p>
+                      <span
+                        className={cn(
+                          "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                          batch.status === "ACTIVE" && "bg-emerald-100 text-emerald-700",
+                          batch.status === "INACTIVE" && "bg-red-100 text-red-700",
+                          batch.status === "SCHEDULED" && "bg-amber-100 text-amber-700",
+                          !batch.status && "bg-amber-100 text-amber-700",
+                        )}
+                      >
+                        {batch.status || "SCHEDULED"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground font-medium mt-1">
+                      {new Date(batch.start_date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })} - {new Date(batch.end_date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </p>
                   </div>
                 </div>
               ))}

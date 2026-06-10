@@ -555,25 +555,52 @@
 }
 
 .react-international-phone-input {
+  width: 100% !important;
+  font-family: inherit !important;
+  font-size: 1rem !important;
   background-color: var(--background) !important;
   color: var(--foreground) !important;
   border-color: var(--input) !important;
+}
+@media (min-width: 768px) {
+  .react-international-phone-input {
+    font-size: 0.875rem !important;
+  }
 }
 
 .react-international-phone-country-selector-button {
   background-color: var(--background) !important;
   border-color: var(--input) !important;
   color: var(--foreground) !important;
+  width: 60px !important;
+}
+.react-international-phone-country-selector-button:hover {
+  background-color: var(--muted) !important;
+}
+.react-international-phone-country-selector-button__dropdown-arrow {
+  border-top-color: var(--muted-foreground) !important;
 }
 
 .react-international-phone-country-selector-dropdown {
-  background-color: var(--card) !important;
-  color: var(--foreground) !important;
+  background-color: var(--background) !important;
   border: 1px solid var(--border) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 0.5rem !important;
 }
 
+.react-international-phone-country-selector-dropdown__list-item {
+  color: var(--foreground) !important;
+  padding: 0.5rem !important;
+  border-radius: 0.5rem !important;
+  transition: background-color 0.2s !important;
+}
 .react-international-phone-country-selector-dropdown__list-item:hover {
   background-color: var(--muted) !important;
+}
+.react-international-phone-country-selector-dropdown__list-item--selected {
+  background-color: var(--primary-soft) !important;
+  color: var(--primary) !important;
 }
 
 /* Fix for Chrome Force-Dark-Mode inverting flag colors */
@@ -588,4 +615,61 @@
   transition: none !important;
   mix-blend-mode: normal !important;
   transform: translateZ(0); 
+}
+
+/* ===================== */
+/* AUTH PHONE INPUT OVERRIDES (To prevent hydration flashing) */
+/* ===================== */
+.auth-phone-container {
+  --background: transparent !important;
+  --foreground: #ffffff !important;
+  --input: rgba(255, 255, 255, 0.1) !important;
+  --muted: rgba(255, 255, 255, 0.05) !important;
+  --card: #1a1a1a !important;
+  --border: rgba(255, 255, 255, 0.1) !important;
+  width: 100% !important;
+}
+
+.auth-phone-container .react-international-phone-container {
+  width: 100% !important;
+}
+
+.auth-phone-container .react-international-phone-input {
+  width: 100% !important;
+  background: transparent !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-left-color: transparent !important;
+  border-top-right-radius: 0.75rem !important;
+  border-bottom-right-radius: 0.75rem !important;
+  height: 52px !important;
+  font-size: 1rem !important;
+}
+
+.auth-phone-container .react-international-phone-country-selector-button {
+  background: transparent !important;
+  color: white !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-top-left-radius: 0.75rem !important;
+  border-bottom-left-radius: 0.75rem !important;
+  height: 52px !important;
+}
+
+.auth-phone-container .react-international-phone-country-selector-button__dropdown-arrow {
+  border-top-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.auth-phone-container .react-international-phone-country-selector-dropdown {
+  background-color: #1a1a1a !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.75rem !important;
+}
+
+.auth-phone-container .react-international-phone-country-selector-dropdown__list-item {
+  color: white !important;
+}
+
+.auth-phone-container .react-international-phone-country-selector-dropdown__list-item:hover,
+.auth-phone-container .react-international-phone-country-selector-dropdown__list-item--selected {
+  background-color: rgba(255, 255, 255, 0.1) !important;
 }

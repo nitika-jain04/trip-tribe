@@ -161,11 +161,38 @@ export default function HomeClient({
         name: "Unknown",
         region: "",
       };
-      const start = new Date(trip.start_date);
-      const end = new Date(trip.end_date);
-      let durationDays = 0;
-      if (!isNaN(start) && !isNaN(end)) {
-        durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      let durationStr = "";
+      const daysVal = trip.duration_days || trip.duration;
+      if (daysVal) {
+        durationStr = String(daysVal).toLowerCase().includes("day")
+          ? String(daysVal)
+          : `${daysVal} days`;
+      } else {
+        const start = new Date(trip.start_date);
+        const end = new Date(trip.end_date);
+        if (!isNaN(start) && !isNaN(end)) {
+          const computedDays = Math.max(
+            1,
+            Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
+          );
+          durationStr = `${computedDays} days`;
+        } else {
+          const firstBatch = trip.batches?.[0];
+          if (firstBatch?.start_date && firstBatch?.end_date) {
+            const startBatch = new Date(firstBatch.start_date);
+            const endBatch = new Date(firstBatch.end_date);
+            if (!isNaN(startBatch) && !isNaN(endBatch)) {
+              const computedDays = Math.max(
+                1,
+                Math.ceil((endBatch - startBatch) / (1000 * 60 * 60 * 24)) + 1,
+              );
+              durationStr = `${computedDays} days`;
+            }
+          }
+        }
+      }
+      if (!durationStr) {
+        durationStr = "N/A";
       }
 
       return {
@@ -191,7 +218,7 @@ export default function HomeClient({
             (c) => c.category?.toLowerCase() === "base price",
           )?.price || trip.price,
         ),
-        duration: `${durationDays} days`,
+        duration: durationStr,
         groupSize: `${trip.total_seats} people`,
         difficulty: trip.difficulty
           ? trip.difficulty.charAt(0).toUpperCase() +

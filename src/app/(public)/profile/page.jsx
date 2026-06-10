@@ -49,20 +49,48 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const userCookie = Cookies.get("user");
-    if (!userCookie) {
+    const token = Cookies.get("token");
+    if (!userCookie || !token) {
       router.push("/login");
-    } else {
-      try {
-        setUser(JSON.parse(userCookie));
-      } catch (e) {
-        console.error("Failed to parse user cookie:", e);
-        Cookies.remove("user");
-        Cookies.remove("token");
-        router.push("/login");
-      }
+      return;
     }
-    setLoading(false);
-  }, [router]);
+
+    try {
+      setUser(JSON.parse(userCookie));
+      setLoading(false);
+    } catch (e) {
+      console.error("Failed to parse user cookie:", e);
+      Cookies.remove("user");
+      Cookies.remove("token");
+      router.push("/login");
+      return;
+    }
+
+    const fetchUserProfile = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/${API_VERSION}/auth/profile`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.result) {
+            setUser(data.result);
+            Cookies.set("user", JSON.stringify(data.result), {
+              expires: 1,
+              path: "/",
+              sameSite: "strict",
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch fresh user profile:", err);
+      }
+    };
+
+    fetchUserProfile();
+  }, [router, BASE_URL, API_VERSION]);
 
   const handleLogout = () => {
     Cookies.remove("token", { path: "/" });
@@ -192,7 +220,12 @@ export default function ProfilePage() {
         
         const updatedUser = {
           ...user,
-          [isEmail ? "email_verified" : "phone_verified"]: true,
+          email_verified: isEmail ? true : (user.email_verified || false),
+          is_email_verified: isEmail ? true : (user.is_email_verified || false),
+          emailVerified: isEmail ? true : (user.emailVerified || false),
+          phone_verified: !isEmail ? true : (user.phone_verified || false),
+          is_phone_verified: !isEmail ? true : (user.is_phone_verified || false),
+          phoneVerified: !isEmail ? true : (user.phoneVerified || false),
         };
         setUser(updatedUser);
         Cookies.set("user", JSON.stringify(updatedUser), {
@@ -227,6 +260,9 @@ export default function ProfilePage() {
   }
 
   if (!user) return null;
+
+  const isEmailVerified = user.email_verified || user.is_email_verified || user.emailVerified || false;
+  const isPhoneVerified = user.phone_verified || user.is_phone_verified || user.phoneVerified || false;
 
   const joinedDate = user.createdAt
     ? new Date(user.createdAt).toLocaleDateString("en-US", {
@@ -297,7 +333,7 @@ export default function ProfilePage() {
                 </div>
                 {user.email && (
                   <div className="self-center flex items-center gap-2">
-                    {user.email_verified ? (
+                    {isEmailVerified ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         Verified
@@ -333,7 +369,7 @@ export default function ProfilePage() {
                 </div>
                 {user.phone_number && (
                   <div className="self-center flex items-center gap-2">
-                    {user.phone_verified ? (
+                    {isPhoneVerified ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                         Verified

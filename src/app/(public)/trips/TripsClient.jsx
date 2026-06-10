@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { LazyMotion, domAnimation, AnimatePresence, motion } from "framer-motion";
+import {
+  LazyMotion,
+  domAnimation,
+  AnimatePresence,
+  motion,
+} from "framer-motion";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import useSWR from "swr";
@@ -12,6 +17,7 @@ import {
   MapPin,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
   Calendar,
   Users,
   X,
@@ -59,10 +65,29 @@ import CompareCheckbox from "@/app/components/website/CompareCheckbox";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_VERSION = process.env.NEXT_PUBLIC_API_VERSION;
 
+const formatDate = (dateStr) => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch (e) {
+    return dateStr;
+  }
+};
+
 const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
   const [imgError, setImgError] = useState(false);
   const [[currentImgIndex, direction], setPage] = useState([0, 0]);
   const [isHovered, setIsHovered] = useState(false);
+  const [selectedBatchIndex, setSelectedBatchIndex] = useState(0);
+
+  const batches = trip.batches || [];
+  const selectedBatch = batches[selectedBatchIndex];
 
   const images =
     trip.images?.length > 0 ? trip.images : ["/placeholder-trip.jpg"];
@@ -227,10 +252,57 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
           </span>
         </div>
 
+        {selectedBatch ? (
+          <div className="flex items-center gap-1.5 text-body-sm text-teal-600 font-semibold mb-3">
+            <Calendar className="w-4 h-4 text-teal-500" />
+            <span>
+              {formatDate(selectedBatch.start_date)} -{" "}
+              {formatDate(selectedBatch.end_date)}
+            </span>
+          </div>
+        ) : (
+          trip.startDate && (
+            <div className="flex items-center gap-1.5 text-body-sm text-teal-600 font-semibold mb-3">
+              <Calendar className="w-4 h-4 text-teal-500" />
+              <span>
+                {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+              </span>
+            </div>
+          )
+        )}
+
         <p className="text-body-sm text-muted-foreground mb-4">
           by{" "}
           <span className="text-foreground font-medium">{trip.provider}</span>
         </p>
+
+        {/* {batches.length > 1 && (
+          <div className="mb-4">
+            <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+              Select Preferred Batch
+            </label>
+            <div className="relative">
+              <select
+                value={selectedBatchIndex}
+                onChange={(e) => setSelectedBatchIndex(Number(e.target.value))}
+                className="w-full bg-background border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 transition-all cursor-pointer appearance-none pr-8 font-semibold shadow-2xs"
+              >
+                {batches.map((batch, index) => {
+                  const start = formatDate(batch.start_date);
+                  const end = formatDate(batch.end_date);
+                  return (
+                    <option key={index} value={index}>
+                      {start} - {end}
+                    </option>
+                  );
+                })}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-muted-foreground">
+                <ChevronDown size={14} />
+              </div>
+            </div>
+          </div>
+        )} */}
 
         <div className="mt-auto">
           <div className="flex items-center justify-between pt-4 border-t border-border">
@@ -246,7 +318,11 @@ const PublicTripCard = ({ trip, isCompared, onToggleCompare }) => {
               onToggleCompare={onToggleCompare}
             />
 
-            <Link href={`/trip/${trip.id}`} className="flex-1" prefetch={false}>
+            <Link
+              href={`/trip/${trip.id}${selectedBatch ? `?batch=${selectedBatchIndex}` : ""}`}
+              className="flex-1"
+              prefetch={false}
+            >
               <Button className="btn-primary w-full">View Details</Button>
             </Link>
           </div>
@@ -442,7 +518,25 @@ export default function TripsClient({
         ),
         startDate: trip.start_date,
         endDate: trip.end_date,
-        duration: trip.duration || "",
+        duration: (() => {
+          const daysVal = trip.duration_days || trip.duration;
+          if (daysVal) {
+            return String(daysVal).toLowerCase().includes("day")
+              ? String(daysVal)
+              : `${daysVal} days`;
+          }
+          const firstBatch = trip.batches?.[0];
+          if (firstBatch?.start_date && firstBatch?.end_date) {
+            const start = new Date(firstBatch.start_date);
+            const end = new Date(firstBatch.end_date);
+            const computedDays = Math.max(
+              1,
+              Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1,
+            );
+            return `${computedDays} days`;
+          }
+          return "N/A";
+        })(),
         groupSize: `${trip.total_seats} people`,
         difficulty: trip.difficulty
           ? trip.difficulty.charAt(0).toUpperCase() +
@@ -454,13 +548,14 @@ export default function TripsClient({
         inclusions: trip.inclusions || [],
         exclusions: trip.exclusions || [],
         itinerary: trip.itinerary || [],
-        type: trip.type?.name || "Other",
+        type: trip.trip_type?.name || trip.type?.name || "Other",
         description: trip.description || "",
         priceCategories: trip.price_categories || [],
         hotelCategory: trip.hotel_category || 0,
         destination_full: `${destination.name}${destination.region !== "" ? `, ${destination.region}` : ""}`,
         source_full: `${source.name}${source.region !== "" ? `, ${source.region}` : ""}`,
         cancellation_policy: trip.cancellation_policy || "",
+        batches: trip.batches || [],
       };
     });
   }, [tripsData, locationMap]);

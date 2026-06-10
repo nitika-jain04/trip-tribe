@@ -428,7 +428,7 @@ export default function Register() {
                 <label className="text-xs font-medium text-white/60 uppercase tracking-wider ml-1">
                   Phone Number
                 </label>
-                <div className="mt-2">
+                <div className="mt-2 auth-phone-container">
                   <PhoneInput
                     value={phoneNumber}
                     onChange={(val) => {
@@ -444,41 +444,6 @@ export default function Register() {
                     }}
                   />
                 </div>
-                <style jsx global>{`
-                  .react-international-phone-input {
-                    background: transparent !important;
-                    color: white !important;
-                    border-color: rgba(255, 255, 255, 0.1) !important;
-                    border-left-color: transparent !important;
-                    border-top-right-radius: 0.75rem !important;
-                    border-bottom-right-radius: 0.75rem !important;
-                    height: 52px !important;
-                    font-size: 1rem !important;
-                  }
-                  .react-international-phone-country-selector-button {
-                    background: transparent !important;
-                    color: white !important;
-                    border-color: rgba(255, 255, 255, 0.1) !important;
-                    border-top-left-radius: 0.75rem !important;
-                    border-bottom-left-radius: 0.75rem !important;
-                    height: 52px !important;
-                  }
-                  .react-international-phone-country-selector-button__dropdown-arrow {
-                    border-top-color: rgba(255, 255, 255, 0.6) !important;
-                  }
-                  .react-international-phone-country-selector-dropdown {
-                    background-color: #1a1a1a !important;
-                    border-color: rgba(255, 255, 255, 0.1) !important;
-                    border-radius: 0.75rem !important;
-                  }
-                  .react-international-phone-country-selector-dropdown__list-item {
-                    color: white !important;
-                  }
-                  .react-international-phone-country-selector-dropdown__list-item:hover,
-                  .react-international-phone-country-selector-dropdown__list-item--selected {
-                    background-color: rgba(255, 255, 255, 0.1) !important;
-                  }
-                `}</style>
               </div>
 
               {/* Password Field */}
